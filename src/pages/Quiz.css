@@ -1,0 +1,139 @@
+.quiz-container {
+  max-width: 800px;
+  margin: 0 auto;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.question-card, .score-card {
+  width: 100%;
+  padding: 3rem;
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.q-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 10px;
+  margin-bottom: 3rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  transition: width 0.5s ease;
+}
+
+.q-text {
+  font-size: 1.8rem;
+  margin-bottom: 3rem;
+  text-align: left;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.option-btn {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: left;
+  transition: var(--transition);
+  font-size: 1.1rem;
+}
+
+.option-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: rgba(139, 0, 0, 0.02);
+  transform: translateX(10px);
+}
+
+.opt-label {
+  width: 40px;
+  height: 40px;
+  background: rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.opt-text {
+  flex: 1;
+}
+
+.option-btn.correct {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: #4CAF50;
+  color: #2e7d32;
+}
+
+.option-btn.correct .opt-label {
+  background: #4CAF50;
+  color: white;
+}
+
+.option-btn.wrong {
+  background: rgba(244, 67, 54, 0.1);
+  border-color: #f44336;
+  color: #c62828;
+}
+
+.option-btn.wrong .opt-label {
+  background: #f44336;
+  color: white;
+}
+
+/* Score Card */
+.award-icon {
+  color: var(--secondary);
+  margin-bottom: 2rem;
+}
+
+.score-text {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.score-badge {
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--primary);
+  margin-bottom: 2rem;
+}
+
+.feedback {
+  margin-bottom: 3rem;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}

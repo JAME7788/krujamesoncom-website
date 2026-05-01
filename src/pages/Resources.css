@@ -1,0 +1,145 @@
+.resources-page {
+  min-height: 80vh;
+}
+
+.resources-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.resources-header h1 {
+  font-size: 2.5rem;
+  color: var(--text-dark);
+  margin: 1rem 0;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.resources-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+
+.resource-section .section-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  color: var(--text-dark);
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.resource-card {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.resource-card:hover {
+  transform: translateX(10px);
+}
+
+.card-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1.5rem;
+  flex-shrink: 0;
+}
+
+.card-info {
+  flex: 1;
+}
+
+.card-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.card-info p {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+.coming-soon {
+  background: var(--bg-color);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  border: 1px dashed #ccc;
+}
+
+.cards-grid-alt {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+}
+
+.feature-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+.feature-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.3rem;
+  color: var(--text-dark);
+}
+
+.feature-card p {
+  margin: 0 0 2rem 0;
+  color: var(--text-light);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.feature-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .resource-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .card-icon {
+    margin-right: 0;
+  }
+}

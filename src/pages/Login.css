@@ -1,0 +1,112 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 2rem;
+}
+
+.login-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(139, 0, 0, 0.05) 0%, transparent 40%),
+              radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.05) 0%, transparent 40%);
+  z-index: -1;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 450px;
+  padding: 3rem;
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.login-header {
+  margin-bottom: 2.5rem;
+}
+
+.auth-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(139, 0, 0, 0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+}
+
+.login-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.login-header p {
+  color: var(--text-muted);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.input-group {
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+}
+
+.input-group input, .input-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.btn-login-submit {
+  background: var(--primary);
+  color: white;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 1rem;
+  box-shadow: 0 10px 20px rgba(139, 0, 0, 0.1);
+}
+
+.btn-login-submit:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.auth-footer {
+  margin-top: 2rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
