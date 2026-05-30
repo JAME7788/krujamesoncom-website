@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงาน Arduino 6: จำลองวงจรและแก้ปัญหา</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: white; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30, 41, 59, .08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 26px 0 10px; font-size: 18px; color: #1f4ea3; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 42px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #eef4ff; text-align: left; }
+    .write { min-height: 46px; }
+    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 6: จำลองวงจร ตรวจของจริง และแก้ปัญหาอัปโหลดไม่ได้</h1>
+    <p>เป้าหมาย: นักเรียนใช้ simulator เป็นสนามซ้อม และใช้ checklist แก้ปัญหาบอร์ดอย่างเป็นลำดับ</p>
+    <div class="meta">
+      <div class="box">ชื่อ: ....................................</div>
+      <div class="box">ชั้น: ................ เลขที่: ........</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>ภารกิจที่ 1: จำลองวงจร</h2>
+    <ol>
+      <li>เปิด Wokwi หรือ Tinkercad แล้วสร้างวงจรจากหน่วยก่อนหน้า 1 งาน</li>
+      <li>อัปโหลดหรือเขียนโค้ดให้วงจรจำลองทำงาน</li>
+      <li>บันทึกลิงก์โปรเจกต์และสรุปผลที่ได้</li>
+    </ol>
+    <table>
+      <thead><tr><th>เครื่องมือ</th><th>ลิงก์โปรเจกต์</th><th>ผลการจำลอง</th></tr></thead>
+      <tbody>
+        <tr><td>Wokwi / Tinkercad</td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>ภารกิจที่ 2: เปรียบเทียบกับวงจรจริง</h2>
+    <table>
+      <thead><tr><th>หัวข้อเปรียบเทียบ</th><th>ใน simulator</th><th>ของจริงหรือผลที่คาด</th></tr></thead>
+      <tbody>
+        <tr><td>การต่อสาย</td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>ค่าที่อ่านได้</td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>ปัญหาที่พบ</td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Checklist อัปโหลดไม่ได้</h2>
+    <table>
+      <thead><tr><th>รายการตรวจ</th><th>ผล</th><th>หมายเหตุ</th></tr></thead>
+      <tbody>
+        <tr><td>สาย USB เป็นสายข้อมูลและเสียบแน่น</td><td>□ ผ่าน □ ไม่ผ่าน</td><td class="write"></td></tr>
+        <tr><td>เลือก Board ถูกต้อง</td><td>□ ผ่าน □ ไม่ผ่าน</td><td class="write"></td></tr>
+        <tr><td>เลือก Port ถูกต้อง</td><td>□ ผ่าน □ ไม่ผ่าน</td><td class="write"></td></tr>
+        <tr><td>ปิด Serial Monitor หรือโปรแกรมที่ใช้ Port เดียวกัน</td><td>□ ผ่าน □ ไม่ผ่าน</td><td class="write"></td></tr>
+        <tr><td>ถอดวงจรภายนอกที่อาจรบกวน</td><td>□ ผ่าน □ ไม่ผ่าน</td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>บันทึก error</h2>
+    <div class="box" style="min-height:90px;">ข้อความ error หรืออาการที่พบ: .......................................................................................................................</div>
+    <div class="box" style="min-height:90px; margin-top:10px;">สิ่งที่ทดลองแก้แล้ว: ...........................................................................................................................................</div>
+
+    <h2>จำลองวงจร</h2>
+    <ul>
+      <li>Wokwi: https://wokwi.com/arduino</li>
+      <li>Tinkercad Circuits: https://www.tinkercad.com/circuits</li>
+    </ul>
+
+    <h2>คำถามท้ายงาน</h2>
+    <ol>
+      <li>Simulator ช่วยเราเรื่องใด และยังแทนของจริงไม่ได้เรื่องใด</li>
+      <li>บูตโหลดเดอร์ช่วยให้ Arduino อัปโหลดโปรแกรมได้สะดวกอย่างไร</li>
+      <li>ทำไมการแก้ปัญหาควรตรวจทีละข้อและจดผลไว้</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงาน Arduino 8: โครงงานปลายคอร์ส</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 960px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: white; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30, 41, 59, .08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 26px 0 10px; font-size: 18px; color: #1f4ea3; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 42px; }
+    .wide { min-height: 96px; }
+    .sketch { min-height: 150px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #eef4ff; text-align: left; }
+    .write { min-height: 48px; }
+    @media print {
+      body { background: white; }
+      main { padding: 0; }
+      .sheet { box-shadow: none; border: 0; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 8: โครงงาน Arduino ปลายคอร์ส</h1>
+    <p>เป้าหมาย: นักเรียนออกแบบ สร้าง ทดสอบ และนำเสนอโครงงาน Arduino ที่มี Input, Process, Output ชัดเจน โดยใช้หลักฐานจากการทดลองจริงประกอบการอธิบาย</p>
+    <div class="meta">
+      <div class="box">ชื่อกลุ่ม: ....................................</div>
+      <div class="box">สมาชิก: ....................................</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>1. เลือกปัญหาหรือความต้องการ</h2>
+    <p>ให้เลือกปัญหาใกล้ตัว เช่น ห้องเรียนมืดเกินไป การเตือนระยะใกล้ การวัดอุณหภูมิ การเปิดปิดอุปกรณ์จำลอง หรือระบบแจ้งเตือนแบบง่าย</p>
+    <div class="box wide">ปัญหาที่เลือก: ..............................................................................................................................................................................................</div>
+    <div class="box wide" style="margin-top:10px;">ผู้ใช้คือใคร และผู้ใช้ต้องการอะไร: ...............................................................................................................................................................</div>
+
+    <h2>2. วิเคราะห์ระบบแบบ Input-Process-Output</h2>
+    <table>
+      <thead><tr><th>Input</th><th>Process</th><th>Output</th><th>เกณฑ์ความสำเร็จ</th></tr></thead>
+      <tbody>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. เลือกอุปกรณ์และหน้าที่</h2>
+    <table>
+      <thead><tr><th>อุปกรณ์</th><th>ขาที่ใช้</th><th>หน้าที่ในโครงงาน</th><th>เหตุผลที่เลือก</th></tr></thead>
+      <tbody>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>4. แบบร่างวงจรและผังการทำงาน</h2>
+    <div class="box sketch">พื้นที่วาดวงจรหรือแปะภาพจาก Wokwi/Tinkercad: ........................................................................................................................................</div>
+    <div class="box sketch" style="margin-top:10px;">ผังขั้นตอนการทำงานหรือ pseudocode: ............................................................................................................................................................</div>
+
+    <h2>5. แผนเขียนโปรแกรม</h2>
+    <table>
+      <thead><tr><th>ส่วนของโปรแกรม</th><th>สิ่งที่ต้องเขียน</th><th>ตรวจแล้ว</th></tr></thead>
+      <tbody>
+        <tr><td>กำหนดตัวแปรและขาอุปกรณ์</td><td class="write"></td><td>□</td></tr>
+        <tr><td>ตั้งค่าใน setup()</td><td class="write"></td><td>□</td></tr>
+        <tr><td>อ่านค่า input</td><td class="write"></td><td>□</td></tr>
+        <tr><td>ประมวลผลและเงื่อนไข</td><td class="write"></td><td>□</td></tr>
+        <tr><td>สั่ง output</td><td class="write"></td><td>□</td></tr>
+        <tr><td>แสดงผลหรือบันทึกผลทดสอบ</td><td class="write"></td><td>□</td></tr>
+      </tbody>
+    </table>
+
+    <h2>6. ตารางทดสอบและปรับปรุง</h2>
+    <table>
+      <thead><tr><th>ครั้งที่</th><th>สถานการณ์ทดสอบ</th><th>ผลที่คาดหวัง</th><th>ผลจริง</th><th>สิ่งที่ปรับปรุง</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>2</td><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>3</td><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>4</td><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>7. เกณฑ์ประเมินโครงงาน</h2>
+    <table>
+      <thead><tr><th>รายการ</th><th>ดีมาก 3</th><th>พอใช้ 2</th><th>ต้องปรับปรุง 1</th><th>คะแนน</th></tr></thead>
+      <tbody>
+        <tr><td>แนวคิดและปัญหาชัดเจน</td><td>อธิบายผู้ใช้และเป้าหมายได้ชัด</td><td>มีเป้าหมายแต่ยังไม่ละเอียด</td><td>ยังไม่เห็นปัญหาชัด</td><td></td></tr>
+        <tr><td>วงจรและความปลอดภัย</td><td>ต่อวงจรถูก ตรวจขาและไฟเลี้ยงครบ</td><td>ทำงานได้แต่ยังต้องช่วยตรวจ</td><td>ต่อผิดหรือเสี่ยงลัดวงจร</td><td></td></tr>
+        <tr><td>โปรแกรมและตรรกะ</td><td>ใช้ตัวแปร เงื่อนไข และ output เหมาะสม</td><td>ทำงานได้บางส่วน</td><td>ยังไม่เชื่อมกับเป้าหมาย</td><td></td></tr>
+        <tr><td>การทดสอบและแก้ปัญหา</td><td>มีหลักฐานทดสอบหลายสถานการณ์</td><td>ทดสอบน้อยหรือบันทึกไม่ครบ</td><td>ไม่มีหลักฐานทดสอบ</td><td></td></tr>
+        <tr><td>การนำเสนอ</td><td>อธิบาย IPO วงจร โค้ด และผลลัพธ์ได้</td><td>อธิบายได้บางส่วน</td><td>ยังไม่พร้อมตอบคำถาม</td><td></td></tr>
+      </tbody>
+    </table>
+
+    <h2>8. เตรียมนำเสนอ</h2>
+    <ol>
+      <li>โครงงานชื่ออะไร และแก้ปัญหาอะไร</li>
+      <li>Input, Process, Output คืออะไร</li>
+      <li>วงจรมีอุปกรณ์อะไรบ้าง และต่อขาใด</li>
+      <li>โค้ดส่วนสำคัญคือบรรทัดใด เพราะอะไร</li>
+      <li>ผลทดสอบพิสูจน์ว่าโครงงานทำงานได้อย่างไร</li>
+      <li>ถ้าพัฒนาต่อ จะเพิ่มหรือปรับปรุงอะไร</li>
+    </ol>
+
+    <h2>แหล่งจำลองและแรงบันดาลใจ</h2>
+    <ul>
+      <li>Wokwi Arduino Simulator: https://wokwi.com/arduino</li>
+      <li>Tinkercad Circuits: https://www.tinkercad.com/circuits</li>
+      <li>Arduino Project Hub: https://projecthub.arduino.cc/</li>
+      <li>Arduino Built-in Examples: https://docs.arduino.cc/built-in-examples/</li>
+    </ul>
+
+    <h2>สะท้อนคิดท้ายคอร์ส</h2>
+    <ol>
+      <li>บทเรียน Arduino เรื่องใดช่วยให้โครงงานสำเร็จมากที่สุด</li>
+      <li>ปัญหาใหญ่ที่สุดที่กลุ่มพบคืออะไร และแก้อย่างไร</li>
+      <li>สิ่งที่ภูมิใจที่สุดในโครงงานนี้คืออะไร</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

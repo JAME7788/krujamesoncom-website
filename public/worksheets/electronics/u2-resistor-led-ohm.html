@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงานอิเล็กทรอนิกส์ 2: ตัวต้านทาน LED และกฎของโอห์ม</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: #fff; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30,41,59,.08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 24px 0 10px; font-size: 18px; color: #0f766e; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    code { background: #ecfeff; border-radius: 5px; padding: 1px 5px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 42px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #ecfeff; text-align: left; }
+    .write { min-height: 48px; }
+    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 2: ตัวต้านทาน LED และกฎของโอห์ม</h1>
+    <p>เป้าหมาย: นักเรียนเลือกตัวต้านทานให้ LED ได้ปลอดภัย และใช้สูตร <code>V = IR</code> คิดกระแสหรือแรงดันพื้นฐานได้</p>
+    <div class="meta">
+      <div class="box">ชื่อ: ....................................</div>
+      <div class="box">ชั้น: ................ เลขที่: ........</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>ความรู้สำคัญ</h2>
+    <ul>
+      <li>ตัวต้านทานช่วยจำกัดกระแส ป้องกัน LED และขา Arduino เสียหาย</li>
+      <li>LED มีขั้ว ต้องต่อขั้วบวกและขั้วลบให้ถูก</li>
+      <li>พิกัดกำลังของตัวต้านทานต้องมากกว่ากำลังที่เกิดขึ้นจริงในวงจร</li>
+    </ul>
+
+    <h2>คำนวณก่อนต่อจริง</h2>
+    <table>
+      <thead><tr><th>แรงดันแหล่งจ่าย</th><th>แรงดันตกคร่อม LED</th><th>กระแสที่ต้องการ</th><th>ค่าตัวต้านทานที่ควรใช้</th></tr></thead>
+      <tbody>
+        <tr><td>5 V</td><td>2 V</td><td>0.01 A</td><td class="write"></td></tr>
+        <tr><td>5 V</td><td>2 V</td><td>0.02 A</td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>บันทึกผลทดลอง</h2>
+    <table>
+      <thead><tr><th>ค่าตัวต้านทาน</th><th>ความสว่าง LED</th><th>กระแสที่วัดได้</th><th>ข้อสังเกต</th></tr></thead>
+      <tbody>
+        <tr><td>220 Ω</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>330 Ω</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>1 kΩ</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>คำถามท้ายงาน</h2>
+    <ol>
+      <li>ถ้าไม่ใส่ตัวต้านทานกับ LED จะเกิดความเสี่ยงอะไร</li>
+      <li>ค่าตัวต้านทานมากขึ้นทำให้กระแสเปลี่ยนอย่างไร</li>
+      <li>กฎของโอห์มช่วยให้เราต่อวงจรปลอดภัยขึ้นอย่างไร</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

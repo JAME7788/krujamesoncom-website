@@ -1,0 +1,86 @@
+// ===================================================================
+// Firestore Security Rules — krujamesoncom-website
+//
+// Deploy: firebase deploy --only firestore:rules
+//
+// โครงสร้าง collection:
+//   /students/{studentId}        — ข้อมูลนักเรียน
+//   /progress/{studentId}        — ความก้าวหน้านักเรียน (slides, activities, quiz)
+//   /grades/{classroom}[_subj]   — คะแนน K/P/A ที่ครูเก็บ
+//   /announcements/{id}          — ประกาศข่าวสาร
+//   /events/{id}                 — ปฏิทินกิจกรรม
+//   /courses/{id}                — รายวิชาที่ครูสร้างเอง (Course Builder)
+//
+// แนวทาง:
+//   - นักเรียนเขียนได้แค่ progress ของตัวเอง
+//   - คะแนน (grades) แก้ได้แค่ admin
+//   - ประกาศ/ปฏิทิน อ่านได้ทุกคน — เขียนได้แค่ admin
+//   - admin = authenticated user that has custom claim 'admin' = true
+//     (จัดการผ่าน Firebase Admin SDK / Cloud Function)
+// ===================================================================
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ====== Helpers ======
+    function isAuthed() { return request.auth != null; }
+    function isAdmin()  { return isAuthed() && request.auth.token.admin == true; }
+    function isOwner(uid) { return isAuthed() && request.auth.uid == uid; }
+
+    // ====== Students ======
+    // นักเรียนสร้างเองได้ แต่แก้ได้แค่ของตัวเอง
+    match /students/{studentId} {
+      allow read: if isAuthed();
+      allow create: if isAuthed();
+      allow update: if isOwner(studentId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ====== Progress ======
+    // เขียนได้แค่ของตัวเอง อ่านได้ admin + เจ้าของ
+    match /progress/{studentId} {
+      allow read: if isOwner(studentId) || isAdmin();
+      allow write: if isOwner(studentId) || isAdmin();
+    }
+
+    // ====== Grades (K/P/A) ======
+    // อ่านได้ทุกคนที่ login (นักเรียนดูคะแนนตัวเอง)
+    // แก้ได้แค่ admin
+    match /grades/{docId} {
+      allow read: if isAuthed();
+      allow write: if isAdmin();
+    }
+
+    // ====== Announcements ======
+    // อ่านได้ทุกคน เขียนได้แค่ admin
+    match /announcements/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ====== Calendar Events ======
+    match /events/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ====== Custom Courses (Course Builder) ======
+    match /courses/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ====== Schedule (ตารางสอน) ======
+    match /schedule/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Default deny for any other path
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงาน Arduino 5: มินิโครงงานเซนเซอร์</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: white; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30, 41, 59, .08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 26px 0 10px; font-size: 18px; color: #1f4ea3; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 44px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #eef4ff; text-align: left; }
+    .write { min-height: 48px; }
+    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 5: ออกแบบมินิโครงงาน Arduino จากเซนเซอร์</h1>
+    <p>เป้าหมาย: นักเรียนออกแบบ ทดลอง และประเมินมินิโครงงานที่มี input, process และ output ชัดเจน</p>
+    <div class="meta">
+      <div class="box">ชื่อกลุ่ม: ....................................</div>
+      <div class="box">สมาชิก: ....................................</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>เลือกหัวข้อโครงงาน</h2>
+    <table>
+      <thead><tr><th>ปัญหาที่ต้องการแก้</th><th>Input</th><th>Process</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>แนวทางโครงงานที่เลือกได้</h2>
+    <ul>
+      <li>เครื่องเตือนระยะใกล้: ultrasonic sensor + LED หรือ buzzer</li>
+      <li>สถานีวัดอุณหภูมิ: DHT22 + LCD หรือ Serial Monitor</li>
+      <li>ไฟอัตโนมัติตามความมืด: LDR + LED</li>
+      <li>ประตูจำลอง: ปุ่มกดหรือเซนเซอร์ + servo</li>
+    </ul>
+
+    <h2>รายการอุปกรณ์</h2>
+    <table>
+      <thead><tr><th>อุปกรณ์</th><th>จำนวน</th><th>หน้าที่ในระบบ</th></tr></thead>
+      <tbody>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>แผนการทดลอง</h2>
+    <ol>
+      <li>วาดหรือแปะผังวงจร</li>
+      <li>เขียนเงื่อนไขการทำงานเป็นภาษาคนก่อนเขียนโค้ด</li>
+      <li>ทดลองอย่างน้อย 3 ครั้งในสถานการณ์ต่างกัน</li>
+      <li>บันทึกผลและแก้ไขจุดที่ยังไม่ทำงาน</li>
+    </ol>
+    <div class="box" style="min-height:120px;">ผังวงจร / เงื่อนไขการทำงาน: ...............................................................................................................................</div>
+
+    <h2>ตารางบันทึกผล</h2>
+    <table>
+      <thead><tr><th>ครั้งที่</th><th>สถานการณ์ทดสอบ</th><th>ค่าที่อ่านได้</th><th>ผลลัพธ์</th><th>ปรับปรุงอะไร</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>2</td><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>3</td><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>จำลองวงจร</h2>
+    <ul>
+      <li>Wokwi Examples: https://wokwi.com/projects/new/arduino-uno</li>
+      <li>Tinkercad Circuits: https://www.tinkercad.com/circuits</li>
+    </ul>
+
+    <h2>สรุปและนำเสนอ</h2>
+    <ol>
+      <li>โครงงานของเราทำงานได้ตามเป้าหมายหรือไม่ เพราะอะไร</li>
+      <li>หลักฐานใดพิสูจน์ว่าระบบทำงานจริง</li>
+      <li>ถ้ามีเวลาเพิ่ม จะปรับปรุงอะไรเป็นอันดับแรก</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,326 @@
+.keyboard-game-page {
+  min-height: 100vh;
+  padding: 6.5rem 1rem 3rem;
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(239, 246, 255, 0.96)),
+    linear-gradient(135deg, rgba(37, 99, 235, 0.13), rgba(250, 204, 21, 0.16));
+}
+
+.keyboard-game-shell {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+}
+
+.keyboard-game-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.keyboard-game-kicker {
+  display: inline-flex;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  background: #0f766e;
+  color: white;
+  font-weight: 900;
+  font-size: 0.8rem;
+}
+
+.keyboard-game-top h1 {
+  margin: 0.8rem 0 0.35rem;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+  color: #111827;
+  letter-spacing: 0;
+}
+
+.keyboard-game-top p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 1.05rem;
+  max-width: 690px;
+}
+
+.keyboard-reset-btn,
+.keyboard-next-btn {
+  border: 0;
+  border-radius: 8px;
+  background: #111827;
+  color: white;
+  padding: 0.75rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(17, 24, 39, 0.16);
+}
+
+.keyboard-reset-btn:hover,
+.keyboard-next-btn:hover {
+  background: #0f766e;
+}
+
+.keyboard-status-panel,
+.keyboard-game-board {
+  background: white;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+}
+
+.keyboard-status-panel {
+  padding: 1rem;
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.keyboard-status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.keyboard-status-item svg {
+  color: #0f766e;
+}
+
+.keyboard-status-item strong,
+.keyboard-status-item span {
+  display: block;
+}
+
+.keyboard-status-item strong {
+  color: #111827;
+}
+
+.keyboard-status-item span,
+.keyboard-message {
+  color: #4b5563;
+}
+
+.keyboard-progress-track {
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.keyboard-progress-track div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #14b8a6, #2563eb, #facc15);
+  transition: width 0.25s ease;
+}
+
+.keyboard-message {
+  margin: 0;
+  font-weight: 800;
+}
+
+.keyboard-game-board {
+  min-height: 560px;
+  padding: clamp(1.2rem, 3vw, 2rem);
+}
+
+.keyboard-mission-card {
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  border-left: 6px solid #0f766e;
+  padding: 1rem 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.keyboard-mission-card span,
+.keyboard-mission-card strong,
+.keyboard-mission-card p {
+  display: block;
+}
+
+.keyboard-mission-card span {
+  color: #0f766e;
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+
+.keyboard-mission-card strong {
+  color: #111827;
+  font-size: clamp(2rem, 5vw, 4.2rem);
+  line-height: 1.05;
+  margin: 0.35rem 0;
+}
+
+.keyboard-mission-card p {
+  color: #4b5563;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.save-sequence {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(62px, 1fr));
+  gap: 0.65rem;
+  max-width: 520px;
+  margin: 0 auto 1rem;
+}
+
+.save-letter {
+  min-height: 74px;
+  border-radius: 8px;
+  border: 2px dashed #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 950;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-letter.active {
+  border-style: solid;
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #facc15;
+}
+
+.save-letter.done {
+  border-style: solid;
+  background: #ecfdf5;
+  border-color: #22c55e;
+  color: #166534;
+}
+
+.virtual-keyboard {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background: #111827;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.keyboard-row {
+  display: flex;
+  gap: 0.55rem;
+  justify-content: center;
+}
+
+.keyboard-key {
+  min-width: 84px;
+  min-height: 78px;
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #111827;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  box-shadow: 0 6px 0 #cbd5e1;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.keyboard-key strong {
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.keyboard-key span {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.keyboard-key.medium {
+  flex: 1.45;
+}
+
+.keyboard-key.wide {
+  flex: 2.3;
+}
+
+.keyboard-key:hover,
+.keyboard-key.highlight {
+  background: #facc15;
+  border-color: #f59e0b;
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 #d97706;
+}
+
+.keyboard-key.highlight span,
+.keyboard-key:hover span {
+  color: #78350f;
+}
+
+.keyboard-counter {
+  margin: 1rem 0 0;
+  color: #1f2937;
+  font-weight: 900;
+  text-align: center;
+}
+
+.keyboard-complete {
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(240, 253, 250, 0.96)),
+    linear-gradient(135deg, rgba(20, 184, 166, 0.16), rgba(250, 204, 21, 0.18));
+  border-radius: 8px;
+}
+
+.keyboard-complete svg {
+  color: #f59e0b;
+  margin-bottom: 1rem;
+}
+
+.keyboard-complete h2 {
+  margin: 0 0 0.6rem;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  color: #111827;
+}
+
+.keyboard-complete p {
+  margin: 0 0 1.4rem;
+  color: #4b5563;
+  max-width: 640px;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 760px) {
+  .keyboard-game-top {
+    flex-direction: column;
+  }
+
+  .keyboard-reset-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .virtual-keyboard {
+    overflow-x: auto;
+  }
+
+  .keyboard-row {
+    min-width: 580px;
+  }
+
+  .keyboard-key {
+    min-width: 72px;
+  }
+}

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงานอิเล็กทรอนิกส์ 6: มัลติมิเตอร์และตรวจวงจร</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: #fff; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30,41,59,.08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 24px 0 10px; font-size: 18px; color: #0f766e; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 42px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #ecfeff; text-align: left; }
+    .write { min-height: 48px; }
+    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 6: ใช้มัลติมิเตอร์และตรวจวงจรอย่างเป็นระบบ</h1>
+    <p>เป้าหมาย: นักเรียนเลือกโหมดวัดได้เหมาะสม วัดแรงดัน/ความต้านทาน/ไดโอดได้ และใช้ KVL/KCL ตรวจเหตุผลของผลวัด</p>
+    <div class="meta">
+      <div class="box">ชื่อ: ....................................</div>
+      <div class="box">ชั้น: ................ เลขที่: ........</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>Checklist ก่อนวัด</h2>
+    <table>
+      <thead><tr><th>รายการตรวจ</th><th>ผ่าน</th><th>หมายเหตุ</th></tr></thead>
+      <tbody>
+        <tr><td>เลือกโหมดวัดให้ตรงกับสิ่งที่จะวัด</td><td>□</td><td class="write"></td></tr>
+        <tr><td>เสียบสายวัดเข้าช่อง COM และ V/Ω ให้ถูก</td><td>□</td><td class="write"></td></tr>
+        <tr><td>ถอดไฟออกก่อนวัดความต้านทาน</td><td>□</td><td class="write"></td></tr>
+        <tr><td>หลีกเลี่ยงการวัดไฟบ้านโดยไม่มีครูควบคุม</td><td>□</td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>บันทึกผลวัด</h2>
+    <table>
+      <thead><tr><th>จุดที่วัด</th><th>โหมดมัลติมิเตอร์</th><th>ค่าที่คาด</th><th>ค่าที่วัดได้</th><th>สรุป</th></tr></thead>
+      <tbody>
+        <tr><td>แบตเตอรี่</td><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>ตัวต้านทาน</td><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>LED/ไดโอด</td><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>วิเคราะห์ด้วยกฎของเคอร์ชอฟฟ์</h2>
+    <p>วงจรอนุกรมมีแบตเตอรี่ 9 V และตัวต้านทาน 2 ตัว ถ้าวัดแรงดันตกคร่อม R1 ได้ 3 V แรงดันที่เหลือบน R2 ควรเป็นเท่าไร เพราะอะไร</p>
+    <div class="box" style="min-height:100px;">คำตอบ: ...........................................................................................................................................................................</div>
+
+    <h2>คำถามท้ายงาน</h2>
+    <ol>
+      <li>ทำไมต้องถอดไฟก่อนวัดความต้านทาน</li>
+      <li>โหมด diode test ช่วยตรวจ LED หรือทรานซิสเตอร์ได้อย่างไร</li>
+      <li>การจดผลวัดช่วยให้แก้ปัญหาวงจรได้ดีขึ้นอย่างไร</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

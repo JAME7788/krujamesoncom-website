@@ -8,13 +8,30 @@ export type QuizQuestion = {
 };
 
 export type Article = { title: string; url: string; source: string; desc?: string };
+export type LearningFile = {
+  title: string;
+  url: string;
+  source: string;
+  desc?: string;
+  kind?: 'pdf' | 'worksheet' | 'lesson-plan' | 'slides' | 'video' | 'web';
+};
+
+export type LessonNotes = {
+  objectives?: string[];
+  summary?: string[];
+  activities?: string[];
+  checkQuestions?: string[];
+  vocabulary?: string[];
+};
 
 export type UnitExtras = {
   intro?: string;
-  videos?: { title: string; query: string }[];
+  videos?: { title: string; query?: string; url?: string }[];
   fun?: { title: string; desc: string; url?: string; emoji: string; noLogin?: boolean }[];
+  files?: LearningFile[];
   quiz?: QuizQuestion[];
   articles?: Article[];
+  lessonNotes?: LessonNotes;
 };
 
 // บทความจาก สสวท. (scimath.org) — แหล่งอ้างอิงเนื้อหาเทคโนโลยี
@@ -49,9 +66,14 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         yt('สอน Microsoft Word เด็ก ป.1'),
       ],
       fun: [
+        { title: 'เกมภารกิจเมาส์แม่นยำ', desc: 'ฝึกคลิก ดับเบิลคลิก และลากวางในเว็บนี้', url: '/games/mouse-practice', emoji: '🖱️', noLogin: true },
+        { title: 'เกมนักสำรวจคีย์บอร์ด', desc: 'ฝึก Spacebar Enter Backspace และคำสั่ง Save', url: '/games/keyboard-practice', emoji: '⌨️', noLogin: true },
+        { title: 'Code.org Learn to Drag and Drop', desc: 'ฝึกลากและวางก่อนเริ่มเขียนโปรแกรม', url: 'https://studio.code.org/s/pre-express-2023/lessons/1', emoji: '🧩', noLogin: true },
+        { title: 'Dragon Drop', desc: 'เกมฝึกเมาส์ คลิก ดับเบิลคลิก ลากวาง', url: 'https://www.roomrecess.com/games/DragonDrop/play.html', emoji: '🎯', noLogin: true },
+        { title: 'Poki Kids: Creative Puzzle', desc: 'ระบายสีและต่อภาพ ฝึกคลิก/ลากวาง', url: 'https://kids.poki.com/game/creative-puzzle', emoji: '🧩', noLogin: true },
+        { title: 'Poki Kids: Happy Crayons', desc: 'ระบายสีออนไลน์ ฝึกใช้เมาส์และเลือกสี', url: 'https://kids.poki.com/game/happy-crayons', emoji: '🖍️', noLogin: true },
         { title: 'TypingClub', desc: 'ฝึกพิมพ์ดีด เล่นได้เลย', url: 'https://www.typingclub.com/', emoji: '⌨️', noLogin: true },
         { title: 'TypingStudy ภาษาไทย', desc: 'ฝึกพิมพ์ไทย ไม่ต้องสมัคร', url: 'https://www.typingstudy.com/th/', emoji: '🇹🇭', noLogin: true },
-        { title: 'Mouse Practice (ABCya)', desc: 'เกมฝึกใช้เมาส์', url: 'https://www.abcya.com/games/cup_stack_typing', emoji: '🖱️', noLogin: true },
         { title: 'JS Paint', desc: 'โปรแกรม Paint ในเบราว์เซอร์', url: 'https://jspaint.app/', emoji: '🎨', noLogin: true },
         { title: 'Mouse-Run', desc: 'เกมขยับเมาส์ตามเส้น', url: 'https://www.helpkidzlearn.com/games/early-years', emoji: '🐭', noLogin: true },
       ],
@@ -79,6 +101,9 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         { title: 'Blockly Maze', desc: 'เกมแก้ปัญหาด้วยบล็อก เล่นเลย', url: 'https://blockly.games/maze', emoji: '🧩', noLogin: true },
         { title: 'Blockly Puzzle', desc: 'จับคู่บล็อก ไม่ต้องสมัคร', url: 'https://blockly.games/puzzle', emoji: '🧠', noLogin: true },
         { title: 'Happy Maps (Code.org)', desc: 'วาดเส้นทาง — เล่นได้ ไม่ต้อง login', url: 'https://studio.code.org/s/coursea-2022/lessons/3', emoji: '🗺️', noLogin: true },
+        { title: 'Poki Kids: Happy Kittens Puzzle', desc: 'เกมปริศนาฝึกสังเกตและแก้ปัญหา', url: 'https://kids.poki.com/game/happy-kittens-puzzle', emoji: '🐱', noLogin: true },
+        { title: 'Poki Kids: BeeLine', desc: 'วางแผนเส้นทางให้ถึงเป้าหมาย', url: 'https://kids.poki.com/game/beeline', emoji: '🐝', noLogin: true },
+        { title: 'Poki Kids: Draw Parking', desc: 'ลากเส้นทางให้รถไปจอด ฝึกวางแผน', url: 'https://kids.poki.com/game/draw-parking', emoji: '🚗', noLogin: true },
         { title: 'Spot the Difference', desc: 'เกมเปรียบเทียบจุดต่าง', url: 'https://www.spotthedifference.com/', emoji: '🔍', noLogin: true },
       ],
       quiz: [
@@ -94,11 +119,12 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         yt('ScratchJr tutorial Thai'),
       ],
       fun: [
+        { title: '🅱️ Code.org Course B (ป.1)', desc: 'หลักสูตรเขียนโค้ด ป.1 — events, sequence', url: 'https://studio.code.org/s/courseb-2023', emoji: '🅱️', noLogin: true },
+        { title: '❄️ Frozen (Hour of Code)', desc: 'Anna+Elsa เล่นสเก็ต — เรียน loop วาดหิมะ', url: 'https://studio.code.org/s/frozen', emoji: '❄️', noLogin: true },
         { title: 'Scratch (Try It)', desc: 'เขียนโปรแกรมเลย ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
         { title: 'Lightbot Hour', desc: 'เกมสั่งหุ่นยนต์ — เล่นได้เลย', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
         { title: 'Blockly Games', desc: '7 เกมเขียนโค้ด ไม่ต้อง login', url: 'https://blockly.games/', emoji: '🎮', noLogin: true },
         { title: 'Hour of Code', desc: 'เลือกบทเรียนเล่น 1 ชั่วโมง', url: 'https://hourofcode.com/th/learn', emoji: '⏰', noLogin: true },
-        { title: 'Code Monster', desc: 'เรียน JS แบบ Interactive', url: 'http://www.crunchzilla.com/code-monster', emoji: '👾', noLogin: true },
       ],
       quiz: [
         { q: 'ขั้นตอนแรกของการเขียนโปรแกรมคืออะไร?', options: ['เขียนโค้ดเลย', 'วิเคราะห์งานหรือปัญหา', 'ทดสอบโปรแกรม', 'พิมพ์ผลลัพธ์'], answer: 1 },
@@ -145,6 +171,9 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       intro: 'นักเขียนโปรแกรมที่ดีต้องตรวจหาข้อผิดพลาดเป็น (Debugging)! มาฝึกหา Bug กันสนุกๆ 🐛',
       videos: [yt('Debugging programming for kids'), yt('Code.org loops Thai')],
       fun: [
+        { title: '🔠 Code.org Course C (ป.2)', desc: 'เน้น Debug + Loop พื้นฐาน — เหมาะกับ ป.2', url: 'https://studio.code.org/s/coursec-2023', emoji: '🔠', noLogin: true },
+        { title: '⭐ Star Wars Blockly', desc: 'BB-8 ผจญภัย ฝึก loop รวบรวมเศษโลหะ', url: 'https://studio.code.org/s/starwarsblocks-2018', emoji: '⭐', noLogin: true },
+        { title: '🐞 Bug Catcher (ในเว็บนี้)', desc: 'จับบั๊กให้ทัน — ฝึกความเร็วและสมาธิ', url: '/games/bug-catcher', emoji: '🐞', noLogin: true },
         { title: 'Scratch Try It', desc: 'เขียนโค้ดเลย ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
         { title: 'Blockly Bird', desc: 'ฝึก if/else กับนก', url: 'https://blockly.games/bird', emoji: '🐦', noLogin: true },
         { title: 'Blockly Maze', desc: 'หา bug ในเขาวงกต', url: 'https://blockly.games/maze', emoji: '🐛', noLogin: true },
@@ -201,10 +230,12 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       intro: 'มาสั่งซอมบี้เก็บดอกทานตะวันด้วยโค้ด! สนุกกับการเขียนโปรแกรมแบบบล็อก 🌻',
       videos: [yt('Scratch programming for kids Thai'), yt('Code.org Plants vs Zombies')],
       fun: [
+        { title: '🇩 Code.org Course D (ป.3)', desc: 'Nested loops + Functions — เหมาะกับ ป.3', url: 'https://studio.code.org/s/coursed-2023', emoji: '🇩', noLogin: true },
+        { title: '⛏️ Minecraft Hour of Code', desc: 'เขียนโค้ดสำรวจโลก Minecraft', url: 'https://code.org/minecraft', emoji: '⛏️', noLogin: true },
+        { title: '🎨 Artist (Code.org)', desc: 'เขียนโค้ดให้ตัวละครวาดรูป', url: 'https://studio.code.org/s/artist-2018', emoji: '🎨', noLogin: true },
+        { title: '🎮 Play Lab', desc: 'สร้างเกม + เล่าเรื่องของตัวเอง', url: 'https://studio.code.org/s/playlab-2018', emoji: '🎮', noLogin: true },
         { title: 'Scratch Try It', desc: 'เขียนโปรแกรมเลย ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
-        { title: 'Hour of Code', desc: 'เกมเขียนโค้ด 1 ชั่วโมง', url: 'https://hourofcode.com/th/learn', emoji: '⏰', noLogin: true },
         { title: 'Blockly Games', desc: '7 เกมเขียนโค้ด', url: 'https://blockly.games/', emoji: '🎮', noLogin: true },
-        { title: 'Lightbot Hour', desc: 'สั่งหุ่นยนต์ผ่านโค้ด', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
       ],
       quiz: [
         { q: 'การเขียนโปรแกรมเริ่มจาก?', options: ['การออกแบบขั้นตอนวิธี', 'การเขียนโค้ด', 'การพิมพ์', 'การ Print'], answer: 0 },
@@ -268,9 +299,11 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       intro: 'Scratch — เครื่องมือสร้างเกมและการ์ตูนของเด็กเก่ง! 🎮',
       videos: [yt('Scratch tutorial Thai for kids'), yt('Scratch สร้างเกม')],
       fun: [
+        { title: '🎯 Code.org Course E (ป.5)', desc: 'Variables + For loops — เหมาะกับ ป.4-5', url: 'https://studio.code.org/s/coursee-2023', emoji: '🇪', noLogin: true },
+        { title: '💃 Dance Party', desc: 'เขียนโค้ดให้ตัวละครเต้น K-Pop', url: 'https://studio.code.org/s/dance-2019', emoji: '💃', noLogin: true },
+        { title: '🐤 Flappy Code', desc: 'สร้างเกม Flappy ใน 1 ชั่วโมง', url: 'https://studio.code.org/s/flappy', emoji: '🐤', noLogin: true },
+        { title: '🐠 Minecraft AI for Good', desc: 'ใช้ AI ใน Minecraft แก้ปัญหาสิ่งแวดล้อม', url: 'https://studio.code.org/s/aquatic', emoji: '🐠', noLogin: true },
         { title: 'Scratch Try It', desc: 'แพลตฟอร์มหลัก ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
-        { title: 'Hour of Code', desc: 'บทเรียน 1 ชั่วโมง', url: 'https://hourofcode.com/th/learn', emoji: '⏰', noLogin: true },
-        { title: 'Blockly Games', desc: '7 เกมเขียนโค้ด', url: 'https://blockly.games/', emoji: '🧩', noLogin: true },
         { title: 'Lightbot', desc: 'เกมเขียนโค้ดสั่งหุ่นยนต์', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
       ],
       quiz: [
@@ -337,9 +370,12 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       intro: 'เขียนโปรแกรมที่มี Logic — if/else, Loop, Conditional! 🧠',
       videos: [yt('Scratch conditionals Thai'), yt('if else programming for kids')],
       fun: [
+        { title: '🇫 Code.org Course F (ป.6)', desc: 'Variables ในเกม + Sprite Lab — เหมาะกับ ป.6', url: 'https://studio.code.org/s/coursef-2023', emoji: '🇫', noLogin: true },
+        { title: '🚄 Code.org Express', desc: 'หลักสูตรรวม A-F เริ่มได้ทุกระดับ', url: 'https://studio.code.org/s/express-2023', emoji: '🚄', noLogin: true },
+        { title: '✨ Sprite Lab', desc: 'สร้างเกม + แอนิเมชัน sprite', url: 'https://studio.code.org/projects/spritelab', emoji: '✨', noLogin: true },
+        { title: '🌊 AI for Oceans', desc: 'อัลกอริทึม classification — สอน AI คัดแยกขยะ', url: 'https://code.org/oceans', emoji: '🌊', noLogin: true },
         { title: 'Scratch Try It', desc: 'สร้างเกมตรรกะ ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
         { title: 'Blockly Bird', desc: 'ฝึก if/else กับนก', url: 'https://blockly.games/bird', emoji: '🐦', noLogin: true },
-        { title: 'Blockly Pond', desc: 'เขียนโค้ดเงื่อนไขขั้นสูง', url: 'https://blockly.games/pond-tutor', emoji: '🐢', noLogin: true },
       ],
       quiz: [
         { q: 'if/else ใช้สำหรับ?', options: ['การวนซ้ำ', 'การตัดสินใจตามเงื่อนไข', 'การคำนวณ', 'การพิมพ์'], answer: 1 },
@@ -436,6 +472,9 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       intro: 'แนวคิดเชิงนามธรรม (Abstraction) — พื้นฐานสำคัญของวิทยาการคำนวณที่ช่วยให้เราแก้ปัญหาที่ซับซ้อนได้อย่างมีประสิทธิภาพ โดยการคัดกรองเฉพาะข้อมูลที่จำเป็น 💡',
       videos: [yt('แนวคิดเชิงนามธรรม ม.1'), yt('Computational Thinking Thai')],
       fun: [
+        { title: '🎓 Code.org CS Discoveries', desc: 'หลักสูตร CS เต็ม สำหรับ ม.ต้น (Web/App/Game)', url: 'https://studio.code.org/courses/csd-2023', emoji: '🎓', noLogin: true },
+        { title: '🤖 Coding Maze (ในเว็บนี้)', desc: 'ลากบล็อกพาหุ่นยนต์ฝ่ามาผ่านอุปสรรค', url: '/games/coding-maze', emoji: '🤖', noLogin: true },
+        { title: '🧩 Algorithm Sorter (ในเว็บนี้)', desc: 'ลากขั้นตอนเรียงตามลำดับที่ถูกต้อง', url: '/games/algorithm-sorter', emoji: '🧩', noLogin: true },
         { title: 'Blockly Games', desc: 'ปริศนาตรรกะ 7 ระดับ', url: 'https://blockly.games/', emoji: '🧩', noLogin: true },
         { title: 'Lightbot', desc: 'เกมตรรกะการเดินทาง', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
         { title: 'Cipher Mini Game', desc: 'เกมถอดรหัส', url: 'https://codingthailand.app/minigame/cipher', emoji: '🔐', noLogin: true },
@@ -473,9 +512,11 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         yt('ภัยคุกคามไซเบอร์ สำหรับนักเรียน'),
       ],
       fun: [
+        { title: '📱 Code.org App Lab', desc: 'สร้าง Mobile App ด้วย JavaScript+Block', url: 'https://studio.code.org/projects/applab', emoji: '📱', noLogin: true },
+        { title: '🕹️ Code.org Game Lab', desc: 'สร้างเกม 2D ด้วย sprite + animation', url: 'https://studio.code.org/projects/gamelab', emoji: '🕹️', noLogin: true },
+        { title: '🤖 Dance Party AI', desc: 'AI แต่งท่าเต้นจากคำพูด — สนุก ม.ต้น', url: 'https://studio.code.org/s/dance-ai', emoji: '🤖', noLogin: true },
+        { title: '✒️ Poetry with Code', desc: 'แต่งกลอนด้วยโค้ด — string + variables', url: 'https://studio.code.org/s/poetry', emoji: '✒️', noLogin: true },
         { title: 'Scratch Try It', desc: 'ลองเขียน Scratch ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
-        { title: 'Scratch Examples', desc: 'ดูตัวอย่างโครงการ Scratch', url: 'https://scratch.mit.edu/explore/projects/games/', emoji: '🎮', noLogin: true },
-        { title: 'Code.org App Lab', desc: 'สร้างแอปด้วยบล็อก', url: 'https://code.org/educate/applab', emoji: '📱', noLogin: true },
         { title: 'Think Digital', desc: 'พลเมืองดิจิทัลสำหรับ ม.ต้น', url: 'https://think-digital.app/', emoji: '🛡️', noLogin: true },
       ],
       articles: [scimathArticles.virus, scimathArticles.dataProcessing],
@@ -848,5 +889,1000 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         { q: 'ตัวชี้วัดความสำเร็จของโครงงาน?', options: ['แก้ปัญหาได้จริง', 'ผู้ใช้พึงพอใจ', 'นำไปต่อยอดได้', 'ทุกข้อ'], answer: 3 },
       ]
     }
+  },
+
+  // ==================== AI Courses ====================
+
+  'ai-p1-3': {
+    1: {
+      intro: 'มาทำความรู้จักกับ AI เพื่อนใหม่ของเรา! AI คืออะไร อยู่ตรงไหนบ้างรอบตัว และต่างจากมนุษย์ยังไง มาเรียนรู้แบบสนุกๆ กัน! 🤖',
+      videos: [
+        yt('AI คืออะไร สอนเด็ก อธิบายง่ายๆ'),
+        yt('ปัญญาประดิษฐ์รอบตัวเรา สำหรับเด็ก'),
+        yt('AI vs มนุษย์ ต่างกันยังไง'),
+      ],
+      fun: [
+        { title: 'Quick, Draw!', desc: 'วาดรูปแข่งกับ AI ดูว่า AI จะทายได้ไหม!', url: 'https://quickdraw.withgoogle.com/', emoji: '🎨', noLogin: true },
+        { title: 'AI for Oceans', desc: 'สอน AI คัดแยกขยะในทะเล จาก Code.org', url: 'https://code.org/oceans', emoji: '🌊', noLogin: true },
+        { title: 'Emoji Scavenger Hunt', desc: 'ใช้กล้องหา Emoji ในชีวิตจริง!', url: 'https://emojiscavengerhunt.withgoogle.com/', emoji: '📱', noLogin: true },
+      ],
+      quiz: [
+        { q: 'AI ย่อมาจากอะไร?', options: ['Automatic Internet', 'Artificial Intelligence', 'Amazing Invention', 'Android Intelligence'], answer: 1, explain: 'AI ย่อมาจาก Artificial Intelligence แปลว่า ปัญญาประดิษฐ์' },
+        { q: 'ข้อใดเป็น AI ที่อยู่รอบตัวเรา?', options: ['พัดลม', 'ผู้ช่วยเสียง Siri', 'ดินสอ', 'จักรยาน'], answer: 1, explain: 'Siri เป็น AI ผู้ช่วยเสียงที่เข้าใจคำพูดของเรา' },
+        { q: 'AI เก่งกว่ามนุษย์เรื่องอะไร?', options: ['ความคิดสร้างสรรค์', 'อารมณ์ความรู้สึก', 'คำนวณเร็วและจำข้อมูลเยอะ', 'วาดรูปด้วยมือ'], answer: 2 },
+        { q: 'AI ช่วยมนุษย์หรือแทนที่มนุษย์?', options: ['แทนที่มนุษย์', 'ช่วยมนุษย์', 'ไม่เกี่ยวกัน', 'ทำลายมนุษย์'], answer: 1 },
+        { q: 'ข้อใดไม่ใช่ AI?', options: ['กล้องจำหน้า', 'เครื่องคิดเลขธรรมดา', 'รถขับเอง', 'แอปแปลภาษา'], answer: 1, explain: 'เครื่องคิดเลขธรรมดาทำตามสูตรตายตัว ไม่ได้เรียนรู้เอง' },
+      ]
+    },
+    2: {
+      intro: 'AI เรียนรู้ได้ยังไง? มาลองสอน AI ด้วยตัวเองผ่าน Teachable Machine กัน! สนุกมากเลย 🧠',
+      videos: [
+        yt('Machine Learning สำหรับเด็ก อธิบายง่ายๆ'),
+        yt('สอน AI จำรูปภาพ Teachable Machine'),
+        yt('AI เรียนรู้จากข้อมูลอย่างไร'),
+      ],
+      fun: [
+        { title: 'Teachable Machine', desc: 'สอน AI จำภาพ เสียง หรือท่าทางของเราเอง!', url: 'https://teachablemachine.withgoogle.com/', emoji: '🤖', noLogin: true },
+        { title: 'AutoDraw', desc: 'วาดรูปแล้ว AI ช่วยเดาว่าวาดอะไร', url: 'https://www.autodraw.com/', emoji: '✏️', noLogin: true },
+        { title: 'Rock Paper Scissors', desc: 'เล่นเป่ายิ้งฉุบกับ AI!', url: 'https://tenso.rs/demos/rock-paper-scissors/', emoji: '✊', noLogin: true },
+      ],
+      quiz: [
+        { q: 'AI เรียนรู้จากอะไร?', options: ['จากครู', 'จากข้อมูล', 'จากหนังสือ', 'จากอากาศ'], answer: 1, explain: 'AI เรียนรู้จากข้อมูลที่เราให้ ยิ่งข้อมูลเยอะยิ่งเก่ง' },
+        { q: 'ถ้าจะสอน AI จำแมว ต้องทำอย่างไร?', options: ['บอก AI ว่าแมวคืออะไร', 'ให้รูปแมวหลายๆ รูป', 'วาดรูปแมวให้ AI ดู', 'อ่านหนังสือเรื่องแมวให้ฟัง'], answer: 1 },
+        { q: 'Teachable Machine ใช้ทำอะไร?', options: ['เล่นเกม', 'สอน AI จำรูปภาพ เสียง ท่าทาง', 'ดูหนัง', 'ส่งข้อความ'], answer: 1 },
+        { q: 'ยิ่งให้ข้อมูล AI มากขึ้น จะเกิดอะไร?', options: ['AI พัง', 'AI เก่งขึ้น', 'ไม่มีอะไรเปลี่ยน', 'AI ช้าลง'], answer: 1 },
+        { q: 'ข้อใดคือวิธีสอน AI ที่ถูกต้อง?', options: ['ให้ตัวอย่างข้อมูลแล้วให้ AI หาแพทเทิร์น', 'เขียนคำตอบทุกอย่างลงไป', 'บอก AI ด้วยเสียง', 'ไม่ต้องสอน AI เก่งเอง'], answer: 0 },
+      ]
+    },
+    3: {
+      intro: 'AI อยู่รอบตัวเราทุกวัน! มาดูว่า AI ช่วยอะไรได้บ้าง และต้องระวังอะไรเมื่อใช้ AI 🌍',
+      videos: [
+        yt('AI ช่วยหมอรักษาโรค'),
+        yt('AI ในชีวิตประจำวัน สำหรับเด็ก'),
+        yt('ข้อควรระวังในการใช้ AI เด็ก'),
+      ],
+      fun: [
+        { title: 'Semantris', desc: 'เล่นเกมคำศัพท์กับ AI ของ Google', url: 'https://research.google.com/semantris/', emoji: '📝', noLogin: true },
+        { title: 'Thing Translator', desc: 'ถ่ายรูปแล้ว AI บอกชื่อเป็นภาษาต่างๆ', url: 'https://thing-translator.appspot.com/', emoji: '🌐', noLogin: true },
+        { title: 'AI Duet', desc: 'เล่นเปียโนคู่กับ AI!', url: 'https://experiments.withgoogle.com/ai/ai-duet/view/', emoji: '🎹', noLogin: true },
+      ],
+      quiz: [
+        { q: 'AI ช่วยหมอทำอะไรได้?', options: ['ผ่าตัดแทนหมอ', 'ช่วยวินิจฉัยโรคจากภาพ', 'เขียนใบสั่งยา', 'ไม่มีข้อถูก'], answer: 1 },
+        { q: 'ข้อใดควรระวังเมื่อใช้ AI?', options: ['ไม่บอกข้อมูลส่วนตัว', 'ตรวจสอบคำตอบ AI เสมอ', 'ใช้ AI เป็นผู้ช่วย', 'ถูกทุกข้อ'], answer: 3 },
+        { q: 'AI ตอบผิดได้ไหม?', options: ['ไม่ได้เลย', 'ได้ ต้องตรวจสอบเสมอ', 'ผิดเฉพาะเรื่องคณิต', 'ผิดเฉพาะเรื่องภาษา'], answer: 1 },
+        { q: 'ในอนาคต AI จะช่วยอะไรได้?', options: ['รถขับเอง', 'รักษาสิ่งแวดล้อม', 'ช่วยผ่าตัด', 'ทุกข้อ'], answer: 3 },
+        { q: 'ทำไมต้องตรวจสอบข้อมูลจาก AI?', options: ['เพราะ AI ฉลาดเสมอ', 'เพราะ AI อาจตอบผิดได้', 'ไม่จำเป็นต้องตรวจ', 'เพราะ AI ช้า'], answer: 1 },
+      ]
+    }
+  },
+
+  'ai-p4-6': {
+    1: {
+      intro: 'Machine Learning คืออะไร? มาเรียนรู้ว่า AI เรียนรู้จากข้อมูลได้อย่างไร พร้อมตัวอย่างในชีวิตจริงที่น่าตื่นเต้น! 📊',
+      videos: [
+        yt('Machine Learning คืออะไร อธิบายง่ายๆ'),
+        yt('Supervised vs Unsupervised Learning ภาษาไทย'),
+        yt('AI กรองอีเมลขยะทำงานยังไง'),
+      ],
+      fun: [
+        { title: 'Teachable Machine', desc: 'สร้างโมเดล ML จำแนกรูปภาพด้วยตัวเอง', url: 'https://teachablemachine.withgoogle.com/', emoji: '🧠', noLogin: true },
+        { title: 'Quick, Draw!', desc: 'วาดรูป 20 วินาที ให้ AI ทาย — เห็น ML ทำงานจริง!', url: 'https://quickdraw.withgoogle.com/', emoji: '🎨', noLogin: true },
+        { title: 'AI for Oceans', desc: 'ฝึก ML คัดแยกสิ่งมีชีวิตในทะเล', url: 'https://code.org/oceans', emoji: '🐠', noLogin: true },
+      ],
+      quiz: [
+        { q: 'ML ย่อมาจากอะไร?', options: ['Main Logic', 'Machine Learning', 'Modern Language', 'Mega Link'], answer: 1 },
+        { q: 'Supervised Learning คืออะไร?', options: ['AI เรียนรู้เอง', 'สอนด้วยตัวอย่างที่มีคำตอบ', 'ลองผิดลองถูก', 'จำทุกอย่าง'], answer: 1, explain: 'Supervised Learning ใช้ข้อมูลที่มี label (คำตอบ) สอน AI' },
+        { q: 'ข้อใดเป็นตัวอย่าง ML ในชีวิตจริง?', options: ['เครื่องคิดเลข', 'แนะนำหนังที่ชอบ', 'นาฬิกาปลุก', 'พัดลม'], answer: 1 },
+        { q: 'Reinforcement Learning เรียนรู้แบบไหน?', options: ['ท่องจำ', 'ลองผิดลองถูก', 'อ่านหนังสือ', 'ดูวิดีโอ'], answer: 1 },
+        { q: 'ทำไม ML ถึงต้องการข้อมูลมาก?', options: ['เพราะ AI ชอบข้อมูล', 'ยิ่งมีข้อมูลยิ่งหาแพทเทิร์นได้ดี', 'เพื่อใช้พื้นที่', 'ไม่จำเป็น'], answer: 1 },
+      ]
+    },
+    2: {
+      intro: 'ลองสร้างโมเดล AI ด้วยตัวเอง! เรียนรู้ขั้นตอนเก็บข้อมูล ฝึกสอน ทดสอบ และปรับปรุง พร้อมเข้าใจว่าทำไมข้อมูลถึงสำคัญที่สุด 🔬',
+      videos: [
+        yt('สร้างโมเดล AI Teachable Machine สอนมือใหม่'),
+        yt('ข้อมูลสำคัญกับ AI อย่างไร'),
+        yt('AI Bias คืออะไร อคติ AI'),
+      ],
+      fun: [
+        { title: 'Teachable Machine', desc: 'สร้างโมเดลจำแนกรูปภาพ/เสียง/ท่าทาง', url: 'https://teachablemachine.withgoogle.com/', emoji: '🤖', noLogin: true },
+        { title: 'Machine Learning for Kids', desc: 'สร้างโปรเจกต์ ML สนุกๆ สำหรับเด็ก', url: 'https://machinelearningforkids.co.uk/scratch3/', emoji: '🧒', noLogin: true },
+        { title: 'AutoDraw', desc: 'วาดรูปแล้ว AI เดาให้ — เห็นการจำแนกทำงาน', url: 'https://www.autodraw.com/', emoji: '✏️', noLogin: true },
+      ],
+      quiz: [
+        { q: 'ขั้นตอนแรกของการสร้างโมเดล AI คือ?', options: ['ทดสอบ', 'ฝึกสอน', 'เก็บข้อมูล', 'ปรับปรุง'], answer: 2 },
+        { q: 'ถ้าข้อมูลน้อยเกินไปจะเกิดอะไร?', options: ['AI เก่งมาก', 'AI ทายผิดบ่อย', 'ไม่มีผล', 'AI เร็วขึ้น'], answer: 1 },
+        { q: 'AI Bias คืออะไร?', options: ['AI ทำงานเร็ว', 'AI มีอคติจากข้อมูลที่ไม่หลากหลาย', 'AI ฉลาดมาก', 'AI พัง'], answer: 1 },
+        { q: 'ข้อมูลที่ดีสำหรับสอน AI ควรเป็นอย่างไร?', options: ['มีแค่ประเภทเดียว', 'หลากหลายและครอบคลุม', 'น้อยที่สุด', 'เฉพาะภาษาอังกฤษ'], answer: 1 },
+        { q: 'หลังฝึกสอนโมเดลแล้ว ต้องทำอะไร?', options: ['จบเลย', 'ทดสอบและปรับปรุง', 'ลบข้อมูล', 'เริ่มใหม่'], answer: 1 },
+      ]
+    },
+    3: {
+      intro: 'Generative AI สร้างผลงานใหม่ได้! มาลองใช้ AI วาดรูป เขียนเรื่อง และเรียนรู้ Prompt Engineering 🎨✨',
+      videos: [
+        yt('Generative AI คืออะไร อธิบายง่ายๆ'),
+        yt('Prompt Engineering เขียนคำสั่ง AI ยังไงให้ดี'),
+        yt('AutoDraw วาดรูปด้วย AI'),
+      ],
+      fun: [
+        { title: 'AutoDraw', desc: 'วาดรูปแล้ว AI ช่วยเปลี่ยนเป็นภาพสวยๆ', url: 'https://www.autodraw.com/', emoji: '🎨', noLogin: true },
+        { title: 'AI Duet', desc: 'เล่นเปียโนแล้ว AI แต่งเพลงต่อให้', url: 'https://experiments.withgoogle.com/ai/ai-duet/view/', emoji: '🎵', noLogin: true },
+        { title: 'Talk to Books', desc: 'ถามคำถาม AI ค้นคำตอบจากหนังสือจริง', url: 'https://books.google.com/talktobooks/', emoji: '📚', noLogin: true },
+      ],
+      quiz: [
+        { q: 'Generative AI ทำอะไรได้?', options: ['สร้างผลงานใหม่ เช่น รูป เรื่อง เพลง', 'คำนวณเลข', 'เปิดปิดไฟ', 'ถ่ายรูป'], answer: 0 },
+        { q: 'Prompt ที่ดีควรเป็นอย่างไร?', options: ['สั้นมากๆ', 'ชัดเจน มีรายละเอียด บอกเป้าหมาย', 'ใช้ภาษาอังกฤษเท่านั้น', 'เขียนยาวๆ ไม่ต้องชัดเจน'], answer: 1 },
+        { q: 'AutoDraw เป็น AI ประเภทไหน?', options: ['Chatbot', 'Generative AI ที่ช่วยวาดรูป', 'หุ่นยนต์', 'เกม'], answer: 1 },
+        { q: 'ข้อใดเป็น Prompt ที่ไม่ดี?', options: ['เขียนเรียงความ 300 คำ เรื่อง AI', 'เขียนอะไรก็ได้', 'วาดรูปแมวสีส้มนั่งบนเก้าอี้', 'แปลประโยคนี้เป็นอังกฤษ'], answer: 1 },
+        { q: 'เมื่อใช้ AI ช่วยทำงาน ควรทำอย่างไร?', options: ['บอกว่าทำเองทั้งหมด', 'บอกที่มาว่าใช้ AI ช่วย', 'ไม่ต้องบอกใคร', 'ลบร่องรอยการใช้'], answer: 1 },
+      ]
+    },
+    4: {
+      intro: 'AI เก่งมาก แต่ต้องใช้อย่างรับผิดชอบ! มาเรียนรู้เรื่อง AI Bias, Deepfake, Privacy และแนวทางใช้ AI อย่างถูกต้อง ⚖️',
+      videos: [
+        yt('จริยธรรม AI สำหรับเด็ก'),
+        yt('Deepfake คืออะไร อันตรายยังไง'),
+        yt('AI Bias อคติ AI คืออะไร'),
+      ],
+      fun: [
+        { title: 'Moral Machine', desc: 'ทดลองตัดสินใจทางจริยธรรมให้รถไร้คนขับ', url: 'https://www.moralmachine.net/', emoji: '🚗', noLogin: true },
+        { title: 'Survival of the Best Fit', desc: 'เกมจำลอง AI Bias ในการรับสมัครงาน', url: 'https://www.survivalofthebestfit.com/', emoji: '⚖️', noLogin: true },
+        { title: 'AI for Oceans', desc: 'เรียนรู้ผลกระทบของข้อมูลต่อ AI', url: 'https://code.org/oceans', emoji: '🌊', noLogin: true },
+      ],
+      quiz: [
+        { q: 'AI Bias เกิดจากอะไร?', options: ['AI เจตนาเลือกปฏิบัติ', 'ข้อมูลที่ใช้สอนไม่หลากหลาย', 'AI ฉลาดเกินไป', 'ไม่มี Bias ใน AI'], answer: 1 },
+        { q: 'Deepfake คืออะไร?', options: ['รูปถ่ายจริง', 'วิดีโอ/ภาพปลอมที่ AI สร้างขึ้น', 'เกมคอมพิวเตอร์', 'แอปถ่ายรูป'], answer: 1 },
+        { q: 'AI Hallucination คืออะไร?', options: ['AI ฝันเหมือนมนุษย์', 'AI ตอบผิดอย่างมั่นใจ', 'AI หลับ', 'AI ไม่ตอบ'], answer: 1 },
+        { q: 'ข้อใดเป็นการใช้ AI อย่างถูกต้อง?', options: ['คัดลอกงาน AI ส่งครูโดยไม่บอก', 'ตรวจสอบข้อมูลและบอกที่มา', 'ส่งข้อมูลส่วนตัวให้ AI', 'เชื่อ AI ทุกอย่าง'], answer: 1 },
+        { q: 'ทำไมต้องมีจริยธรรม AI?', options: ['เพราะ AI อันตรายเสมอ', 'เพื่อให้ AI ถูกใช้อย่างเป็นธรรมและรับผิดชอบ', 'ไม่จำเป็น', 'เพราะกฎหมายบังคับเท่านั้น'], answer: 1 },
+      ]
+    }
+  },
+
+  'ai-m1-3': {
+    1: {
+      intro: 'ทำความเข้าใจรากฐาน AI ตั้งแต่ Turing Test จนถึง Deep Learning เรียนรู้สถาปัตยกรรม Neural Network และวิวัฒนาการที่เปลี่ยนโลก 🏗️',
+      videos: [
+        yt('ประวัติ AI จาก Turing ถึง ChatGPT'),
+        yt('Neural Network คืออะไร อธิบายง่าย'),
+        yt('Deep Learning vs Machine Learning ต่างกันอย่างไร'),
+      ],
+      fun: [
+        { title: 'Neural Network Playground', desc: 'ทดลองสร้าง Neural Network แบบ interactive', url: 'https://playground.tensorflow.org/', emoji: '🧠', noLogin: true },
+        { title: 'Elements of AI', desc: 'คอร์ส AI ฟรีจากมหาวิทยาลัยเฮลซิงกิ', url: 'https://www.elementsofai.com/', emoji: '📘', noLogin: true },
+        { title: 'Teachable Machine', desc: 'สร้างโมเดล ML ง่ายๆ เห็น Neural Network ทำงาน', url: 'https://teachablemachine.withgoogle.com/', emoji: '🤖', noLogin: true },
+      ],
+      quiz: [
+        { q: 'ใครเสนอ Turing Test?', options: ['Elon Musk', 'Alan Turing', 'Steve Jobs', 'Mark Zuckerberg'], answer: 1 },
+        { q: 'AlphaGo ชนะมนุษย์ในเกมอะไร?', options: ['หมากรุก', 'โกะ', 'PokerStars', 'Tetris'], answer: 1 },
+        { q: 'Neural Network เลียนแบบอะไร?', options: ['คอมพิวเตอร์', 'สมองมนุษย์', 'อินเทอร์เน็ต', 'โทรศัพท์'], answer: 1 },
+        { q: 'Deep Learning ต่างจาก ML อย่างไร?', options: ['ไม่ต่างกัน', 'ใช้ Neural Network หลายชั้น', 'ไม่ต้องใช้ข้อมูล', 'ทำงานช้ากว่า'], answer: 1 },
+        { q: 'ChatGPT เปิดตัวปีอะไร?', options: ['2020', '2021', '2022', '2023'], answer: 2 },
+      ]
+    },
+    2: {
+      intro: 'เจาะลึก Computer Vision และ NLP — สองสาขาหลักของ AI ที่ทำให้คอมพิวเตอร์มองเห็นและเข้าใจภาษามนุษย์ 👁️💬',
+      videos: [
+        yt('Computer Vision คืออะไร ภาษาไทย'),
+        yt('NLP Natural Language Processing อธิบายง่าย'),
+        yt('Face Recognition ทำงานยังไง'),
+      ],
+      fun: [
+        { title: 'Teachable Machine', desc: 'สร้างโมเดล Image Classification ง่ายๆ', url: 'https://teachablemachine.withgoogle.com/', emoji: '📷', noLogin: true },
+        { title: 'Quick, Draw!', desc: 'ดู AI จำแนกรูปวาดแบบ real-time', url: 'https://quickdraw.withgoogle.com/', emoji: '🎨', noLogin: true },
+        { title: 'Semantris', desc: 'เกม NLP — AI เข้าใจความหมายคำศัพท์', url: 'https://research.google.com/semantris/', emoji: '📝', noLogin: true },
+      ],
+      quiz: [
+        { q: 'Computer Vision ทำอะไรได้?', options: ['แปลภาษา', 'จำแนกรูปภาพ/ตรวจจับวัตถุ', 'แต่งเพลง', 'พิมพ์เอกสาร'], answer: 1 },
+        { q: 'NLP ย่อมาจากอะไร?', options: ['Network Logic Program', 'Natural Language Processing', 'New Learning Platform', 'Neural Link Protocol'], answer: 1 },
+        { q: 'ข้อใดเป็นงานของ NLP?', options: ['จำหน้าคน', 'แปลภาษาอัตโนมัติ', 'วาดรูป', 'ขับรถ'], answer: 1 },
+        { q: 'Face Recognition ใช้ AI สาขาไหน?', options: ['NLP', 'Computer Vision', 'Robotics', 'Data Science'], answer: 1 },
+        { q: 'Speech Recognition แปลงอะไรเป็นอะไร?', options: ['ข้อความเป็นเสียง', 'เสียงเป็นข้อความ', 'รูปเป็นข้อความ', 'เสียงเป็นรูป'], answer: 1 },
+      ]
+    },
+    3: {
+      intro: 'เรียนรู้ศิลปะการสื่อสารกับ AI — Prompt Engineering เทคนิค Zero-shot, Few-shot, Chain-of-Thought และ Role-playing 🎯',
+      videos: [
+        yt('Prompt Engineering เทคนิคเขียน Prompt ภาษาไทย'),
+        yt('Zero-shot vs Few-shot prompting อธิบาย'),
+        yt('Chain of Thought prompting คืออะไร'),
+      ],
+      fun: [
+        { title: 'ChatGPT (Free)', desc: 'ฝึกเขียน Prompt กับ ChatGPT', url: 'https://chat.openai.com/', emoji: '💬', noLogin: true },
+        { title: 'Claude.ai', desc: 'ฝึก Prompt กับ Claude AI', url: 'https://claude.ai/', emoji: '🤖', noLogin: true },
+        { title: 'Learn Prompting', desc: 'คอร์ส Prompt Engineering ฟรี', url: 'https://learnprompting.org/', emoji: '📖', noLogin: true },
+      ],
+      quiz: [
+        { q: 'Prompt คืออะไร?', options: ['ชื่อ AI', 'คำสั่งหรือคำถามที่ส่งให้ AI', 'โปรแกรม', 'ภาษาเขียนโค้ด'], answer: 1 },
+        { q: 'Zero-shot Prompting คืออะไร?', options: ['ถามโดยไม่ให้ตัวอย่าง', 'ให้ตัวอย่างหลายข้อ', 'ให้ AI คิดทีละขั้น', 'กำหนดบทบาท'], answer: 0 },
+        { q: 'Few-shot Prompting ทำอย่างไร?', options: ['ถามตรงๆ', 'ให้ตัวอย่าง 2-3 ข้อก่อนถามคำถามจริง', 'สั่งให้คิดทีละขั้น', 'ไม่ให้ข้อมูลเลย'], answer: 1 },
+        { q: 'Chain-of-Thought ช่วยอะไร?', options: ['ทำให้ AI ตอบสั้น', 'ให้ AI แสดงขั้นตอนการคิด', 'ทำให้ AI วาดรูป', 'ไม่ช่วยอะไร'], answer: 1 },
+        { q: 'Prompt ที่ดีควรมีอะไร?', options: ['สั้นที่สุด', 'ความชัดเจน บริบท และเป้าหมาย', 'ภาษาอังกฤษเท่านั้น', 'ไม่ต้องมีรายละเอียด'], answer: 1 },
+      ]
+    },
+    4: {
+      intro: 'สำรวจประเด็นจริยธรรม AI ระดับสากล — PDPA, UNESCO AI Ethics, AI Bias, Deepfake และความรับผิดชอบของนักพัฒนา ⚖️',
+      videos: [
+        yt('PDPA พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล อธิบายง่าย'),
+        yt('AI Ethics จริยธรรมปัญญาประดิษฐ์'),
+        yt('Deepfake อันตราย วิธีสังเกต'),
+      ],
+      fun: [
+        { title: 'Moral Machine', desc: 'ทดลองตัดสินใจจริยธรรมรถไร้คนขับ', url: 'https://www.moralmachine.net/', emoji: '🚗', noLogin: true },
+        { title: 'Survival of the Best Fit', desc: 'เกมจำลอง AI Bias ในกระบวนการรับสมัครงาน', url: 'https://www.survivalofthebestfit.com/', emoji: '⚖️', noLogin: true },
+        { title: 'Data Detox Kit', desc: 'เรียนรู้วิธีปกป้องข้อมูลส่วนตัวออนไลน์', url: 'https://datadetoxkit.org/', emoji: '🔒', noLogin: true },
+      ],
+      quiz: [
+        { q: 'PDPA คืออะไร?', options: ['กฎหมายลิขสิทธิ์', 'พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล', 'มาตรฐาน AI', 'ภาษาโปรแกรม'], answer: 1 },
+        { q: 'AI Bias แก้ไขได้อย่างไร?', options: ['ปิด AI', 'ใช้ข้อมูลที่หลากหลายและตรวจสอบผลลัพธ์', 'ไม่ต้องแก้', 'เขียนโค้ดใหม่'], answer: 1 },
+        { q: 'Transparency ในจริยธรรม AI หมายถึง?', options: ['AI มองทะลุ', 'โปร่งใส อธิบายการทำงานได้', 'AI ไม่มีสี', 'ซ่อนข้อมูล'], answer: 1 },
+        { q: 'ใครควรรับผิดชอบเมื่อ AI ทำผิดพลาด?', options: ['AI เอง', 'ไม่มีใคร', 'ผู้พัฒนาและผู้ใช้งาน', 'รัฐบาลเท่านั้น'], answer: 2 },
+        { q: 'Fairness ใน AI หมายถึง?', options: ['AI ทำงานเร็ว', 'ไม่เลือกปฏิบัติ ปฏิบัติอย่างเป็นธรรม', 'AI ฟรี', 'AI สวยงาม'], answer: 1 },
+      ]
+    },
+    5: {
+      intro: 'ถึงเวลาลงมือทำโปรเจกต์ AI จริงๆ! ตั้งแต่ระบุปัญหา รวบรวมข้อมูล สร้างโมเดล ทดสอบ จนถึงนำเสนอ 🚀',
+      videos: [
+        yt('ทำโปรเจกต์ AI เริ่มต้นยังไง'),
+        yt('สร้างโมเดลจำแนกรูปภาพ Teachable Machine'),
+        yt('นำเสนอโครงงาน AI อย่างมืออาชีพ'),
+      ],
+      fun: [
+        { title: 'Teachable Machine', desc: 'สร้างโมเดลจำแนกรูป/เสียง/ท่าทาง สำหรับโปรเจกต์', url: 'https://teachablemachine.withgoogle.com/', emoji: '🤖', noLogin: true },
+        { title: 'Hugging Face Spaces', desc: 'ลองเล่น AI Demo หลากหลายโมเดล', url: 'https://huggingface.co/spaces', emoji: '🤗', noLogin: true },
+        { title: 'Excalidraw', desc: 'วาด diagram ออกแบบโปรเจกต์ไม่ต้องล็อกอิน', url: 'https://excalidraw.com/', emoji: '📐', noLogin: true },
+      ],
+      quiz: [
+        { q: 'ขั้นตอนแรกของโปรเจกต์ AI คือ?', options: ['สร้างโมเดลเลย', 'ระบุปัญหาที่ต้องการแก้', 'นำเสนอ', 'เก็บข้อมูล'], answer: 1 },
+        { q: 'Data Collection สำคัญอย่างไร?', options: ['ไม่สำคัญ', 'เป็นรากฐานของโมเดล AI ที่ดี', 'แค่ทำให้เสร็จ', 'ยิ่งน้อยยิ่งดี'], answer: 1 },
+        { q: 'ข้อใดเป็นไอเดียโปรเจกต์ AI ที่ดี?', options: ['สร้าง AI ครองโลก', 'จำแนกพันธุ์พืชจากรูปใบ', 'ทำ AI ที่ทำทุกอย่าง', 'ไม่มีข้อถูก'], answer: 1 },
+        { q: 'การทดสอบโมเดลใช้ข้อมูลแบบไหน?', options: ['ข้อมูลเดียวกับที่ฝึก', 'ข้อมูลใหม่ที่ไม่เคยเห็น', 'ไม่ต้องทดสอบ', 'ข้อมูลเก่าเท่านั้น'], answer: 1 },
+        { q: 'การนำเสนอโปรเจกต์ AI ควรมีอะไร?', options: ['แค่ผลลัพธ์', 'ปัญหา วิธีการ ผลลัพธ์ และบทเรียน', 'แค่โค้ด', 'แค่ชื่อโปรเจกต์'], answer: 1 },
+      ]
+    }
+  },
+
+  'arduino-basic': {
+    1: {
+      intro: 'เริ่มจากภาพใหญ่ของ Arduino: บอร์ดเล็ก ๆ ที่รับข้อมูลจากโลกจริง ประมวลผลด้วยโปรแกรม แล้วสั่งไฟ เสียง มอเตอร์ หรือจอแสดงผลให้ทำงานได้',
+      videos: [yt('Arduino คืออะไร ไมโครคอนโทรลเลอร์ เบื้องต้น'), yt('Arduino UNO R3 ส่วนประกอบของบอร์ด')],
+      files: [
+        { title: '[Arduino #1] แนะนำตัวก่อนนะ', url: 'https://www.praphas.com/index.php/2008-11-03-14-25-25/51-arduino/86-arduino-1', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'บทนำ Arduino และเหตุผลที่เหมาะกับการสร้างชิ้นงานต้นแบบ' },
+        { title: '[เอกสาร #5] เรียนรู้และลองเล่น Arduino เบื้องต้น', url: 'https://praphas.com/index.php/51-knowhow/arduino', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'เอกสารฉบับปรับปรุง มีใบงาน Arduino จำนวนมากสำหรับต่อยอดการทดลอง' },
+      ],
+      articles: [
+        { title: 'Arduino: บทเรียนจากครูประภาส', url: 'https://www.praphas.com/index.php/2008-11-03-14-25-25/51-arduino/', source: 'praphas.com', desc: 'หน้ารวมบทความ Arduino สำหรับใช้เป็นแหล่งอ้างอิงของคอร์ส' },
+      ],
+      lessonNotes: {
+        objectives: ['อธิบายได้ว่า Arduino ใช้สร้างงานอิเล็กทรอนิกส์โต้ตอบกับโลกจริงได้อย่างไร', 'ระบุอุปกรณ์พื้นฐานที่ใช้เริ่มทดลอง Arduino ได้'],
+        summary: ['Arduino เป็นแพลตฟอร์มต้นแบบแบบเปิดที่ใช้งานง่าย เหมาะกับผู้เริ่มต้น นักออกแบบ และผู้สนใจสร้างชิ้นงานโต้ตอบกับอุปกรณ์ภายนอก', 'งาน Arduino ต้องมองทั้งฮาร์ดแวร์ วงจร และซอฟต์แวร์ที่สั่งงานบอร์ด'],
+        activities: ['ให้ผู้เรียนสำรวจอุปกรณ์จริงหรือภาพบอร์ด แล้วติดป้ายชื่อ USB, power, digital pins, analog pins และ GND', 'จับคู่ตัวอย่างชีวิตจริงกับแนวคิด input-process-output เช่น ปุ่มกด ไมโครคอนโทรลเลอร์ และ LED'],
+        checkQuestions: ['ไมโครคอนโทรลเลอร์ต่างจากคอมพิวเตอร์ทั่วไปอย่างไร', 'Arduino รับข้อมูลจากอะไรและสั่งงานอะไรได้บ้าง'],
+        vocabulary: ['Microcontroller: ชิปควบคุมขนาดเล็กที่รับข้อมูลและสั่งงานอุปกรณ์', 'Open-source: เปิดให้ศึกษา ปรับใช้ และพัฒนาต่อยอดได้'],
+      },
+      quiz: [
+        { q: 'Arduino เหมาะกับงานประเภทใดมากที่สุด?', options: ['สร้างเอกสาร', 'สร้างวงจรโต้ตอบกับอุปกรณ์ภายนอก', 'ตัดต่อภาพเท่านั้น', 'ดูวิดีโอออนไลน์'], answer: 1 },
+        { q: 'ส่วนใดทำหน้าที่เหมือนสมองของบอร์ด?', options: ['USB cable', 'ไมโครคอนโทรลเลอร์', 'LED', 'Breadboard'], answer: 1 },
+        { q: 'ข้อใดคือ input ของระบบ Arduino?', options: ['LED', 'มอเตอร์', 'ปุ่มกดหรือเซนเซอร์', 'จอภาพที่แสดงผล'], answer: 2 },
+      ],
+    },
+    2: {
+      intro: 'ก่อนทำวงจรสนุก ๆ ต้องตั้งค่าเครื่องมือให้ถูก: ติดตั้ง Arduino IDE เลือกบอร์ด เลือกพอร์ต แล้วทดลองอัปโหลด Blink',
+      videos: [yt('ติดตั้ง Arduino IDE เลือกบอร์ด เลือกพอร์ต'), yt('Arduino Blink อัปโหลดโปรแกรมแรก')],
+      files: [
+        { title: '[Arduino #2] เครื่องมือเขียนโปรแกรม Arduino IDE', url: 'https://www.praphas.com/index.php/2008-11-03-14-25-25/51-arduino/87-arduino-2-sketch', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'แนะนำเครื่องมือเขียนโปรแกรมและการดาวน์โหลด Arduino IDE' },
+        { title: '[Arduino #5] เริ่มต้น Arduino UNO R3 และ Blink', url: 'https://praphas.com/index.php/2008-11-03-14-25-25/51-arduino/90-arduino-5-1-uno-r3.PROTEUS', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'ขั้นตอนติดตั้งไดรเวอร์ เลือกบอร์ด เลือก COM Port และทดลอง Blink' },
+        { title: 'ดาวน์โหลด Arduino IDE', url: 'https://www.arduino.cc/en/software', source: 'Arduino', kind: 'web', desc: 'หน้าดาวน์โหลดโปรแกรม Arduino IDE จากต้นทาง' },
+      ],
+      lessonNotes: {
+        objectives: ['ติดตั้งและเปิด Arduino IDE ได้', 'เลือก Board, Port และ Programmer ได้ถูกต้องก่อนอัปโหลด'],
+        summary: ['Arduino IDE ใช้เขียน ตรวจสอบ และอัปโหลดโปรแกรมลงบอร์ด', 'หากอัปโหลดไม่ได้ ให้ตรวจบอร์ด พอร์ต สาย USB ไดรเวอร์ และการตั้งค่าในเมนู Tools ก่อนเสมอ'],
+        activities: ['ให้ผู้เรียนเปิดตัวอย่าง Blink แล้วอ่านโค้ดว่า setup() และ loop() ทำหน้าที่อะไร', 'ฝึกตรวจพอร์ตโดยเสียบและถอดบอร์ดแล้วดูรายการที่เปลี่ยนใน Device Manager หรือเมนู Port'],
+        checkQuestions: ['ทำไมต้องเลือก Board ให้ตรงกับบอร์ดจริง', 'ถ้า Port ไม่ขึ้นควรตรวจอะไรบ้าง'],
+        vocabulary: ['IDE: โปรแกรมสำหรับเขียนและอัปโหลดโค้ด', 'Port: ช่องทางสื่อสารระหว่างคอมพิวเตอร์กับบอร์ด'],
+      },
+      quiz: [
+        { q: 'โปรแกรมที่ใช้เขียนโค้ด Arduino คืออะไร?', options: ['Arduino IDE', 'Excel', 'Paint', 'PowerPoint'], answer: 0 },
+        { q: 'ก่อนอัปโหลดควรตั้งค่าอะไร?', options: ['Board และ Port', 'สีพื้นหลัง', 'ชื่อไฟล์เพลง', 'ความสว่างจอ'], answer: 0 },
+        { q: 'Blink ใช้ทดสอบอะไร?', options: ['การพิมพ์งาน', 'การอัปโหลดและควบคุม LED พื้นฐาน', 'การต่ออินเทอร์เน็ต', 'การวาดภาพ'], answer: 1 },
+      ],
+    },
+    3: {
+      intro: 'รู้จักขาใช้งานของ Arduino UNO R3 แล้วต่อวงจรง่าย ๆ ให้ปลอดภัย ตั้งแต่ LED ปุ่มกด ไปจนถึงการอ่านค่าแอนาลอก',
+      videos: [yt('Arduino digital input output LED button'), yt('Arduino analogRead potentiometer PWM LED')],
+      files: [
+        { title: '[Arduino #5] คุณสมบัติบอร์ด Arduino UNO R3', url: 'https://praphas.com/index.php/2008-11-03-14-25-25/51-arduino/90-arduino-5-1-uno-r3.PROTEUS', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'ข้อมูลบอร์ด UNO R3 เช่น ATmega328, 5V, digital pins, analog input และ clock speed' },
+      ],
+      fun: [
+        { title: 'Tinkercad Circuits', desc: 'จำลองวงจร Arduino บนเว็บก่อนต่อจริง', url: 'https://www.tinkercad.com/circuits', emoji: '🔌', noLogin: true },
+        { title: 'Wokwi Arduino Simulator', desc: 'จำลอง Arduino และเซนเซอร์หลายชนิด', url: 'https://wokwi.com/arduino', emoji: '🧪', noLogin: true },
+      ],
+      lessonNotes: {
+        objectives: ['แยกหน้าที่ของ digital pin, analog input, 5V และ GND ได้', 'ต่อวงจร LED และปุ่มกดพื้นฐานโดยคำนึงถึงความปลอดภัยได้'],
+        summary: ['บอร์ด Arduino UNO R3 มีขา digital สำหรับเปิด/ปิด และขา analog input สำหรับอ่านค่าต่อเนื่องจากเซนเซอร์', 'การต่อ LED ต้องใช้ตัวต้านทานและต่อขั้วให้ถูกเพื่อป้องกันอุปกรณ์เสียหาย'],
+        activities: ['ต่อ LED พร้อมตัวต้านทาน แล้วสลับค่า HIGH/LOW เพื่อสังเกตผล', 'ต่อปุ่มกดแล้วเขียนโปรแกรมอ่านสถานะด้วย digitalRead()'],
+        checkQuestions: ['GND สำคัญอย่างไรในวงจร', 'digital กับ analog ต่างกันอย่างไร'],
+      },
+      quiz: [
+        { q: 'Arduino UNO R3 ใช้ไมโครคอนโทรลเลอร์ตระกูลใดในบทเรียนต้นทาง?', options: ['ATmega328', 'Core i7', 'Ryzen', 'ESP32 เท่านั้น'], answer: 0 },
+        { q: 'ขา analog input ใช้ทำอะไร?', options: ['อ่านค่าที่เปลี่ยนต่อเนื่อง', 'พิมพ์เอกสาร', 'เปิดเว็บไซต์', 'บันทึกเสียงเท่านั้น'], answer: 0 },
+        { q: 'ทำไมต่อ LED ต้องมีตัวต้านทาน?', options: ['เพื่อให้สวย', 'เพื่อจำกัดกระแสและป้องกัน LED เสีย', 'เพื่อเพิ่มเสียง', 'เพื่อเชื่อม Wi-Fi'], answer: 1 },
+      ],
+    },
+    4: {
+      intro: 'หน่วยนี้คือหัวใจของการเขียนโปรแกรม Arduino: อ่านค่า ส่งค่า ปรับความแรงสัญญาณ และใช้ Serial Monitor ช่วย debug',
+      videos: [yt('Arduino Serial Monitor ภาษาไทย'), yt('Arduino PWM analogWrite สอน')],
+      files: [
+        { title: '[เอกสาร #2] เรียนรู้และลองเล่น Arduino เบื้องต้น', url: 'https://www.praphas.com/index.php/2008-11-03-14-25-25/51-arduino/96-2-arduino', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'เอกสาร Arduino ที่มีบทพื้นฐานไมโครคอนโทรลเลอร์ การเขียน C และใบงานทดลองหลายหัวข้อ' },
+      ],
+      lessonNotes: {
+        objectives: ['ใช้ digitalWrite(), digitalRead(), analogRead(), analogWrite() และ Serial Monitor ในงานพื้นฐานได้', 'อธิบายค่าที่อ่านได้และปรับแก้โค้ดตามผลการทดลองได้'],
+        summary: ['setup() ใช้กำหนดค่าเริ่มต้น เช่น pinMode() และ Serial.begin()', 'loop() ทำงานซ้ำเพื่ออ่านค่า ประมวลผล และสั่งงานอุปกรณ์', 'Serial Monitor ช่วยมองเห็นค่าภายในโปรแกรม ทำให้แก้ปัญหาได้ง่ายขึ้น'],
+        activities: ['อ่านค่าปุ่มกดแล้วแสดงผลใน Serial Monitor', 'อ่านค่า potentiometer แล้วใช้ PWM ปรับความสว่าง LED'],
+        checkQuestions: ['Serial Monitor ช่วย debug อย่างไร', 'PWM แตกต่างจากการเปิด/ปิดธรรมดาอย่างไร'],
+      },
+      quiz: [
+        { q: 'ฟังก์ชันใดใช้สั่งขา digital output?', options: ['digitalWrite()', 'analogRead()', 'Serial.begin()', 'delayMicrophone()'], answer: 0 },
+        { q: 'analogRead() บน Arduino UNO มักให้ค่าช่วงใด?', options: ['0-1', '0-255', '0-1023', '0-10000'], answer: 2 },
+        { q: 'Serial Monitor ใช้เพื่ออะไร?', options: ['ดูและส่งค่าระหว่างคอมพิวเตอร์กับบอร์ด', 'ล้างบอร์ด', 'วาดรูป', 'ชาร์จแบตเตอรี่'], answer: 0 },
+      ],
+    },
+    5: {
+      intro: 'ต่อยอดจากพื้นฐานสู่ใบงานจริง: เซนเซอร์ มอเตอร์ จอแสดงผล และมินิโครงงานที่มีการวัดผลและปรับปรุง',
+      videos: [yt('Arduino ultrasonic sensor servo project'), yt('Arduino DHT22 LCD I2C ภาษาไทย')],
+      files: [
+        { title: '[เอกสาร #5] เรียนรู้และลองเล่น Arduino เบื้องต้น ฉบับปรับปรุงครั้งที่ 2', url: 'https://praphas.com/index.php/51-knowhow/arduino', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'หน้ารวมเอกสารฉบับปรับปรุงและใบงาน Arduino 33 ใบงาน' },
+        { title: '[เอกสาร #3] เรียนรู้และลองเล่น Arduino เบื้องต้น ฉบับปรับปรุงครั้งที่ 1', url: 'https://www.praphas.com/index.php/2008-11-03-14-25-25/51-arduino/97-2-arduino-1', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'รายการใบงาน เช่น ดิจิทัลอินพุต แอนาลอก PWM DHT22 Ultrasonic Motor LCD และ OLED' },
+      ],
+      fun: [
+        { title: 'Wokwi Examples', desc: 'เลือกตัวอย่าง Arduino พร้อมวงจรจำลอง', url: 'https://wokwi.com/projects/new/arduino-uno', emoji: '🧰', noLogin: true },
+      ],
+      lessonNotes: {
+        objectives: ['เลือกเซนเซอร์หรืออุปกรณ์สั่งงานให้เหมาะกับปัญหาที่ต้องการแก้ได้', 'สร้างมินิโครงงาน Arduino พร้อมบันทึกผลการทดลองและปรับปรุงได้'],
+        summary: ['ใบงาน Arduino ที่ดีควรมีจุดประสงค์ อุปกรณ์ วงจร โค้ด วิธีทดลอง ผลลัพธ์ และคำถามสะท้อนคิด', 'โครงงานควรเริ่มจากปัญหาเล็ก ๆ ที่วัดผลได้ เช่น เตือนระยะใกล้ วัดอุณหภูมิ หรือแสดงค่าบนจอ'],
+        activities: ['ออกแบบมินิโครงงาน 1 ชิ้นโดยระบุ input-process-output', 'ทำตารางบันทึกค่าที่เซนเซอร์อ่านได้และสรุปว่าระบบทำงานตรงตามเงื่อนไขหรือไม่'],
+        checkQuestions: ['ถ้าค่าเซนเซอร์แกว่งมากควรตรวจอะไร', 'มินิโครงงานควรมีหลักฐานการทดสอบแบบใด'],
+      },
+      quiz: [
+        { q: 'เซนเซอร์ ultrasonic ใช้วัดอะไร?', options: ['สี', 'ระยะทาง', 'น้ำหนัก', 'รหัสผ่าน'], answer: 1 },
+        { q: 'DHT22 ใช้วัดค่าใด?', options: ['อุณหภูมิและความชื้น', 'เสียงดนตรี', 'ความเร็วรถ', 'ข้อความ'], answer: 0 },
+        { q: 'โครงงานที่ดีควรมีอะไร?', options: ['วงจรและโค้ดอย่างเดียว', 'ปัญหา วิธีทดลอง ผลลัพธ์ และข้อปรับปรุง', 'ชื่อสวยเท่านั้น', 'รูปภาพอย่างเดียว'], answer: 1 },
+      ],
+    },
+    6: {
+      intro: 'ปิดท้ายด้วยมุมช่าง: จำลองวงจร ตรวจปัญหา และเข้าใจบูตโหลดเดอร์ในระดับที่ช่วยดูแลบอร์ด Arduino ได้',
+      videos: [yt('Arduino as ISP bootloader ภาษาไทย'), yt('Proteus Arduino simulation เบื้องต้น')],
+      files: [
+        { title: '[Arduino #4] การสร้าง Arduino บน Proteus', url: 'https://www.praphas.com/index.php/2008-11-03-14-25-25/51-arduino/89-arduino-4-arduino-proteus', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'บทความเกี่ยวกับไลบรารีและการจำลองวงจร Arduino ใน Proteus' },
+        { title: '[Arduino #6] การทำบูตโหลดเดอร์', url: 'https://www.praphas.com/index.php/2008-11-03-14-25-25/51-arduino/91-arduino-6-2', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'ขั้นตอนแนวคิด Arduino as ISP และการเบิร์นบูตโหลดเดอร์ให้ชิป' },
+        { title: '[Arduino #8] การซ่อมบูตโหลดเดอร์', url: 'https://www.praphas.com/index.php/2008-11-03-14-25-25/51-arduino/94-arduino-8', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'แนวทางใช้บอร์ด Arduino ที่ใช้งานได้เป็นเครื่องโปรแกรมเพื่อซ่อมบูตโหลดเดอร์' },
+      ],
+      lessonNotes: {
+        objectives: ['อธิบายหน้าที่ของบูตโหลดเดอร์ได้ในระดับพื้นฐาน', 'วิเคราะห์อาการอัปโหลดไม่ได้และจัดลำดับการตรวจสอบได้'],
+        summary: ['การจำลองวงจรช่วยทดสอบแนวคิดก่อนต่อจริง แต่ยังต้องตรวจข้อจำกัดของโมเดลและอุปกรณ์จริง', 'บูตโหลดเดอร์ช่วยให้บอร์ดรับโปรแกรมผ่าน USB ได้ ถ้าเสียหายอาจต้องใช้ Arduino as ISP ช่วยเบิร์นใหม่'],
+        activities: ['ทำผังตรวจสอบเมื่ออัปโหลดไม่ได้: สาย USB, Driver, Port, Board, Programmer, วงจรภายนอก และบูตโหลดเดอร์', 'เปรียบเทียบข้อดีข้อจำกัดของการจำลองวงจรกับการต่อวงจรจริง'],
+        checkQuestions: ['ทำไมการจำลองวงจรจึงไม่แทนการทดลองจริงทั้งหมด', 'บูตโหลดเดอร์ช่วยให้การใช้งาน Arduino สะดวกขึ้นอย่างไร'],
+      },
+      quiz: [
+        { q: 'บูตโหลดเดอร์ช่วยเรื่องใด?', options: ['ทำให้บอร์ดรับโปรแกรมผ่าน USB ได้สะดวก', 'ทำให้ LED สว่างขึ้นเท่านั้น', 'เพิ่มความจุแบตเตอรี่', 'เปิดอินเทอร์เน็ต'], answer: 0 },
+        { q: 'Arduino as ISP คืออะไรในบริบทนี้?', options: ['ใช้ Arduino ตัวหนึ่งเป็นเครื่องโปรแกรม', 'ใช้ Arduino เป็นลำโพง', 'ใช้ Arduino เป็นจอภาพ', 'ใช้ Arduino เป็นเมาส์'], answer: 0 },
+        { q: 'เมื่ออัปโหลดไม่ได้ ควรตรวจอะไรก่อน?', options: ['ซื้อบอร์ดใหม่ทันที', 'สาย USB, Board, Port และ Driver', 'ลบโค้ดทั้งหมดเสมอ', 'เปลี่ยนจอคอม'], answer: 1 },
+      ],
+    },
   }
+};
+
+const mergeLessonNotes = (base: LessonNotes = {}, extra: LessonNotes = {}): LessonNotes => ({
+  objectives: [...(base.objectives || []), ...(extra.objectives || [])],
+  summary: [...(base.summary || []), ...(extra.summary || [])],
+  activities: [...(base.activities || []), ...(extra.activities || [])],
+  checkQuestions: [...(base.checkQuestions || []), ...(extra.checkQuestions || [])],
+  vocabulary: [...(base.vocabulary || []), ...(extra.vocabulary || [])],
+});
+
+const extendArduinoUnit = (unitNo: number, extra: UnitExtras) => {
+  const current = unitExtras['arduino-basic'][unitNo] || {};
+  unitExtras['arduino-basic'][unitNo] = {
+    ...current,
+    files: [...(current.files || []), ...(extra.files || [])],
+    fun: [...(current.fun || []), ...(extra.fun || [])],
+    quiz: [...(current.quiz || []), ...(extra.quiz || [])],
+    articles: [...(current.articles || []), ...(extra.articles || [])],
+    videos: [...(current.videos || []), ...(extra.videos || [])],
+    lessonNotes: extra.lessonNotes ? mergeLessonNotes(current.lessonNotes, extra.lessonNotes) : current.lessonNotes,
+  };
+};
+
+const arduinoReadyToTeachExtras: Record<number, UnitExtras> = {
+  1: {
+    files: [
+      { title: 'ใบงานที่ 1: สำรวจบอร์ด Arduino และ Input-Process-Output', url: '/worksheets/arduino/u1-board-ipo.html', source: 'Kru James', kind: 'worksheet', desc: 'ใบงานเปิดจากเว็บและพิมพ์ได้ สำหรับให้เด็กระบุส่วนประกอบบอร์ดและคิดระบบแบบ input-process-output' },
+    ],
+    fun: [
+      { title: 'Wokwi Arduino Playground', desc: 'เปิดพื้นที่จำลอง Arduino เพื่อดูภาพรวมบอร์ดและทดลองโค้ดเบื้องต้น', url: 'https://wokwi.com/arduino', emoji: '🔎', noLogin: true },
+      { title: 'Tinkercad Circuits', desc: 'สำรวจบอร์ด Arduino และอุปกรณ์อิเล็กทรอนิกส์แบบลากวาง', url: 'https://www.tinkercad.com/circuits', emoji: '🧩', noLogin: true },
+    ],
+    lessonNotes: {
+      activities: ['ใช้ใบงานที่ 1 เป็นงานเดี่ยวหรือคู่ ก่อนให้เด็กเสนอไอเดียชิ้นงาน Arduino 1 ปัญหา'],
+      checkQuestions: ['ชิ้นงานของนักเรียนมี input-process-output ครบหรือยัง และส่วนใดคือหลักฐานว่า Arduino เป็นผู้ควบคุม'],
+    },
+    quiz: [
+      { q: 'คำว่า output ในงาน Arduino หมายถึงอะไร?', options: ['ข้อมูลที่เข้าบอร์ด', 'ผลที่บอร์ดสั่งให้อุปกรณ์ทำงาน', 'ชื่อโปรแกรม', 'สาย USB'], answer: 1, explain: 'Output คือผลที่ระบบสั่งออกไป เช่น LED ติด เสียงดัง หรือมอเตอร์หมุน' },
+      { q: 'ข้อใดเป็นตัวอย่าง process ของระบบ Arduino?', options: ['ปุ่มกด', 'โค้ดตรวจว่าค่ามากกว่าเกณฑ์หรือไม่', 'LED', 'สาย jumper'], answer: 1 },
+      { q: 'GND มีบทบาทสำคัญอย่างไรในวงจร?', options: ['ทำให้ไฟสวยขึ้น', 'เป็นจุดอ้างอิงและทางกลับของวงจร', 'ใช้แทนโค้ด', 'ทำให้คอมพิวเตอร์เร็วขึ้น'], answer: 1 },
+      { q: 'ข้อใดควรทำก่อนเสียบไฟเข้าวงจร?', options: ['ตรวจขั้วและตรวจว่า 5V ไม่ลัดกับ GND', 'เขย่าบอร์ด', 'ถอดตัวต้านทานออก', 'เปลี่ยนชื่อไฟล์'], answer: 0 },
+      { q: 'Arduino เหมาะกับการเรียนรู้แบบใด?', options: ['ท่องจำอย่างเดียว', 'ทดลอง วัดผล แก้ปัญหา และปรับปรุง', 'ตัดต่อภาพเท่านั้น', 'พิมพ์รายงานเท่านั้น'], answer: 1 },
+    ],
+  },
+  2: {
+    files: [
+      { title: 'ใบงานที่ 2: Blink โปรแกรมแรกและการปรับ delay', url: '/worksheets/arduino/u2-blink.html', source: 'Kru James', kind: 'worksheet', desc: 'ใบงานทดลองอัปโหลด Blink ปรับเวลา delay และบันทึกผลการกะพริบของ LED' },
+    ],
+    fun: [
+      { title: 'Wokwi Arduino UNO: Blink', desc: 'เริ่มโปรเจกต์ Arduino UNO สำหรับจำลอง Blink และแก้ delay', url: 'https://wokwi.com/projects/new/arduino-uno', emoji: '💡', noLogin: true },
+      { title: 'Tinkercad Circuits: Blink', desc: 'สร้างวงจร Arduino + LED ด้วยภาพลากวาง เหมาะกับผู้เริ่มต้น', url: 'https://www.tinkercad.com/circuits', emoji: '🧱', noLogin: true },
+    ],
+    lessonNotes: {
+      activities: ['ใช้ใบงานที่ 2 ให้เด็กทดลอง delay หลายค่า แล้วสรุปความสัมพันธ์ระหว่างตัวเลขในโค้ดกับพฤติกรรมของ LED'],
+      checkQuestions: ['ถ้า Verify ผ่านแต่ Upload ไม่ผ่าน ปัญหาน่าจะอยู่ที่โค้ดหรือการเชื่อมต่อ เพราะอะไร'],
+    },
+    quiz: [
+      { q: 'Verify ใน Arduino IDE ใช้ทำอะไร?', options: ['ตรวจโค้ดก่อนอัปโหลด', 'ล้างบอร์ด', 'เพิ่มความสว่างจอ', 'ต่อสายอัตโนมัติ'], answer: 0 },
+      { q: 'Upload ใช้ทำอะไร?', options: ['ส่งโปรแกรมลงบอร์ด', 'เปิดเว็บ', 'พิมพ์ใบงาน', 'ชาร์จแบตเตอรี่เท่านั้น'], answer: 0 },
+      { q: 'setup() ทำงานเมื่อใด?', options: ['ทำซ้ำตลอดเวลา', 'ทำครั้งเดียวตอนเริ่มโปรแกรม', 'ไม่เคยทำงาน', 'ทำเฉพาะตอนปิดเครื่อง'], answer: 1 },
+      { q: 'loop() มีหน้าที่หลักอย่างไร?', options: ['ทำงานซ้ำต่อเนื่อง', 'ติดตั้งไดรเวอร์', 'เลือก Port', 'วาดวงจร'], answer: 0 },
+      { q: 'ถ้าอยากให้ไฟกะพริบช้าลงควรทำอย่างไร?', options: ['เพิ่มค่า delay', 'ลดค่า delay เหลือ 0 เสมอ', 'ถอด GND', 'เปลี่ยนชื่อบอร์ด'], answer: 0 },
+    ],
+  },
+  3: {
+    files: [
+      { title: 'ใบงานที่ 3: LED ปุ่มกด และค่าแอนาลอก', url: '/worksheets/arduino/u3-led-button-analog.html', source: 'Kru James', kind: 'worksheet', desc: 'ใบงานต่อวงจร LED ภายนอก ปุ่มกด และทดลองอ่านค่า analog จาก potentiometer หรือเซนเซอร์' },
+    ],
+    lessonNotes: {
+      activities: ['ใช้ใบงานที่ 3 ฝึกให้เด็กวาดเส้นทางไฟฟ้าและบันทึกค่าที่อ่านได้ก่อนสรุปผล'],
+      checkQuestions: ['เมื่อต่อวงจรไม่ทำงาน นักเรียนตรวจวงจร โค้ด และการตั้งค่าตามลำดับใด'],
+    },
+    quiz: [
+      { q: 'Breadboard มีประโยชน์อย่างไร?', options: ['ต่อวงจรทดลองโดยไม่ต้องบัดกรี', 'ใช้เป็นแบตเตอรี่', 'ใช้แทน Arduino', 'ใช้เขียนรายงาน'], answer: 0 },
+      { q: 'digitalRead() อ่านค่าแบบใด?', options: ['HIGH หรือ LOW', 'รูปภาพ', 'เสียงเพลง', 'ไฟล์เอกสาร'], answer: 0 },
+      { q: 'INPUT_PULLUP ทำให้ปุ่มกดมักอ่านค่าอย่างไรเมื่อกดลง GND?', options: ['LOW', 'HIGH เสมอ', '1023', '255'], answer: 0 },
+      { q: 'analog input บน UNO เหมาะกับงานใด?', options: ['อ่านค่าระดับแสงที่เปลี่ยนต่อเนื่อง', 'เปิดเว็บ', 'พิมพ์เอกสาร', 'ลบโปรแกรม'], answer: 0 },
+      { q: 'ถ้า LED ไม่ติด ข้อใดควรตรวจร่วมกับโค้ด?', options: ['ขั้ว LED ตัวต้านทาน สาย GND และขา pin', 'สีพื้นหลัง IDE', 'ชื่อผู้ใช้คอมพิวเตอร์', 'ความเร็วอินเทอร์เน็ต'], answer: 0 },
+    ],
+  },
+  4: {
+    files: [
+      { title: 'ใบงานที่ 4: Serial Monitor และ PWM ปรับความสว่าง', url: '/worksheets/arduino/u4-serial-pwm.html', source: 'Kru James', kind: 'worksheet', desc: 'ใบงานอ่านค่า analog ผ่าน Serial Monitor แปลงค่า และใช้ PWM ควบคุม LED' },
+    ],
+    fun: [
+      { title: 'Wokwi: Analog + PWM Lab', desc: 'จำลอง Arduino UNO เพื่ออ่าน potentiometer และปรับ LED ด้วย PWM', url: 'https://wokwi.com/projects/new/arduino-uno', emoji: '📊', noLogin: true },
+      { title: 'Tinkercad Circuits: Serial/PWM', desc: 'สร้างวงจรอ่าน input และควบคุม output แบบเห็นภาพ', url: 'https://www.tinkercad.com/circuits', emoji: '🎛️', noLogin: true },
+    ],
+    lessonNotes: {
+      activities: ['ใช้ใบงานที่ 4 ให้เด็กบันทึกค่าจาก Serial Monitor แล้วค่อยตั้ง threshold หรือแปลงค่า PWM'],
+      checkQuestions: ['ทำไมการตั้ง threshold จากข้อมูลจริงจึงน่าเชื่อถือกว่าการเดาค่า'],
+    },
+    quiz: [
+      { q: 'Serial.begin(9600) ใช้เพื่ออะไร?', options: ['เริ่มสื่อสารผ่าน Serial ที่ความเร็ว 9600', 'ปิดบอร์ด', 'เลือกสี LED', 'ลบไดรเวอร์'], answer: 0 },
+      { q: 'Serial.println() ต่างจาก Serial.print() อย่างไรโดยทั่วไป?', options: ['ขึ้นบรรทัดใหม่หลังพิมพ์ค่า', 'ทำให้บอร์ดดับ', 'ใช้ต่อวงจร', 'ใช้แทน delay'], answer: 0 },
+      { q: 'analogWrite() บน Arduino UNO ใช้ค่าช่วงใดบ่อยที่สุด?', options: ['0-255', '0-1023', '0-1 เท่านั้น', '1000-2000'], answer: 0 },
+      { q: 'map() ช่วยเรื่องใด?', options: ['แปลงช่วงค่าตัวเลข', 'เลือก Port อัตโนมัติ', 'ต่อสายไฟ', 'ล้างหน่วยความจำ'], answer: 0 },
+      { q: 'baud rate ในโค้ดและ Serial Monitor ควรเป็นอย่างไร?', options: ['ตรงกัน', 'ต่างกันเสมอ', 'ไม่เกี่ยวกัน', 'ต้องเป็น 0'], answer: 0 },
+    ],
+  },
+  5: {
+    files: [
+      { title: 'ใบงานที่ 5: มินิโครงงานเซนเซอร์ Arduino', url: '/worksheets/arduino/u5-sensor-project.html', source: 'Kru James', kind: 'worksheet', desc: 'ใบงานออกแบบมินิโครงงานจากปัญหา เลือกเซนเซอร์ กำหนด output และบันทึกผลการทดลอง' },
+    ],
+    fun: [
+      { title: 'Tinkercad Circuits: Sensor Project', desc: 'ออกแบบวงจรเซนเซอร์และ output ด้วยภาพลากวางก่อนลงมือจริง', url: 'https://www.tinkercad.com/circuits', emoji: '🧪', noLogin: true },
+      { title: 'Arduino Project Hub', desc: 'ดูตัวอย่างไอเดียโครงงาน Arduino เพื่อปรับใช้ในระดับนักเรียน', url: 'https://projecthub.arduino.cc/', emoji: '💡', noLogin: true },
+    ],
+    lessonNotes: {
+      activities: ['ใช้ใบงานที่ 5 เป็นงานกลุ่ม ให้เด็กนำเสนอปัญหา input-process-output หลักฐานการทดสอบ และข้อปรับปรุง'],
+      checkQuestions: ['โครงงานของกลุ่มมีหลักฐานใดพิสูจน์ว่าทำงานตามเป้าหมาย ไม่ใช่แค่ต่อวงจรได้'],
+    },
+    quiz: [
+      { q: 'Output แบบใดเหมาะกับการเตือนผู้ใช้ทันที?', options: ['Buzzer หรือ LED เตือน', 'ไฟล์เอกสาร', 'ชื่อโฟลเดอร์', 'สาย USB'], answer: 0 },
+      { q: 'ทำไมมอเตอร์จึงไม่ควรต่อเข้าขา Arduino โดยตรงในหลายกรณี?', options: ['กินกระแสมากเกินกว่าขาจะจ่ายได้', 'ทำให้โค้ดสั้นเกินไป', 'ทำให้จอใหญ่ขึ้น', 'ไม่มีเหตุผล'], answer: 0 },
+      { q: 'ใบงานทดลองที่ดีควรมีอะไร?', options: ['จุดประสงค์ อุปกรณ์ วิธีทดลอง ตารางผล และคำถามวิเคราะห์', 'ชื่อสวยอย่างเดียว', 'รูปภาพอย่างเดียว', 'คำตอบให้ครบทุกข้อ'], answer: 0 },
+      { q: 'ถ้าเซนเซอร์อ่านค่าแกว่งมาก ควรทำอย่างไร?', options: ['อ่านหลายครั้ง บันทึกผล และตรวจวงจร/สภาพแวดล้อม', 'ลบโค้ดทั้งหมด', 'เพิ่มเสียงเพลง', 'ไม่ต้องทดสอบ'], answer: 0 },
+      { q: 'หลักฐานใดเหมาะกับการนำเสนอโปรเจกต์ Arduino?', options: ['ภาพวงจร โค้ด ตารางทดลอง และข้อปรับปรุง', 'ชื่อโปรเจกต์อย่างเดียว', 'สีของสายไฟอย่างเดียว', 'จำนวนสมาชิกเท่านั้น'], answer: 0 },
+    ],
+  },
+  6: {
+    files: [
+      { title: 'ใบงานที่ 6: จำลองวงจรและแก้ปัญหาอัปโหลดไม่ได้', url: '/worksheets/arduino/u6-simulation-troubleshooting.html', source: 'Kru James', kind: 'worksheet', desc: 'ใบงานให้เด็กสร้างวงจรจำลอง เปรียบเทียบกับของจริง และใช้ checklist แก้ปัญหา' },
+    ],
+    fun: [
+      { title: 'Wokwi Arduino Simulator', desc: 'จำลองวงจร Arduino และแชร์ลิงก์โปรเจกต์เพื่อให้ครูตรวจได้', url: 'https://wokwi.com/arduino', emoji: '🧰', noLogin: true },
+      { title: 'Tinkercad Circuits', desc: 'จำลองวงจร Arduino ด้วยภาพอุปกรณ์เหมาะกับการสรุปท้ายคอร์ส', url: 'https://www.tinkercad.com/circuits', emoji: '🧱', noLogin: true },
+    ],
+    lessonNotes: {
+      activities: ['ใช้ใบงานที่ 6 เป็นงานรวบยอด ให้เด็กส่งลิงก์จำลองและ checklist การแก้ปัญหาของตนเอง'],
+      checkQuestions: ['ถ้าจำลองผ่านแต่ของจริงไม่ผ่าน นักเรียนจะแยกปัญหา simulator, วงจรจริง และการตั้งค่าอย่างไร'],
+    },
+    quiz: [
+      { q: 'ข้อใดเป็นข้อดีของ simulator?', options: ['ทดลองแนวคิดได้เร็วและลดความเสี่ยงต่ออุปกรณ์', 'แทนของจริงได้ทุกกรณี', 'ไม่ต้องเข้าใจวงจร', 'ทำให้ไม่ต้องเขียนโค้ด'], answer: 0 },
+      { q: 'ข้อใดเป็นข้อจำกัดของ simulator?', options: ['อาจไม่แสดงปัญหาสายหลวมหรืออุปกรณ์เสียจริง', 'เปิดไม่ได้บนคอมพิวเตอร์ทุกชนิดเสมอ', 'ไม่มีประโยชน์เลย', 'ใช้ดูโค้ดไม่ได้'], answer: 0 },
+      { q: 'บูตโหลดเดอร์อยู่เพื่อช่วยเรื่องใดเป็นหลัก?', options: ['รับโปรแกรมใหม่เข้าสู่ไมโครคอนโทรลเลอร์ได้สะดวก', 'ทำให้ LED เปลี่ยนสีเอง', 'เพิ่มจำนวนขา analog', 'ทำให้สาย USB ยาวขึ้น'], answer: 0 },
+      { q: 'ก่อนสงสัยว่าบูตโหลดเดอร์เสีย ควรตรวจอะไรก่อน?', options: ['สาย USB, Board, Port, Driver และวงจรภายนอก', 'สีของโต๊ะ', 'ชื่อไฟล์รูปภาพ', 'เวลาในนาฬิกา'], answer: 0 },
+      { q: 'ทำไมควรบันทึกข้อความ error และสิ่งที่ลองแก้แล้ว?', options: ['ช่วยวิเคราะห์สาเหตุและไม่แก้ซ้ำแบบเดิม', 'ทำให้บอร์ดสวยขึ้น', 'เพิ่มแรงดันไฟ', 'ลดจำนวนสายไฟ'], answer: 0 },
+    ],
+  },
+};
+
+Object.entries(arduinoReadyToTeachExtras).forEach(([unitNo, extra]) => {
+  extendArduinoUnit(Number(unitNo), extra);
+});
+
+const arduinoExpandedMediaExtras: Record<number, UnitExtras> = {
+  1: {
+    files: [
+      { title: 'Arduino Built-in Examples', url: 'https://docs.arduino.cc/built-in-examples', source: 'Arduino Docs', kind: 'web', desc: 'หน้ารวมตัวอย่างพื้นฐานที่มีใน Arduino IDE เช่น Blink, Button, AnalogReadSerial และ PWM' },
+      { title: 'Arduino Education Starter Kit', url: 'https://www.arduino.cc/education/edu-starter-kit/', source: 'Arduino Education', kind: 'web', desc: 'แนวทางจัดบทเรียนแบบห้องเรียนสำหรับการเรียนอิเล็กทรอนิกส์และโค้ดเป็นคู่' },
+    ],
+    fun: [
+      { title: 'Arduino Project Hub: Beginner ideas', desc: 'ดูไอเดียโครงงานระดับเริ่มต้นก่อนเลือกปัญหาในโรงเรียน', url: 'https://projecthub.arduino.cc/', emoji: '💡', noLogin: true },
+    ],
+    lessonNotes: {
+      activities: ['ให้เด็กเลือกของใช้จริง 1 ชิ้น แล้วแยก input-process-output ก่อนเชื่อมโยงกลับมาที่ Arduino'],
+      vocabulary: ['Microcontroller: สมองเล็กในอุปกรณ์', 'Prototype: ต้นแบบที่ทดลองและแก้ไขได้'],
+    },
+    quiz: [
+      { q: 'เหตุใด Arduino จึงเหมาะกับการทำต้นแบบ?', options: ['เขียนและทดลองวงจรได้เร็ว', 'ใช้แทนคอมพิวเตอร์ทุกงาน', 'ทำงานโดยไม่ต้องใช้ไฟ', 'ใช้ได้เฉพาะดูวิดีโอ'], answer: 0 },
+      { q: 'ระบบ Arduino ที่อธิบายครบควรมีอะไร?', options: ['input-process-output และเป้าหมาย', 'ชื่ออุปกรณ์อย่างเดียว', 'สีสายไฟอย่างเดียว', 'ราคาอุปกรณ์เท่านั้น'], answer: 0 },
+    ],
+  },
+  2: {
+    files: [
+      { title: 'Arduino Blink example', url: 'https://docs.arduino.cc/built-in-examples/basics/Blink/', source: 'Arduino Docs', kind: 'web', desc: 'ตัวอย่าง Blink อย่างเป็นทางการสำหรับทดสอบบอร์ดและโครงสร้าง setup/loop' },
+      { title: 'Arduino Built-in Examples: Blink Without Delay', url: 'https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/', source: 'Arduino Docs', kind: 'web', desc: 'แนวคิดไม่ใช้ delay ยาว เหมาะสำหรับต่อยอดเมื่อเด็กเข้าใจ Blink แล้ว' },
+    ],
+    fun: [
+      { title: 'Wokwi: New Arduino UNO Project', desc: 'เปิดโปรเจกต์ Arduino UNO เปล่าแล้วเขียน Blink หรือแก้ delay ได้ทันที', url: 'https://wokwi.com/projects/new/arduino-uno', emoji: '💻', noLogin: true },
+    ],
+    lessonNotes: {
+      checkQuestions: ['Verify ผ่านแต่ Upload ไม่ผ่าน บอกอะไรเกี่ยวกับชนิดของปัญหา', 'delay ยาวมีข้อจำกัดอย่างไรถ้าเราต้องอ่านปุ่มพร้อมกัน'],
+      vocabulary: ['Compile error: โค้ดผิดก่อนส่งลงบอร์ด', 'Upload error: ส่งโปรแกรมลงบอร์ดไม่สำเร็จ'],
+    },
+    quiz: [
+      { q: 'ถ้า Verify ผ่านแต่ Upload ไม่ผ่าน สาเหตุที่ควรตรวจคือข้อใด?', options: ['Board/Port/สาย USB', 'สีพื้นหลัง IDE', 'ชื่อไฟล์ภาพ', 'ขนาดจอคอม'], answer: 0 },
+      { q: 'ข้อจำกัดของ delay() ที่ยาวมากคืออะไร?', options: ['บอร์ดหยุดรอและตอบสนองอย่างอื่นช้า', 'ทำให้ LED เสียทันที', 'ทำให้โค้ดไม่ต้องมี loop', 'ทำให้ Serial Monitor หายไป'], answer: 0 },
+    ],
+  },
+  3: {
+    files: [
+      { title: 'Arduino Button example', url: 'https://docs.arduino.cc/built-in-examples/digital/Button/', source: 'Arduino Docs', kind: 'web', desc: 'ตัวอย่างปุ่มกดควบคุม LED และแนวคิด digital input' },
+      { title: 'Arduino Analog Read Serial', url: 'https://docs.arduino.cc/built-in-examples/basics/AnalogReadSerial/', source: 'Arduino Docs', kind: 'web', desc: 'อ่านค่า analog แล้วแสดงใน Serial Monitor' },
+    ],
+    fun: [
+      { title: 'Wokwi LED/Button/Potentiometer', desc: 'โปรเจกต์ตัวอย่างรวม LED ปุ่มกด และ potentiometer สำหรับฝึก input-output', url: 'https://wokwi.com/projects/410462647202853889', emoji: '🔘', noLogin: true },
+    ],
+    lessonNotes: {
+      activities: ['จัดสถานีตรวจวงจร: เด็กต้องชี้ขา LED, resistor, GND, ขา input และอธิบาย breadboard ก่อนเสียบ USB'],
+      checkQuestions: ['ถ้าใช้ INPUT_PULLUP แล้วกดปุ่มอ่านค่า LOW เพราะอะไร'],
+      vocabulary: ['Floating input: ขา input ไม่มีค่าอ้างอิงชัดเจน', 'Threshold: ค่าเกณฑ์สำหรับตัดสินใจ'],
+    },
+    quiz: [
+      { q: 'INPUT_PULLUP ช่วยลดปัญหาใด?', options: ['input ลอยและอ่านค่าไม่นิ่ง', 'LED ร้อนเกินไปทุกกรณี', 'เปิด Serial Monitor อัตโนมัติ', 'เปลี่ยนสีสายไฟ'], answer: 0 },
+      { q: 'ก่อนตั้ง threshold ควรทำอะไร?', options: ['อ่านและบันทึกค่าจริงหลายครั้ง', 'เดาตัวเลขทันที', 'ลบโค้ด setup', 'ถอด resistor ออก'], answer: 0 },
+    ],
+  },
+  4: {
+    files: [
+      { title: 'Arduino Analog In, Out Serial', url: 'https://www.arduino.cc/en/Tutorial/BuiltInExamples/AnalogInOutSerial/', source: 'Arduino', kind: 'web', desc: 'อ่าน potentiometer แปลงค่า และใช้ PWM ปรับความสว่าง LED พร้อมพิมพ์ค่าออก Serial' },
+      { title: 'Use PWM output with Arduino', url: 'https://support.arduino.cc/hc/en-us/articles/9350537961500-Use-PWM-output-with-Arduino', source: 'Arduino Help Center', kind: 'web', desc: 'คำอธิบาย PWM และรายการขา PWM ของบอร์ด Arduino หลายรุ่น' },
+    ],
+    fun: [
+      { title: 'Wokwi Potentiometer Analog Input', desc: 'ตัวอย่างอ่าน potentiometer ควบคุม LED, RGB และ Servo พร้อม Serial Monitor', url: 'https://wokwi.com/projects/459617449701346305', emoji: '🎛️', noLogin: true },
+    ],
+    lessonNotes: {
+      activities: ['ให้เด็กเก็บค่าจาก Serial Monitor อย่างน้อย 5 ค่า แล้วใช้ map() แปลงเป็น brightness 0-255'],
+      vocabulary: ['PWM: การเปิดปิดสัญญาณเร็วเพื่อจำลองระดับความแรง', 'Baud rate: ความเร็วสื่อสาร Serial ที่ต้องตั้งให้ตรงกัน'],
+    },
+    quiz: [
+      { q: 'ขา PWM บน Arduino UNO มักมีสัญลักษณ์ใดกำกับ?', options: ['~', '#', '@', '?'], answer: 0 },
+      { q: 'map(sensor, 0, 1023, 0, 255) มีหน้าที่หลักคืออะไร?', options: ['แปลงช่วงค่า analog เป็นช่วง PWM', 'เลือกพอร์ต USB', 'ล้างหน้าจอ', 'เปลี่ยนชื่อบอร์ด'], answer: 0 },
+    ],
+  },
+  5: {
+    files: [
+      { title: 'Wokwi HC-SR04 ultrasonic reference', url: 'https://docs.wokwi.com/parts/wokwi-hc-sr04', source: 'Wokwi Docs', kind: 'web', desc: 'เอกสารขา TRIG/ECHO การคำนวณระยะ และตัวอย่างโค้ด ultrasonic' },
+      { title: 'Wokwi DHT22 reference', url: 'https://docs.wokwi.com/parts/wokwi-dht22', source: 'Wokwi Docs', kind: 'web', desc: 'เอกสารเซนเซอร์อุณหภูมิและความชื้น DHT22 สำหรับจำลองใน Wokwi' },
+      { title: 'Arduino Servo library', url: 'https://docs.arduino.cc/libraries/servo/', source: 'Arduino Docs', kind: 'web', desc: 'ข้อมูลไลบรารี Servo สำหรับควบคุมมุมมอเตอร์เซอร์โว' },
+    ],
+    fun: [
+      { title: 'Wokwi Ultrasonic Parking Sensor', desc: 'ตัวอย่างเซนเซอร์วัดระยะ ใช้ปรับเป็นโปรเจกต์เตือนระยะใกล้ได้', url: 'https://docs.wokwi.com/parts/wokwi-hc-sr04#simulator-examples', emoji: '📏', noLogin: true },
+      { title: 'Wokwi Servo reference', desc: 'ศึกษาขา servo และตัวอย่าง Sweep/Knob ก่อนต่อจริง', url: 'https://docs.wokwi.com/parts/wokwi-servo', emoji: '⚙️', noLogin: true },
+    ],
+    lessonNotes: {
+      checkQuestions: ['ถ้า servo ทำให้บอร์ดรีเซต ควรสงสัยเรื่องใด', 'ทำไม ultrasonic ต้องมีทั้ง TRIG และ ECHO'],
+      vocabulary: ['TRIG: ขาเริ่มวัดของ ultrasonic', 'ECHO: ขารับพัลส์กลับเพื่อคำนวณระยะ'],
+    },
+    quiz: [
+      { q: 'HC-SR04 ใช้ขาใดเริ่มการวัด?', options: ['TRIG', 'GND', 'VCC เท่านั้น', 'A0 เท่านั้น'], answer: 0 },
+      { q: 'Servo เหมาะกับงานแบบใด?', options: ['หมุนไปยังมุมที่กำหนด', 'เก็บข้อมูลจำนวนมาก', 'เชื่อมต่อ Wi-Fi โดยตรง', 'แทนตัวต้านทาน'], answer: 0 },
+    ],
+  },
+  6: {
+    files: [
+      { title: 'Wokwi Arduino UNO reference', url: 'https://docs.wokwi.com/parts/wokwi-arduino-uno', source: 'Wokwi Docs', kind: 'web', desc: 'ข้อมูลบอร์ด Arduino UNO ใน Wokwi สำหรับตรวจขาและจำลองวงจร' },
+      { title: '[Arduino #6] การทำบูตโหลดเดอร์', url: 'https://www.praphas.com/index.php/2008-11-03-14-25-25/51-arduino/91-arduino-6-2', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'บทความภาษาไทยเกี่ยวกับ Arduino as ISP และการเบิร์นบูตโหลดเดอร์' },
+    ],
+    lessonNotes: {
+      activities: ['ให้เด็กทำตาราง 4 ช่อง: อาการ, หมวดปัญหา, สิ่งที่ลองแก้, ผลลัพธ์ เพื่อฝึก troubleshooting'],
+      vocabulary: ['Simulator: เครื่องมือจำลองวงจร', 'Bootloader: โปรแกรมเล็กที่ช่วยรับโค้ดใหม่เข้าสู่บอร์ด'],
+    },
+    quiz: [
+      { q: 'การบันทึก error ช่วยอะไร?', options: ['รู้ว่าลองแก้อะไรแล้วและหาสาเหตุเป็นขั้นตอน', 'ทำให้บอร์ดเร็วขึ้นทันที', 'ทำให้ไฟแรงขึ้น', 'เปลี่ยนสีจอ'], answer: 0 },
+    ],
+  },
+  7: {
+    intro: 'หน่วยนี้เติมส่วนที่ทำให้โครงงานสื่อสารกับผู้ใช้ได้จริง: จอ LCD/OLED, I2C, การจัดข้อความ และการแสดงค่าจากเซนเซอร์ให้อ่านง่าย',
+    videos: [yt('Arduino LCD I2C ภาษาไทย'), yt('Arduino OLED I2C แสดงค่า sensor'), yt('Wokwi LCD1602 Arduino tutorial')],
+    files: [
+      { title: 'ใบงานที่ 7: LCD I2C แสดงค่าจากเซนเซอร์', url: '/worksheets/arduino/u7-display-i2c.html', source: 'Kru James', kind: 'worksheet', desc: 'ใบงานต่อจอ LCD I2C แสดงค่าระยะ/อุณหภูมิ พร้อม checklist แก้ปัญหาจอไม่ขึ้น' },
+      { title: 'Wokwi LCD1602 reference', url: 'https://docs.wokwi.com/parts/wokwi-lcd1602', source: 'Wokwi Docs', kind: 'web', desc: 'เอกสาร LCD 16x2 ทั้งแบบปกติและ I2C พร้อมความต่างของจำนวนขาที่ใช้' },
+      { title: 'Arduino LiquidCrystal library', url: 'https://docs.arduino.cc/libraries/liquidcrystal/', source: 'Arduino Docs', kind: 'web', desc: 'ข้อมูลไลบรารี LiquidCrystal สำหรับจอ LCD' },
+    ],
+    fun: [
+      { title: 'Wokwi LCD1602 examples', desc: 'ดูตัวอย่างจอ LCD แสดงข้อความและค่าจากเซนเซอร์', url: 'https://docs.wokwi.com/parts/wokwi-lcd1602#simulator-examples', emoji: '🖥️', noLogin: true },
+      { title: 'Wokwi New Arduino UNO', desc: 'เริ่มโปรเจกต์จำลอง LCD I2C หรือ OLED ด้วย Arduino UNO', url: 'https://wokwi.com/projects/new/arduino-uno', emoji: '🧪', noLogin: true },
+    ],
+    lessonNotes: {
+      objectives: ['อธิบายประโยชน์ของจอแสดงผลในโครงงาน Arduino ได้', 'ต่อหรือจำลอง LCD I2C เพื่อแสดงข้อความและค่าจากเซนเซอร์ได้'],
+      summary: ['LCD/OLED ทำให้โครงงานสื่อสารกับผู้ใช้ได้โดยไม่ต้องเปิด Serial Monitor', 'I2C ใช้สาย SDA/SCL ลดจำนวนขาที่ต้องใช้ แต่ต้องตรวจ address และไลบรารีให้ถูก'],
+      activities: ['ให้เด็กปรับโครงงานเซนเซอร์เดิมให้แสดงค่าและสถานะบนจอ เช่น SAFE/ALERT'],
+      checkQuestions: ['ถ้าจอติดไฟแต่ไม่แสดงข้อความ ควรตรวจอะไรบ้าง', 'ข้อความบนจอที่ดีควรมีลักษณะอย่างไร'],
+      vocabulary: ['I2C', 'SDA', 'SCL', 'Address', 'Cursor'],
+    },
+    quiz: [
+      { q: 'จอ LCD 16x2 หมายถึงอะไร?', options: ['2 บรรทัด บรรทัดละ 16 ตัวอักษร', '16 บรรทัด บรรทัดละ 2 ตัวอักษร', 'มี 16 สี', 'ใช้ไฟ 16 โวลต์'], answer: 0 },
+      { q: 'I2C ใช้สายสัญญาณหลักใด?', options: ['SDA และ SCL', 'TRIG และ ECHO', 'TX และ RX เท่านั้น', 'VCC และ GND เท่านั้น'], answer: 0 },
+      { q: 'ถ้า LCD I2C ไม่ขึ้นข้อความ แต่มีไฟหลังจอ ควรตรวจอะไร?', options: ['address, SDA/SCL, ไลบรารี และคำสั่งเริ่มต้น', 'สีของกล่องอุปกรณ์', 'ชื่อไฟล์รูปภาพ', 'จำนวนสมาชิกในกลุ่ม'], answer: 0 },
+      { q: 'ข้อความบนจอที่ดีควรเป็นอย่างไร?', options: ['สั้น ชัด มีหน่วยกำกับ', 'ยาวเต็มจอเสมอ', 'ไม่มีหน่วยเพื่อประหยัดที่', 'เปลี่ยนเร็วมากจนอ่านไม่ทัน'], answer: 0 },
+      { q: 'ข้อใดคือประโยชน์ของการใช้จอในโครงงาน?', options: ['ผู้ใช้เห็นสถานะหรือค่าที่วัดได้ทันที', 'ทำให้ไม่ต้องต่อวงจร', 'ทำให้ไม่ต้องเขียนโค้ด', 'ทำให้ sensor อ่านค่าเองโดยไม่ใช้ไฟ'], answer: 0 },
+    ],
+  },
+  8: {
+    intro: 'หน่วยปลายคอร์สให้เด็กใช้ความรู้ทั้งหมดสร้างโครงงานเล็กที่มีปัญหา วงจร โค้ด ตารางทดสอบ หลักฐาน และการนำเสนอแบบพร้อมประเมินจริง',
+    videos: [yt('Arduino final project beginner presentation'), yt('Arduino project based learning classroom'), yt('Arduino ultrasonic parking sensor project')],
+    files: [
+      { title: 'ใบงานที่ 8: โครงงาน Arduino ปลายคอร์ส', url: '/worksheets/arduino/u8-capstone-project.html', source: 'Kru James', kind: 'worksheet', desc: 'ใบงานโครงงานปลายคอร์ส มีแบบฟอร์มปัญหา IPO แผนวงจร ตารางทดสอบ และ rubric ประเมิน' },
+      { title: 'Arduino Project Hub', url: 'https://projecthub.arduino.cc/', source: 'Arduino', kind: 'web', desc: 'คลังไอเดียโครงงาน Arduino เพื่อใช้ดูแนวทางและปรับให้เหมาะกับระดับนักเรียน' },
+      { title: '[เอกสาร #3] เรียนรู้และลองเล่น Arduino เบื้องต้น', url: 'https://www.praphas.com/index.php/2008-11-03-14-25-25/51-arduino/97-2-arduino-1', source: 'ครูประภาส สุวรรณเพชร', kind: 'web', desc: 'เอกสารภาษาไทยที่มีรายการใบงานต่อยอดจำนวนมากสำหรับทำโครงงาน' },
+    ],
+    fun: [
+      { title: 'Tinkercad Circuits: Capstone prototype', desc: 'วาดและทดสอบวงจรปลายคอร์สแบบลากวางก่อนต่อจริง', url: 'https://www.tinkercad.com/circuits', emoji: '🧱', noLogin: true },
+      { title: 'Wokwi Arduino Simulator', desc: 'สร้างลิงก์โครงงานจำลองเพื่อส่งให้ครูตรวจและให้เพื่อนลองปรับค่า', url: 'https://wokwi.com/arduino', emoji: '🔗', noLogin: true },
+    ],
+    lessonNotes: {
+      objectives: ['ออกแบบโครงงานจากปัญหาที่วัดผลได้', 'สร้างและทดสอบต้นแบบพร้อมหลักฐาน', 'นำเสนอผลและข้อปรับปรุงอย่างมีเหตุผล'],
+      summary: ['โครงงาน Arduino ที่ดีเริ่มจากปัญหา มี input-process-output ชัด ทดสอบด้วยข้อมูล และอธิบายข้อจำกัดได้', 'คะแนนควรดูทั้งวงจร โค้ด กระบวนการทดสอบ ความปลอดภัย และการนำเสนอ'],
+      activities: ['แบ่งกลุ่ม 2-3 คน ทำโครงงาน 1 ชิ้น ส่งลิงก์จำลอง ภาพวงจรจริง ตารางทดสอบ และนำเสนอ 3 นาที'],
+      checkQuestions: ['หลักฐานใดพิสูจน์ว่าโครงงานทำงานตามเป้าหมาย', 'ถ้าให้เวลาปรับปรุงอีก 1 สัปดาห์ กลุ่มจะปรับส่วนใดก่อน'],
+      vocabulary: ['Prototype', 'Rubric', 'Evidence', 'Iteration', 'Threshold'],
+    },
+    quiz: [
+      { q: 'โครงงานที่ดีควรเริ่มจากอะไร?', options: ['ปัญหาที่ชัดและวัดผลได้', 'เลือกอุปกรณ์ที่ดูสวยก่อน', 'คัดลอกโค้ดโดยไม่เข้าใจ', 'ตั้งชื่อให้ยาวที่สุด'], answer: 0 },
+      { q: 'หลักฐานใดเหมาะกับการประเมินโครงงาน Arduino?', options: ['วงจร โค้ด ตารางทดสอบ และข้อปรับปรุง', 'ชื่อกลุ่มอย่างเดียว', 'สีสายไฟอย่างเดียว', 'จำนวนรูปภาพเท่านั้น'], answer: 0 },
+      { q: 'Iteration ในโครงงานหมายถึงอะไร?', options: ['การปรับปรุงจากผลทดสอบซ้ำเป็นรอบ ๆ', 'การลบโค้ดทั้งหมด', 'การเลือกสี LED', 'การปิดโปรแกรม'], answer: 0 },
+      { q: 'ถ้าโครงงานเตือนผิดบ่อย ควรทำอะไร?', options: ['ดูข้อมูลทดสอบและปรับ threshold หรือวงจร', 'เปลี่ยนชื่อโครงงาน', 'ไม่ต้องทดสอบอีก', 'ถอด sensor ออกเสมอ'], answer: 0 },
+      { q: 'การนำเสนอที่ดีควรอธิบายอะไร?', options: ['ปัญหา วิธีทำ ผลทดสอบ และสิ่งที่จะปรับปรุง', 'เฉพาะชื่อสมาชิก', 'เฉพาะราคาบอร์ด', 'เฉพาะสีของจอ'], answer: 0 },
+    ],
+  },
+};
+
+Object.entries(arduinoExpandedMediaExtras).forEach(([unitNo, extra]) => {
+  extendArduinoUnit(Number(unitNo), extra);
+});
+
+const electronicsTeacherGuideFile: LearningFile = {
+  title: 'คู่มือคอร์สฉบับครูเจมส์: อิเล็กทรอนิกส์เบื้องต้น',
+  url: '/worksheets/electronics/electronics-course-outline.html',
+  source: 'Kru James',
+  kind: 'worksheet',
+  desc: 'คู่มือสอนที่เรียบเรียงใหม่เป็นภาษาของเราเอง ใช้คู่กับสไลด์ ใบงาน และกิจกรรมในเว็บ โดยไม่แนบไฟล์ต้นฉบับของผู้อื่น',
+};
+
+const electronicsWorksheet = (unitNo: number, title: string, url: string, desc: string): LearningFile => ({
+  title: `ใบงานที่ ${unitNo}: ${title}`,
+  url,
+  source: 'Kru James',
+  kind: 'worksheet',
+  desc,
+});
+
+unitExtras['electronics-basic'] = {
+  1: {
+    intro: 'เริ่มจากให้เด็กมองเห็นว่าอิเล็กทรอนิกส์ไม่ได้อยู่ไกลตัว แต่ซ่อนอยู่ในโทรศัพท์ รีโมต ไฟจราจร ของเล่น เครื่องใช้ไฟฟ้า และบอร์ด Arduino ทุกชิ้นมีแนวคิด input-process-output และต้องใช้ไฟฟ้าอย่างปลอดภัย',
+    videos: [
+      yt('อิเล็กทรอนิกส์เบื้องต้น ในชีวิตประจำวัน นักเรียนมัธยม'),
+      yt('analog digital signal explained Thai'),
+      yt('ไฟฟ้าและอิเล็กทรอนิกส์พื้นฐานสำหรับเด็ก'),
+    ],
+    files: [
+      electronicsTeacherGuideFile,
+      electronicsWorksheet(1, 'สำรวจอุปกรณ์อิเล็กทรอนิกส์รอบตัว', '/worksheets/electronics/u1-everyday-systems.html', 'ให้นักเรียนเลือกอุปกรณ์จริง 3 ชิ้น แล้ววิเคราะห์ input-process-output สัญญาณ และกฎความปลอดภัยก่อนใช้งาน'),
+    ],
+    fun: [
+      { title: 'PhET Circuit Construction Kit: DC', desc: 'ทดลองต่อวงจรถ่านไฟฉาย สายไฟ หลอดไฟ และสวิตช์ เห็นกระแสไฟไหลแบบภาพจำลอง', url: 'https://phet.colorado.edu/sims/html/circuit-construction-kit-dc/latest/circuit-construction-kit-dc_all.html', emoji: '🔋', noLogin: true },
+      { title: 'Tinkercad Circuits', desc: 'พื้นที่จำลองวงจรแบบลากวาง เหมาะสำหรับต่อยอดก่อนใช้ Arduino จริง', url: 'https://www.tinkercad.com/circuits', emoji: '🧱', noLogin: true },
+    ],
+    lessonNotes: {
+      objectives: [
+        'อธิบายความหมายของอิเล็กทรอนิกส์และยกตัวอย่างอุปกรณ์รอบตัวได้',
+        'แยก input, process และ output ของอุปกรณ์ใกล้ตัวได้',
+        'เปรียบเทียบสัญญาณแอนะล็อกกับดิจิทัลจากสถานการณ์จริงได้',
+        'บอกข้อควรระวังในการทดลองวงจรไฟฟ้ากระแสตรงแรงดันต่ำได้',
+      ],
+      summary: [
+        'อิเล็กทรอนิกส์คือการควบคุมการไหลของไฟฟ้าเพื่อรับข้อมูล ประมวลผล และแสดงผล',
+        'อุปกรณ์อิเล็กทรอนิกส์ส่วนใหญ่มี input เช่น ปุ่มหรือเซนเซอร์ มี process เช่น วงจรหรือไมโครคอนโทรลเลอร์ และมี output เช่น ไฟ เสียง หรือการเคลื่อนไหว',
+        'แอนะล็อกเปลี่ยนค่าได้ต่อเนื่อง ส่วนดิจิทัลใช้ระดับชัดเจน เช่น 0/1 หรือ LOW/HIGH',
+        'การทดลองควรเริ่มจากแหล่งจ่ายไฟต่ำ ตรวจขั้วก่อนต่อวงจร และไม่ทดลองกับไฟบ้านโดยเด็ดขาด',
+      ],
+      activities: [
+        'ครูนำอุปกรณ์จริงหรือภาพอุปกรณ์ 5 ชิ้นให้เด็กระบุ input-process-output',
+        'ให้นักเรียนจับคู่ภาพสถานการณ์กับคำว่าแอนะล็อกหรือดิจิทัล เช่น เสียงคนพูด ระดับแสง สวิตช์เปิดปิด รหัสผ่าน',
+        'ใช้ใบงานที่ 1 ให้เด็กเลือกอุปกรณ์หนึ่งชิ้น แล้ววาดผังการทำงานอย่างง่าย',
+      ],
+      checkQuestions: [
+        'รีโมตทีวีมี input, process และ output คืออะไร',
+        'ทำไมปุ่มเปิดปิดจึงมักถือเป็นสัญญาณดิจิทัล',
+        'ก่อนต่อวงจรจริง นักเรียนควรตรวจอะไรบ้างเพื่อความปลอดภัย',
+      ],
+      vocabulary: ['electronics', 'input', 'process', 'output', 'analog', 'digital', 'sensor', 'actuator'],
+    },
+    quiz: [
+      { q: 'ข้อใดเป็นตัวอย่างของ input ในระบบอิเล็กทรอนิกส์', options: ['LED สว่าง', 'ปุ่มกด', 'เสียงจากลำโพง', 'มอเตอร์หมุน'], answer: 1, explain: 'input คือสิ่งที่ระบบรับเข้ามา เช่น ปุ่มกด เซนเซอร์ หรือสัญญาณจากผู้ใช้' },
+      { q: 'สัญญาณดิจิทัลเหมาะกับข้อใดมากที่สุด', options: ['ระดับแสงที่ค่อย ๆ เปลี่ยน', 'อุณหภูมิที่เพิ่มทีละน้อย', 'สถานะเปิดหรือปิด', 'เสียงพูดตามธรรมชาติ'], answer: 2, explain: 'ดิจิทัลมีระดับชัดเจน เช่น 0/1 เปิด/ปิด HIGH/LOW' },
+      { q: 'ข้อใดเป็น output ของไฟจราจร', options: ['ปุ่มคนข้ามถนน', 'วงจรควบคุมเวลา', 'ไฟสีแดง เหลือง เขียว', 'สายไฟในตู้ควบคุม'], answer: 2 },
+      { q: 'เหตุใดจึงไม่ควรทดลองวงจรกับไฟบ้าน', options: ['เพราะไฟบ้านแรงดันสูงและอันตราย', 'เพราะ LED จะสว่างน้อย', 'เพราะต่อวงจรง่ายเกินไป', 'เพราะไม่มีสัญญาณดิจิทัล'], answer: 0 },
+      { q: 'ข้อใดอธิบายอิเล็กทรอนิกส์ได้เหมาะสม', options: ['การตกแต่งคอมพิวเตอร์ให้สวย', 'การควบคุมไฟฟ้าเพื่อให้วงจรทำงานตามต้องการ', 'การใช้ไฟฟ้าเฉพาะในบ้าน', 'การเขียนรายงานด้วยคอมพิวเตอร์'], answer: 1 },
+    ],
+  },
+  2: {
+    intro: 'หน่วยนี้ทำให้เด็กเข้าใจไฟฟ้าพื้นฐานแบบจับต้องได้: แหล่งจ่ายไฟให้พลังงาน ตัวต้านทานช่วยจำกัดกระแส LED ต้องต่อถูกขั้ว และกฎของโอห์มช่วยคำนวณให้วงจรปลอดภัยก่อนทดลองจริง',
+    videos: [
+      yt('กฎของโอห์ม ตัวต้านทาน LED เบื้องต้น ภาษาไทย'),
+      yt('อ่านค่าสีตัวต้านทาน สำหรับนักเรียน'),
+      yt('ต่อวงจร LED กับ resistor Arduino beginner Thai'),
+    ],
+    files: [
+      electronicsTeacherGuideFile,
+      electronicsWorksheet(2, 'ตัวต้านทาน LED และกฎของโอห์ม', '/worksheets/electronics/u2-resistor-led-ohm.html', 'ฝึกอ่านค่าตัวต้านทาน คำนวณกระแส LED และทดลองเปลี่ยนค่าความต้านทานเพื่อดูผลต่อความสว่าง'),
+    ],
+    fun: [
+      { title: 'PhET Circuit Construction Kit: DC', desc: 'ทดลองต่อวงจรแบตเตอรี่ ตัวต้านทาน และหลอดไฟเพื่อดูความสัมพันธ์ของแรงดัน กระแส และความต้านทาน', url: 'https://phet.colorado.edu/sims/html/circuit-construction-kit-dc/latest/circuit-construction-kit-dc_all.html', emoji: '💡', noLogin: true },
+      { title: 'Tinkercad Circuits: LED + Resistor', desc: 'จำลอง LED กับตัวต้านทานก่อนลงมือจริง เหมาะสำหรับฝึกอ่านขั้วและเลือกค่า R', url: 'https://www.tinkercad.com/circuits', emoji: '🧪', noLogin: true },
+      { title: 'Wokwi Arduino UNO', desc: 'เริ่มโปรเจกต์ Arduino UNO เพื่อทดลอง Blink และต่อยอดเรื่อง LED', url: 'https://wokwi.com/projects/new/arduino-uno', emoji: '🔌', noLogin: true },
+    ],
+    lessonNotes: {
+      objectives: [
+        'อธิบายหน้าที่ของแหล่งจ่ายไฟ ตัวต้านทาน และ LED ได้',
+        'ใช้ความสัมพันธ์ V = I x R เพื่อประมาณค่ากระแสหรือความต้านทานได้',
+        'เลือกตัวต้านทานจำกัดกระแส LED ในวงจรพื้นฐานได้',
+        'ต่อ LED ถูกขั้วและตรวจวงจรก่อนจ่ายไฟได้',
+      ],
+      summary: [
+        'แรงดันไฟฟ้าเปรียบเหมือนแรงผลักให้ประจุเคลื่อนที่ กระแสคือปริมาณไฟฟ้าที่ไหล และความต้านทานคือสิ่งที่ขวางการไหล',
+        'กฎของโอห์ม V = I x R ใช้คาดคะเนค่าต่าง ๆ ก่อนทดลองจริง',
+        'LED ยอมให้กระแสไหลทางเดียวและต้องมีตัวต้านทานจำกัดกระแสเพื่อป้องกันเสียหาย',
+        'ตัวต้านทานยิ่งค่ามาก กระแสมักยิ่งน้อย และ LED มักสว่างลดลง',
+      ],
+      activities: [
+        'ครูสาธิตวงจร LED 1 ดวงกับตัวต้านทาน 220, 330 และ 1k โอห์ม แล้วให้นักเรียนบันทึกความสว่าง',
+        'ให้นักเรียนคำนวณกระแสโดยประมาณจากแรงดันและค่าตัวต้านทานที่กำหนด',
+        'ใช้ใบงานที่ 2 ให้เด็กวาดวงจรก่อนต่อจริง แล้วแลกกับเพื่อนเพื่อตรวจขั้ว LED',
+      ],
+      checkQuestions: [
+        'ถ้าเพิ่มค่าตัวต้านทาน กระแสในวงจรมักเปลี่ยนอย่างไร',
+        'ทำไม LED จึงต้องต่อร่วมกับตัวต้านทาน',
+        'สูตร V = I x R ช่วยลดความเสี่ยงในการทดลองอย่างไร',
+      ],
+      vocabulary: ['voltage', 'current', 'resistance', 'Ohm law', 'LED', 'polarity', 'series circuit'],
+    },
+    quiz: [
+      { q: 'สูตรของกฎโอห์มคือข้อใด', options: ['V = I x R', 'I = V x R', 'R = V x I', 'P = V + I'], answer: 0 },
+      { q: 'ตัวต้านทานในวงจร LED มีหน้าที่สำคัญอย่างไร', options: ['เพิ่มเสียง', 'จำกัดกระแส', 'เก็บข้อมูล', 'เปลี่ยนไฟ DC เป็น AC'], answer: 1 },
+      { q: 'ถ้า R มากขึ้น โดยแรงดันเท่าเดิม กระแสจะเป็นอย่างไร', options: ['มากขึ้นเสมอ', 'น้อยลง', 'ไม่เกี่ยวข้องกัน', 'กลายเป็นศูนย์ทันที'], answer: 1 },
+      { q: 'LED มีคุณสมบัติใดที่ต้องระวังเป็นพิเศษ', options: ['ต้องต่อถูกขั้ว', 'ใช้แทนแบตเตอรี่ได้', 'ต่อกลับขั้วแล้วสว่างขึ้น', 'ไม่ต้องใช้ตัวต้านทาน'], answer: 0 },
+      { q: 'หน่วยของความต้านทานคืออะไร', options: ['โวลต์', 'แอมแปร์', 'โอห์ม', 'วัตต์'], answer: 2 },
+    ],
+  },
+  3: {
+    intro: 'เมื่อเด็กเริ่มรู้จักไฟและ LED แล้ว หน่วยนี้จะขยายเป็นคลังอุปกรณ์: ตัวเก็บประจุ ไดโอด สวิตช์ รีเลย์ ทรานซิสเตอร์ เซนเซอร์ และมอเตอร์ พร้อมมองว่าแต่ละชิ้นทำหน้าที่เป็น input, output หรือส่วนควบคุมของระบบ',
+    videos: [
+      yt('อุปกรณ์อิเล็กทรอนิกส์พื้นฐาน capacitor diode transistor relay sensor motor Thai'),
+      yt('ทรานซิสเตอร์ทำงานอย่างไร สำหรับผู้เริ่มต้น'),
+      yt('เซนเซอร์และมอเตอร์ Arduino เบื้องต้น ภาษาไทย'),
+    ],
+    files: [
+      electronicsTeacherGuideFile,
+      electronicsWorksheet(3, 'รู้จักอุปกรณ์และเลือกใช้อย่างปลอดภัย', '/worksheets/electronics/u3-components-safety.html', 'ตารางสรุปหน้าที่ สัญลักษณ์ ข้อควรระวัง และการจัดกลุ่มอุปกรณ์เป็น input-output-control'),
+    ],
+    fun: [
+      { title: 'Tinkercad Circuits: Components Lab', desc: 'สำรวจอุปกรณ์หลากหลายแบบ เช่น ปุ่มกด เซนเซอร์ มอเตอร์ และ LED ในวงจรจำลอง', url: 'https://www.tinkercad.com/circuits', emoji: '🧰', noLogin: true },
+      { title: 'Wokwi Arduino UNO + Sensors', desc: 'เริ่มโปรเจกต์ Arduino แล้วเพิ่มเซนเซอร์หรือมอเตอร์เพื่อเข้าใจ input-output', url: 'https://wokwi.com/projects/new/arduino-uno', emoji: '🤖', noLogin: true },
+    ],
+    lessonNotes: {
+      objectives: [
+        'บอกหน้าที่พื้นฐานของ capacitor, diode, transistor, relay, sensor และ motor ได้',
+        'จัดกลุ่มอุปกรณ์เป็น input, output หรือส่วนควบคุมได้',
+        'อธิบายเหตุผลที่บางอุปกรณ์ต้องระวังขั้วหรือกระแสได้',
+        'เลือกอุปกรณ์ให้เหมาะกับสถานการณ์ง่าย ๆ เช่น ไฟเตือน พัดลมอัตโนมัติ หรือระบบตรวจแสงได้',
+      ],
+      summary: [
+        'ตัวเก็บประจุเก็บและคายประจุ ช่วยหน่วงเวลา กรองสัญญาณ หรือทำให้ไฟเรียบขึ้นในบางวงจร',
+        'ไดโอดยอมให้กระแสไหลทางเดียว ส่วน LED เป็นไดโอดชนิดหนึ่งที่ให้แสง',
+        'ทรานซิสเตอร์ใช้เป็นสวิตช์อิเล็กทรอนิกส์หรือขยายสัญญาณ จึงช่วยให้อุปกรณ์กำลังต่ำควบคุมโหลดที่ต้องใช้กระแสมากกว่าได้',
+        'เซนเซอร์รับข้อมูลจากสิ่งแวดล้อม ส่วนมอเตอร์ รีเลย์ LED และลำโพงมักเป็น output หรือ actuator',
+      ],
+      activities: [
+        'จัดโต๊ะอุปกรณ์หรือรูปภาพอุปกรณ์หลายชนิด แล้วให้เด็กติดป้ายหน้าที่และข้อควรระวัง',
+        'ให้นักเรียนออกแบบระบบง่าย ๆ 1 ระบบ เช่น ไฟเปิดเมื่อมืด โดยระบุ input-process-output และอุปกรณ์ที่ใช้',
+        'ใช้ใบงานที่ 3 ให้เด็กเปรียบเทียบอุปกรณ์ที่ต่อผิดขั้วแล้วมีปัญหากับอุปกรณ์ที่ไม่ต้องสนใจขั้วมากนัก',
+      ],
+      checkQuestions: [
+        'เซนเซอร์แสงควรจัดเป็น input หรือ output เพราะอะไร',
+        'ทำไมมอเตอร์บางตัวจึงไม่ควรต่อเข้าขา Arduino โดยตรง',
+        'รีเลย์ต่างจากสวิตช์ธรรมดาอย่างไรในมุมมองระบบควบคุม',
+      ],
+      vocabulary: ['capacitor', 'diode', 'transistor', 'relay', 'sensor', 'motor', 'actuator', 'polarity'],
+    },
+    quiz: [
+      { q: 'อุปกรณ์ใดมักใช้รับข้อมูลจากสิ่งแวดล้อม', options: ['เซนเซอร์', 'ลำโพง', 'LED', 'มอเตอร์'], answer: 0 },
+      { q: 'ไดโอดมีคุณสมบัติเด่นข้อใด', options: ['เก็บข้อมูล', 'ยอมให้กระแสไหลทางเดียวเป็นหลัก', 'สร้างเสียง', 'เปลี่ยนสีสายไฟ'], answer: 1 },
+      { q: 'ทรานซิสเตอร์มักใช้ทำหน้าที่ใดในวงจรควบคุม', options: ['เป็นสวิตช์หรือขยายสัญญาณ', 'เป็นแบตเตอรี่', 'เป็นจอภาพ', 'เป็นสาย USB'], answer: 0 },
+      { q: 'มอเตอร์จัดเป็นอุปกรณ์ประเภทใดในระบบ input-process-output', options: ['input', 'process เท่านั้น', 'output/actuator', 'แหล่งข้อมูล'], answer: 2 },
+      { q: 'ข้อใดเป็นเหตุผลที่ต้องอ่าน datasheet หรือข้อมูลอุปกรณ์ก่อนใช้', options: ['เพื่อรู้ขั้ว แรงดัน และกระแสที่เหมาะสม', 'เพื่อเลือกสีให้สวยเท่านั้น', 'เพื่อทำให้โค้ดยาวขึ้น', 'เพื่อปิดวงจรไม่ให้ทำงาน'], answer: 0 },
+    ],
+  },
+  4: {
+    intro: 'หน่วยนี้ทำให้เด็กเห็นว่าวงจรแอนะล็อกคือวงจรที่ค่าต่าง ๆ เปลี่ยนต่อเนื่อง เช่น วงจรกรอง RC วงจรเรียงกระแส วงจรขยาย และวงจรปรับแรงดัน ซึ่งเป็นพื้นฐานสำคัญก่อนเข้าใจแหล่งจ่ายไฟและการอ่านสัญญาณเซนเซอร์',
+    videos: [
+      yt('วงจร RC filter เบื้องต้น ภาษาไทย'),
+      yt('วงจรเรียงกระแส diode bridge ภาษาไทย'),
+      yt('op amp transistor amplifier beginner Thai'),
+    ],
+    files: [
+      electronicsTeacherGuideFile,
+      electronicsWorksheet(4, 'ทดลองวงจรแอนะล็อก RC และเรียงกระแส', '/worksheets/electronics/u4-analog-circuits.html', 'ให้เด็กสังเกตผลของตัวต้านทานและตัวเก็บประจุต่อการเปลี่ยนสัญญาณ และอธิบายการแปลงไฟ AC เป็น DC ในภาพรวม'),
+    ],
+    fun: [
+      { title: 'Falstad Circuit Simulator', desc: 'จำลองวงจรแอนะล็อกแบบเห็นกระแสและแรงดัน เหมาะกับ RC filter, diode และ amplifier', url: 'https://www.falstad.com/circuit/', emoji: '📈', noLogin: true },
+      { title: 'PhET Circuit Construction Kit: DC', desc: 'ใช้ทบทวนวงจรพื้นฐานก่อนเข้าสู่วงจรแอนะล็อกที่ซับซ้อนขึ้น', url: 'https://phet.colorado.edu/sims/html/circuit-construction-kit-dc/latest/circuit-construction-kit-dc_all.html', emoji: '🔎', noLogin: true },
+    ],
+    lessonNotes: {
+      objectives: [
+        'อธิบายแนวคิดสัญญาณแอนะล็อกและการเปลี่ยนค่าอย่างต่อเนื่องได้',
+        'บอกหน้าที่ของวงจรกรอง RC วงจรเรียงกระแส วงจรขยาย และวงจรปรับแรงดันได้ในระดับพื้นฐาน',
+        'อ่านภาพวงจรง่าย ๆ แล้วระบุส่วนที่ทำหน้าที่กรอง เรียงกระแส หรือขยายสัญญาณได้',
+        'เชื่อมโยงวงจรแอนะล็อกกับการอ่านค่าเซนเซอร์และระบบ Arduino ได้',
+      ],
+      summary: [
+        'วงจร RC ใช้ตัวต้านทานและตัวเก็บประจุร่วมกันเพื่อหน่วงเวลา กรองสัญญาณ หรือทำให้สัญญาณเปลี่ยนนุ่มขึ้น',
+        'วงจรเรียงกระแสใช้ไดโอดเปลี่ยนไฟสลับให้เป็นไฟทางเดียว ก่อนกรองให้เรียบขึ้นด้วยตัวเก็บประจุ',
+        'วงจรขยายช่วยทำให้สัญญาณเล็กมีขนาดใหญ่พอจะนำไปใช้ต่อ เช่น เสียงหรือสัญญาณจากเซนเซอร์',
+        'วงจรปรับแรงดันช่วยให้แรงดันคงที่มากขึ้น ทำให้อุปกรณ์อิเล็กทรอนิกส์ทำงานเสถียร',
+      ],
+      activities: [
+        'ครูเปิด Falstad ให้เด็กดูการไหลของกระแสในวงจร RC แล้วเปลี่ยนค่า R หรือ C เพื่อเปรียบเทียบผล',
+        'ให้เด็กวาดภาพก่อนและหลังการเรียงกระแสด้วยคำของตนเอง โดยไม่ต้องลงคณิตศาสตร์หนัก',
+        'ใช้ใบงานที่ 4 ให้เด็กสรุปว่าแต่ละวงจรช่วยแก้ปัญหาอะไรในชีวิตจริง',
+      ],
+      checkQuestions: [
+        'วงจรกรองช่วยให้สัญญาณเปลี่ยนไปอย่างไร',
+        'ไดโอดในวงจรเรียงกระแสมีบทบาทสำคัญอย่างไร',
+        'ทำไมวงจรขยายจึงจำเป็นเมื่อสัญญาณจากเซนเซอร์มีขนาดเล็ก',
+      ],
+      vocabulary: ['analog circuit', 'RC filter', 'rectifier', 'amplifier', 'op amp', 'regulator', 'ripple'],
+    },
+    quiz: [
+      { q: 'วงจร RC ประกอบด้วยอุปกรณ์หลักใด', options: ['ตัวต้านทานและตัวเก็บประจุ', 'มอเตอร์และลำโพง', 'คีย์บอร์ดและเมาส์', 'แบตเตอรี่สองก้อนเท่านั้น'], answer: 0 },
+      { q: 'วงจรเรียงกระแสมีหน้าที่ใด', options: ['ช่วยแปลงไฟสลับให้เป็นไฟทางเดียว', 'ทำให้เสียงดังขึ้นเสมอ', 'เก็บรหัสผ่าน', 'วาดรูปวงจรอัตโนมัติ'], answer: 0 },
+      { q: 'วงจรขยายมีประโยชน์อย่างไร', options: ['ทำให้สัญญาณเล็กมีขนาดใหญ่ขึ้น', 'ลดจำนวนสายไฟให้เหลือศูนย์', 'ทำให้ไฟบ้านปลอดภัยเสมอ', 'เปลี่ยนแบตเตอรี่เป็นเซนเซอร์'], answer: 0 },
+      { q: 'ตัวเก็บประจุในแหล่งจ่ายไฟหลังวงจรเรียงกระแสช่วยเรื่องใด', options: ['ทำให้แรงดันเรียบขึ้น', 'ทำให้ไดโอดเปลี่ยนสี', 'ทำให้มอเตอร์ไม่ต้องใช้ไฟ', 'ทำให้โค้ดสั้นลง'], answer: 0 },
+      { q: 'สัญญาณแอนะล็อกมีลักษณะเด่นข้อใด', options: ['เปลี่ยนค่าได้ต่อเนื่อง', 'มีได้เฉพาะ 0 และ 1', 'ไม่เกี่ยวกับไฟฟ้า', 'ใช้ได้กับข้อความเท่านั้น'], answer: 0 },
+    ],
+  },
+  5: {
+    intro: 'หน่วยนี้เปลี่ยนจากสัญญาณต่อเนื่องมาเป็นโลก 0 และ 1 เด็กจะเรียนเลขฐานสอง ตารางความจริง ลอจิกเกต และการรวมเกตเป็นวงจรคอมบิเนชัน ซึ่งเชื่อมตรงกับ Arduino เพราะคำสั่ง digitalRead และ digitalWrite ก็ทำงานบนแนวคิด HIGH/LOW',
+    videos: [
+      yt('เลขฐานสอง และ logic gate ภาษาไทย'),
+      yt('AND OR NOT gate truth table Thai'),
+      yt('digitalRead digitalWrite Arduino Thai'),
+    ],
+    files: [
+      electronicsTeacherGuideFile,
+      electronicsWorksheet(5, 'เลขฐานสอง ตารางความจริง และลอจิกเกต', '/worksheets/electronics/u5-digital-logic.html', 'ฝึกแปลงเลขฐานสอง อ่านตารางความจริง และออกแบบเงื่อนไขเปิดไฟด้วย AND OR NOT'),
+    ],
+    fun: [
+      { title: 'CircuitVerse Digital Circuit Simulator', desc: 'จำลองวงจรดิจิทัล ลอจิกเกต ตารางความจริง และวงจรคอมบิเนชันได้ในเว็บ', url: 'https://circuitverse.org/simulator', emoji: '🔢', noLogin: true },
+      { title: 'Wokwi Arduino UNO: digitalRead/digitalWrite', desc: 'ทดลองปุ่มกดและ LED ด้วยค่า HIGH/LOW เพื่อเชื่อมลอจิกกับโค้ด Arduino', url: 'https://wokwi.com/projects/new/arduino-uno', emoji: '💻', noLogin: true },
+    ],
+    lessonNotes: {
+      objectives: [
+        'แปลงเลขฐานสองระดับง่ายและอธิบายแนวคิดบิตได้',
+        'อ่านตารางความจริงของ AND, OR และ NOT ได้',
+        'เลือกใช้ลอจิกเกตให้ตรงกับเงื่อนไขง่าย ๆ ในชีวิตจริงได้',
+        'เชื่อมโยงแนวคิด HIGH/LOW กับคำสั่ง Arduino digitalRead และ digitalWrite ได้',
+      ],
+      summary: [
+        'ระบบดิจิทัลใช้ค่าที่แยกชัดเจน เช่น 0/1, LOW/HIGH, false/true',
+        'AND จะจริงเมื่อเงื่อนไขทุกข้อจริง OR จะจริงเมื่อมีอย่างน้อยหนึ่งข้อจริง และ NOT ใช้กลับค่าจริงเป็นเท็จหรือเท็จเป็นจริง',
+        'ตารางความจริงช่วยตรวจว่าทุกกรณีของ input ให้ output เป็นอย่างไร',
+        'วงจรคอมบิเนชันคือวงจรที่ output ขึ้นกับ input ปัจจุบัน เช่น ระบบเปิดไฟเมื่อมืดและมีคนอยู่',
+      ],
+      activities: [
+        'ให้เด็กเล่นบทบาทเป็นสัญญาณ A และ B แล้วทั้งห้องตัดสิน output ของ AND/OR/NOT ด้วยบัตร 0/1',
+        'ใช้ CircuitVerse สร้าง AND gate และ OR gate แล้วสลับ input เพื่อเทียบกับตารางความจริง',
+        'ใช้ใบงานที่ 5 ออกแบบเงื่อนไขระบบเตือน เช่น ถ้าประตูเปิดและเป็นเวลากลางคืนให้ไฟเตือนติด',
+      ],
+      checkQuestions: [
+        'AND ต่างจาก OR อย่างไร',
+        'ทำไมตารางความจริงช่วยลดความผิดพลาดในการออกแบบวงจร',
+        'ปุ่มกดบน Arduino ที่อ่านเป็น HIGH/LOW คล้ายกับแนวคิดใดในวงจรดิจิทัล',
+      ],
+      vocabulary: ['binary', 'bit', 'truth table', 'AND', 'OR', 'NOT', 'HIGH', 'LOW', 'combinational circuit'],
+    },
+    quiz: [
+      { q: 'เลขฐานสองใช้สัญลักษณ์หลักใด', options: ['0 และ 1', '0 ถึง 9', 'A ถึง Z', 'เฉพาะเลขคู่'], answer: 0 },
+      { q: 'AND gate จะให้ output เป็น 1 เมื่อใด', options: ['เมื่อ input ทุกตัวเป็น 1', 'เมื่อ input อย่างน้อยหนึ่งตัวเป็น 1', 'เมื่อ input ทุกตัวเป็น 0', 'สุ่มค่าเอง'], answer: 0 },
+      { q: 'OR gate จะให้ output เป็น 1 เมื่อใด', options: ['เมื่อมี input อย่างน้อยหนึ่งตัวเป็น 1', 'เมื่อ input ทุกตัวเป็น 0 เท่านั้น', 'เมื่อไม่มีไฟเลี้ยง', 'เมื่อกด reset'], answer: 0 },
+      { q: 'NOT gate ทำหน้าที่อย่างไร', options: ['กลับค่าจาก 0 เป็น 1 หรือจาก 1 เป็น 0', 'รวมเลขทุกตัว', 'เก็บประจุ', 'เพิ่มแรงดันเสมอ'], answer: 0 },
+      { q: 'digitalRead() บน Arduino อ่านค่าแบบใดโดยทั่วไป', options: ['HIGH หรือ LOW', 'รูปภาพ', 'เสียงเพลง', 'ไฟล์ PDF'], answer: 0 },
+    ],
+  },
+  6: {
+    intro: 'หน่วยสุดท้ายทำให้เด็กพร้อมทำงานจริง: ใช้มัลติมิเตอร์อย่างถูกโหมด ตรวจวงจรอย่างเป็นระบบ เข้าใจกฎของเคอร์ชอฟฟ์ในระดับพื้นฐาน และแก้ปัญหาแบบมีหลักฐาน ไม่เดาสุ่มเมื่อวงจรไม่ทำงาน',
+    videos: [
+      yt('การใช้มัลติมิเตอร์ วัดแรงดัน กระแส ความต้านทาน ภาษาไทย'),
+      yt('กฎของเคอร์ชอฟฟ์ เบื้องต้น วงจรไฟฟ้า'),
+      yt('debug circuit electronics beginner Thai'),
+    ],
+    files: [
+      electronicsTeacherGuideFile,
+      electronicsWorksheet(6, 'มัลติมิเตอร์ กฎของเคอร์ชอฟฟ์ และการตรวจวงจร', '/worksheets/electronics/u6-multimeter-kirchhoff.html', 'ฝึกเลือกโหมดวัด วางสายวัดให้ถูกตำแหน่ง บันทึกค่า และใช้ checklist แก้ปัญหาวงจรไม่ทำงาน'),
+    ],
+    fun: [
+      { title: 'PhET Circuit Construction Kit: DC', desc: 'ใช้วัดค่าในวงจรจำลองและฝึกคิดเรื่องแรงดันกับกระแสก่อนจับมัลติมิเตอร์จริง', url: 'https://phet.colorado.edu/sims/html/circuit-construction-kit-dc/latest/circuit-construction-kit-dc_all.html', emoji: '📏', noLogin: true },
+      { title: 'Falstad Circuit Simulator', desc: 'ดูแรงดันและกระแสในแต่ละจุดของวงจร ช่วยอธิบายกฎของเคอร์ชอฟฟ์แบบเห็นภาพ', url: 'https://www.falstad.com/circuit/', emoji: '🧭', noLogin: true },
+      { title: 'Tinkercad Circuits: Troubleshooting', desc: 'จำลองวงจรแล้วลองสลับสาย/ปรับค่า เพื่อฝึกหาสาเหตุเมื่อวงจรไม่ทำงาน', url: 'https://www.tinkercad.com/circuits', emoji: '🛠️', noLogin: true },
+    ],
+    lessonNotes: {
+      objectives: [
+        'เลือกโหมดมัลติมิเตอร์สำหรับวัดแรงดัน ความต้านทาน และตรวจความต่อเนื่องได้',
+        'อธิบายแนวคิดกฎกระแสและกฎแรงดันของเคอร์ชอฟฟ์ในภาษาง่าย ๆ ได้',
+        'ตรวจวงจรไม่ทำงานด้วยลำดับที่เป็นระบบ เช่น ไฟเลี้ยง ขั้ว สาย โค้ด และอุปกรณ์',
+        'บันทึกหลักฐานการทดลองและสรุปสาเหตุของปัญหาได้',
+      ],
+      summary: [
+        'มัลติมิเตอร์ต้องเลือกโหมดให้ตรงกับสิ่งที่จะวัด และต้องระวังตำแหน่งสายวัดโดยเฉพาะการวัดกระแส',
+        'กฎกระแสของเคอร์ชอฟฟ์บอกว่า กระแสที่ไหลเข้าจุดรวมเท่ากับกระแสที่ไหลออกจากจุดรวมนั้น',
+        'กฎแรงดันของเคอร์ชอฟฟ์บอกว่า ผลรวมแรงดันรอบวงปิดสัมพันธ์กันและช่วยตรวจความสมเหตุสมผลของวงจร',
+        'การแก้วงจรควรไล่จากแหล่งจ่ายไฟ สายไฟ ขั้วอุปกรณ์ ค่าอุปกรณ์ จุดต่อ และคำสั่งควบคุม',
+      ],
+      activities: [
+        'ครูสาธิตการวัดแรงดันแบตเตอรี่และการตรวจสายขาดด้วยโหมด continuity',
+        'ให้นักเรียนใช้ใบงานที่ 6 วัดค่าจำลองหรือค่าจริง แล้วบันทึกว่าค่าที่วัดตรงกับที่คาดไว้หรือไม่',
+        'จัดโจทย์วงจรผิด 3 แบบ เช่น LED กลับขั้ว สาย GND หลุด ตัวต้านทานผิดค่า ให้เด็กใช้ checklist หาเหตุผล',
+      ],
+      checkQuestions: [
+        'ก่อนวัดความต้านทาน ควรทำให้วงจรอยู่ในสภาพใด',
+        'ทำไมการวัดกระแสจึงเสี่ยงกว่าการวัดแรงดันถ้าตั้งโหมดผิด',
+        'เมื่อ LED ไม่ติด ควรตรวจอะไรเป็นลำดับแรก ๆ',
+      ],
+      vocabulary: ['multimeter', 'voltage mode', 'resistance mode', 'continuity', 'Kirchhoff current law', 'Kirchhoff voltage law', 'troubleshooting'],
+    },
+    quiz: [
+      { q: 'มัลติมิเตอร์โหมด V ใช้ทำอะไร', options: ['วัดแรงดันไฟฟ้า', 'วัดความยาวสายไฟ', 'เปิดโปรแกรม Arduino', 'เปลี่ยนสี LED'], answer: 0 },
+      { q: 'โหมด continuity มีประโยชน์อย่างไร', options: ['ตรวจว่าสายหรือจุดต่อเชื่อมถึงกันหรือไม่', 'เพิ่มแรงดัน', 'เขียนโค้ดให้สั้นลง', 'เปลี่ยนไฟ AC เป็น DC'], answer: 0 },
+      { q: 'กฎกระแสของเคอร์ชอฟฟ์กล่าวโดยสรุปว่าอย่างไร', options: ['กระแสเข้าและออกที่จุดรวมต้องสมดุลกัน', 'แรงดันต้องเป็นศูนย์ทุกจุด', 'ตัวต้านทานทุกตัวมีค่าเท่ากัน', 'LED ทุกดวงต้องสีเดียวกัน'], answer: 0 },
+      { q: 'ถ้าจะวัดความต้านทานของตัวต้านทาน ควรทำอย่างไรเพื่อความปลอดภัยและความแม่นยำ', options: ['ตัดไฟจากวงจรก่อนวัด', 'เพิ่มไฟเลี้ยงให้สูงขึ้น', 'จับขั้ว LED สลับไปมา', 'เปิดมอเตอร์ให้หมุนเร็วที่สุด'], answer: 0 },
+      { q: 'เมื่อวงจรไม่ทำงาน วิธีที่เหมาะสมที่สุดคือข้อใด', options: ['ตรวจทีละจุดและบันทึกหลักฐาน', 'เปลี่ยนอุปกรณ์ทุกชิ้นทันที', 'เดาสุ่มแล้วลองไปเรื่อย ๆ โดยไม่จด', 'เพิ่มแรงดันให้มากที่สุด'], answer: 0 },
+    ],
+  },
 };

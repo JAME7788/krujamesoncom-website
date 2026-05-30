@@ -1,54 +1,68 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Color Palette */
-  --primary: #8B0000; /* Deep Maroon */
-  --primary-light: #B22222;
-  --secondary: #D4AF37; /* Gold */
-  --accent: #FFD700;
-  --background: #FDFDFD;
-  --surface: rgba(255, 255, 255, 0.85);
-  --text-main: #1A1A1A;
-  --text-muted: #666666;
-  --border: rgba(0, 0, 0, 0.08);
+  /* Modern Yellow & White Palette */
+  --primary: #FFCC00; /* Vibrant Golden Yellow */
+  --primary-dark: #EBB800;
+  --primary-light: #FFE066;
+  --primary-soft: #FFF9E6;
   
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.3);
-  --glass-shadow: 0 8px 32px 0 rgba(139, 0, 0, 0.1);
+  --secondary: #1D1D1F; /* Sophisticated Dark */
+  
+  --background: #FFFFFF;
+  --surface: #FBFBFA;
+  --card: #FFFFFF;
+  
+  --text-main: #1D1D1F;
+  --text-muted: #6E6E73;
+  --text-on-primary: #1D1D1F;
+  
+  --border: rgba(0, 0, 0, 0.05);
+  --border-light: rgba(0, 0, 0, 0.03);
+  
+  /* Glassmorphism Refined */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 12px 40px rgba(255, 204, 0, 0.08);
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.1);
   
   /* Spacing & Radii */
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --container-max: 1200px;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
+  --radius-full: 9999px;
+  
+  --container-max: 1300px;
   
   /* Transitions */
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  font-family: 'Inter', 'Sarabun', sans-serif;
+  font-family: 'Outfit', 'Sarabun', sans-serif;
   background-color: var(--background);
   color: var(--text-main);
-  line-height: 1.6;
+  line-height: 1.5;
   overflow-x: hidden;
 }
 
 a {
   text-decoration: none;
   color: inherit;
-  transition: var(--transition);
-}
-
-ul {
-  list-style: none;
+  transition: var(--transition-fast);
 }
 
 button {
@@ -56,12 +70,12 @@ button {
   border: none;
   outline: none;
   font-family: inherit;
-  transition: var(--transition);
+  transition: var(--transition-fast);
 }
 
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -69,45 +83,218 @@ button {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary-light);
+  background: #E5E5E5;
   border-radius: 10px;
+  border: 3px solid var(--background);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Global Layout Utilities */
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 2.5rem;
 }
 
-.fade-in {
-  animation: fadeIn 0.6s ease forwards;
+.section-padding {
+  padding: 5rem 0;
 }
 
-/* Utility Classes */
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
 }
 
-.container {
-  max-width: var(--container-max);
-  margin: 0 auto;
-  padding: 0 2rem;
+.card-hover {
+  transition: var(--transition);
 }
 
-.section-padding {
-  padding: 6rem 0;
+.card-hover:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  background: linear-gradient(135deg, var(--text-main) 0%, #434343 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+.badge-yellow {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Animations */
+.page-transition {
+  animation: pageEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1.25rem;
+  }
+  .section-padding {
+    padding: 3rem 0;
+  }
+}
+
+/* ============================================
+   Modern Button System (shared across app)
+   ============================================ */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #FFD43B, #FAB005);
+  color: #1f2937;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(250, 176, 5, 0.25);
+  transition: all 0.15s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(250, 176, 5, 0.35);
+}
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.btn-secondary:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+  background: #fafafa;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  color: #6b7280;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-ghost:hover { background: #f3f4f6; color: #1f2937; }
+
+/* ============================================
+   Modern Card System
+   ============================================ */
+.card {
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+.card:hover {
+  border-color: #e5e7eb;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* ============================================
+   Section Header (used in Home + others)
+   ============================================ */
+.section-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.section-header h2 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0.5rem 0;
+  letter-spacing: -0.5px;
+}
+.section-header > p {
+  color: var(--text-muted, #6b7280);
+  max-width: 580px;
+  margin: 0 auto;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* ============================================
+   Smooth focus rings (a11y)
+   ============================================ */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-offset: 0;
+}
+
+/* ============================================
+   Selection
+   ============================================ */
+::selection {
+  background: rgba(255, 212, 59, 0.4);
+  color: #1f2937;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

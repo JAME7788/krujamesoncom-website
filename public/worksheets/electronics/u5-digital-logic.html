@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงานอิเล็กทรอนิกส์ 5: ดิจิทัลและลอจิกเกต</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: #fff; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30,41,59,.08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 24px 0 10px; font-size: 18px; color: #0f766e; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 42px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: center; vertical-align: top; }
+    th { background: #ecfeff; }
+    .left { text-align: left; }
+    .write { min-height: 48px; }
+    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 5: เลขฐานสองและลอจิกเกต</h1>
+    <p>เป้าหมาย: นักเรียนแปลงเลขฐานสองพื้นฐาน สร้าง truth table และอธิบาย AND, OR, NOT, NAND ได้</p>
+    <div class="meta">
+      <div class="box">ชื่อ: ....................................</div>
+      <div class="box">ชั้น: ................ เลขที่: ........</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>แปลงเลขฐานสิบเป็นฐานสอง</h2>
+    <table>
+      <thead><tr><th>เลขฐานสิบ</th><th>เลขฐานสอง</th><th>วิธีคิดสั้น ๆ</th></tr></thead>
+      <tbody>
+        <tr><td>5</td><td class="write"></td><td class="write left"></td></tr>
+        <tr><td>13</td><td class="write"></td><td class="write left"></td></tr>
+        <tr><td>25</td><td class="write"></td><td class="write left"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Truth Table</h2>
+    <table>
+      <thead><tr><th>A</th><th>B</th><th>AND</th><th>OR</th><th>NAND</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>0</td><td></td><td></td><td></td></tr>
+        <tr><td>0</td><td>1</td><td></td><td></td><td></td></tr>
+        <tr><td>1</td><td>0</td><td></td><td></td><td></td></tr>
+        <tr><td>1</td><td>1</td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+
+    <h2>ออกแบบเงื่อนไข</h2>
+    <p>ระบบประตูจะเปิดเมื่อ “มีบัตรผ่าน” และ “กดปุ่มยืนยัน” ให้วาด/เขียนสมการลอจิกที่เหมาะสม</p>
+    <div class="box" style="min-height:100px;">.......................................................................................................................................................................................</div>
+
+    <h2>คำถามท้ายงาน</h2>
+    <ol>
+      <li>ทำไมระบบดิจิทัลจึงนิยมแทนสถานะด้วย 0 และ 1</li>
+      <li>NAND gate สำคัญอย่างไรในวงจรดิจิทัล</li>
+      <li>Arduino อ่านปุ่มกดเป็นแนวคิดดิจิทัลอย่างไร</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import { db } from './firebase';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import type { StudentProgressData } from './progressService';
 
 export interface UnitScore {
   k: number; // Knowledge (Quiz score)
@@ -16,6 +17,7 @@ export interface StudentProgress {
   studentNumber: string;
   units: Record<string, UnitScore>; // key is unitNo
   totalPoints: number;
+  engagement?: StudentProgressData;
 }
 
 /**
@@ -75,16 +77,41 @@ export const getStudentProgress = async (studentId: string): Promise<StudentProg
 
 /**
  * ดึงรายชื่อนักเรียนทั้งหมดในห้องเรียนนั้น (สำหรับครู)
+ * พร้อมรวมข้อมูลความก้าวหน้าใหม่ (slides/activities/quiz history) ถ้ามี
  */
-export const getClassroomProgress = async (classroom: string): Promise<StudentProgress[]> => {
-  const q = query(collection(db, 'students'), where('classroom', '==', classroom));
-  const querySnapshot = await getDocs(q);
-  const results: StudentProgress[] = [];
-  querySnapshot.forEach((doc) => {
-    results.push(doc.data() as StudentProgress);
-  });
-  // เรียงลำดับตามเลขที่
-  return results.sort((a, b) => parseInt(a.studentNumber) - parseInt(b.studentNumber));
+export const getClassroomProgress = async (
+  classroom: string
+): Promise<(StudentProgress & { engagement?: StudentProgressData })[]> => {
+  try {
+    const q = query(collection(db, 'students'), where('classroom', '==', classroom));
+    const querySnapshot = await getDocs(q);
+    const results: (StudentProgress & { engagement?: StudentProgressData })[] = [];
+
+    // อ่านข้อมูล engagement พร้อมกันแบบ parallel
+    const promises: Promise<void>[] = [];
+    querySnapshot.forEach((d) => {
+      const student = d.data() as StudentProgress;
+      promises.push(
+        (async () => {
+          try {
+            const progRef = doc(db, 'progress', student.id);
+            const progSnap = await getDoc(progRef);
+            if (progSnap.exists()) {
+              student.engagement = progSnap.data() as StudentProgressData;
+            }
+          } catch {
+            // ignore — แค่ engagement หาย ไม่กระทบ K/P/A
+          }
+          results.push(student);
+        })()
+      );
+    });
+    await Promise.all(promises);
+    return results.sort((a, b) => parseInt(a.studentNumber) - parseInt(b.studentNumber));
+  } catch (e) {
+    console.error('getClassroomProgress error', e);
+    return [];
+  }
 };
 
 /**

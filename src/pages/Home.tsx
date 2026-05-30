@@ -1,21 +1,27 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, Play, Book, BarChart3, UploadCloud, ShieldCheck, Heart, Users, Target, Zap, Globe } from 'lucide-react';
+import { ChevronRight, Play, Book, BarChart3, UploadCloud, ShieldCheck, Heart, Users, Target, Zap, Globe, Sparkles } from 'lucide-react';
 import LeaderboardSection from '../components/LeaderboardSection';
+import AnnouncementBanner from '../components/AnnouncementBanner';
 import './Home.css';
 
 const Home: React.FC = () => {
+  const navigate = useNavigate();
   const goals = [
-    { title: 'พัฒนาการคิดเชิงคำนวณ', desc: 'เน้นการแก้ปัญหาอย่างเป็นขั้นตอนและเป็นระบบ', icon: <Zap /> },
-    { title: 'ต่อยอดสู่อาชีพดิจิทัล', desc: 'เตรียมทักษะพื้นฐานสำหรับอาชีพในอนาคต', icon: <Target /> },
-    { title: 'ทักษะศตวรรษที่ 21', desc: 'ส่งเสริมการคิดวิเคราะห์ ความคิดสร้างสรรค์', icon: <Users /> },
-    { title: 'การรู้เท่าทันสื่อ', desc: 'กรองข้อมูล วิเคราะห์ความน่าเชื่อถือ', icon: <Globe /> },
-    { title: 'จริยธรรมและความปลอดภัย', desc: 'เข้าใจกฎหมายคอมพิวเตอร์และมารยาททางสังคม', icon: <ShieldCheck /> },
-    { title: 'ตระหนักต่อสิ่งแวดล้อม', desc: 'รับรู้ผลกระทบของเทคโนโลยีต่อโลก', icon: <Heart /> },
+    { title: 'พัฒนาการคิดเชิงคำนวณ', desc: 'เน้นการแก้ปัญหาอย่างเป็นขั้นตอนและเป็นระบบ เพื่อรากฐานที่แข็งแกร่ง', icon: <Zap /> },
+    { title: 'ต่อยอดสู่อาชีพดิจิทัล', desc: 'เตรียมทักษะพื้นฐานสำหรับสายงานเทคโนโลยีในอนาคต', icon: <Target /> },
+    { title: 'ทักษะศตวรรษที่ 21', desc: 'ส่งเสริมการคิดวิเคราะห์ และความคิดสร้างสรรค์ที่ไร้ขีดจำกัด', icon: <Users /> },
+    { title: 'การรู้เท่าทันสื่อ', desc: 'คัดกรองข้อมูล และวิเคราะห์ความน่าเชื่อถือในโลกออนไลน์', icon: <Globe /> },
+    { title: 'จริยธรรมความปลอดภัย', desc: 'เข้าใจกฎหมายคอมพิวเตอร์และมารยาทการใช้สื่อสังคมออนไลน์', icon: <ShieldCheck /> },
+    { title: 'รับผิดชอบต่อส่วนรวม', desc: 'ตระหนักถึงผลกระทบของเทคโนโลยีที่มีต่อสิ่งแวดล้อมและโลก', icon: <Heart /> },
   ];
 
   return (
-    <div className="home-page">
+    <div className="home-page page-transition">
+      <div className="container" style={{ paddingTop: '5rem' }}>
+        <AnnouncementBanner />
+      </div>
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-shape"></div>
@@ -23,36 +29,36 @@ const Home: React.FC = () => {
           <motion.div 
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
             className="hero-text"
           >
-            <span className="badge">Kru James Soncom • ห้องเรียนครูเจมส์</span>
-            <h1>เรียน เทคโนโลยี <span>ไปทำไม?</span></h1>
+            <span className="badge-yellow"><Sparkles size={16} /> Kru James Soncom • ห้องเรียนเทคโนโลยี</span>
+            <h1>เรียนเทคโนโลยี <span>ไปทำไม?</span></h1>
             <p>
               "การเรียนเทคโนโลยีไม่ใช่เพียงเพื่อการเป็นผู้ใช้งาน แต่เพื่อให้ผู้เรียน 
-              <strong> คิดเป็น ทำเป็น และใช้อย่างรู้เท่าทัน</strong> เพื่อพัฒนาคุณภาพชีวิตและสังคมอย่างยั่งยืน"
+              <strong> คิดเป็น ทำเป็น และใช้อย่างรู้เท่าทัน</strong> เพื่อพัฒนาคุณภาพชีวิตอย่างยั่งยืน"
             </p>
             <div className="hero-btns">
-              <button className="btn-primary" onClick={() => window.location.href='/courses'}>
-                เข้าสู่บทเรียน <ChevronRight size={20} />
+              <button className="btn-primary" onClick={() => navigate('/courses')}>
+                เริ่มเข้าสู่บทเรียน <ChevronRight size={20} />
               </button>
               <button className="btn-secondary" onClick={() => window.open('https://www.youtube.com/watch?v=TJpkm-WDRHU', '_blank')}>
-                <Play size={18} /> ดูวงิดีโอแนะนำ
+                <Play size={18} fill="currentColor" /> วิดีโอแนะนำ
               </button>
             </div>
           </motion.div>
           
           <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
+            initial={{ opacity: 0, scale: 0.9, rotate: 5 }}
+            animate={{ opacity: 1, scale: 1, rotate: 3 }}
+            transition={{ duration: 1, ease: "easeOut" }}
             className="hero-image"
           >
-            <div className="img-card glass">
+            <div className="img-card">
               <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600" alt="Technology Classroom" />
               <div className="card-badge">
                  <div className="pulse"></div>
-                 Active Learning
+                 Active Learning Mode
               </div>
             </div>
           </motion.div>
@@ -62,17 +68,23 @@ const Home: React.FC = () => {
       {/* Intro Video Section */}
       <section className="video-section section-padding">
         <div className="container">
-          <div className="video-container glass">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="video-container glass"
+          >
              <iframe 
                 width="100%" 
-                height="500" 
+                height="550" 
                 src="https://www.youtube.com/embed/TJpkm-WDRHU" 
                 title="ทำไมต้องเรียนวิชา เทคโนโลยี" 
                 frameBorder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowFullScreen
+                style={{ borderRadius: 'var(--radius-lg)' }}
              ></iframe>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -80,18 +92,22 @@ const Home: React.FC = () => {
       <section className="goals section-padding">
         <div className="container">
           <div className="section-header">
+            <span className="badge-yellow">Our Vision</span>
             <h2>เป้าหมายการเรียนรู้ 6 ประการ</h2>
-            <p>มุ่งเน้นการพัฒนาผู้เรียนให้พร้อมสำหรับโลกอนาคต</p>
+            <p>มุ่งเน้นการพัฒนาผู้เรียนให้มีความพร้อมและก้าวทันโลกอนาคตที่เปลี่ยนแปลงอย่างรวดเร็ว</p>
           </div>
           
           <div className="goals-grid">
             {goals.map((goal, i) => (
               <motion.div 
                 key={i}
-                whileHover={{ y: -5 }}
-                className="goal-card glass"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="goal-card"
               >
-                <div className="goal-icon">{goal.icon}</div>
+                <div className="goal-icon"><div className="f-icon">{goal.icon}</div></div>
                 <h3>{goal.title}</h3>
                 <p>{goal.desc}</p>
               </motion.div>
@@ -100,80 +116,62 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Curriculum Detail */}
-      <section className="curriculum section-padding">
-        <div className="container">
-          <div className="curriculum-split">
-             <div className="curriculum-item glass">
-                <div className="c-tag">ว 4.1</div>
-                <h3>การออกแบบและเทคโนโลยี</h3>
-                <p>เน้นความหมายของเทคโนโลยี ระบบเทคโนโลยี การเปลี่ยนแปลง ผลกระทบ และ <strong>กระบวนการออกแบบเชิงวิศวกรรม (6 ขั้นตอน)</strong></p>
-                <ul>
-                   <li>วัสดุ อุปกรณ์ และเครื่องมือพื้นฐาน</li>
-                   <li>กลไก ไฟฟ้า และอิเล็กทรอนิกส์</li>
-                </ul>
-             </div>
-             <div className="curriculum-item glass">
-                <div className="c-tag">ว 4.2</div>
-                <h3>วิทยาการคำนวณ</h3>
-                <p>เน้น 3 เสาหลักสำคัญ เพื่อการแก้ปัญหาอย่างเป็นระบบ:</p>
-                <div className="c-sub-grid">
-                   <div className="c-sub">
-                      <h4>Computer Science</h4>
-                      <p>การคิดเชิงคำนวณ การเขียนโปรแกรม (Coding)</p>
-                   </div>
-                   <div className="c-sub">
-                      <h4>ICT</h4>
-                      <p>การจัดการข้อมูล การสืบค้น และระบบคอมพิวเตอร์</p>
-                   </div>
-                   <div className="c-sub">
-                      <h4>Digital Literacy</h4>
-                      <p>การใช้เทคโนโลยีอย่างปลอดภัย มีจริยธรรม</p>
-                   </div>
-                </div>
-             </div>
-          </div>
-        </div>
-      </section>
-
       {/* Features Grid */}
-      <section className="features section-padding">
+      <section className="features section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container">
           <div className="section-header">
-            <h2>ฟีเจอร์เด่นของห้องเรียนออนไลน์</h2>
-            <p>ทุกเครื่องมือที่จำเป็นสำหรับการเรียนการสอนยุคใหม่</p>
+            <span className="badge-yellow">Platform Features</span>
+            <h2>ห้องเรียนออนไลน์ 4.0</h2>
+            <p>เครื่องมือล้ำสมัยที่ช่วยให้การเรียนรู้วิชาเทคโนโลยีเป็นเรื่องสนุกและเข้าถึงง่าย</p>
           </div>
           
           <div className="features-grid">
-            <div className="feature-card glass">
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="feature-card"
+            >
                <div className="f-icon"><Book size={32} /></div>
                <h3>คลังสื่อการสอน</h3>
-               <p>วิดีโอ ใบงาน และบทเรียนแบบ Interactive ครบทุกระดับชั้น</p>
-            </div>
-            <div className="feature-card glass">
+               <p>วิดีโอ ใบงาน และบทเรียนแบบ Interactive ครบทุกระดับชั้น ตั้งแต่ ป.1 - ม.3</p>
+            </motion.div>
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="feature-card"
+            >
                <div className="f-icon"><BarChart3 size={32} /></div>
-               <h3>ระบบดูคะแนน</h3>
-               <p>ติดตามผลการเรียนและความก้าวหน้าของตัวเองได้แบบเรียลไทม์</p>
-            </div>
-            <div className="feature-card glass">
+               <h3>ระบบติดตามผล</h3>
+               <p>ดูคะแนนสะสม ความก้าวหน้า และอันดับของตัวเองได้แบบเรียลไทม์</p>
+            </motion.div>
+            <motion.div 
+              whileHover={{ y: -10 }}
+              className="feature-card"
+            >
                <div className="f-icon"><UploadCloud size={32} /></div>
-               <h3>ส่งงานออนไลน์</h3>
-               <p>ส่งการบ้านและโครงงานได้ง่ายๆ พร้อมระบบตรวจและให้คำแนะนำ</p>
-            </div>
+               <h3>Digital Sandbox</h3>
+               <p>พื้นที่สำหรับส่งงานและโครงงานดิจิทัล พร้อมระบบ AI ช่วยให้คำแนะนำเบื้องต้น</p>
+            </motion.div>
           </div>
         </div>
       </section>
 
       <LeaderboardSection />
 
-
-
       {/* CTA Section */}
-      <section className="cta">
-        <div className="container cta-box glass">
-          <h2>พร้อมที่จะพัฒนาทักษะดิจิทัลหรือยัง?</h2>
-          <p>เข้าใช้งานด้วยชื่อและเลขที่ เพื่อเริ่มเก็บคะแนนสะสมได้ทันที</p>
-          <button className="btn-primary" onClick={() => window.location.href='/login'}>เข้าสู่ห้องเรียนเลย</button>
+      <section className="cta section-padding">
+        <div className="container">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="cta-box"
+          >
+            <h2>พร้อมเริ่มเรียนหรือยัง?</h2>
+            <p>ใช้ชื่อและเลขที่ของคุณ เพื่อเข้าสู่ระบบและเริ่มเก็บคะแนนสะสมจากการเรียนได้ทันที</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+              <button className="btn-secondary" onClick={() => navigate('/login')}>เข้าสู่ระบบ</button>
+              <button className="btn-primary" style={{ background: 'var(--secondary)', color: 'white' }} onClick={() => navigate('/courses')}>ไปที่คอร์สเรียน</button>
+            </div>
+          </motion.div>
         </div>
       </section>
     </div>

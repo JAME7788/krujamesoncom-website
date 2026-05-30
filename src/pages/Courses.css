@@ -1,46 +1,68 @@
 .courses-header {
   text-align: center;
-  margin-bottom: 4rem;
+  margin-bottom: 6rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .courses-header h1 {
-  font-size: 3rem;
+  font-size: 3.5rem;
   font-weight: 800;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
+  letter-spacing: -1px;
 }
 
 .courses-header h1 span {
   color: var(--primary);
 }
 
+.courses-header p {
+  font-size: 1.15rem;
+  color: var(--text-muted);
+}
+
+.badge {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 .course-tabs {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 50px;
-  max-width: 700px;
+  gap: 12px;
+  padding: 8px;
+  background: var(--surface);
+  border-radius: var(--radius-full);
+  width: fit-content;
   margin: 0 auto 4rem;
 }
 
 .tab-btn {
-  padding: 12px 24px;
-  border-radius: 40px;
-  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
   color: var(--text-muted);
   background: transparent;
-  transition: var(--transition);
+  transition: var(--transition-fast);
+  font-size: 0.95rem;
 }
 
 .tab-btn:hover {
-  color: var(--primary);
-  background: rgba(139, 0, 0, 0.05);
+  color: var(--text-main);
+  background: white;
 }
 
 .tab-btn.active {
-  background: var(--primary);
-  color: white;
-  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
+  background: white;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
 }
 
 /* New Course Cards */
@@ -152,4 +174,84 @@ a.btn-enroll-new {
     padding: 8px 16px;
     font-size: 0.9rem;
   }
+}
+
+/* ===== Course access gate (ยังไม่ login) ===== */
+.course-gate {
+  max-width: 600px;
+  margin: 4rem auto;
+  padding: 3rem 2rem;
+  background: white;
+  border-radius: 24px;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+}
+.gate-icon {
+  width: 100px; height: 100px;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #d97706;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.course-gate h1 {
+  font-size: 1.6rem;
+  margin: 0 0 0.5rem;
+}
+.course-gate > p {
+  color: #6b7280;
+  margin-bottom: 2rem;
+}
+.gate-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+.gate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.85rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+.gate-btn.primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+.gate-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.3); }
+.gate-btn.secondary {
+  background: white;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+.gate-btn.secondary:hover { border-color: #6366f1; color: #6366f1; }
+
+.gate-info {
+  text-align: left;
+  background: #f9fafb;
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid #f3f4f6;
+}
+.gate-info h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+.gate-info ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.88rem;
+  line-height: 1.8;
+  color: #374151;
 }

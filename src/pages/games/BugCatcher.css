@@ -1,0 +1,61 @@
+/* ===== Bug Catcher ===== */
+.bug-arena {
+  position: relative;
+  width: 100%;
+  height: 540px;
+  background:
+    linear-gradient(180deg, #166534 0%, #15803d 50%, #14532d 100%);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.05) 0, transparent 50px),
+    radial-gradient(circle at 80% 70%, rgba(255,255,255,0.05) 0, transparent 50px),
+    linear-gradient(180deg, #166534 0%, #15803d 50%, #14532d 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: crosshair;
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.3);
+}
+
+.bug {
+  position: absolute;
+  border: 0;
+  background: transparent;
+  border-radius: 50%;
+  cursor: crosshair;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+  animation: bug-spawn 0.2s ease-out;
+}
+@keyframes bug-spawn {
+  from { transform: scale(0) rotate(-180deg); }
+  to { transform: scale(1) rotate(0deg); }
+}
+.bug:hover { transform: scale(1.1); }
+.bug:active { transform: scale(0.85); }
+
+.bug-fast { animation: bug-spawn 0.2s ease-out, bug-wiggle 0.3s ease-in-out infinite alternate; }
+@keyframes bug-wiggle {
+  to { transform: rotate(15deg); }
+}
+.bug-good {
+  animation: bug-spawn 0.2s ease-out, bug-fly 1s ease-in-out infinite alternate;
+}
+@keyframes bug-fly {
+  to { transform: translateY(-12px) scale(1.05); }
+}
+
+.bug-particle {
+  position: absolute;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fbbf24;
+  pointer-events: none;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  animation: particle-rise 0.7s ease-out forwards;
+}
+@keyframes particle-rise {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-50px); opacity: 0; }
+}

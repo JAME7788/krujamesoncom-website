@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงาน Arduino 4: Serial Monitor และ PWM</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: white; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30, 41, 59, .08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 26px 0 10px; font-size: 18px; color: #1f4ea3; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 34px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #eef4ff; text-align: left; }
+    .write { min-height: 44px; }
+    code, pre { font-family: Consolas, monospace; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow: auto; }
+    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } pre { white-space: pre-wrap; color: #111827; background: #f1f5f9; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 4: ใช้ Serial Monitor และ PWM ปรับความสว่าง LED</h1>
+    <p>เป้าหมาย: นักเรียนอ่านค่าจาก input แสดงผลใน Serial Monitor และใช้ PWM ควบคุม output ได้</p>
+    <div class="meta">
+      <div class="box">ชื่อ: ....................................</div>
+      <div class="box">ชั้น: ................ เลขที่: ........</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>แนวคิดสำคัญ</h2>
+    <ul>
+      <li>Serial Monitor ช่วยดูค่าจริงที่บอร์ดอ่านได้</li>
+      <li>analogRead อ่านค่า 0-1023</li>
+      <li>analogWrite ใช้ค่า 0-255 กับขา PWM</li>
+      <li>map() ใช้แปลงช่วงค่าจากช่วงหนึ่งไปอีกช่วงหนึ่ง</li>
+    </ul>
+
+    <h2>ภารกิจทดลอง</h2>
+    <ol>
+      <li>ต่อ potentiometer เข้าขา A0</li>
+      <li>ต่อ LED พร้อมตัวต้านทานเข้าขา PWM เช่น 9</li>
+      <li>พิมพ์ค่าจาก A0 ใน Serial Monitor</li>
+      <li>แปลงค่า 0-1023 เป็น 0-255 เพื่อปรับความสว่าง LED</li>
+    </ol>
+    <pre>sensorValue = analogRead(A0);
+brightness = map(sensorValue, 0, 1023, 0, 255);
+analogWrite(9, brightness);</pre>
+
+    <h2>ตารางบันทึกผล</h2>
+    <table>
+      <thead><tr><th>ตำแหน่งปุ่มหมุน</th><th>ค่า analogRead</th><th>ค่า PWM</th><th>ความสว่าง LED</th></tr></thead>
+      <tbody>
+        <tr><td>ต่ำ</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>กลาง</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>สูง</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>เพิ่มความท้าทาย</h2>
+    <p>เพิ่มเงื่อนไขให้ LED ติดเฉพาะเมื่อค่า analogRead มากกว่า 600 แล้วอธิบายว่า threshold นี้เหมาะสมหรือไม่</p>
+    <div class="box" style="min-height:80px;">คำอธิบาย: ..............................................................................................................................................................</div>
+
+    <h2>จำลองวงจร</h2>
+    <ul>
+      <li>Wokwi Arduino UNO: https://wokwi.com/projects/new/arduino-uno</li>
+      <li>Tinkercad Circuits: https://www.tinkercad.com/circuits</li>
+    </ul>
+
+    <h2>คำถามท้ายงาน</h2>
+    <ol>
+      <li>Serial Monitor ช่วย debug อย่างไร</li>
+      <li>PWM แตกต่างจากการเปิดปิดปกติอย่างไร</li>
+      <li>ทำไมต้องแปลงค่า 0-1023 เป็น 0-255 ก่อนใช้ analogWrite</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

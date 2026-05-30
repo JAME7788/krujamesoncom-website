@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงาน Arduino 2: Blink โปรแกรมแรก</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: white; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30, 41, 59, .08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 26px 0 10px; font-size: 18px; color: #1f4ea3; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 34px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #eef4ff; text-align: left; }
+    .write { min-height: 42px; }
+    code, pre { font-family: Consolas, monospace; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow: auto; }
+    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } pre { white-space: pre-wrap; color: #111827; background: #f1f5f9; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 2: Blink โปรแกรมแรกของ Arduino</h1>
+    <p>เป้าหมาย: นักเรียนตั้งค่า Arduino IDE อัปโหลด Blink และอธิบายผลของการเปลี่ยนค่า delay ได้</p>
+    <div class="meta">
+      <div class="box">ชื่อ: ....................................</div>
+      <div class="box">ชั้น: ................ เลขที่: ........</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>ก่อนเริ่มทดลอง</h2>
+    <ol>
+      <li>เสียบบอร์ด Arduino กับคอมพิวเตอร์</li>
+      <li>เปิด Arduino IDE และเลือก Board ให้ตรงกับบอร์ด</li>
+      <li>เลือก Port ที่ปรากฏเมื่อเสียบบอร์ด</li>
+      <li>เปิดตัวอย่าง File > Examples > 01.Basics > Blink</li>
+    </ol>
+
+    <h2>โค้ดที่ต้องเข้าใจ</h2>
+    <pre>void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1000);
+}</pre>
+
+    <h2>ภารกิจทดลอง</h2>
+    <table>
+      <thead><tr><th>รอบทดลอง</th><th>delay ตอนติด</th><th>delay ตอนดับ</th><th>ผลที่สังเกตได้</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>1000</td><td>1000</td><td class="write"></td></tr>
+        <tr><td>2</td><td>500</td><td>500</td><td class="write"></td></tr>
+        <tr><td>3</td><td>200</td><td>200</td><td class="write"></td></tr>
+        <tr><td>4</td><td>2000</td><td>500</td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>จำลองวงจร</h2>
+    <ul>
+      <li>Wokwi: https://wokwi.com/projects/new/arduino-uno</li>
+      <li>Tinkercad Circuits: https://www.tinkercad.com/circuits</li>
+    </ul>
+
+    <h2>คำถามท้ายงาน</h2>
+    <ol>
+      <li>setup() และ loop() ต่างกันอย่างไร</li>
+      <li>ถ้าเลือก Port ผิด จะส่งผลต่อการอัปโหลดอย่างไร</li>
+      <li>ถ้าต้องการให้ไฟติดนานกว่าดับ ควรแก้โค้ดบรรทัดใด</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

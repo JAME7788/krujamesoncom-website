@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, ChevronRight, CheckCircle2, XCircle, Timer, Award } from 'lucide-react';
+import { CheckCircle2, XCircle, Timer, Award } from 'lucide-react';
 import './Quiz.css';
 
 const Quiz: React.FC = () => {
+  const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [showScore, setShowScore] = useState(false);
   const [score, setScore] = useState(0);
@@ -75,7 +77,7 @@ const Quiz: React.FC = () => {
             <p className="feedback">
               {score === questions.length ? "ยอดเยี่ยมมาก! คุณเข้าใจบทเรียนนี้อย่างถ่องแท้" : "เก่งมาก! ลองทบทวนส่วนที่ผิดเพื่อคะแนนที่ดียิ่งขึ้น"}
             </p>
-            <button className="btn-primary" onClick={() => window.location.href = '/dashboard'}>
+            <button className="btn-primary" onClick={() => navigate('/dashboard')}>
               กลับไปยังแดชบอร์ด
             </button>
           </motion.div>

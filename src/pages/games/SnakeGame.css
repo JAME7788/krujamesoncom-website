@@ -1,0 +1,70 @@
+/* ===== Snake Game ===== */
+.snake-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.snake-board {
+  position: relative;
+  display: grid;
+  gap: 1px;
+  background: #1f2937;
+  padding: 4px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 540px;
+  aspect-ratio: 1;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.snake-cell {
+  background: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  border-radius: 2px;
+}
+.snake-cell.head {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  font-size: 1rem;
+  border-radius: 6px;
+  z-index: 2;
+}
+.snake-cell.body {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-radius: 4px;
+}
+.snake-cell.food {
+  font-size: 1rem;
+  animation: food-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes food-pulse {
+  to { transform: scale(1.2); }
+}
+
+.snake-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0.5rem;
+}
+.snake-btn {
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+  user-select: none;
+}
+.snake-btn:active {
+  transform: scale(0.92);
+}

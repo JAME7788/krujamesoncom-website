@@ -1,0 +1,186 @@
+/* ===== Coding Maze ===== */
+.maze-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+.maze-side, .prog-side {
+  background: white;
+  padding: 1.25rem;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+}
+.maze-side h3, .prog-side h3 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.maze-hint {
+  font-size: 0.85rem;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin: 0 0 1rem;
+}
+
+.maze-grid {
+  display: grid;
+  gap: 2px;
+  background: #1f2937;
+  padding: 4px;
+  border-radius: 8px;
+  margin: 0 auto;
+}
+.maze-cell {
+  aspect-ratio: 1;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  position: relative;
+}
+.maze-cell.maze-wall { background: #4b5563; }
+.maze-cell.maze-path { background: #f9fafb; }
+.maze-cell.maze-start { background: #dcfce7; }
+.maze-cell.maze-goal { background: #fef3c7; }
+.maze-cell.maze-star { background: #fef9c3; }
+.robot {
+  font-size: 1.6rem;
+  animation: robot-bounce 0.5s ease-in-out infinite alternate;
+}
+@keyframes robot-bounce {
+  to { transform: translateY(-4px); }
+}
+
+.maze-msg {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef3c7;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+.maze-msg.success { background: #dcfce7; color: #166534; }
+.maze-msg.fail { background: #fee2e2; color: #991b1b; }
+
+/* Block palette */
+.block-palette {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.block-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: white;
+  transition: transform 0.1s;
+}
+.block-btn:hover:not(:disabled) { transform: translateY(-2px); }
+.block-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.block-up { background: #3b82f6; }
+.block-down { background: #f59e0b; }
+.block-left { background: #ec4899; }
+.block-right { background: #22c55e; }
+.block-loop { background: #8b5cf6; }
+
+.program-area {
+  min-height: 120px;
+  background: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+.program-blocks {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.prog-block {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: white;
+  font-weight: 800;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.prog-block:hover { transform: scale(0.95); }
+.prog-block.active {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px white, 0 0 0 5px #fbbf24;
+}
+.prog-up { background: #3b82f6; }
+.prog-down { background: #f59e0b; }
+.prog-left { background: #ec4899; }
+.prog-right { background: #22c55e; }
+.prog-arrow { font-size: 1.3rem; line-height: 1; }
+.prog-loop {
+  font-size: 0.75rem;
+  background: rgba(255,255,255,0.3);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.prog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.level-nav {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+.level-nav h4 { margin: 0 0 0.5rem; }
+.level-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.level-pill {
+  padding: 6px 12px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.level-pill:hover { border-color: #6366f1; }
+.level-pill.active {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+.level-pill.solved {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #166534;
+}
+.level-pill.active.solved {
+  background: #22c55e;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .maze-container { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงาน Arduino 7: จอแสดงผล LCD/OLED และ I2C</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: white; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30, 41, 59, .08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 26px 0 10px; font-size: 18px; color: #1f4ea3; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    code { background: #eef4ff; border-radius: 5px; padding: 1px 5px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 42px; }
+    .hint { background: #f8fbff; border-left: 4px solid #2563eb; margin: 14px 0; padding: 10px 14px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #eef4ff; text-align: left; }
+    .write { min-height: 46px; }
+    .sketch { min-height: 130px; }
+    @media print {
+      body { background: white; }
+      main { padding: 0; }
+      .sheet { box-shadow: none; border: 0; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 7: แสดงข้อมูลจาก Arduino ด้วย LCD/OLED และ I2C</h1>
+    <p>เป้าหมาย: นักเรียนต่อจอแสดงผลกับ Arduino ได้ อธิบายหน้าที่ของสาย I2C ได้ และนำข้อมูลจากตัวแปรหรือเซนเซอร์ไปแสดงเป็นข้อความที่อ่านเข้าใจง่าย</p>
+    <div class="meta">
+      <div class="box">ชื่อ: ....................................</div>
+      <div class="box">ชั้น: ................ เลขที่: ........</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>ความรู้ก่อนลงมือ</h2>
+    <div class="hint">
+      จอ LCD/OLED ทำหน้าที่เป็น Output เหมือน Serial Monitor แต่เห็นผลบนชิ้นงานจริงได้ทันที ส่วน I2C ช่วยลดจำนวนสายสัญญาณ โดยใช้สายหลักเพียง SDA และ SCL สำหรับส่งข้อมูลระหว่างบอร์ดกับจอ
+    </div>
+    <ol>
+      <li><code>VCC</code> จ่ายไฟให้โมดูลจอ</li>
+      <li><code>GND</code> ต่อกราวด์ร่วมกับ Arduino</li>
+      <li><code>SDA</code> เป็นสายส่งข้อมูล</li>
+      <li><code>SCL</code> เป็นสายนาฬิกาที่ช่วยกำหนดจังหวะการสื่อสาร</li>
+    </ol>
+
+    <h2>อุปกรณ์</h2>
+    <table>
+      <thead><tr><th>อุปกรณ์</th><th>จำนวน</th><th>หน้าที่</th></tr></thead>
+      <tbody>
+        <tr><td>Arduino Uno หรือบอร์ดเทียบเท่า</td><td>1</td><td>ประมวลผลและสั่งให้จอแสดงข้อความ</td></tr>
+        <tr><td>LCD 16x2 I2C หรือ OLED I2C</td><td>1</td><td>แสดงข้อความ ค่าตัวเลข หรือสถานะของระบบ</td></tr>
+        <tr><td>สาย Jumper</td><td>4 เส้นขึ้นไป</td><td>เชื่อมต่อไฟเลี้ยงและสัญญาณ I2C</td></tr>
+        <tr><td>เซนเซอร์ที่เลือกใช้ เช่น DHT22, LDR, Potentiometer</td><td>1</td><td>สร้างข้อมูลสำหรับนำไปแสดงบนจอ</td></tr>
+      </tbody>
+    </table>
+
+    <h2>แผนการต่อวงจร</h2>
+    <table>
+      <thead><tr><th>ขาจอ I2C</th><th>ต่อกับ Arduino Uno</th><th>ตรวจแล้ว</th><th>หมายเหตุ</th></tr></thead>
+      <tbody>
+        <tr><td>VCC</td><td>5V หรือ 3.3V ตามชนิดจอ</td><td>□</td><td class="write"></td></tr>
+        <tr><td>GND</td><td>GND</td><td>□</td><td class="write"></td></tr>
+        <tr><td>SDA</td><td>A4</td><td>□</td><td class="write"></td></tr>
+        <tr><td>SCL</td><td>A5</td><td>□</td><td class="write"></td></tr>
+      </tbody>
+    </table>
+    <div class="box sketch" style="margin-top:10px;">พื้นที่วาดผังวงจรหรือแปะภาพจาก Wokwi/Tinkercad: ...............................................................................................................................</div>
+
+    <h2>ภารกิจที่ 1: แสดงข้อความคงที่</h2>
+    <ol>
+      <li>เขียนโปรแกรมให้บรรทัดแรกแสดงชื่อกลุ่มหรือชื่อโครงงาน</li>
+      <li>เขียนโปรแกรมให้บรรทัดที่สองแสดงสถานะ เช่น Ready, Testing, หรือ Hello</li>
+      <li>ปรับตำแหน่งข้อความให้พอดีกับจำนวนตัวอักษรบนจอ</li>
+    </ol>
+    <table>
+      <thead><tr><th>ข้อความที่ต้องการแสดง</th><th>ตำแหน่งบรรทัด/คอลัมน์</th><th>ผลที่เห็นบนจอ</th></tr></thead>
+      <tbody>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>ภารกิจที่ 2: แสดงค่าจากเซนเซอร์</h2>
+    <p>เลือกเซนเซอร์ 1 ชนิด แล้วออกแบบให้จอแสดงค่าที่อ่านได้ พร้อมหน่วยหรือคำอธิบายสั้น ๆ เพื่อให้คนอื่นเข้าใจโดยไม่ต้องเปิดโค้ดดู</p>
+    <table>
+      <thead><tr><th>เซนเซอร์</th><th>ค่าที่อ่านได้</th><th>ข้อความบนจอที่ออกแบบ</th><th>เหตุผลที่ออกแบบแบบนี้</th></tr></thead>
+      <tbody>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Checklist โค้ด</h2>
+    <table>
+      <thead><tr><th>รายการตรวจ</th><th>ผล</th><th>แก้ไขอย่างไรถ้ายังไม่ผ่าน</th></tr></thead>
+      <tbody>
+        <tr><td>เรียกใช้ไลบรารีของจอถูกต้อง</td><td>□ ผ่าน □ ยังไม่ผ่าน</td><td class="write"></td></tr>
+        <tr><td>กำหนด address ของจอถูกต้อง เช่น 0x27 หรือ 0x3F</td><td>□ ผ่าน □ ยังไม่ผ่าน</td><td class="write"></td></tr>
+        <tr><td>ใช้คำสั่งเริ่มต้นจอใน <code>setup()</code></td><td>□ ผ่าน □ ยังไม่ผ่าน</td><td class="write"></td></tr>
+        <tr><td>ข้อความไม่ยาวเกินพื้นที่จอ และอ่านง่าย</td><td>□ ผ่าน □ ยังไม่ผ่าน</td><td class="write"></td></tr>
+        <tr><td>มีการหน่วงเวลาหรืออัปเดตค่าที่เหมาะสม ไม่กระพริบเร็วเกินไป</td><td>□ ผ่าน □ ยังไม่ผ่าน</td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>ตารางทดสอบ</h2>
+    <table>
+      <thead><tr><th>ครั้งที่</th><th>สิ่งที่ทดสอบ</th><th>ผลที่คาดหวัง</th><th>ผลจริง</th><th>สรุป</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="write"></td><td class="write"></td><td class="write"></td><td>□ ผ่าน □ ปรับปรุง</td></tr>
+        <tr><td>2</td><td class="write"></td><td class="write"></td><td class="write"></td><td>□ ผ่าน □ ปรับปรุง</td></tr>
+        <tr><td>3</td><td class="write"></td><td class="write"></td><td class="write"></td><td>□ ผ่าน □ ปรับปรุง</td></tr>
+      </tbody>
+    </table>
+
+    <h2>แหล่งจำลองและเรียนรู้</h2>
+    <ul>
+      <li>Wokwi LCD 16x2 I2C: https://docs.wokwi.com/parts/wokwi-lcd1602</li>
+      <li>Wokwi Arduino Uno: https://docs.wokwi.com/parts/wokwi-arduino-uno</li>
+      <li>Tinkercad Circuits: https://www.tinkercad.com/circuits</li>
+      <li>Arduino LiquidCrystal library: https://docs.arduino.cc/libraries/liquidcrystal/</li>
+    </ul>
+
+    <h2>สะท้อนคิดท้ายงาน</h2>
+    <ol>
+      <li>I2C ช่วยให้การต่อจอสะดวกขึ้นอย่างไร</li>
+      <li>ถ้าจอไม่แสดงข้อความ นักเรียนจะตรวจอะไรก่อน 3 ข้อ</li>
+      <li>ข้อความบนจอของกลุ่มเราเหมาะกับผู้ใช้หรือยัง เพราะอะไร</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

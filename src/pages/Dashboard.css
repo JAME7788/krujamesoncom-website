@@ -203,3 +203,202 @@
   .stats-grid { grid-template-columns: 1fr; }
   .dashboard-main { grid-template-columns: 1fr; }
 }
+
+/* ========== New Progress Tracking Styles ========== */
+.unit-progress-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.unit-progress-item {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem; border-radius: 12px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid var(--border, #e5e7eb);
+  text-decoration: none; color: inherit;
+  transition: all 0.2s;
+}
+.unit-progress-item:hover { transform: translateX(4px); border-color: var(--primary, #6366f1); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.upi-emoji { font-size: 2rem; flex-shrink: 0; }
+.upi-info { flex: 1; min-width: 0; }
+.upi-info h4 { margin: 0 0 0.25rem; font-size: 0.95rem; font-weight: 700; }
+.upi-info p { margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--text-muted, #6b7280); }
+.upi-stats { display: flex; gap: 0.75rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--text-muted, #6b7280); }
+.upi-stats span { display: inline-flex; align-items: center; gap: 3px; }
+.upi-pct { flex-shrink: 0; }
+.pct-ring { position: relative; width: 56px; height: 56px; }
+.pct-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; }
+
+.empty-state { text-align: center; padding: 2rem 1rem; color: var(--text-muted, #6b7280); }
+.empty-state p { margin-bottom: 1rem; }
+.empty-state .btn-primary { display: inline-flex; align-items: center; gap: 0.5rem; }
+
+.activity-feed { display: flex; flex-direction: column; gap: 0.5rem; max-height: 480px; overflow-y: auto; }
+.activity-row { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.6rem; border-radius: 10px; transition: background 0.2s; }
+.activity-row:hover { background: rgba(0,0,0,0.03); }
+.activity-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #1f2937; }
+.activity-text { flex: 1; min-width: 0; }
+.activity-text h5 { margin: 0 0 2px; font-size: 0.85rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.activity-text p { margin: 0; font-size: 0.75rem; color: var(--text-muted, #6b7280); }
+
+.db-status.connected { color: #22c55e; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px; margin-top: 0.5rem; }
+
+/* Schedule Class Banner */
+.schedule-banner {
+  margin-bottom: 2rem;
+  border-radius: var(--radius-md);
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.schedule-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.schedule-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.schedule-badge {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  padding: 0.5rem 1rem;
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.schedule-badge-pulse {
+  width: 8px;
+  height: 8px;
+  background: #ff4757;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 71, 87, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+}
+
+.schedule-text {
+  flex: 1;
+}
+
+.schedule-text h3 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.2px;
+  color: white;
+}
+
+.schedule-text p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
+  font-weight: 550;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.schedule-countdown-box {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 0.75rem 1.5rem;
+  border-radius: 14px;
+  text-align: center;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.schedule-countdown-val {
+  font-size: 1.8rem;
+  font-weight: 800;
+  font-family: monospace;
+  letter-spacing: 1px;
+  line-height: 1;
+  margin-bottom: 2px;
+  color: white;
+}
+
+.schedule-countdown-lbl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  opacity: 0.85;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.schedule-banner-actions {
+  display: flex;
+  align-items: center;
+}
+
+.schedule-btn {
+  background: white;
+  color: #1f2937;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.schedule-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  background: #f9fafb;
+}
+
+@media (max-width: 768px) {
+  .schedule-banner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1.25rem 1.5rem;
+  }
+  .schedule-banner-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .schedule-countdown-box {
+    align-self: flex-start;
+    min-width: 0;
+    width: 100%;
+  }
+  .schedule-banner-actions {
+    margin-top: 0.5rem;
+  }
+  .schedule-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+

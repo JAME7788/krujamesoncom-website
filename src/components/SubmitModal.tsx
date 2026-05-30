@@ -25,8 +25,8 @@ const SubmitModal: React.FC<SubmitModalProps> = ({ isOpen, onClose }) => {
     
     setIsSubmitting(true);
     const result = await submitAssignment(
-      user.uid,
-      user.displayName || 'Anonymous',
+      user.id,
+      user.name || 'Anonymous',
       assignmentTitle,
       type,
       type === 'link' ? linkContent : fileContent!

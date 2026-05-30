@@ -1,97 +1,109 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Award, Crown, TrendingUp } from 'lucide-react';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { Trophy, Crown, TrendingUp, Sparkles, Medal } from 'lucide-react';
+import { getLeaderboard } from '../services/leaderboardService';
+import type { LeaderboardEntry } from '../services/leaderboardService';
+import { allClassrooms2569 } from '../data/students2569';
 import './LeaderboardSection.css';
 
-interface LeaderEntry {
-  name: string;
-  classroom: string;
-  totalPoints: number;
-  studentNumber: string;
-}
-
 const LeaderboardSection: React.FC = () => {
-  const [leaders, setLeaders] = useState<LeaderEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
+  const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
-    const fetchLeaders = async () => {
-      try {
-        const q = query(
-          collection(db, 'students'),
-          orderBy('totalPoints', 'desc'),
-          limit(5)
-        );
-        const querySnapshot = await getDocs(q);
-        const results: LeaderEntry[] = [];
-        querySnapshot.forEach((doc) => {
-          results.push(doc.data() as LeaderEntry);
-        });
-        setLeaders(results);
-      } catch (err) {
-        console.error("Error fetching leaderboard", err);
-      } finally {
-        setLoading(false);
-      }
+    const reload = () => {
+      const data = getLeaderboard({
+        classroom: filter === 'all' ? undefined : filter,
+        limit: 10,
+      });
+      setLeaders(data);
     };
-
-    fetchLeaders();
-  }, []);
-
-  if (loading) return null;
+    reload();
+    const t = setInterval(reload, 10000); // refresh every 10s
+    return () => clearInterval(t);
+  }, [filter]);
 
   return (
     <section className="leaderboard-section section-padding">
       <div className="container">
         <div className="section-header">
-          <div className="header-icon-box">
-            <Trophy className="icon-trophy" />
-          </div>
+          <span className="badge-yellow"><Trophy size={14} /> Top Achievers</span>
           <h2>ทำเนียบสุดยอด <span>นักคิดเชิงคำนวณ</span></h2>
-          <p>เหล่านักเรียนที่ทำคะแนนสะสมสูงสุด 5 อันดับแรกของโรงเรียน</p>
+          <p>นักเรียนที่ทำคะแนนสะสมสูงสุดจากการเรียนในเว็บ • อัปเดตเรียลไทม์</p>
         </div>
 
-        <div className="leaderboard-container glass">
-          <div className="leader-grid">
-            {leaders.map((leader, i) => {
-              const isFirst = i === 0;
-              const isSecond = i === 1;
-              const isThird = i === 2;
-              
-              return (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className={`leader-card ${isFirst ? 'rank-1' : ''}`}
-                >
-                  <div className="rank-badge">
-                    {isFirst ? <Crown size={24} /> : i + 1}
-                  </div>
-                  <div className="leader-avatar">
-                    {isFirst || isSecond || isThird ? <Award className={`medal-${i+1}`} /> : <div className="avatar-placeholder">{leader.name ? leader.name[0] : '?'}</div>}
-                  </div>
-                  <div className="leader-info">
-                    <h3>{leader.name}</h3>
-                    <p>ชั้น {leader.classroom} • เลขที่ {leader.studentNumber}</p>
-                  </div>
-                  <div className="leader-score">
-                    <span className="score-val">{leader.totalPoints || 0}</span>
-                    <span className="score-label">คะแนน K</span>
-                  </div>
-                  {isFirst && <div className="sparkle"></div>}
-                </motion.div>
-              );
-            })}
-          </div>
-          
-          <div className="leader-footer">
-            <p><TrendingUp size={16} /> สู้ต่อไปนะเด็กๆ คะแนนอัปเดตแบบเรียลไทม์!</p>
-          </div>
+        {/* Filter pills */}
+        <div className="lb-filter">
+          <button
+            className={`lb-pill ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            🌍 ทุกห้อง
+          </button>
+          {allClassrooms2569.map((c) => (
+            <button
+              key={c}
+              className={`lb-pill ${filter === c ? 'active' : ''}`}
+              onClick={() => setFilter(c)}
+            >
+              {c}
+            </button>
+          ))}
         </div>
+
+        {leaders.length === 0 ? (
+          <div className="lb-empty">
+            <p>🎓 ยังไม่มีข้อมูล — ให้นักเรียน login + ทำกิจกรรมในเว็บ คะแนนจะปรากฏที่นี่</p>
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="leaderboard-container"
+          >
+            <div className="leader-grid">
+              {leaders.map((leader, i) => {
+                const isFirst = i === 0;
+                const isSecond = i === 1;
+                const isThird = i === 2;
+                return (
+                  <motion.div
+                    key={leader.studentId}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05 }}
+                    className={`leader-card ${isFirst ? 'rank-1' : isSecond ? 'rank-2' : isThird ? 'rank-3' : ''}`}
+                  >
+                    <div className="rank-badge">
+                      {isFirst ? <Crown size={20} /> : isSecond || isThird ? <Medal size={18} /> : leader.rank}
+                    </div>
+                    <div className="leader-avatar">
+                      <span style={{ fontSize: '1.8rem' }}>{leader.emoji}</span>
+                    </div>
+                    <div className="leader-info">
+                      <h3>{leader.name}</h3>
+                      <p>ชั้น {leader.classroom} • เลขที่ {leader.studentNo}</p>
+                      <div className="leader-mini-stats">
+                        📄 {leader.totalSlides} • 🎮 {leader.totalActivities} • ✓ {leader.unitsCompleted}
+                      </div>
+                    </div>
+                    <div className="leader-score">
+                      <span className="score-val">{leader.totalPoints}</span>
+                      <span className="score-label">Points</span>
+                    </div>
+                    {isFirst && <div className="sparkle"><Sparkles size={16} /></div>}
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            <div className="leader-footer">
+              <p><TrendingUp size={16} /> รวม {leaders.length} อันดับ • อัปเดตทุก 10 วินาที</p>
+            </div>
+          </motion.div>
+        )}
       </div>
     </section>
   );

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงาน Arduino 3: LED ปุ่มกด และค่าแอนาลอก</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: white; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30, 41, 59, .08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 26px 0 10px; font-size: 18px; color: #1f4ea3; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 34px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #eef4ff; text-align: left; }
+    .write { min-height: 46px; }
+    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 3: ต่อวงจร LED ปุ่มกด และอ่านค่าแอนาลอก</h1>
+    <p>เป้าหมาย: นักเรียนต่อวงจรพื้นฐานบน breadboard และบันทึกผลการอ่านค่าสัญญาณ digital/analog ได้</p>
+    <div class="meta">
+      <div class="box">ชื่อ: ....................................</div>
+      <div class="box">ชั้น: ................ เลขที่: ........</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>อุปกรณ์</h2>
+    <ul>
+      <li>Arduino UNO, breadboard, สาย jumper</li>
+      <li>LED, ตัวต้านทาน 220 โอห์ม หรือใกล้เคียง</li>
+      <li>ปุ่มกด, ตัวต้านทานสำหรับ pull-down หรือใช้ INPUT_PULLUP</li>
+      <li>potentiometer หรือเซนเซอร์แสง</li>
+    </ul>
+
+    <h2>ภารกิจที่ 1: LED ภายนอก</h2>
+    <ol>
+      <li>ต่อขา digital ไปยังตัวต้านทาน แล้วต่อเข้า LED</li>
+      <li>ต่อขาอีกด้านของ LED กลับ GND</li>
+      <li>อัปโหลดโค้ดกะพริบ LED และตรวจว่าขาที่ใช้ตรงกับโค้ด</li>
+    </ol>
+    <table>
+      <thead><tr><th>ขาที่ใช้</th><th>ตัวต้านทาน</th><th>LED ติดหรือไม่</th><th>สิ่งที่แก้ไข</th></tr></thead>
+      <tbody><tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr></tbody>
+    </table>
+
+    <h2>ภารกิจที่ 2: ปุ่มกดควบคุม LED</h2>
+    <p>ทดลองอ่านค่าปุ่มใน Serial Monitor แล้วเขียนเงื่อนไขให้ LED ติดเมื่อกดปุ่ม</p>
+    <table>
+      <thead><tr><th>สถานะปุ่ม</th><th>ค่าที่อ่านได้</th><th>ผลของ LED</th><th>หมายเหตุ</th></tr></thead>
+      <tbody>
+        <tr><td>ไม่กด</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>กด</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>ภารกิจที่ 3: อ่านค่าแอนาลอก</h2>
+    <table>
+      <thead><tr><th>สถานการณ์</th><th>ค่าที่อ่านได้</th><th>ตีความหมาย</th></tr></thead>
+      <tbody>
+        <tr><td>ค่าต่ำสุด</td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>ค่ากลาง</td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>ค่าสูงสุด</td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>จำลองวงจร</h2>
+    <ul>
+      <li>Wokwi Arduino: https://wokwi.com/arduino</li>
+      <li>Tinkercad Circuits: https://www.tinkercad.com/circuits</li>
+    </ul>
+
+    <h2>คำถามท้ายงาน</h2>
+    <ol>
+      <li>ทำไม LED ต้องต่อผ่านตัวต้านทาน</li>
+      <li>ถ้าค่าปุ่มเปลี่ยนเองทั้งที่ไม่ได้กด อาจเกิดจากอะไร</li>
+      <li>ค่า analog 0-1023 ช่วยให้เราตัดสินใจเรื่องใดได้บ้าง</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

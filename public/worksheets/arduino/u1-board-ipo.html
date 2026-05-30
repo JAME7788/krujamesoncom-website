@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงาน Arduino 1: สำรวจบอร์ดและ Input Process Output</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: white; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30, 41, 59, .08); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 26px 0 10px; font-size: 18px; color: #1f4ea3; }
+    p, li { line-height: 1.65; font-size: 16px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 34px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #eef4ff; text-align: left; }
+    .write { min-height: 42px; }
+    .rubric td:first-child { width: 58%; }
+    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <h1>ใบงานที่ 1: สำรวจบอร์ด Arduino และคิดแบบ Input -> Process -> Output</h1>
+    <p>เป้าหมาย: นักเรียนอธิบายส่วนสำคัญของบอร์ด Arduino UNO และแยก input, process, output ของชิ้นงานง่าย ๆ ได้</p>
+    <div class="meta">
+      <div class="box">ชื่อ: ....................................</div>
+      <div class="box">ชั้น: ................ เลขที่: ........</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>อุปกรณ์</h2>
+    <ul>
+      <li>บอร์ด Arduino UNO หรือภาพบอร์ด Arduino UNO</li>
+      <li>ดินสอ สี หรือปากกา สำหรับทำเครื่องหมาย</li>
+      <li>ใบความรู้ส่วนประกอบบอร์ด Arduino</li>
+    </ul>
+
+    <h2>ภารกิจที่ 1: สำรวจบอร์ด</h2>
+    <p>ทำเครื่องหมายหรือเขียนตำแหน่งของส่วนประกอบต่อไปนี้: USB, ช่องจ่ายไฟ, ปุ่ม Reset, ไมโครคอนโทรลเลอร์, Digital pins, Analog pins, 5V, 3.3V และ GND</p>
+    <table>
+      <thead><tr><th>ส่วนประกอบ</th><th>หน้าที่</th><th>พบตำแหน่งแล้วหรือยัง</th></tr></thead>
+      <tbody>
+        <tr><td>USB</td><td class="write"></td><td>□ พบ □ ยังไม่พบ</td></tr>
+        <tr><td>Digital pins</td><td class="write"></td><td>□ พบ □ ยังไม่พบ</td></tr>
+        <tr><td>Analog pins</td><td class="write"></td><td>□ พบ □ ยังไม่พบ</td></tr>
+        <tr><td>5V / 3.3V / GND</td><td class="write"></td><td>□ พบ □ ยังไม่พบ</td></tr>
+      </tbody>
+    </table>
+
+    <h2>ภารกิจที่ 2: วิเคราะห์ระบบ</h2>
+    <p>เลือกสถานการณ์ 1 เรื่อง แล้วเติมตาราง เช่น ไฟเปิดเมื่อกดปุ่ม, เครื่องเตือนระยะใกล้, เครื่องรดน้ำต้นไม้อัตโนมัติ</p>
+    <table>
+      <thead><tr><th>สถานการณ์</th><th>Input</th><th>Process</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+
+    <h2>คำถามสะท้อนคิด</h2>
+    <ol>
+      <li>ไมโครคอนโทรลเลอร์ต่างจากคอมพิวเตอร์ทั่วไปอย่างไร</li>
+      <li>ทำไมวงจร Arduino จึงต้องมี GND ร่วมกัน</li>
+      <li>ก่อนเสียบไฟเข้าบอร์ด เราควรตรวจอะไรอย่างน้อย 3 อย่าง</li>
+    </ol>
+
+    <h2>เกณฑ์ประเมิน</h2>
+    <table class="rubric">
+      <tbody>
+        <tr><td>ระบุตำแหน่งและหน้าที่ส่วนประกอบสำคัญได้</td><td>□ ดีมาก □ ผ่าน □ ต้องปรับปรุง</td></tr>
+        <tr><td>แยก input, process, output ได้สมเหตุสมผล</td><td>□ ดีมาก □ ผ่าน □ ต้องปรับปรุง</td></tr>
+        <tr><td>อธิบายความปลอดภัยพื้นฐานได้</td><td>□ ดีมาก □ ผ่าน □ ต้องปรับปรุง</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>
