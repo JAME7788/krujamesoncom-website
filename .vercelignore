@@ -1,0 +1,6 @@
+CODEX_RESUME_NOTES.md
+*.xls
+*.xlsx
+temp_zip/
+dist/
+node_modules/
