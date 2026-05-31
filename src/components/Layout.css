@@ -332,7 +332,7 @@ main { flex: 1; }
   height: 4px;
   background: linear-gradient(90deg, #FAB005, #f59e0b, #eab308, #6366f1, #8b5cf6);
   width: 100%;
-  margin-top: 5rem;
+  margin-top: 2.5rem;
 }
 
 .footer {
@@ -345,9 +345,9 @@ main { flex: 1; }
 .footer .footer-content {
   display: grid;
   grid-template-columns: 1fr 1.15fr 1.15fr;
-  gap: 2.2rem; /* ปรับลดระยะห่างขอบระหว่างคอลัมน์ให้กระชับพอดี ไม่ห่างเกินไป */
-  padding-top: 5.5rem; /* เพิ่มพื้นที่ระยะห่างขอบบนเพื่อป้องกันปัญหาเนื้อหาชิดขอบบน */
-  padding-bottom: 4.5rem;
+  gap: 1.5rem; /* ปรับลดระยะห่างขอบระหว่างคอลัมน์ให้กระชับพอดี ไม่ห่างเกินไป */
+  padding-top: 2.5rem; /* เพิ่มพื้นที่ระยะห่างขอบบนเพื่อป้องกันปัญหาเนื้อหาชิดขอบบน */
+  padding-bottom: 2.5rem;
   text-align: left;
 }
 
@@ -502,7 +502,7 @@ main { flex: 1; }
 .footer-bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   background: #0b0f19;
-  padding: 2.2rem 0 4rem; /* เพิ่มพื้นที่ขอบล่างให้มีระยะห่าง (Breathing Room) ไม่ให้ชิดขอบจอเกินไป และเพื่อหลบแถบเครื่องมือส่วนขยายบราวเซอร์ */
+  padding: 1.5rem 0 2rem; /* ปรับลดพื้นที่ขอบบนและขอบล่างให้กระชับพอดี ไม่ห่างเกินไป */
   color: #64748b;
   font-size: 0.82rem;
 }
