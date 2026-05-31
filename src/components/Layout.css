@@ -344,43 +344,92 @@ main { flex: 1; }
 
 .footer .footer-content {
   display: grid;
-  grid-template-columns: 2.2fr 1fr;
-  gap: 8rem;
+  grid-template-columns: 1fr 1.15fr 1.15fr;
+  gap: 2.2rem; /* ปรับลดระยะห่างขอบระหว่างคอลัมน์ให้กระชับพอดี ไม่ห่างเกินไป */
   padding-top: 5.5rem; /* เพิ่มพื้นที่ระยะห่างขอบบนเพื่อป้องกันปัญหาเนื้อหาชิดขอบบน */
   padding-bottom: 4.5rem;
   text-align: left;
 }
 
-.footer-section {
+.footer-brand-section {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
 }
 
-.footer-section.main-info {
-  gap: 1.5rem;
+.footer-policy-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  transition: all 0.3s ease;
 }
 
-.footer-section h4 {
-  margin: 0 0 1rem;
+.footer-policy-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(250, 176, 5, 0.2);
+  transform: translateY(-2px);
+}
+
+.policy-card-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.6rem;
+  border-radius: 12px;
+}
+
+.policy-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.policy-card-info h4 {
+  margin: 0;
   font-size: 0.95rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #f1f5f9; /* Slate 100 */
-  position: relative;
-  padding-bottom: 0.65rem;
+  font-weight: 700;
+  color: #f1f5f9;
 }
 
-.footer-section h4::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 30px;
-  height: 2.5px;
-  background: #FAB005;
-  border-radius: 4px;
+.policy-card-info p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.policy-card-links {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.policy-card-links a {
+  font-size: 0.8rem;
+  color: #FAB005;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.policy-card-links a:hover {
+  opacity: 0.8;
+  color: #FAB005;
+  transform: none;
+}
+
+.non-commercial-badge {
+  font-size: 0.72rem;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .footer-section a {
@@ -802,6 +851,13 @@ main { flex: 1; }
   width: 1px;
   height: 12px;
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 1024px) {
+  .footer .footer-content {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
 }
 
 @media (max-width: 768px) {

@@ -188,27 +188,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
           
-          <div className="footer-policies-grid">
-            <div className="footer-policy-card">
-              <div className="policy-card-icon">🛡️</div>
-              <div className="policy-card-info">
-                <h4>การคุ้มครองข้อมูลส่วนบุคคล (PDPA)</h4>
-                <p>ระบบบันทึกเวลาเรียน คะแนนสะสม และแบบทดสอบของนักเรียน ได้รับการดูแลตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล เพื่อการประเมินผลสัมฤทธิ์ทางการเรียนเฉพาะบุคคล โดยไม่มีการเผยแพร่ภายนอก</p>
-                <div className="policy-card-links">
-                  <a href="#" onClick={(e) => { e.preventDefault(); setIsPrivacyOpen(true); }}>ความเป็นส่วนตัว ↗</a>
-                  <a href="#" onClick={(e) => { e.preventDefault(); setIsCookieOpen(true); }}>การใช้งานคุกกี้ 🍪</a>
-                </div>
+          <div className="footer-policy-card">
+            <div className="policy-card-icon">🛡️</div>
+            <div className="policy-card-info">
+              <h4>การคุ้มครองข้อมูลส่วนบุคคล (PDPA)</h4>
+              <p>ระบบบันทึกเวลาเรียน คะแนนสะสม และแบบทดสอบของนักเรียน ได้รับการดูแลตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล เพื่อการประเมินผลสัมฤทธิ์ทางการเรียนเฉพาะบุคคล โดยไม่มีการเผยแพร่ภายนอก</p>
+              <div className="policy-card-links">
+                <a href="#" onClick={(e) => { e.preventDefault(); setIsPrivacyOpen(true); }}>ความเป็นส่วนตัว ↗</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); setIsCookieOpen(true); }}>การใช้งานคุกกี้ 🍪</a>
               </div>
             </div>
-            
-            <div className="footer-policy-card">
-              <div className="policy-card-icon">⚖️</div>
-              <div className="policy-card-info">
-                <h4>ความโปร่งใสทางลิขสิทธิ์ (Copyright)</h4>
-                <p>เนื้อหาบทเรียน สไลด์สื่อการสอน และวิดีโอประกอบการเรียนรู้ในเว็บไซต์นี้ ได้รับการเผยแพร่ภายใต้หลักการใช้งานที่ชอบธรรม (Fair Use) เพื่อประโยชน์การศึกษาภายในโรงเรียนเท่านั้น</p>
-                <div className="policy-card-links">
-                  <span className="non-commercial-badge">🤝 กิจกรรมเพื่อการศึกษา (Non-Commercial)</span>
-                </div>
+          </div>
+          
+          <div className="footer-policy-card">
+            <div className="policy-card-icon">⚖️</div>
+            <div className="policy-card-info">
+              <h4>ความโปร่งใสทางลิขสิทธิ์ (Copyright)</h4>
+              <p>เนื้อหาบทเรียน สไลด์สื่อการสอน และวิดีโอประกอบการเรียนรู้ในเว็บไซต์นี้ ได้รับการเผยแพร่ภายใต้หลักการใช้งานที่ชอบธรรม (Fair Use) เพื่อประโยชน์การศึกษาภายในโรงเรียนเท่านั้น</p>
+              <div className="policy-card-links">
+                <span className="non-commercial-badge">🤝 กิจกรรมเพื่อการศึกษา (Non-Commercial)</span>
               </div>
             </div>
           </div>
