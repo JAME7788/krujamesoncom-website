@@ -19,6 +19,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, partner, logout } = useAuth();
   const location = useLocation();
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isCookieOpen, setIsCookieOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -170,31 +172,62 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       <main>{children}</main>
 
+      <div className="footer-top-gradient"></div>
       <footer className="footer">
         <div className="container footer-content">
-          <div className="footer-section">
+          <div className="footer-section main-info">
             <div className="footer-logo">
               <span className="logo-icon">KJ</span>
-              <strong>Kru James Learning Portal</strong>
+              <strong>Kru James Portal</strong>
             </div>
-            <p>ยกระดับการเรียนรู้วิชาเทคโนโลยีและวิทยาการคำนวณ สำหรับ ป.1 - ม.3</p>
+            <p className="footer-desc">
+              ยกระดับการเรียนรู้วิชาเทคโนโลยีและวิทยาการคำนวณ สำหรับชั้น ป.1 - ม.3 เรียนรู้อย่างสร้างสรรค์ ผ่านบอร์ดเกม เกมคอมพิวเตอร์ และนวัตกรรมใหม่ๆ 💡
+            </p>
+            <div className="footer-school-tag">
+              🏫 โรงเรียนบ้านคลองมดแดง (สพป.พิษณุโลก เขต 1)
+            </div>
           </div>
+          
           <div className="footer-section">
-            <h4>เมนู</h4>
-            <Link to="/">หน้าแรก</Link>
-            <Link to="/courses">คอร์สเรียน</Link>
-            <Link to="/resources">แหล่งเรียนรู้</Link>
-            <Link to="/games">เกมฝึก</Link>
+            <h4>เมนูหลัก</h4>
+            <Link to="/"><span className="bullet">⚡</span> หน้าแรก</Link>
+            <Link to="/courses"><span className="bullet">📚</span> คอร์สเรียนทั้งหมด</Link>
+            <Link to="/resources"><span className="bullet">🌐</span> แหล่งเรียนรู้</Link>
+            <Link to="/games"><span className="bullet">🎮</span> คลังเกมฝึกทักษะ</Link>
           </div>
+          
           <div className="footer-section">
-            <h4>ช่วยเหลือ</h4>
-            <a href="#">นโยบายความเป็นส่วนตัว</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); setIsContactOpen(true); }}>ติดต่อสอบถาม</a>
-            <Link to="/admin">สำหรับครู (Admin)</Link>
+            <h4>ช่วยเหลือ & ข้อมูล</h4>
+            <a href="#" onClick={(e) => { e.preventDefault(); setIsContactOpen(true); }}><span className="bullet">📞</span> ติดต่อครูเจมส์</a>
+            <Link to="/resources#faq"><span className="bullet">❓</span> คำถามที่พบบ่อย</Link>
+            <a href="https://g.co/kgs/DqPvxmZ" target="_blank" rel="noreferrer"><span className="bullet">📍</span> แผนที่โรงเรียน ↗</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setIsPrivacyOpen(true); }}><span className="bullet">🛡️</span> ความเป็นส่วนตัว</a>
+          </div>
+          
+          <div className="footer-section">
+            <h4>สำหรับคุณครู</h4>
+            <Link to="/admin"><span className="bullet">⚙️</span> แผงควบคุมระบบ (Admin)</Link>
+            <Link to="/admin#site"><span className="bullet">💾</span> สำรองและกู้คืนข้อมูล</Link>
+            <Link to="/admin#gradebook"><span className="bullet">📊</span> จัดการคะแนน K/P/A</Link>
+            <Link to="/admin#schedule"><span className="bullet">📅</span> ตารางเวรการสอน</Link>
           </div>
         </div>
+        
         <div className="footer-bottom">
-          <p>© 2026 Kru James Soncom • โรงเรียนบ้านคลองมดแดง • Built with ❤️ for Thai students</p>
+          <div className="container footer-bottom-inner">
+            <p className="footer-copyright">
+              © 2026 ห้องเรียนครูเจมส์. สงวนลิขสิทธิ์ทั้งหมด. จัดทำเพื่อประโยชน์ทางการเรียนการสอน
+            </p>
+            <div className="footer-policy-links">
+              <a href="#" onClick={(e) => { e.preventDefault(); setIsPrivacyOpen(true); }}>
+                นโยบายความเป็นส่วนตัว (Privacy Policy)
+              </a>
+              <span className="divider"></span>
+              <a href="#" onClick={(e) => { e.preventDefault(); setIsCookieOpen(true); }}>
+                นโยบายคุกกี้ (Cookie Policy)
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
 
@@ -254,6 +287,72 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="contact-notice">
                 💡 <strong>หมายเหตุ:</strong> นักเรียนที่ติดปัญหาระบบเช็คชื่อ คะแนน หรือการล็อกอินเข้าเรียน สามารถทักสอบถามคุณครูผ่านช่องทาง Line ID: <strong>@krujames</strong> หรือแจ้งในชั่วโมงเรียนคอมพิวเตอร์ได้โดยตรงครับ
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Policy Modal */}
+      {isPrivacyOpen && (
+        <div className="contact-overlay" onClick={() => setIsPrivacyOpen(false)}>
+          <div className="contact-modal policy-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="contact-header">
+              <h2 className="policy-title">🛡️ นโยบายความเป็นส่วนตัว (Privacy Policy)</h2>
+              <button className="contact-close-btn" onClick={() => setIsPrivacyOpen(false)} aria-label="ปิด">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="contact-body policy-body">
+              <div className="policy-section">
+                <h3>1. วัตถุประสงค์</h3>
+                <p>เว็บไซต์ห้องเรียนครูเจมส์ (krujames.com) จัดทำขึ้นเพื่อใช้ในการเรียนการสอนวิชาคอมพิวเตอร์และเทคโนโลยี โรงเรียนบ้านคลองมดแดง เพื่อช่วยบันทึกการเช็คชื่อ ส่งการบ้าน และวัดประเมินผลการเรียนรู้ของนักเรียน</p>
+              </div>
+              <div className="policy-section">
+                <h3>2. การจัดเก็บข้อมูล</h3>
+                <p>ระบบจะจัดเก็บข้อมูลพื้นฐานเฉพาะที่จำเป็น ได้แก่ ชื่อ-นามสกุล ชั้นเรียน เลขที่ บันทึกการเข้าเรียน คะแนนสอบ และคะแนนทักษะ K/P/A เพื่อประมวลผลเป็นสมุดรายงานผลการเรียนส่วนบุคคล</p>
+              </div>
+              <div className="policy-section">
+                <h3>3. ความปลอดภัยและการเผยแพร่</h3>
+                <p>ข้อมูลการเรียนทั้งหมดจะถูกจัดเก็บเป็นความลับและเข้าถึงได้โดยคุณครูผู้สอนเพื่อวัตถุประสงค์ในการประเมินผลการเรียนรู้ของนักเรียนเท่านั้น จะไม่มีการเปิดเผยข้อมูลส่วนบุคคลหรือคะแนนของนักเรียนแก่บุคคลภายนอกหรือนำไปใช้ในเชิงพาณิชย์โดยเด็ดขาด</p>
+              </div>
+              <div className="policy-section">
+                <h3>4. สิทธิ์ของนักเรียนและผู้ปกครอง</h3>
+                <p>นักเรียนและผู้ปกครองมีสิทธิ์ในการขอดูลบ หรือแก้ไขข้อมูลส่วนบุคคลให้ถูกต้องได้ทุกเมื่อ โดยสามารถแจ้งความประสงค์ผ่านคุณครูผู้สอนประจำวิชาได้โดยตรง</p>
+              </div>
+              <button className="btn-policy-close" onClick={() => setIsPrivacyOpen(false)}>
+                รับทราบและยอมรับนโยบาย
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cookie Policy Modal */}
+      {isCookieOpen && (
+        <div className="contact-overlay" onClick={() => setIsCookieOpen(false)}>
+          <div className="contact-modal policy-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="contact-header">
+              <h2 className="policy-title">🍪 นโยบายคุกกี้ (Cookie Policy)</h2>
+              <button className="contact-close-btn" onClick={() => setIsCookieOpen(false)} aria-label="ปิด">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="contact-body policy-body">
+              <div className="policy-section">
+                <h3>1. คุกกี้ (Cookies) คืออะไร?</h3>
+                <p>คุกกี้คือข้อมูลขนาดเล็กที่ถูกบันทึกไว้ในเบราว์เซอร์ของอุปกรณ์ท่านเมื่อเข้าใช้งานเว็บไซต์ เพื่อช่วยจดจำข้อมูลการตั้งค่าและประวัติการทำงานของคุณ</p>
+              </div>
+              <div className="policy-section">
+                <h3>2. คุกกี้ที่ใช้บนเว็บไซต์นี้</h3>
+                <p>เราใช้คุกกี้ประเภท <strong>"คุกกี้ที่มีความจำเป็นอย่างยิ่ง" (Essential Cookies)</strong> ซึ่งมีความสำคัญต่อการทำงานของระบบในการจดจำบัญชีเข้าใช้งานของนักเรียนเพื่อหลีกเลี่ยงการต้องเข้าสู่ระบบซ้ำทุกครั้ง และบันทึกคะแนนกิจกรรมการเรียนรู้แบบออฟไลน์/ออนไลน์</p>
+              </div>
+              <div className="policy-section">
+                <h3>3. การจัดการคุกกี้</h3>
+                <p>นักเรียนสามารถเลือกปิดหรือล้างคุกกี้ผ่านเมนูตั้งค่าความเป็นส่วนตัวในเบราว์เซอร์ของท่านได้ตลอดเวลา อย่างไรก็ดี หากท่านเลือกปฏิเสธการใช้งานคุกกี้ ฟังก์ชันการจำข้อมูลล็อกอินและคะแนนสะสมชั่วคราวบางส่วนอาจทำงานได้ไม่สมบูรณ์</p>
+              </div>
+              <button className="btn-policy-close" onClick={() => setIsCookieOpen(false)}>
+                รับทราบและยอมรับนโยบาย
+              </button>
             </div>
           </div>
         </div>
