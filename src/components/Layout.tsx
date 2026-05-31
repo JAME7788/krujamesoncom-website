@@ -175,25 +175,42 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="footer-top-gradient"></div>
       <footer className="footer">
         <div className="container footer-content">
-          <div className="footer-section main-info">
+          <div className="footer-brand-section">
             <div className="footer-logo">
               <span className="logo-icon">KJ</span>
               <strong>Kru James Portal</strong>
             </div>
             <p className="footer-desc">
-              ยกระดับการเรียนรู้วิชาเทคโนโลยีและวิทยาการคำนวณ สำหรับชั้น ป.1 - ม.3 เรียนรู้อย่างสร้างสรรค์ ผ่านบอร์ดเกม เกมคอมพิวเตอร์ และนวัตกรรมใหม่ๆ 💡
+              ระบบสารสนเทศเพื่อสนับสนุนการจัดการเรียนรู้รายวิชาเทคโนโลยีและวิทยาการคำนวณ โรงเรียนบ้านคลองมดแดง
             </p>
             <div className="footer-school-tag">
-              🏫 โรงเรียนบ้านคลองมดแดง (สพป.พิษณุโลก เขต 1)
+              🏫 โรงเรียนบ้านคลองมดแดง (สพป.กำแพงเพชร เขต 2)
             </div>
           </div>
           
-          <div className="footer-section">
-            <h4>เมนูหลัก</h4>
-            <Link to="/"><span className="bullet">⚡</span> หน้าแรก</Link>
-            <Link to="/courses"><span className="bullet">📚</span> คอร์สเรียนทั้งหมด</Link>
-            <Link to="/resources"><span className="bullet">🌐</span> แหล่งเรียนรู้</Link>
-            <Link to="/games"><span className="bullet">🎮</span> คลังเกมฝึกทักษะ</Link>
+          <div className="footer-policies-grid">
+            <div className="footer-policy-card">
+              <div className="policy-card-icon">🛡️</div>
+              <div className="policy-card-info">
+                <h4>การคุ้มครองข้อมูลส่วนบุคคล (PDPA)</h4>
+                <p>ระบบบันทึกเวลาเรียน คะแนนสะสม และแบบทดสอบของนักเรียน ได้รับการดูแลตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล เพื่อการประเมินผลสัมฤทธิ์ทางการเรียนเฉพาะบุคคล โดยไม่มีการเผยแพร่ภายนอก</p>
+                <div className="policy-card-links">
+                  <a href="#" onClick={(e) => { e.preventDefault(); setIsPrivacyOpen(true); }}>ความเป็นส่วนตัว ↗</a>
+                  <a href="#" onClick={(e) => { e.preventDefault(); setIsCookieOpen(true); }}>การใช้งานคุกกี้ 🍪</a>
+                </div>
+              </div>
+            </div>
+            
+            <div className="footer-policy-card">
+              <div className="policy-card-icon">⚖️</div>
+              <div className="policy-card-info">
+                <h4>ความโปร่งใสทางลิขสิทธิ์ (Copyright)</h4>
+                <p>เนื้อหาบทเรียน สไลด์สื่อการสอน และวิดีโอประกอบการเรียนรู้ในเว็บไซต์นี้ ได้รับการเผยแพร่ภายใต้หลักการใช้งานที่ชอบธรรม (Fair Use) เพื่อประโยชน์การศึกษาภายในโรงเรียนเท่านั้น</p>
+                <div className="policy-card-links">
+                  <span className="non-commercial-badge">🤝 กิจกรรมเพื่อการศึกษา (Non-Commercial)</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
