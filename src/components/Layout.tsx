@@ -195,22 +195,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/resources"><span className="bullet">🌐</span> แหล่งเรียนรู้</Link>
             <Link to="/games"><span className="bullet">🎮</span> คลังเกมฝึกทักษะ</Link>
           </div>
-          
-          <div className="footer-section">
-            <h4>ช่วยเหลือ & ข้อมูล</h4>
-            <a href="#" onClick={(e) => { e.preventDefault(); setIsContactOpen(true); }}><span className="bullet">📞</span> ติดต่อครูเจมส์</a>
-            <Link to="/resources#faq"><span className="bullet">❓</span> คำถามที่พบบ่อย</Link>
-            <a href="https://g.co/kgs/DqPvxmZ" target="_blank" rel="noreferrer"><span className="bullet">📍</span> แผนที่โรงเรียน ↗</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); setIsPrivacyOpen(true); }}><span className="bullet">🛡️</span> ความเป็นส่วนตัว</a>
-          </div>
-          
-          <div className="footer-section">
-            <h4>สำหรับคุณครู</h4>
-            <Link to="/admin"><span className="bullet">⚙️</span> แผงควบคุมระบบ (Admin)</Link>
-            <Link to="/admin#site"><span className="bullet">💾</span> สำรองและกู้คืนข้อมูล</Link>
-            <Link to="/admin#gradebook"><span className="bullet">📊</span> จัดการคะแนน K/P/A</Link>
-            <Link to="/admin#schedule"><span className="bullet">📅</span> ตารางเวรการสอน</Link>
-          </div>
         </div>
         
         <div className="footer-bottom">

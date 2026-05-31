@@ -344,8 +344,8 @@ main { flex: 1; }
 
 .footer .footer-content {
   display: grid;
-  grid-template-columns: 1.8fr 1fr 1fr;
-  gap: 5rem;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 8rem;
   padding-top: 5.5rem; /* เพิ่มพื้นที่ระยะห่างขอบบนเพื่อป้องกันปัญหาเนื้อหาชิดขอบบน */
   padding-bottom: 4.5rem;
   text-align: left;
