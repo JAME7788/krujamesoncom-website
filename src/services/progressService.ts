@@ -191,8 +191,7 @@ const recomputeTotals = (data: StudentProgressData) => {
 const persist = async (data: StudentProgressData) => {
   recomputeTotals(data);
   saveLocal(data);
-  // sync ใน background ไม่ block UI
-  syncToFirebase(data);
+  await syncToFirebase(data);
 };
 
 // ---------- Public API ----------
@@ -369,7 +368,13 @@ export const fetchStudentProgress = async (
       if ((remote.lastActive || 0) > (local.lastActive || 0)) {
         saveLocal(remote);
         return remote;
+      } else if ((local.lastActive || 0) > (remote.lastActive || 0)) {
+        // Local is newer! Sync back to Firestore in background
+        syncToFirebase(local);
       }
+    } else {
+      // Remote does not exist yet! Sync local to Firestore
+      syncToFirebase(local);
     }
   } catch (e) {
     console.debug('[progress] fetch failed, using local', e);

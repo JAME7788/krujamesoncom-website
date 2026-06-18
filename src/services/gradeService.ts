@@ -7,7 +7,7 @@
 //   - คำนวณคะแนนรวม + เกรด อัตโนมัติ
 
 import { db } from './firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 export type Skill = 'พอใช้' | 'ปานกลาง' | 'ดี';
 export const ACADEMIC_YEAR = '2569';
@@ -677,7 +677,7 @@ export const computeTotal = (
 };
 
 /** คะแนนเต็ม = 100 เสมอ (มาตรฐานไทย) */
-export const computeMaxTotal = (_classroom?: string, _subject?: Subject): number => {
+export const computeMaxTotal = (): number => {
   return SCORE_WEIGHT.TOTAL;
 };
 
@@ -723,8 +723,8 @@ export const fetchClassroomFromFirebase = async (
     const ref = doc(db, 'grades', docId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      const data: any = snap.data();
-      return data.students || null;
+      const data = snap.data() as { students?: StudentGrade[] } | undefined;
+      return data?.students || null;
     }
   } catch (e) {
     console.debug('grade fetch failed', e);
@@ -736,6 +736,7 @@ export const fetchClassroomFromFirebase = async (
 
 import { grades as curriculumGrades } from '../data/curriculum';
 import { loadSchedule, isInClassTime } from '../data/schedule';
+import type { StudentProgressData, ActivityLog } from './progressService';
 
 /**
  * Map ห้อง (classroom) → gradeId ใน curriculum
@@ -834,7 +835,7 @@ const findUnitsForIndicator = (id: string): { gradeId: string; unitNo: number }[
   parsed.gradeIds.forEach((gid) => {
     const grade = curriculumGrades.find((g) => g.id === gid);
     if (!grade?.units) return;
-    grade.units.forEach((u: any) => {
+    grade.units.forEach((u: { no: number; indicators?: number[] }) => {
       const inds: number[] = u.indicators || [];
       if (inds.includes(parsed.indicatorIndex)) {
         result.push({ gradeId: gid, unitNo: u.no });
@@ -852,11 +853,11 @@ const findUnitsForIndicator = (id: string): { gradeId: string; unitNo: number }[
 };
 
 /** ดึง progress data จาก localStorage ของ studentId */
-const loadProgressData = (studentId: string): any | null => {
+const loadProgressData = (studentId: string): StudentProgressData | null => {
   try {
     const raw = localStorage.getItem(`krujames_progress_${studentId}`);
     if (!raw) return null;
-    return JSON.parse(raw);
+    return JSON.parse(raw) as StudentProgressData;
   } catch {
     return null;
   }
@@ -883,7 +884,7 @@ const findProgressForStudent = (
   classroom: string,
   studentNo: number,
   name: string
-): { progress: any; matchedKey: string; matchType: 'exact' | 'number' | 'name' } | null => {
+): { progress: StudentProgressData; matchedKey: string; matchType: 'exact' | 'number' | 'name' } | null => {
   // 1) exact
   const exactId = buildStudentId(classroom, studentNo, name);
   const exactProg = loadProgressData(exactId);
@@ -893,8 +894,8 @@ const findProgressForStudent = (
   const cleanedName = name.replace(/\s/g, '').toLowerCase();
   const nameTokens = name.split(/\s+/).filter((t) => t.length > 1);
 
-  let numberMatch: { progress: any; key: string } | null = null;
-  let nameMatch: { progress: any; key: string } | null = null;
+  let numberMatch: { progress: StudentProgressData; key: string } | null = null;
+  let nameMatch: { progress: StudentProgressData; key: string } | null = null;
 
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -914,7 +915,9 @@ const findProgressForStudent = (
       try {
         const prog = JSON.parse(localStorage.getItem(key) || 'null');
         if (prog) numberMatch = { progress: prog, key };
-      } catch {}
+      } catch (e) {
+        console.error('Failed to parse progress', e);
+      }
     }
 
     // 3) match ชื่อ (ถ้ามี token ของชื่อจริงอยู่ใน key)
@@ -928,7 +931,9 @@ const findProgressForStudent = (
         try {
           const prog = JSON.parse(localStorage.getItem(key) || 'null');
           if (prog) nameMatch = { progress: prog, key };
-        } catch {}
+        } catch (e) {
+          console.error('Failed to parse progress', e);
+        }
       }
     }
   }
@@ -953,6 +958,52 @@ export const diagnoseProgress = (
   return { totalKeys: all.length, classroomKeys: inClass };
 };
 
+const progressBelongsToClassroom = (
+  data: StudentProgressData,
+  studentId: string,
+  classroom: string
+) => {
+  const id = data.studentId || studentId;
+  if (id.startsWith(`${classroom}_`)) return true;
+  const maybeClassroom = (data as StudentProgressData & { classroom?: string }).classroom;
+  return maybeClassroom === classroom;
+};
+
+const saveProgressForSync = (data: StudentProgressData, fallbackId: string) => {
+  const studentId = data.studentId || fallbackId;
+  if (!studentId) return false;
+  try {
+    localStorage.setItem(`krujames_progress_${studentId}`, JSON.stringify({ ...data, studentId }));
+    return true;
+  } catch (e) {
+    console.warn('save progress from firebase failed', e);
+    return false;
+  }
+};
+
+export const hydrateProgressFromFirebase = async (
+  classroom: string
+): Promise<{ available: boolean; downloaded: number; error?: string }> => {
+  if (!firebaseAvailable()) {
+    return { available: false, downloaded: 0, error: 'Firebase is not configured' };
+  }
+  try {
+    const snap = await getDocs(collection(db, 'progress'));
+    let downloaded = 0;
+    snap.forEach((d) => {
+      const data = d.data() as StudentProgressData;
+      const studentId = data.studentId || d.id;
+      if (!progressBelongsToClassroom(data, studentId, classroom)) return;
+      if (saveProgressForSync(data, studentId)) downloaded += 1;
+    });
+    return { available: true, downloaded };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    console.warn('fetch progress from firebase failed', e);
+    return { available: true, downloaded: 0, error };
+  }
+};
+
 /**
  * Sync K, P, A จาก progress data → grade
  * - K: คำนวณจาก best quiz score ของทุก unit ที่ map กับตัวชี้วัดนี้ (เฉลี่ย %)
@@ -970,7 +1021,7 @@ export const syncFromProgress = (
   if (!student) return { changed: 0 };
 
   // ลอง exact id ที่ส่งมาก่อน
-  let prog: any = null;
+  let prog: StudentProgressData | null = null;
   let matchType: string | undefined;
   if (studentId) {
     prog = loadProgressData(studentId);
@@ -988,7 +1039,7 @@ export const syncFromProgress = (
 
   const indicators = getIndicators(classroom, subject);
   const schedule = loadSchedule();
-  const allActivities: any[] = prog.activities || [];
+  const allActivities: ActivityLog[] = prog.activities || [];
   let changed = 0;
 
   indicators.forEach((ind) => {
@@ -1046,7 +1097,7 @@ export const syncFromProgress = (
     // เกณฑ์: เข้าเรียนในเวลาเรียน (ตาราง) + เข้าหน่วยที่เกี่ยวกับตัวชี้วัดนี้บ่อย
     // นับจำนวน "วันที่แตกต่างกัน" ที่นักเรียนทำกิจกรรมในเวลาเรียน
     const inClassDays = new Set<string>();
-    allActivities.forEach((act: any) => {
+    allActivities.forEach((act: ActivityLog) => {
       // 1) ต้องเป็นกิจกรรมในหน่วยที่ link กับตัวชี้วัดนี้
       const actKey = `${act.gradeId}_${act.unitNo}`;
       if (!linkedUnitKeys.has(actKey)) return;
@@ -1112,6 +1163,30 @@ export const syncAllFromProgress = (classroom: string, subject: Subject = 'main'
     }
   });
   return { studentsUpdated, indicatorsUpdated, notFound, matchedByExact, matchedByNumber, matchedByName };
+};
+
+export const syncAllFromProgressAsync = async (
+  classroom: string,
+  subject: Subject = 'main'
+): Promise<{
+  studentsUpdated: number;
+  indicatorsUpdated: number;
+  notFound: { no: number; name: string }[];
+  matchedByExact: number;
+  matchedByNumber: number;
+  matchedByName: number;
+  firebaseProgressAvailable: boolean;
+  firebaseProgressDownloaded: number;
+  firebaseProgressError?: string;
+}> => {
+  const remote = await hydrateProgressFromFirebase(classroom);
+  const result = syncAllFromProgress(classroom, subject);
+  return {
+    ...result,
+    firebaseProgressAvailable: remote.available,
+    firebaseProgressDownloaded: remote.downloaded,
+    firebaseProgressError: remote.error,
+  };
 };
 
 /** ดึง mapping ของ indicator → units (สำหรับแสดงในหน้าครู/นักเรียน) */

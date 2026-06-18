@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Download, Users, RefreshCw, FileSpreadsheet, BookOpen, Calculator, Printer, Plus, Trash2 } from 'lucide-react';
 import {
   loadGrades, initClassroom, updateStudentScore, updateFinalExam, updateMidtermExam,
   computeBreakdown, computeGrade, getIndicators, examMaxScores,
-  syncAllFromProgress, downloadCSV, fetchClassroomFromFirebase,
+  syncAllFromProgressAsync, downloadCSV, fetchClassroomFromFirebase,
   getLinkedUnits, diagnoseProgress, getSubjectsForClassroom, saveGrades,
   SCORE_WEIGHT, loadManualAssessments, loadManualAssessmentScores,
   createManualAssessment, deleteManualAssessment, updateManualAssessmentScore,
@@ -12,7 +12,7 @@ import {
 } from '../services/gradeService';
 import { findGrade } from '../data/curriculum';
 import { Link as LinkIcon, Info } from 'lucide-react';
-import type { StudentGrade, Skill, Subject, ManualAssessment, ManualAssessmentScores, AssessmentCategory } from '../services/gradeService';
+import type { Skill, Subject, ManualAssessment, AssessmentCategory } from '../services/gradeService';
 import { allClassrooms2569 } from '../data/students2569';
 import { loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
@@ -22,18 +22,16 @@ const students2569 = loadAllRosters();
 const GradeBook: React.FC = () => {
   const [classroom, setClassroom] = useState<string>('ป.1');
   const [subject, setSubject] = useState<Subject>('main');
-  const [grades, setGrades] = useState<StudentGrade[]>([]);
   const [loading, setLoading] = useState(false);
   const [showLinkage, setShowLinkage] = useState(false);
   const [printableMode, setPrintableMode] = useState(false);
-  const [manualAssessments, setManualAssessments] = useState<ManualAssessment[]>([]);
-  const [manualScores, setManualScores] = useState<ManualAssessmentScores>({});
   const [draftAssessment, setDraftAssessment] = useState({
     title: '',
     indicatorId: '',
     category: 'k' as AssessmentCategory,
     maxScore: 10,
   });
+  const [reloadKey, setReloadKey] = useState(0);
   const toast = useToast();
 
   const handlePrint = () => {
@@ -47,36 +45,47 @@ const GradeBook: React.FC = () => {
   const subjectsAvailable = useMemo(() => getSubjectsForClassroom(classroom), [classroom]);
   const indicators = useMemo(() => getIndicators(classroom, subject), [classroom, subject]);
 
-  useEffect(() => {
-    if (!indicators.length) return;
-    setDraftAssessment((prev) =>
-      indicators.some((ind) => ind.id === prev.indicatorId)
-        ? prev
-        : { ...prev, indicatorId: indicators[0].id }
-    );
-  }, [indicators]);
-
   // เมื่อเปลี่ยนห้อง — เลือกวิชาแรกอัตโนมัติ (main สำหรับ ป., cs สำหรับ ม.)
-  useEffect(() => {
+  const [prevClassroom, setPrevClassroom] = useState(classroom);
+  if (classroom !== prevClassroom) {
+    setPrevClassroom(classroom);
     const subs = getSubjectsForClassroom(classroom);
     if (subs.length > 0 && !subs.find((s) => s.id === subject)) {
       setSubject(subs[0].id);
     }
-  }, [classroom]);
+  }
 
-  const reload = () => {
+  // Synchronize draft assessment indicator when indicators change
+  const [prevIndicators, setPrevIndicators] = useState(indicators);
+  if (indicators !== prevIndicators) {
+    setPrevIndicators(indicators);
+    if (indicators.length > 0 && !indicators.some((ind) => ind.id === draftAssessment.indicatorId)) {
+      setDraftAssessment((prev) => ({ ...prev, indicatorId: indicators[0].id }));
+    }
+  }
+
+  const grades = useMemo(() => {
+    void reloadKey;
     let g = loadGrades(classroom, subject);
     if (g.length === 0 && students2569[classroom]) {
       g = initClassroom(classroom, subject);
     }
-    setGrades(g);
-    setManualAssessments(loadManualAssessments(classroom, subject));
-    setManualScores(loadManualAssessmentScores(classroom, subject));
-  };
+    return g;
+  }, [classroom, subject, reloadKey]);
 
-  useEffect(() => {
-    reload();
-  }, [classroom, subject]);
+  const manualAssessments = useMemo(() => {
+    void reloadKey;
+    return loadManualAssessments(classroom, subject);
+  }, [classroom, subject, reloadKey]);
+
+  const manualScores = useMemo(() => {
+    void reloadKey;
+    return loadManualAssessmentScores(classroom, subject);
+  }, [classroom, subject, reloadKey]);
+
+  const reload = () => {
+    setReloadKey((k) => k + 1);
+  };
 
   const handleK = (studentCode: string, indicatorId: string, value: string) => {
     const ind = indicators.find((i) => i.id === indicatorId);
@@ -110,22 +119,36 @@ const GradeBook: React.FC = () => {
     reload();
   };
 
-  const handleSync = () => {
-    const r = syncAllFromProgress(classroom, subject);
-    reload();
-    let msg = `🔄 ผลการนำเข้าคะแนนจากเว็บ — ${classroom}\n\n`;
-    msg += `✅ อัปเดตได้: ${r.studentsUpdated} คน (${r.indicatorsUpdated} รายการตัวชี้วัด)\n`;
-    msg += `   • Match จากชื่อตรง: ${r.matchedByExact} คน\n`;
-    msg += `   • Match จากเลขที่: ${r.matchedByNumber} คน\n`;
-    msg += `   • Match จากชื่อบางส่วน: ${r.matchedByName} คน\n\n`;
-    if (r.notFound.length > 0) {
-      msg += `⚠️ ไม่พบ progress data: ${r.notFound.length} คน\n`;
-      msg += `   (นักเรียนเหล่านี้ยังไม่ได้ login + เรียนในเว็บ)\n`;
-      if (r.notFound.length <= 10) {
-        r.notFound.forEach((n) => (msg += `   • เลข ${n.no}: ${n.name}\n`));
+  const handleSync = async () => {
+    setLoading(true);
+    try {
+      const r = await syncAllFromProgressAsync(classroom, subject);
+      reload();
+      let msg = `🔄 ผลการนำเข้าคะแนนจากเว็บ — ${classroom}\n\n`;
+      msg += `☁️ ดึง progress จาก Firebase: ${r.firebaseProgressDownloaded} คน\n`;
+      if (!r.firebaseProgressAvailable) {
+        msg += `⚠️ Firebase ยังไม่ได้ตั้งค่า ระบบใช้ข้อมูลในเครื่องนี้เท่านั้น\n`;
+      } else if (r.firebaseProgressError) {
+        msg += `⚠️ ดึง Firebase ไม่สำเร็จ: ${r.firebaseProgressError}\n`;
       }
+      msg += `✅ อัปเดตได้: ${r.studentsUpdated} คน (${r.indicatorsUpdated} รายการตัวชี้วัด)\n`;
+      msg += `   • Match จากชื่อตรง: ${r.matchedByExact} คน\n`;
+      msg += `   • Match จากเลขที่: ${r.matchedByNumber} คน\n`;
+      msg += `   • Match จากชื่อบางส่วน: ${r.matchedByName} คน\n\n`;
+      if (r.notFound.length > 0) {
+        msg += `⚠️ ไม่พบ progress data: ${r.notFound.length} คน\n`;
+        msg += `   (นักเรียนเหล่านี้ยังไม่ได้ login + เรียนในเว็บ)\n`;
+        if (r.notFound.length <= 10) {
+          r.notFound.forEach((n) => (msg += `   • เลข ${n.no}: ${n.name}\n`));
+        }
+      }
+      toast.show(msg, r.studentsUpdated > 0 ? 'success' : 'info');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.show(`นำเข้า K/P/A ไม่สำเร็จ: ${msg}`, 'error');
+    } finally {
+      setLoading(false);
     }
-    toast.show(msg, 'success');
   };
 
   const handleDiagnose = () => {
@@ -195,7 +218,7 @@ const GradeBook: React.FC = () => {
   const handleManualScore = (assessment: ManualAssessment, studentCode: string, raw: string) => {
     const score = raw.trim() === '' ? null : Number(raw);
     updateManualAssessmentScore(classroom, subject, assessment.id, studentCode, score);
-    setManualScores(loadManualAssessmentScores(classroom, subject));
+    reload();
   };
 
   const handleApplyManualAssessments = () => {
@@ -237,8 +260,8 @@ const GradeBook: React.FC = () => {
             ))}
           </select>
         </div>
-        <button className="btn-secondary" onClick={handleSync}>
-          <RefreshCw size={14} /> นำเข้า K/P/A จากเว็บ (อัตโนมัติ)
+        <button className="btn-secondary" onClick={handleSync} disabled={loading}>
+          <RefreshCw size={14} /> {loading ? 'กำลังดึงคะแนน...' : 'นำเข้า K/P/A จากเว็บ (Firebase)'}
         </button>
         <button className="btn-secondary" onClick={() => setShowLinkage(!showLinkage)}>
           <LinkIcon size={14} /> {showLinkage ? 'ซ่อน' : 'ดู'} การเชื่อมโยงตัวชี้วัด↔หน่วย
@@ -461,7 +484,7 @@ const GradeBook: React.FC = () => {
                       <div className="lc-units">
                         {units.map(({ gradeId, unitNo }) => {
                           const g = findGrade(gradeId);
-                          const unit = g?.units?.find((u: any) => u.no === unitNo);
+                          const unit = g?.units?.find((u: { no: number }) => u.no === unitNo);
                           return (
                             <a
                               key={`${gradeId}_${unitNo}`}
