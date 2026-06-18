@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../services/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -7,6 +8,7 @@ interface Student {
   name: string;
   classroom: string;
   studentNumber: string;
+  loginTime?: number;
 }
 
 interface AuthContextType {
@@ -20,8 +22,10 @@ interface AuthContextType {
     partner?: { name: string; classroom: string; studentNumber: string }
   ) => Promise<void>;
   logout: () => void;
+  clearStudentSession: () => void;
   /** คืน id ของทุกคนที่ active อยู่ตอนนี้ (1 หรือ 2) — ใช้บันทึกคะแนนให้ครบ */
   getActiveIds: () => string[];
+  persistStudent: (s: Student) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,37 +33,95 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const buildId = (name: string, classroom: string, studentNumber: string) =>
   `${classroom}_${studentNumber}_${name.replace(/\s/g, '')}`;
 
+const STUDENT_KEY = 'current_student';
 const PARTNER_KEY = 'current_partner';
+const STUDENT_SESSION_MS = 45 * 60 * 1000;
+
+const getSessionItem = (key: string) => {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setSessionItem = (key: string, value: string) => {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    localStorage.setItem(key, value);
+  }
+};
+
+const removeStudentSessionStorage = () => {
+  try {
+    sessionStorage.removeItem(STUDENT_KEY);
+    sessionStorage.removeItem(PARTNER_KEY);
+  } catch {
+    // ignore
+  }
+  localStorage.removeItem(STUDENT_KEY);
+  localStorage.removeItem(PARTNER_KEY);
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<Student | null>(null);
-  const [partner, setPartner] = useState<Student | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<Student | null>(() => {
+    const legacyStudent = localStorage.getItem(STUDENT_KEY);
+    if (legacyStudent) {
+      localStorage.removeItem(STUDENT_KEY);
+      localStorage.removeItem(PARTNER_KEY);
+    }
 
-  useEffect(() => {
-    const savedStudent = localStorage.getItem('current_student');
+    const savedStudent = getSessionItem(STUDENT_KEY);
     if (savedStudent) {
-      setUser(JSON.parse(savedStudent));
-    } else {
-      const adminSession = localStorage.getItem('krujames_admin_session_v1');
-      if (adminSession) {
-        try {
-          const parsed = JSON.parse(adminSession);
-          if (Date.now() < parsed.expiresAt) {
-            setUser({
-              id: 'admin_teacher_account',
-              name: 'คุณครู (Admin)',
-              classroom: 'ป.1',
-              studentNumber: '00',
-            });
-          }
-        } catch {}
+      try {
+        const parsed = JSON.parse(savedStudent);
+        if (parsed.loginTime && Date.now() - parsed.loginTime > STUDENT_SESSION_MS) {
+          removeStudentSessionStorage();
+          return null;
+        }
+        return parsed;
+      } catch (e) {
+        console.error('Failed to parse current student', e);
       }
     }
-    const savedPartner = localStorage.getItem(PARTNER_KEY);
-    if (savedPartner) setPartner(JSON.parse(savedPartner));
-    setLoading(false);
-  }, []);
+    const adminSession = localStorage.getItem('krujames_admin_session_v1');
+    if (adminSession) {
+      try {
+        const parsed = JSON.parse(adminSession);
+        if (Date.now() < parsed.expiresAt) {
+          return {
+            id: 'admin_teacher_account',
+            name: 'คุณครู (Admin)',
+            classroom: 'ป.1',
+            studentNumber: '00',
+          };
+        }
+      } catch (e) {
+        console.error('Failed to parse admin session', e);
+      }
+    }
+    return null;
+  });
+
+  const [partner, setPartner] = useState<Student | null>(() => {
+    const savedPartner = getSessionItem(PARTNER_KEY);
+    if (savedPartner) {
+      try {
+        const parsed = JSON.parse(savedPartner);
+        if (parsed.loginTime && Date.now() - parsed.loginTime > STUDENT_SESSION_MS) {
+          removeStudentSessionStorage();
+          return null;
+        }
+        return parsed;
+      } catch (e) {
+        console.error('Failed to parse partner', e);
+      }
+    }
+    return null;
+  });
+
+  const [loading] = useState(false);
 
   const persistStudent = async (s: Student) => {
     try {
@@ -84,8 +146,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       name,
       classroom,
       studentNumber,
+      loginTime: Date.now(),
     };
-    localStorage.setItem('current_student', JSON.stringify(main));
+    removeStudentSessionStorage();
+    setSessionItem(STUDENT_KEY, JSON.stringify(main));
     setUser(main);
     persistStudent(main);
 
@@ -95,24 +159,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: partnerInfo.name,
         classroom: partnerInfo.classroom,
         studentNumber: partnerInfo.studentNumber,
+        loginTime: Date.now(),
       };
-      localStorage.setItem(PARTNER_KEY, JSON.stringify(p));
+      setSessionItem(PARTNER_KEY, JSON.stringify(p));
       setPartner(p);
       persistStudent(p);
     } else {
+      try {
+        sessionStorage.removeItem(PARTNER_KEY);
+      } catch {
+        // ignore
+      }
       localStorage.removeItem(PARTNER_KEY);
       setPartner(null);
     }
   };
 
+  const clearStudentSession = () => {
+    removeStudentSessionStorage();
+    setUser(null);
+    setPartner(null);
+  };
+
   const logout = () => {
-    localStorage.removeItem('current_student');
-    localStorage.removeItem(PARTNER_KEY);
+    removeStudentSessionStorage();
     localStorage.removeItem('krujames_admin_session_v1');
     setUser(null);
     setPartner(null);
     window.location.reload();
   };
+
+  useEffect(() => {
+    if (!user || user.id === 'admin_teacher_account') return;
+
+    const checkSession = () => {
+      const savedStudent = getSessionItem(STUDENT_KEY);
+      if (savedStudent) {
+        try {
+          const parsed = JSON.parse(savedStudent);
+          if (parsed.loginTime && Date.now() - parsed.loginTime > STUDENT_SESSION_MS) {
+            alert('เซสชันการเรียนหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่');
+            logout();
+          }
+        } catch (e) {
+          console.error('Error checking student session expiration', e);
+        }
+      }
+    };
+
+    checkSession();
+    const interval = setInterval(checkSession, 10000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const getActiveIds = (): string[] => {
     const ids: string[] = [];
@@ -122,7 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, partner, loading, loginAsStudent, logout, getActiveIds }}>
+    <AuthContext.Provider value={{ user, partner, loading, loginAsStudent, logout, clearStudentSession, getActiveIds, persistStudent }}>
       {children}
     </AuthContext.Provider>
   );

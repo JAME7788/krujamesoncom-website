@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
@@ -17,7 +17,7 @@ const students2569 = loadAllRosters();
 type Step = 'classroom' | 'student';
 
 const Login: React.FC = () => {
-  const { user, loginAsStudent } = useAuth();
+  const { user, loginAsStudent, clearStudentSession } = useAuth();
   const [step, setStep] = useState<Step>('classroom');
   const [classroom, setClassroom] = useState<string>('');
   const [pairMode, setPairMode] = useState(false);                  // โหมดนั่งคู่
@@ -44,7 +44,23 @@ const Login: React.FC = () => {
     );
   }, [classroom, search]);
 
-  if (user) return <Navigate to="/dashboard" />;
+  useEffect(() => {
+    if (user && user.id !== 'admin_teacher_account') {
+      clearStudentSession();
+    }
+  }, [user, clearStudentSession]);
+
+  if (user?.id === 'admin_teacher_account') return <Navigate to="/dashboard" />;
+  if (user) {
+    return (
+      <div className="login-page page-transition">
+        <div className="login-bg"></div>
+        <div className="login-card">
+          <h1>กำลังเปิดหน้าเลือกนักเรียน...</h1>
+        </div>
+      </div>
+    );
+  }
 
   // คลิก card นักเรียน
   const handleCardClick = (s: StudentInfo) => {
@@ -350,7 +366,7 @@ const Login: React.FC = () => {
         </AnimatePresence>
 
         <p className="auth-footer" style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
-          <span>* ระบบจะจดจำการเข้าใช้งานในเครื่องนี้ • ครูเห็นคะแนนได้แบบเรียลไทม์</span>
+          <span>* เครื่องห้องคอมจะไม่จำชื่อนักเรียนข้ามรอบใช้งาน • ครูเห็นคะแนนได้แบบเรียลไทม์</span>
           <Link 
             to="/admin" 
             style={{ 

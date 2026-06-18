@@ -28,10 +28,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // ปิดเมนูเมื่อเปลี่ยนหน้า
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(location.pathname);
+
+  if (location.pathname !== prevPathname) {
+    setPrevPathname(location.pathname);
     setIsMenuOpen(false);
-  }, [location.pathname]);
+  }
+
 
   // Lock body scroll เมื่อเปิดเมนู
   useEffect(() => {
@@ -96,6 +99,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </span>
                   <span className="user-chip-class">{user.classroom}/{user.studentNumber}</span>
                 </div>
+                {user.id !== 'admin_teacher_account' && (
+                  <Link className="user-chip-switch" to="/login" title="เปลี่ยนนักเรียน">
+                    เปลี่ยน
+                  </Link>
+                )}
                 <button className="user-chip-logout" onClick={logout} title="ออกจากระบบ">
                   <LogOut size={14} />
                 </button>
@@ -157,9 +165,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             <div className="mobile-menu-footer">
               {user ? (
-                <button className="btn-logout-full" onClick={() => { logout(); setIsMenuOpen(false); }}>
-                  <LogOut size={16} /> ออกจากระบบ
-                </button>
+                <>
+                  {user.id !== 'admin_teacher_account' && (
+                    <Link className="btn-login-full" to="/login" onClick={() => setIsMenuOpen(false)}>
+                      <GraduationCap size={16} /> เปลี่ยนนักเรียน
+                    </Link>
+                  )}
+                  <button className="btn-logout-full" onClick={() => { logout(); setIsMenuOpen(false); }}>
+                    <LogOut size={16} /> ออกจากระบบ
+                  </button>
+                </>
               ) : (
                 <Link to="/login" className="btn-login-full">
                   <GraduationCap size={16} /> เข้าสู่ระบบ
