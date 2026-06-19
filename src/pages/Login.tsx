@@ -18,6 +18,7 @@ type Step = 'classroom' | 'student';
 
 const Login: React.FC = () => {
   const { user, loginAsStudent, clearStudentSession } = useAuth();
+  const [loginReady, setLoginReady] = useState(false);
   const [step, setStep] = useState<Step>('classroom');
   const [classroom, setClassroom] = useState<string>('');
   const [pairMode, setPairMode] = useState(false);                  // โหมดนั่งคู่
@@ -48,19 +49,23 @@ const Login: React.FC = () => {
     if (user && user.id !== 'admin_teacher_account') {
       clearStudentSession();
     }
-  }, [user, clearStudentSession]);
+    setLoginReady(true);
+    // Run once on page entry. After a new login succeeds, user changes and should navigate to Dashboard.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (user?.id === 'admin_teacher_account') return <Navigate to="/dashboard" />;
-  if (user) {
+  if (!loginReady) {
     return (
       <div className="login-page page-transition">
         <div className="login-bg"></div>
         <div className="login-card">
-          <h1>กำลังเปิดหน้าเลือกนักเรียน...</h1>
+          <h1>กำลังเตรียมหน้าเลือกนักเรียน...</h1>
         </div>
       </div>
     );
   }
+  if (user?.id === 'admin_teacher_account') return <Navigate to="/dashboard" />;
+  if (user) return <Navigate to="/dashboard" />;
 
   // คลิก card นักเรียน
   const handleCardClick = (s: StudentInfo) => {
