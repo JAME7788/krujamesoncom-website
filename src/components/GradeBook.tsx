@@ -32,8 +32,10 @@ const GradeBook: React.FC = () => {
     maxScore: 10,
   });
   const [reloadKey, setReloadKey] = useState(0);
+  const [loadedGradebookKey, setLoadedGradebookKey] = useState('');
   const toast = useToast();
   const gradebookKey = `${classroom}_${subject}`;
+  const gradebookReady = loadedGradebookKey === gradebookKey;
 
   const handlePrint = () => {
     setPrintableMode(true);
@@ -89,6 +91,7 @@ const GradeBook: React.FC = () => {
 
     const loadRemoteFirst = async () => {
       setLoading(true);
+      setLoadedGradebookKey('');
       try {
         const remote = await fetchClassroomFromFirebase(classroom, subject);
         if (cancelled) return;
@@ -98,12 +101,14 @@ const GradeBook: React.FC = () => {
         } else if (loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
           initClassroom(classroom, subject);
         }
-        reload();
+        setLoadedGradebookKey(gradebookKey);
+        setReloadKey((k) => k + 1);
       } catch (e) {
         if (!cancelled && loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
           initClassroom(classroom, subject);
-          reload();
+          setReloadKey((k) => k + 1);
         }
+        if (!cancelled) setLoadedGradebookKey(gradebookKey);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -331,7 +336,13 @@ const GradeBook: React.FC = () => {
       )}
 
       {/* Info */}
-      {indicators.length === 0 ? (
+      {!gradebookReady ? (
+        <div className="empty-state-card">
+          <RefreshCw size={48} style={{ color: '#6366f1' }} />
+          <h3>กำลังดึงคะแนนจาก Firebase...</h3>
+          <p>รอสักครู่ ระบบกำลังโหลดคะแนนจริงของห้อง {classroom}</p>
+        </div>
+      ) : indicators.length === 0 ? (
         <div className="empty-state-card">
           <FileSpreadsheet size={48} style={{ color: '#6b7280' }} />
           <h3>ยังไม่มีตัวชี้วัดสำหรับชั้น {classroom}</h3>
