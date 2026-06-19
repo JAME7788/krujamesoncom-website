@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Download, Users, RefreshCw, FileSpreadsheet, BookOpen, Calculator, Printer, Plus, Trash2 } from 'lucide-react';
 import {
   loadGrades, initClassroom, updateStudentScore, updateFinalExam, updateMidtermExam,
@@ -33,6 +33,7 @@ const GradeBook: React.FC = () => {
   });
   const [reloadKey, setReloadKey] = useState(0);
   const toast = useToast();
+  const gradebookKey = `${classroom}_${subject}`;
 
   const handlePrint = () => {
     setPrintableMode(true);
@@ -66,11 +67,7 @@ const GradeBook: React.FC = () => {
 
   const grades = useMemo(() => {
     void reloadKey;
-    let g = loadGrades(classroom, subject);
-    if (g.length === 0 && students2569[classroom]) {
-      g = initClassroom(classroom, subject);
-    }
-    return g;
+    return loadGrades(classroom, subject);
   }, [classroom, subject, reloadKey]);
 
   const manualAssessments = useMemo(() => {
@@ -86,6 +83,37 @@ const GradeBook: React.FC = () => {
   const reload = () => {
     setReloadKey((k) => k + 1);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRemoteFirst = async () => {
+      setLoading(true);
+      try {
+        const remote = await fetchClassroomFromFirebase(classroom, subject);
+        if (cancelled) return;
+
+        if (remote && remote.length > 0) {
+          saveGrades(classroom, remote, subject);
+        } else if (loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
+          initClassroom(classroom, subject);
+        }
+        reload();
+      } catch (e) {
+        if (!cancelled && loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
+          initClassroom(classroom, subject);
+          reload();
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadRemoteFirst();
+    return () => {
+      cancelled = true;
+    };
+  }, [gradebookKey]);
 
   const handleK = (studentCode: string, indicatorId: string, value: string) => {
     const ind = indicators.find((i) => i.id === indicatorId);
