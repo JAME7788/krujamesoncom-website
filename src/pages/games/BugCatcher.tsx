@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Play, Trophy, Heart, Clock } from 'lucide-react';
+import { useGameProgress } from '../../hooks/useGameProgress';
 import './GameStyles.css';
 import './BugCatcher.css';
 
@@ -23,8 +24,14 @@ const BugCatcher: React.FC = () => {
   const [bestScore, setBestScore] = useState(() => parseInt(localStorage.getItem('kj_bug_best') || '0'));
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; emoji: string; ts: number }[]>([]);
   const arenaRef = useRef<HTMLDivElement>(null);
+  const runningRef = useRef(running);
+  const recordGame = useGameProgress('bug-catcher', 'จับบั๊ก');
+  useEffect(() => {
+    runningRef.current = running;
+  }, [running]);
 
   const start = () => {
+    recordGame();
     setScore(0);
     setLives(3);
     setTime(0);
@@ -35,22 +42,26 @@ const BugCatcher: React.FC = () => {
     setParticles([]);
   };
 
+  const endGame = () => {
+    setRunning(false);
+    setScore((s) => {
+      setBestScore((currentBest) => {
+        if (s > currentBest) {
+          localStorage.setItem('kj_bug_best', String(s));
+          return s;
+        }
+        return currentBest;
+      });
+      return s;
+    });
+  };
+
   // Time + game over check
   useEffect(() => {
     if (!running) return;
     const t = setInterval(() => setTime((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [running]);
-
-  useEffect(() => {
-    if (lives <= 0 && running) {
-      setRunning(false);
-      if (score > bestScore) {
-        setBestScore(score);
-        localStorage.setItem('kj_bug_best', String(score));
-      }
-    }
-  }, [lives, running, score, bestScore]);
 
   // Spawn bugs
   useEffect(() => {
@@ -78,11 +89,18 @@ const BugCatcher: React.FC = () => {
       // Auto remove
       const lifetime = type === 'fast' ? 800 : type === 'big' ? 1200 : type === 'good' ? 1500 : 1500;
       setTimeout(() => {
+        if (!runningRef.current) return;
         setBugs((prev) => {
           const exists = prev.find((b) => b.id === bug.id);
           if (exists && exists.type !== 'good') {
             // bug หนีไป — เสียชีวิต
-            setLives((l) => Math.max(0, l - 1));
+            setLives((l) => {
+              const next = Math.max(0, l - 1);
+              if (next <= 0) {
+                endGame();
+              }
+              return next;
+            });
             setCombo(0);
           }
           return prev.filter((b) => b.id !== bug.id);
@@ -106,7 +124,13 @@ const BugCatcher: React.FC = () => {
     e.stopPropagation();
     if (bug.type === 'good') {
       // ตีผีเสื้อ — เสียคะแนน
-      setLives((l) => Math.max(0, l - 1));
+      setLives((l) => {
+        const next = Math.max(0, l - 1);
+        if (next <= 0) {
+          endGame();
+        }
+        return next;
+      });
       setCombo(0);
       setParticles((p) => [...p, { id: Date.now(), x: bug.x, y: bug.y, emoji: '💔', ts: Date.now() }]);
     } else {

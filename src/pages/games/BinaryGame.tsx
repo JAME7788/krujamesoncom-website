@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, Lightbulb } from 'lucide-react';
+import { useGameProgress } from '../../hooks/useGameProgress';
 import './GameStyles.css';
 
 const binToDec = (bin: string) => parseInt(bin, 2);
 
 const BinaryGame: React.FC = () => {
-  const [target, setTarget] = useState(0);
+  const [target, setTarget] = useState(() => Math.floor(Math.random() * 256));
   const [bits, setBits] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0]);
   const [checked, setChecked] = useState<'correct' | 'wrong' | null>(null);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [showHelp, setShowHelp] = useState(true);
   const [bestStreak, setBestStreak] = useState(() => parseInt(localStorage.getItem('kj_bin_best') || '0'));
+  const recordGame = useGameProgress('binary', 'แปลงเลขฐานสอง');
 
   const newRound = () => {
     setTarget(Math.floor(Math.random() * 256));
@@ -20,9 +22,6 @@ const BinaryGame: React.FC = () => {
     setChecked(null);
   };
 
-  useEffect(() => {
-    newRound();
-  }, []);
 
   const toggle = (idx: number) => {
     if (checked === 'correct') return;
@@ -36,6 +35,7 @@ const BinaryGame: React.FC = () => {
 
   const check = () => {
     if (current === target) {
+      recordGame(score + 10);
       setChecked('correct');
       setScore((s) => s + 10);
       setStreak((st) => {

@@ -101,6 +101,15 @@ const GradeBook: React.FC = () => {
         } else if (loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
           initClassroom(classroom, subject);
         }
+
+        // Pull the latest lesson/game progress into K/P/A whenever the teacher opens a gradebook.
+        try {
+          await syncAllFromProgressAsync(classroom, subject);
+        } catch (syncError) {
+          console.debug('Auto progress sync skipped', syncError);
+        }
+        if (cancelled) return;
+
         setLoadedGradebookKey(gradebookKey);
         setReloadKey((k) => k + 1);
       } catch (e) {

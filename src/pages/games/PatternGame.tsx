@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
+import { useGameProgress } from '../../hooks/useGameProgress';
 import './GameStyles.css';
 
 interface Pattern {
@@ -96,6 +97,7 @@ const PatternGame: React.FC = () => {
   const [level, setLevel] = useState(0);
   const [round, setRound] = useState(1);
   const [bestStreak, setBestStreak] = useState(() => parseInt(localStorage.getItem('kj_pat_best') || '0'));
+  const recordGame = useGameProgress('pattern', 'หาแพทเทิร์น');
 
   const next = () => {
     const newLevel = Math.min(4, Math.floor(round / 3));
@@ -110,6 +112,7 @@ const PatternGame: React.FC = () => {
     setPicked(choice);
     setShowResult(true);
     if (choice === pattern.answer) {
+      recordGame(score + 20 + level * 5);
       setScore((s) => s + 20 + level * 5);
       setStreak((st) => {
         const ns = st + 1;

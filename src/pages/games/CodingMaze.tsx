@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Play, Trophy, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Trash2, Repeat } from 'lucide-react';
+import { useGameProgress } from '../../hooks/useGameProgress';
 import './GameStyles.css';
 import './CodingMaze.css';
 
@@ -69,38 +70,80 @@ const levels: Level[] = [
     hint: 'ขึ้นเก็บ ⭐ ก่อนแล้วค่อยลงไปเป้าหมาย',
   },
   {
-    name: 'Loop',
+    name: 'ซิกแซก',
     ...parseGrid([
       '########',
-      '#S.....#',
-      '#.####.#',
-      '#.#G.#.#',
-      '#.#..#.#',
-      '#......#',
+      '#S.#..G#',
+      '#..#.#.#',
+      '##...#.#',
       '########',
     ]),
-    maxBlocks: 30,
-    hint: 'ใช้ "ทำซ้ำ" ช่วยลดบล็อก',
+    maxBlocks: 15,
+    hint: 'ลง 1 → ขวา 1 → ลง 1 → ขวา 2 → ขึ้น 2 → ขวา 2',
+  },
+  {
+    name: 'เก็บดาวคู่',
+    ...parseGrid([
+      '#########',
+      '#S..*...#',
+      '###.###.#',
+      '#*..#G..#',
+      '#########',
+    ]),
+    maxBlocks: 25,
+    hint: 'ขวาเก็บ ⭐ บน แล้วใช้ช่องกลางลงมาเก็บ ⭐ ล่าง จากนั้นอ้อมขวาไปเป้าหมาย',
+  },
+  {
+    name: 'อุโมงค์เขาวงกต',
+    ...parseGrid([
+      '##########',
+      '#S........#',
+      '#.#######.#',
+      '#.......G.#',
+      '##########',
+    ]),
+    maxBlocks: 15,
+    hint: 'เดินเลาะอุโมงค์ด้านบนหรือล่างเพื่ออ้อมไปหาเป้าหมาย G',
+  },
+  {
+    name: 'หมุนรอบตัว',
+    ...parseGrid([
+      '#######',
+      '#S.*.G#',
+      '#.#.#.#',
+      '#*...*#',
+      '#######',
+    ]),
+    maxBlocks: 25,
+    hint: 'ใช้ช่องซ้ายหรือขวาเพื่อลงมาด้านล่างและเก็บ ⭐ ให้ครบ',
   },
 ];
 
 const CodingMaze: React.FC = () => {
   const [levelIdx, setLevelIdx] = useState(0);
+  const [prevLevelIdx, setPrevLevelIdx] = useState(0);
   const [program, setProgram] = useState<{ cmd: Cmd; loop?: number }[]>([]);
   const [running, setRunning] = useState(false);
-  const [pos, setPos] = useState<[number, number]>([0, 0]);
-  const [grid, setGrid] = useState<Cell[][]>([]);
+  const [pos, setPos] = useState<[number, number]>(() => levels[0].start);
+  const [grid, setGrid] = useState<Cell[][]>(() => levels[0].grid.map(row => [...row]));
   const [collected, setCollected] = useState(0);
   const [solved, setSolved] = useState<boolean[]>(() => Array(levels.length).fill(false));
   const [message, setMessage] = useState<string>('');
   const [stepIdx, setStepIdx] = useState(-1);
+  const recordGame = useGameProgress('coding-maze', 'Coding Maze');
 
   const level = levels[levelIdx];
 
-  // Reset on level change
-  useEffect(() => {
-    resetLevel();
-  }, [levelIdx]);
+  if (levelIdx !== prevLevelIdx) {
+    setPrevLevelIdx(levelIdx);
+    setProgram([]);
+    setPos(level.start);
+    setGrid(level.grid.map(row => [...row]));
+    setRunning(false);
+    setMessage('');
+    setStepIdx(-1);
+    setCollected(0);
+  }
 
   const resetLevel = () => {
     setProgram([]);
@@ -111,6 +154,7 @@ const CodingMaze: React.FC = () => {
     setStepIdx(-1);
     setCollected(0);
   };
+
 
   const addCmd = (cmd: Cmd) => {
     if (running) return;
@@ -140,6 +184,8 @@ const CodingMaze: React.FC = () => {
       setMessage('🤔 ต้องวางบล็อกก่อนนะ!');
       return;
     }
+    const solvedCount = solved.filter(Boolean).length;
+    recordGame(solvedCount > 0 ? solvedCount : undefined);
     setRunning(true);
     setMessage('');
     setPos(level.start);

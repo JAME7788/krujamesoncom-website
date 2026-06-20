@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, Trophy, Clock } from 'lucide-react';
+import { useGameProgress } from '../../hooks/useGameProgress';
 import './GameStyles.css';
 
 interface Target {
@@ -23,21 +24,36 @@ const MousePractice: React.FC = () => {
     parseInt(localStorage.getItem('kj_mouse_best') || '0')
   );
   const arenaRef = useRef<HTMLDivElement>(null);
+  const recordGame = useGameProgress('mouse', 'ภารกิจเมาส์แม่นยำ');
+
+  const scoreRef = useRef(score);
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
 
   // Timer
   useEffect(() => {
     if (!running) return;
-    if (time <= 0) {
-      setRunning(false);
-      if (score > bestScore) {
-        setBestScore(score);
-        localStorage.setItem('kj_mouse_best', String(score));
-      }
-      return;
-    }
-    const t = setTimeout(() => setTime(time - 1), 1000);
-    return () => clearTimeout(t);
-  }, [running, time, score, bestScore]);
+    const t = setInterval(() => {
+      setTime((prev) => {
+        if (prev <= 1) {
+          clearInterval(t);
+          setRunning(false);
+          const currentScore = scoreRef.current;
+          setBestScore((currentBest) => {
+            if (currentScore > currentBest) {
+              localStorage.setItem('kj_mouse_best', String(currentScore));
+              return currentScore;
+            }
+            return currentBest;
+          });
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [running]);
 
   // Spawn targets
   useEffect(() => {
@@ -63,6 +79,7 @@ const MousePractice: React.FC = () => {
   }, [running]);
 
   const start = () => {
+    recordGame();
     setScore(0);
     setMisses(0);
     setTime(60);

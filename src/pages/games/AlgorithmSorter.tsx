@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import { useGameProgress } from '../../hooks/useGameProgress';
 import './GameStyles.css';
 
 interface Puzzle {
@@ -74,6 +75,66 @@ const puzzles: Puzzle[] = [
       'จบโปรแกรม (Stop)',
     ],
   },
+  {
+    title: 'การแปรงฟัน',
+    emoji: '🪥',
+    steps: [
+      'บีบยาสีฟันใส่แปรงสีฟัน',
+      'บ้วนปากด้วยน้ำสะอาดรอบแรก',
+      'แปรงฟันบนและล่างให้ทั่วทุกซี่',
+      'แปรงลิ้นเบาๆ เพื่อขจัดสิ่งสกปรก',
+      'บ้วนฟองยาสีฟันทั้งหมดทิ้ง',
+      'ล้างแปรงสีฟันให้สะอาดเก็บเข้าที่',
+    ],
+  },
+  {
+    title: 'การล้างจาน',
+    emoji: '🍽️',
+    steps: [
+      'กวาดเศษอาหารทิ้งลงถังขยะ',
+      'เทน้ำยาล้างจานลงบนฟองน้ำ',
+      'บีบฟองน้ำชุบน้ำให้เกิดฟอง',
+      'ขัดถูทำความสะอาดจานให้ทั่ว',
+      'ล้างจานด้วยน้ำเปล่าจนสะอาดไร้ฟอง',
+      'คว่ำจานลงบนที่คว่ำจานเพื่อผึ่งลม',
+    ],
+  },
+  {
+    title: 'ทำผัดกะเพราไก่',
+    emoji: '🌶️',
+    steps: [
+      'โขลกพริกกับกระเทียมให้พอหยาบ',
+      'เจียวพริกกระเทียมในน้ำมันร้อนๆ',
+      'ใส่เนื้อไก่ลงไปผัดจนเริ่มสุก',
+      'ปรุงรสด้วยซอสหอยนางรมและน้ำปลา',
+      'เด็ดใบกะเพราใส่แล้วผัดเร็วๆ จากนั้นปิดไฟ',
+      'ตักราดข้าวสวยร้อนๆ พร้อมเสิร์ฟ',
+    ],
+  },
+  {
+    title: 'สมัครสมาชิกเว็บไซต์',
+    emoji: '📝',
+    steps: [
+      'เปิดหน้าลงทะเบียนของเว็บไซต์',
+      'กรอกชื่อผู้ใช้และตั้งรหัสผ่าน',
+      'กรอกอีเมลติดต่อส่วนตัว',
+      'กดยอมรับข้อตกลงและเงื่อนไข',
+      'กดปุ่มยืนยันการสมัครสมาชิก',
+      'เข้าไปกดยืนยันตัวตนในอีเมลที่ได้รับ',
+    ],
+  },
+  {
+    title: 'ตู้กดน้ำดื่มหยอดเหรียญ',
+    emoji: '🪙',
+    steps: [
+      'เดินไปที่ตู้กดน้ำ',
+      'เลือกเครื่องดื่มที่ต้องการ',
+      'ดูหน้าจอแสดงราคาที่ต้องจ่าย',
+      'หยอดเหรียญให้ครบถ้วนตามราคา',
+      'รอให้เครื่องดื่มตกลงมาที่ช่องรับ',
+      'หยิบขวดเครื่องดื่มและเงินทอน (ถ้ามี)',
+    ],
+  },
 ];
 
 // Fisher-Yates shuffle
@@ -88,17 +149,21 @@ const shuffle = <T,>(arr: T[]): T[] => {
 
 const AlgorithmSorter: React.FC = () => {
   const [puzzleIdx, setPuzzleIdx] = useState(0);
-  const [items, setItems] = useState<string[]>([]);
+  const [prevPuzzleIdx, setPrevPuzzleIdx] = useState(0);
+  const [items, setItems] = useState<string[]>(() => shuffle(puzzles[0].steps));
   const [checked, setChecked] = useState(false);
   const [score, setScore] = useState(0);
   const [solvedCount, setSolvedCount] = useState(0);
+  const recordGame = useGameProgress('algorithm', 'จัดอัลกอริทึม');
 
   const puzzle = puzzles[puzzleIdx];
 
-  useEffect(() => {
+  if (puzzleIdx !== prevPuzzleIdx) {
+    setPrevPuzzleIdx(puzzleIdx);
     setItems(shuffle(puzzle.steps));
     setChecked(false);
-  }, [puzzleIdx]);
+  }
+
 
   const move = (idx: number, dir: -1 | 1) => {
     const newIdx = idx + dir;
@@ -113,6 +178,7 @@ const AlgorithmSorter: React.FC = () => {
     setChecked(true);
     const correct = items.every((it, i) => it === puzzle.steps[i]);
     if (correct) {
+      recordGame(score + 50);
       setScore((s) => s + 50);
       setSolvedCount((c) => c + 1);
     }

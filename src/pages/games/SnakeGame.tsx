@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Play, Trophy, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useGameProgress } from '../../hooks/useGameProgress';
 import './GameStyles.css';
 import './SnakeGame.css';
 
@@ -20,7 +21,11 @@ const SnakeGame: React.FC = () => {
   const [speed, setSpeed] = useState<keyof typeof SPEEDS>('medium');
   const [bestScore, setBestScore] = useState(() => parseInt(localStorage.getItem('kj_snake_best') || '0'));
   const dirRef = useRef(dir);
-  dirRef.current = dir;
+  const recordGame = useGameProgress('snake', 'งูกินผลไม้');
+
+  useEffect(() => {
+    dirRef.current = dir;
+  }, [dir]);
 
   const randomFood = useCallback((snakeBody: Pos[]): Pos => {
     while (true) {
@@ -30,6 +35,7 @@ const SnakeGame: React.FC = () => {
   }, []);
 
   const reset = () => {
+    recordGame(score > 0 ? score : undefined);
     const initSnake = [{ x: 9, y: 9 }, { x: 8, y: 9 }, { x: 7, y: 9 }];
     setSnake(initSnake);
     setFood(randomFood(initSnake));
@@ -123,7 +129,7 @@ const SnakeGame: React.FC = () => {
         <div className="gstat">⚡ ความเร็ว:
           <select
             value={speed}
-            onChange={(e) => setSpeed(e.target.value as any)}
+            onChange={(e) => setSpeed(e.target.value as keyof typeof SPEEDS)}
             style={{ marginLeft: 6, padding: '2px 6px', border: '1px solid #d1d5db', borderRadius: 4 }}
             disabled={running}
           >

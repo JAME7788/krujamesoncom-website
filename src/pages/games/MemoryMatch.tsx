@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, Trophy, Clock } from 'lucide-react';
+import { useGameProgress } from '../../hooks/useGameProgress';
 import './GameStyles.css';
 
 const themes = {
@@ -25,8 +26,9 @@ const MemoryMatch: React.FC = () => {
   const [running, setRunning] = useState(false);
   const [theme, setTheme] = useState<keyof typeof themes>('emoji');
   const [bestMoves, setBestMoves] = useState(() => parseInt(localStorage.getItem('kj_mem_best') || '999'));
+  const recordGame = useGameProgress('memory', 'จับคู่ความจำ');
 
-  const shuffle = (arr: any[]) => {
+  const shuffle = <T,>(arr: T[]): T[] => {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -36,6 +38,7 @@ const MemoryMatch: React.FC = () => {
   };
 
   const start = (selected: keyof typeof themes = theme) => {
+    recordGame();
     const symbols = themes[selected];
     const pairs = [...symbols, ...symbols];
     const shuffled = shuffle(pairs).map((s, i) => ({ id: i, symbol: s, flipped: false, matched: false }));
@@ -58,38 +61,52 @@ const MemoryMatch: React.FC = () => {
   useEffect(() => {
     if (flipped.length !== 2) return;
     const [a, b] = flipped;
-    setMoves((m) => m + 1);
     if (cards[a].symbol === cards[b].symbol) {
       // match!
-      setTimeout(() => {
+      const t = setTimeout(() => {
         setCards((prev) => prev.map((c, i) => i === a || i === b ? { ...c, matched: true } : c));
         setFlipped([]);
         setMatches((m) => {
           const next = m + 1;
           if (next === themes[theme].length) {
             setRunning(false);
-            if (moves + 1 < bestMoves) {
-              setBestMoves(moves + 1);
-              localStorage.setItem('kj_mem_best', String(moves + 1));
-            }
+            setMoves((currentMoves) => {
+              setBestMoves((currentBest) => {
+                if (currentMoves < currentBest) {
+                  localStorage.setItem('kj_mem_best', String(currentMoves));
+                  return currentMoves;
+                }
+                return currentBest;
+              });
+              return currentMoves;
+            });
           }
           return next;
         });
       }, 500);
+      return () => clearTimeout(t);
     } else {
       // no match
-      setTimeout(() => {
+      const t = setTimeout(() => {
         setCards((prev) => prev.map((c, i) => i === a || i === b ? { ...c, flipped: false } : c));
         setFlipped([]);
       }, 1000);
+      return () => clearTimeout(t);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flipped]);
 
   const flip = (idx: number) => {
     if (flipped.length >= 2) return;
     if (cards[idx].flipped || cards[idx].matched) return;
     setCards((prev) => prev.map((c, i) => i === idx ? { ...c, flipped: true } : c));
-    setFlipped((f) => [...f, idx]);
+    setFlipped((f) => {
+      const next = [...f, idx];
+      if (next.length === 2) {
+        setMoves((m) => m + 1);
+      }
+      return next;
+    });
   };
 
   const won = matches === themes[theme].length && cards.length > 0;
