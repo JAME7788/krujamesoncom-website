@@ -61,7 +61,9 @@ const Resources: React.FC = () => {
           (g) => g.studentNo === parseInt(user.studentNumber) || g.name === user.name
         );
         if (myGrade) syncFromProgress(user.classroom, myGrade.studentCode, user.id);
-      } catch {}
+      } catch (e) {
+        console.warn('Sync student progress failed', e);
+      }
       if (partner) {
         try {
           const pGrades = loadGrades(partner.classroom);
@@ -69,7 +71,9 @@ const Resources: React.FC = () => {
             (g) => g.studentNo === parseInt(partner.studentNumber) || g.name === partner.name
           );
           if (pg) syncFromProgress(partner.classroom, pg.studentCode, partner.id);
-        } catch {}
+        } catch (e) {
+          console.warn('Sync partner progress failed', e);
+        }
       }
     }
 

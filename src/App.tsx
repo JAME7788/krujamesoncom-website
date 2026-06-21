@@ -32,6 +32,11 @@ const PatternGame = React.lazy(() => import('./pages/games/PatternGame'));
 const CodingMaze = React.lazy(() => import('./pages/games/CodingMaze'));
 const SnakeGame = React.lazy(() => import('./pages/games/SnakeGame'));
 const BugCatcher = React.lazy(() => import('./pages/games/BugCatcher'));
+const Tools = React.lazy(() => import('./pages/Tools'));
+const ParentPortal = React.lazy(() => import('./pages/ParentPortal'));
+const LiveQuizHost = React.lazy(() => import('./pages/LiveQuizHost'));
+const LiveQuizPlay = React.lazy(() => import('./pages/LiveQuizPlay'));
+const HomeworkStudent = React.lazy(() => import('./pages/HomeworkStudent'));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -73,6 +78,11 @@ function App() {
                   <Route path="/games/coding-maze" element={<ProtectedRoute><CodingMaze /></ProtectedRoute>} />
                   <Route path="/games/snake" element={<ProtectedRoute><SnakeGame /></ProtectedRoute>} />
                   <Route path="/games/bug-catcher" element={<ProtectedRoute><BugCatcher /></ProtectedRoute>} />
+                  <Route path="/tools" element={<Tools />} />
+                  <Route path="/parent/:studentId" element={<ParentPortal />} />
+                  <Route path="/live" element={<LiveQuizPlay />} />
+                  <Route path="/live/host" element={<LiveQuizHost />} />
+                  <Route path="/homework" element={<ProtectedRoute><HomeworkStudent /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

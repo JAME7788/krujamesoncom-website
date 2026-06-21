@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, BookOpen, Layers, Check, ShieldAlert } from 'lucide-react';
 import { grades } from '../data/curriculum';
 import { loadCourses } from '../services/contentService';
@@ -44,11 +44,7 @@ const LessonLockManager: React.FC = () => {
   const [selectedCourseId, setSelectedCourseId] = useState<string>(allCourses[0]?.id || '');
   
   // โหลดข้อมูลสถานะปลดล็อกรายหน่วย
-  const [unlockedMap, setUnlockedMap] = useState<Record<string, number[]>>({});
-
-  useEffect(() => {
-    setUnlockedMap(getUnlockedUnits());
-  }, []);
+  const [unlockedMap, setUnlockedMap] = useState<Record<string, number[]>>(() => getUnlockedUnits());
 
   const selectedCourse = useMemo(() => {
     return allCourses.find((c) => c.id === selectedCourseId);
@@ -72,15 +68,17 @@ const LessonLockManager: React.FC = () => {
     });
   }, [allCourses, searchTerm, activeFilter]);
 
-  // เมื่อเปลี่ยนฟิลเตอร์ ให้รีเซ็ตคอร์สที่ถูกเลือกไปยังตัวแรกในรายการที่กรองแล้ว
-  useEffect(() => {
+  const [prevFilteredCourses, setPrevFilteredCourses] = useState(filteredCourses);
+  if (filteredCourses !== prevFilteredCourses) {
+    setPrevFilteredCourses(filteredCourses);
     if (filteredCourses.length > 0) {
       const found = filteredCourses.find((c) => c.id === selectedCourseId);
       if (!found) {
         setSelectedCourseId(filteredCourses[0].id);
       }
     }
-  }, [filteredCourses, selectedCourseId]);
+  }
+
 
   // จัดการปลดล็อก/ล็อกรายหน่วย
   const handleToggleLock = (courseId: string, unitNo: number) => {

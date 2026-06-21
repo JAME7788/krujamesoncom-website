@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Plus, Trash2, Edit3, Save, X, Users, Search,
   Download, RefreshCw, ArrowRightLeft, ListOrdered,
@@ -14,7 +14,8 @@ const emojiOptions = ['👦', '👧', '🧒', '👨', '👩', '🧑', '👶', '�
 
 const StudentManager: React.FC = () => {
   const [classroom, setClassroom] = useState<string>('ป.1');
-  const [list, setList] = useState<StudentInfo[]>([]);
+  const [prevClassroom, setPrevClassroom] = useState('ป.1');
+  const [list, setList] = useState<StudentInfo[]>(() => loadRoster('ป.1'));
   const [search, setSearch] = useState('');
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -26,12 +27,14 @@ const StudentManager: React.FC = () => {
 
   const reload = () => setList(loadRoster(classroom));
 
-  useEffect(() => {
-    reload();
+  if (classroom !== prevClassroom) {
+    setPrevClassroom(classroom);
+    setList(loadRoster(classroom));
     setSearch('');
     setEditingCode(null);
     setShowAdd(false);
-  }, [classroom]);
+  }
+
 
   const filtered = useMemo(() => {
     if (!search.trim()) return list;
@@ -235,7 +238,15 @@ const StudentRow: React.FC<{
   onMove: () => void;
 }> = ({ student, isEditing, onEdit, onCancel, onSave, onDelete, onMove }) => {
   const [draft, setDraft] = useState(student);
-  useEffect(() => setDraft(student), [student, isEditing]);
+
+  // Synchronize draft student state when editing mode or student changes
+  const [prevStudent, setPrevStudent] = useState(student);
+  const [prevIsEditing, setPrevIsEditing] = useState(isEditing);
+  if (student !== prevStudent || isEditing !== prevIsEditing) {
+    setPrevStudent(student);
+    setPrevIsEditing(isEditing);
+    setDraft(student);
+  }
 
   if (!isEditing) {
     return (

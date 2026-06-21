@@ -7,6 +7,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
 import AchievementsBadge from './AchievementsBadge';
+import DarkModeToggle from './DarkModeToggle';
+import AITutor from './AITutor';
 import './Layout.css';
 
 interface LayoutProps {
@@ -42,7 +44,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => { document.body.style.overflow = ''; };
   }, [isMenuOpen]);
 
-  const navLinks = [
+  const navLinks: { name: string; path: string; icon: React.ReactNode }[] = [
     { name: 'หน้าแรก', path: '/', icon: <Home size={18} /> },
     { name: 'คอร์สเรียน', path: '/courses', icon: <Award size={18} /> },
     { name: 'แหล่งเรียนรู้', path: '/resources', icon: <Library size={18} /> },
@@ -50,6 +52,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   if (user) {
+    navLinks.push({ name: 'การบ้าน', path: '/homework', icon: <Award size={18} /> });
     navLinks.push({ name: 'แดชบอร์ด', path: '/dashboard', icon: <LayoutDashboard size={18} /> });
   }
 
@@ -80,6 +83,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* Right actions */}
           <div className="nav-actions">
             <SearchBar />
+            <DarkModeToggle />
             {user && <AchievementsBadge />}
             <button 
               className="icon-btn" 
@@ -186,6 +190,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
 
       <main>{children}</main>
+
+      {/* Floating AI Tutor (เฉพาะ login แล้ว) */}
+      {user && <AITutor />}
 
       <div className="footer-top-gradient"></div>
       <footer className="footer">

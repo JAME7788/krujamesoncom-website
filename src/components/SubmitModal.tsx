@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Link as LinkIcon, Send, CheckCircle } from 'lucide-react';
+import { X, Link as LinkIcon, Send, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { submitAssignment } from '../services/assignmentService';
 import './SubmitModal.css';
@@ -12,10 +12,8 @@ interface SubmitModalProps {
 
 const SubmitModal: React.FC<SubmitModalProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const [type, setType] = useState<'file' | 'link'>('link');
   const [assignmentTitle, setAssignmentTitle] = useState('');
   const [linkContent, setLinkContent] = useState('');
-  const [fileContent, setFileContent] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -28,8 +26,8 @@ const SubmitModal: React.FC<SubmitModalProps> = ({ isOpen, onClose }) => {
       user.id,
       user.name || 'Anonymous',
       assignmentTitle,
-      type,
-      type === 'link' ? linkContent : fileContent!
+      'link',
+      linkContent
     );
 
     if (result.success) {
@@ -39,7 +37,6 @@ const SubmitModal: React.FC<SubmitModalProps> = ({ isOpen, onClose }) => {
         onClose();
         setAssignmentTitle('');
         setLinkContent('');
-        setFileContent(null);
       }, 2000);
     }
     setIsSubmitting(false);
@@ -66,8 +63,8 @@ const SubmitModal: React.FC<SubmitModalProps> = ({ isOpen, onClose }) => {
             ) : (
               <>
                 <div className="modal-header">
-                  <h2>ส่งงานใหม่</h2>
-                  <p>เลือกประเภทงานที่คุณต้องการส่ง</p>
+                  <h2>ส่งงานใหม่ (ส่งเป็นลิงก์เท่านั้น)</h2>
+                  <p>เพื่อประหยัดพื้นที่จัดเก็บและเพิ่มความรวดเร็ว กรุณาส่งงานเป็นลิงก์</p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -82,48 +79,27 @@ const SubmitModal: React.FC<SubmitModalProps> = ({ isOpen, onClose }) => {
                     />
                   </div>
 
-                  <div className="type-toggle">
-                    <button 
-                      type="button" 
-                      className={type === 'link' ? 'active' : ''}
-                      onClick={() => setType('link')}
-                    >
-                      <LinkIcon size={18} /> แปะลิงก์ (Scratch/Canva)
-                    </button>
-                    <button 
-                      type="button" 
-                      className={type === 'file' ? 'active' : ''}
-                      onClick={() => setType('file')}
-                    >
-                      <Upload size={18} /> อัปโหลดไฟล์
-                    </button>
+                  <div className="submit-instructions">
+                    💡 <strong>คำแนะนำในการส่งรูปภาพหรือ PDF:</strong>
+                    <ol>
+                      <li>อัปโหลดรูปภาพหรือไฟล์ PDF ของนักเรียนขึ้น <strong>Google Drive</strong> หรือ <strong>Canva</strong></li>
+                      <li>ตั้งค่าให้ลิงก์เป็น <u>"ทุกคนที่มีลิงก์มีสิทธิ์อ่าน" (Anyone with the link can view)</u></li>
+                      <li>คัดลอกลิงก์นั้นมาแปะลงในช่องด้านล่างนี้</li>
+                    </ol>
                   </div>
 
-                  {type === 'link' ? (
-                    <div className="input-group">
-                      <label>ลิงก์ผลงานของคุณ</label>
-                      <input 
-                        type="url" 
-                        required 
-                        placeholder="https://..."
-                        value={linkContent}
-                        onChange={(e) => setLinkContent(e.target.value)}
-                      />
-                    </div>
-                  ) : (
-                    <div className="file-upload">
-                      <input 
-                        type="file" 
-                        id="file-input"
-                        required
-                        onChange={(e) => setFileContent(e.target.files?.[0] || null)}
-                      />
-                      <label htmlFor="file-input">
-                        <Upload size={32} />
-                        <span>{fileContent ? fileContent.name : 'คลิกเพื่อเลือกไฟล์ (PDF, PNG, JPG)'}</span>
-                      </label>
-                    </div>
-                  )}
+                  <div className="input-group">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <LinkIcon size={16} /> ลิงก์ผลงานของคุณ (Google Drive, Canva, Scratch)
+                    </label>
+                    <input 
+                      type="url" 
+                      required 
+                      placeholder="https://drive.google.com/... หรือ https://canva.com/..."
+                      value={linkContent}
+                      onChange={(e) => setLinkContent(e.target.value)}
+                    />
+                  </div>
 
                   <button className="btn-submit" disabled={isSubmitting}>
                     {isSubmitting ? 'กำลังส่งงาน...' : <><Send size={18} /> ส่งงานให้คุณครู</>}
@@ -139,3 +115,4 @@ const SubmitModal: React.FC<SubmitModalProps> = ({ isOpen, onClose }) => {
 };
 
 export default SubmitModal;
+

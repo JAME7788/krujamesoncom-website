@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Megaphone, X, Pin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getActiveAnnouncements } from '../services/announcementService';
-import type { Announcement } from '../services/announcementService';
 
 const typeStyles = {
   info:        { bg: 'linear-gradient(135deg,#dbeafe,#e0e7ff)', border: '#3b82f6', emoji: 'ℹ️' },
@@ -14,19 +13,19 @@ const typeStyles = {
 
 const AnnouncementBanner: React.FC = () => {
   const { user } = useAuth();
-  const [items, setItems] = useState<Announcement[]>([]);
+  const items = React.useMemo(() => getActiveAnnouncements(user?.classroom), [user?.classroom]);
   const [dismissed, setDismissed] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('kj_dismissed_ann') || '[]'); } catch { return []; }
   });
 
-  useEffect(() => {
-    setItems(getActiveAnnouncements(user?.classroom));
-  }, [user]);
-
   const dismiss = (id: string) => {
     const next = [...dismissed, id];
     setDismissed(next);
-    try { localStorage.setItem('kj_dismissed_ann', JSON.stringify(next)); } catch {}
+    try {
+      localStorage.setItem('kj_dismissed_ann', JSON.stringify(next));
+    } catch (e) {
+      console.debug('Dismiss storage failed', e);
+    }
   };
 
   const visible = items.filter((a) => a.pinned || !dismissed.includes(a.id));

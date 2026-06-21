@@ -65,7 +65,7 @@ const ReportCard: React.FC = () => {
 
   const findMyGrade = (subject: Subject) => {
     // Reference localGradesVersion to satisfy TypeScript compile checks and trigger updates
-    localGradesVersion;
+    void localGradesVersion;
     const grades = loadGrades(user.classroom, subject);
     return grades.find(
       (g) => g.studentNo === parseInt(user.studentNumber) || g.name === user.name

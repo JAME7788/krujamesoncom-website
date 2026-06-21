@@ -135,8 +135,13 @@ export const loadAchievements = (studentId: string): AchievementProgress => {
 };
 
 const save = (studentId: string, data: AchievementProgress) => {
-  try { localStorage.setItem(KEY(studentId), JSON.stringify(data)); } catch {}
+  try {
+    localStorage.setItem(KEY(studentId), JSON.stringify(data));
+  } catch (e) {
+    console.error('Failed to save achievements', e);
+  }
 };
+
 
 /** ตรวจสอบ achievements ใหม่ — เรียกหลังทำกิจกรรม */
 export const checkAchievements = (studentId: string): string[] => {

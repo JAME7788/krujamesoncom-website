@@ -22,7 +22,7 @@ import { findGrade } from '../data/curriculum';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import TrendChart from '../components/TrendChart';
 import { getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
-import { loadSchedule, dayNames, minutesOf } from '../data/schedule';
+import { loadSchedule, dayNames, minutesOf, fetchScheduleFromFirebase } from '../data/schedule';
 import type { ClassSlot } from '../data/schedule';
 import './Dashboard.css';
 
@@ -55,11 +55,12 @@ const timeAgo = (ts: number): string => {
 };
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, partner, persistStudent } = useAuth();
   const [summary, setSummary] = useState(() =>
     user ? getSummary(user.id) : null
   );
   const [now, setNow] = useState(new Date());
+  const [schedule, setSchedule] = useState<ClassSlot[]>(() => loadSchedule());
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -69,20 +70,36 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    const syncProgress = async () => {
+    const syncData = async () => {
       try {
+        await persistStudent(user);
+        if (partner) {
+          await persistStudent(partner);
+        }
         await fetchStudentProgress(user.id);
+        if (partner) {
+          await fetchStudentProgress(partner.id);
+        }
         setSummary(getSummary(user.id));
+        const remoteSlots = await fetchScheduleFromFirebase();
+        if (remoteSlots) {
+          setSchedule(remoteSlots);
+        }
       } catch (e) {
-        console.warn('Sync student progress failed', e);
+        console.warn('Sync student progress/schedule failed', e);
       }
     };
-    syncProgress();
+    syncData();
 
-    setSummary(getSummary(user.id));
+    setTimeout(() => {
+      if (user) setSummary(getSummary(user.id));
+    }, 0);
     // refresh ทุก 5 วิ เผื่อมี activity ใหม่จากแท็บอื่น
-    const id = setInterval(() => setSummary(getSummary(user.id)), 5000);
+    const id = setInterval(() => {
+      if (user) setSummary(getSummary(user.id));
+    }, 5000);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   if (!user || !summary) {
@@ -150,7 +167,6 @@ const Dashboard: React.FC = () => {
   const upcomingEvents = getUpcomingEvents(user.classroom, 14);
 
   // Calculate schedule information for user
-  const schedule = loadSchedule();
   const mySlots = schedule.filter((s) => s.classroom === user.classroom);
   const todayDay = now.getDay();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -485,7 +501,7 @@ const Dashboard: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {upcomingEvents.slice(0, 5).map((e) => {
                   const info = eventTypeInfo[e.type];
-                  const days = Math.ceil((new Date(e.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                  const days = Math.ceil((new Date(e.date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                   return (
                     <div key={e.id} style={{
                       display: 'flex', gap: 10, padding: 10, borderRadius: 10,

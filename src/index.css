@@ -1,5 +1,85 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap');
 
+/* ========== Dark Mode ========== */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0f172a;
+  --surface: #1e293b;
+  --card: #1e293b;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.04);
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] body {
+  background-color: #0f172a !important;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .navbar {
+  background: rgba(15, 23, 42, 0.6) !important;
+}
+html[data-theme="dark"] .navbar.scrolled {
+  background: rgba(15, 23, 42, 0.95) !important;
+}
+html[data-theme="dark"] .nav-item {
+  color: #94a3b8;
+}
+html[data-theme="dark"] .nav-item:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.05);
+}
+html[data-theme="dark"] .nav-item.active {
+  color: #fde68a;
+  background: rgba(250, 176, 5, 0.15);
+}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .glass {
+  background: #1e293b !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .footer {
+  background: linear-gradient(180deg, #0f172a 0%, #020617 100%) !important;
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html[data-theme="dark"] .btn-secondary {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html[data-theme="dark"] .icon-btn {
+  color: #94a3b8;
+}
+html[data-theme="dark"] .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .user-chip {
+  background: rgba(255, 255, 255, 0.06);
+}
+html[data-theme="dark"] .user-chip-name {
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .search-trigger {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+}
+html[data-theme="dark"] .search-kbd {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 :root {
   /* Modern Yellow & White Palette */
   --primary: #FFCC00; /* Vibrant Golden Yellow */

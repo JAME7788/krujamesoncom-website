@@ -12,7 +12,10 @@ import GradeBook from '../components/GradeBook';
 import StudentManager from '../components/StudentManager';
 import AnnouncementManager from '../components/AnnouncementManager';
 import CalendarManager from '../components/CalendarManager';
+import HomeworkManager from '../components/HomeworkManager';
+import ThemeCustomizer from '../components/ThemeCustomizer';
 import LessonLockManager from '../components/LessonLockManager';
+import SlideManager from '../components/SlideManager';
 import { loadErrors, clearErrors } from '../services/errorLogger';
 import { Megaphone, Calendar as CalIcon, Bug } from 'lucide-react';
 import { adminLogout, getAdminSession } from '../services/authAdmin';
@@ -22,12 +25,13 @@ import {
 import type { StudentRecord, AttendanceRecord } from '../services/adminService';
 import {
   loadSchedule, saveSchedule, defaultSchedule, dayNames, dayNamesShort, todaySlots,
+  fetchScheduleFromFirebase, syncScheduleToFirebase,
 } from '../data/schedule';
 import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'overview' | 'roster' | 'attendance' | 'scores' | 'gradebook' | 'development' | 'schedule' | 'courses' | 'locks' | 'announcements' | 'calendar' | 'errors' | 'site';
+type Tab = 'overview' | 'roster' | 'attendance' | 'scores' | 'gradebook' | 'development' | 'schedule' | 'courses' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -67,6 +71,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     items: [
       { id: 'courses', label: 'จัดการรายวิชา', icon: <Pencil size={16} /> },
       { id: 'locks', label: 'ปลดล็อกบทเรียน', icon: <Lock size={16} /> },
+      { id: 'slides', label: 'จัดการสไลด์', icon: <BookOpen size={16} /> },
       { id: 'schedule', label: 'จัดการตารางสอน', icon: <Clock size={16} /> },
     ]
   },
@@ -75,12 +80,14 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     items: [
       { id: 'announcements', label: 'ประกาศข่าวสาร', icon: <Megaphone size={16} /> },
       { id: 'calendar', label: 'ปฏิทินกิจกรรม', icon: <CalIcon size={16} /> },
+      { id: 'homework', label: 'การบ้าน', icon: <Award size={16} /> },
     ]
   },
   {
     title: '⚙️ ตั้งค่าระบบ',
     items: [
-      { id: 'site', label: 'ข้อมูลเว็บ & สำรอง', icon: <Activity size={16} /> },
+      { id: 'theme', label: 'ธีม & สำรองข้อมูล', icon: <Activity size={16} /> },
+      { id: 'site', label: 'ข้อมูลเว็บ', icon: <Activity size={16} /> },
       { id: 'errors', label: 'Error Log', icon: <Bug size={16} /> },
     ]
   }
@@ -118,11 +125,18 @@ const AdminDashboardInner: React.FC = () => {
     setLoading(true);
     const data = await fetchAllStudents();
     setStudents(data);
+    const remoteSchedule = await fetchScheduleFromFirebase();
+    if (remoteSchedule) {
+      setSchedule(remoteSchedule);
+    }
     setLoading(false);
   };
 
   useEffect(() => {
-    refresh();
+    const timer = setTimeout(() => {
+      refresh();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const stats = useMemo(() => getSiteStats(students), [students]);
@@ -159,9 +173,9 @@ const AdminDashboardInner: React.FC = () => {
     let csv = 'เลขที่,ชื่อ,ห้อง,หน่วยที่เริ่ม,หน่วยที่จบ,สไลด์ที่อ่าน,วิดีโอ,กิจกรรม,ครั้งทำควิซ,คะแนนรวม,ใช้งานล่าสุด\n';
     filteredStudents.forEach((s) => {
       const p = s.progress;
-      const videos = p ? Object.values(p.units || {}).reduce((a, u: any) => a + (u.videosClicked?.length || 0), 0) : 0;
-      const fun = p ? Object.values(p.units || {}).reduce((a, u: any) => a + (u.funClicked?.length || 0), 0) : 0;
-      const attempts = p ? Object.values(p.units || {}).reduce((a, u: any) => a + (u.quizAttempts || 0), 0) : 0;
+      const videos = p ? Object.values(p.units || {}).reduce((a, u: { videosClicked?: string[] }) => a + (u.videosClicked?.length || 0), 0) : 0;
+      const fun = p ? Object.values(p.units || {}).reduce((a, u: { funClicked?: string[] }) => a + (u.funClicked?.length || 0), 0) : 0;
+      const attempts = p ? Object.values(p.units || {}).reduce((a, u: { quizAttempts?: number }) => a + (u.quizAttempts || 0), 0) : 0;
       csv += `${s.studentNumber},${s.name},${s.classroom},${Object.keys(p?.units || {}).length},${p?.unitsCompleted || 0},${p?.totalSlidesViewed || 0},${videos},${fun},${attempts},${p?.totalPoints || 0},${fmtDateTime(p?.lastActive)}\n`;
     });
     download(csv, `คะแนน_${classroom}_${date}.csv`);
@@ -413,9 +427,9 @@ const AdminDashboardInner: React.FC = () => {
                         </td></tr>
                       ) : filteredStudents.map((s) => {
                         const p = s.progress;
-                        const videos = p ? Object.values(p.units || {}).reduce((a, u: any) => a + (u.videosClicked?.length || 0), 0) : 0;
-                        const fun = p ? Object.values(p.units || {}).reduce((a, u: any) => a + (u.funClicked?.length || 0), 0) : 0;
-                        const attempts = p ? Object.values(p.units || {}).reduce((a, u: any) => a + (u.quizAttempts || 0), 0) : 0;
+                        const videos = p ? Object.values(p.units || {}).reduce((a, u) => a + (u.videosClicked?.length || 0), 0) : 0;
+                        const fun = p ? Object.values(p.units || {}).reduce((a, u) => a + (u.funClicked?.length || 0), 0) : 0;
+                        const attempts = p ? Object.values(p.units || {}).reduce((a, u) => a + (u.quizAttempts || 0), 0) : 0;
                         return (
                           <tr key={s.id}>
                             <td>{s.studentNumber}</td>
@@ -524,6 +538,32 @@ const AdminDashboardInner: React.FC = () => {
               </motion.div>
             )}
 
+            {/* TAB: HOMEWORK */}
+            {tab === 'homework' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <div style={{ marginBottom: '1rem' }}>
+                  <h2 style={{ margin: '0 0 0.25rem' }}>📝 ส่งการบ้าน</h2>
+                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
+                    สร้างการบ้านให้นักเรียน • ตรวจงาน • ให้คะแนน + feedback
+                  </p>
+                </div>
+                <HomeworkManager />
+              </motion.div>
+            )}
+
+            {/* TAB: THEME */}
+            {tab === 'theme' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <div style={{ marginBottom: '1rem' }}>
+                  <h2 style={{ margin: '0 0 0.25rem' }}>🎨 ธีม & สำรองข้อมูล</h2>
+                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
+                    เปลี่ยนธีมสี • Dark mode • Backup/Restore ข้อมูลทั้งระบบ • ติดตั้งเป็นแอป PWA
+                  </p>
+                </div>
+                <ThemeCustomizer />
+              </motion.div>
+            )}
+
             {/* TAB: ERRORS */}
             {tab === 'errors' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
@@ -609,6 +649,13 @@ const AdminDashboardInner: React.FC = () => {
                   </p>
                 </div>
                 <LessonLockManager />
+              </motion.div>
+            )}
+
+            {/* TAB: SLIDES */}
+            {tab === 'slides' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <SlideManager />
               </motion.div>
             )}
 
@@ -735,7 +782,7 @@ const StudentDetail: React.FC<{ student: StudentRecord }> = ({ student }) => {
 
       <h3 style={{ marginTop: '2rem' }}>🎯 ความก้าวหน้าแต่ละหน่วย</h3>
       <div className="unit-grid">
-        {Object.entries(p?.units || {}).map(([k, u]: [string, any]) => (
+         {Object.entries(p?.units || {}).map(([k, u]: [string, { completionPct: number; slidesViewed?: number[]; totalSlides?: number; videosClicked?: string[]; funClicked?: string[]; bestQuizScore?: number; bestQuizMax?: number }]) => (
           <div key={k} className="unit-progress-card">
             <h4>{k}</h4>
             <div className="upc-pct">{u.completionPct}%</div>
@@ -775,8 +822,38 @@ const StudentDetail: React.FC<{ student: StudentRecord }> = ({ student }) => {
   );
 };
 
+const HourMinutePicker: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => {
+  const [h, m] = (value || '08:00').split(':');
+  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+  
+  return (
+    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
+      <select 
+        value={h || '08'} 
+        onChange={(e) => onChange(`${e.target.value}:${m || '00'}`)} 
+        style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #d1d5db', background: 'white', fontSize: '0.88rem', width: '60px', textAlign: 'center' }}
+      >
+        {hours.map(hr => <option key={hr} value={hr}>{hr}</option>)}
+      </select>
+      <span style={{ fontWeight: 'bold' }}>:</span>
+      <select 
+        value={m || '00'} 
+        onChange={(e) => onChange(`${h || '08'}:${e.target.value}`)} 
+        style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #d1d5db', background: 'white', fontSize: '0.88rem', width: '60px', textAlign: 'center' }}
+      >
+        {minutes.map(mn => <option key={mn} value={mn}>{mn}</option>)}
+      </select>
+    </div>
+  );
+};
+
 const ScheduleEditor: React.FC<{ schedule: ClassSlot[]; setSchedule: (s: ClassSlot[]) => void }> = ({ schedule, setSchedule }) => {
   const [draft, setDraft] = useState<ClassSlot[]>(schedule);
+
+  useEffect(() => {
+    setDraft(schedule);
+  }, [schedule]);
 
   const update = (id: string, patch: Partial<ClassSlot>) => {
     setDraft(draft.map((s) => (s.id === id ? { ...s, ...patch } : s)));
@@ -788,10 +865,15 @@ const ScheduleEditor: React.FC<{ schedule: ClassSlot[]; setSchedule: (s: ClassSl
     ]);
   };
   const remove = (id: string) => setDraft(draft.filter((s) => s.id !== id));
-  const persist = () => {
+  const persist = async () => {
     saveSchedule(draft);
+    const result = await syncScheduleToFirebase(draft);
+    if (!result.ok) {
+      alert(`บันทึกในเครื่องแล้ว แต่ยังไม่ขึ้น Firebase\n\nสาเหตุ: ${result.error || 'ไม่ทราบสาเหตุ'}`);
+      return;
+    }
     setSchedule(draft);
-    alert('บันทึกตารางสอนแล้ว ✓');
+    alert('บันทึกตารางสอนลง Firebase แล้ว ✓');
   };
   const reset = () => {
     setDraft(defaultSchedule);
@@ -812,8 +894,8 @@ const ScheduleEditor: React.FC<{ schedule: ClassSlot[]; setSchedule: (s: ClassSl
             <tr>
               <th>ห้อง</th>
               <th>วัน</th>
-              <th>เริ่ม</th>
-              <th>สิ้นสุด</th>
+              <th style={{ textAlign: 'center' }}>เริ่ม</th>
+              <th style={{ textAlign: 'center' }}>สิ้นสุด</th>
               <th>วิชา</th>
               <th></th>
             </tr>
@@ -831,8 +913,8 @@ const ScheduleEditor: React.FC<{ schedule: ClassSlot[]; setSchedule: (s: ClassSl
                     {dayNames.map((n, i) => <option key={i} value={i}>{n}</option>)}
                   </select>
                 </td>
-                <td><input type="time" value={s.start} onChange={(e) => update(s.id, { start: e.target.value })} /></td>
-                <td><input type="time" value={s.end} onChange={(e) => update(s.id, { end: e.target.value })} /></td>
+                <td><HourMinutePicker value={s.start} onChange={(val) => update(s.id, { start: val })} /></td>
+                <td><HourMinutePicker value={s.end} onChange={(val) => update(s.id, { end: val })} /></td>
                 <td><input type="text" value={s.subject || ''} onChange={(e) => update(s.id, { subject: e.target.value })} /></td>
                 <td>
                   <button className="link-btn danger" onClick={() => remove(s.id)}>
@@ -902,7 +984,8 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
       a.click();
       URL.revokeObjectURL(url);
       toast.show(`ส่งออกข้อมูลสำรองเรียบร้อยแล้ว (${keysFound} รายการ) ✓`, 'success');
-    } catch (err) {
+    } catch (e) {
+      console.warn(e);
       toast.show('เกิดข้อผิดพลาดในการสร้างไฟล์สำรอง', 'error');
     }
   };
@@ -937,7 +1020,8 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
             window.location.reload();
           }, 1500);
         }
-      } catch (err) {
+      } catch (e) {
+        console.warn(e);
         toast.show('อ่านไฟล์สำรองล้มเหลว กรุณาตรวจสอบความถูกต้องของไฟล์ JSON', 'error');
       }
     };
@@ -1001,10 +1085,16 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
     }
   };
 
-  const resetScheduleData = () => {
+  const resetScheduleData = async () => {
     if (confirm('⚠️ ยืนยันที่จะรีเซ็ตตารางสอนใช่ไหม?\n\nการดำเนินการนี้จะรีเซ็ตตารางคาบเรียนวิชาเทคโนโลยีกลับเป็นตารางเริ่มต้น')) {
-      localStorage.removeItem('krujames_schedule_v1');
-      toast.show('รีเซ็ตตารางสอนเรียบร้อยแล้ว', 'success');
+      saveSchedule(defaultSchedule);
+      const result = await syncScheduleToFirebase(defaultSchedule);
+      toast.show(
+        result.ok
+          ? 'รีเซ็ตตารางสอนและบันทึก Firebase แล้ว'
+          : `รีเซ็ตในเครื่องแล้ว แต่ยังไม่ขึ้น Firebase: ${result.error || 'ไม่ทราบสาเหตุ'}`,
+        result.ok ? 'success' : 'error'
+      );
       setTimeout(() => window.location.reload(), 1500);
     }
   };

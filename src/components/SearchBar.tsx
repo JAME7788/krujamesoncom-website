@@ -9,19 +9,23 @@ import './SearchBar.css';
 const SearchBar: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const results = React.useMemo(() => {
     if (query.trim().length >= 2) {
-      setResults(search(query, 12));
-      setActiveIdx(0);
-    } else {
-      setResults([]);
+      return search(query, 12);
     }
+    return [];
   }, [query]);
+
+  // Reset activeIdx when results change, during rendering
+  const [prevResultsLength, setPrevResultsLength] = useState(0);
+  if (results.length !== prevResultsLength) {
+    setPrevResultsLength(results.length);
+    setActiveIdx(0);
+  }
 
   // Keyboard shortcut Ctrl/Cmd + K
   useEffect(() => {

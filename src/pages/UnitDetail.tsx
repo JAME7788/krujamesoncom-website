@@ -31,7 +31,8 @@ import {
 import { syncFromProgress } from '../services/gradeService';
 import RichSlideViewer from '../components/RichSlideViewer';
 import '../components/RichSlideViewer.css';
-import { hasRichSlides, getRichSlides } from '../data/richSlides';
+import { hasRichSlides, getRichSlides, type RichSlide } from '../data/richSlides';
+import { fetchCustomSlides } from '../services/slideService';
 import './UnitDetail.css';
 
 const mergeList = (...lists: Array<string[] | undefined>) => {
@@ -975,20 +976,32 @@ const UnitDetail: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [activeTab, setActiveTab] = useState('overview');
   const [quizIdx, setQuizIdx] = useState(0);
+  const [customSlides, setCustomSlides] = useState<RichSlide[] | null>(null);
 
   // Reset states when changing unit + load saved attempt count
   useEffect(() => {
-    setSlideIdx(0);
-    setQuizAnswers({});
-    setQuizSubmitted(false);
-    setQuizIdx(0);
-    setActiveTab('overview');
-    if (user && gradeId) {
-      const u = getUnitProgress(user.id, gradeId, unitNumber);
-      setAttempts(u.quizAttempts || 0);
-    } else {
-      setAttempts(0);
-    }
+    const timer = setTimeout(() => {
+      setSlideIdx(0);
+      setQuizAnswers({});
+      setQuizSubmitted(false);
+      setQuizIdx(0);
+      setActiveTab('overview');
+      if (user && gradeId) {
+        const u = getUnitProgress(user.id, gradeId, unitNumber);
+        setAttempts(u.quizAttempts || 0);
+      } else {
+        setAttempts(0);
+      }
+
+      if (gradeId) {
+        fetchCustomSlides(gradeId, unitNumber).then((res) => {
+          setCustomSlides(res);
+        });
+      } else {
+        setCustomSlides(null);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [gradeId, unitNo, user, unitNumber]);
 
   // Track slide views — บันทึกทุกครั้งที่นักเรียนเปลี่ยนสไลด์
@@ -1087,9 +1100,10 @@ const UnitDetail: React.FC = () => {
   const articleItems = mergeArticles(extras.articles, buildOfficialArticles(grade, unit));
   const fileItems = mergeFiles(extras.files, buildOfficialFiles(grade, unit));
   const generatedSlides = buildIndicatorSlides(grade, unit, lessonNotes);
-  // ตรวจสอบ Rich Slides ก่อน — ถ้ามี ใช้แทน slides ปกติ
-  const useRichSlides = hasRichSlides(gradeId || '', unitNumber);
-  const richSlideList = useRichSlides ? getRichSlides(gradeId || '', unitNumber) : [];
+  // ตรวจสอบ Custom Slides หรือ Rich Slides ก่อน — ถ้ามี ใช้แทน slides ปกติ
+  const hasCustom = !!(customSlides && customSlides.length > 0);
+  const useRichSlides = hasCustom ? true : hasRichSlides(gradeId || '', unitNumber);
+  const richSlideList = hasCustom ? customSlides! : (useRichSlides ? getRichSlides(gradeId || '', unitNumber) : []);
   const useGeneratedSlides = !useRichSlides && shouldUseGeneratedSlides(slides, slidesEntry?.slideImages);
   const displaySlides = useGeneratedSlides ? generatedSlides : slides;
   const displaySlideImages = useGeneratedSlides ? [] : slidesEntry?.slideImages;
@@ -1168,7 +1182,7 @@ const UnitDetail: React.FC = () => {
           body = cleaned.slice(idx + 1).trim();
         } else {
           const words = cleaned.split(' ');
-          let t: string[] = [];
+          const t: string[] = [];
           let count = 0;
           for (const w of words) {
             count += w.length + 1;
@@ -1182,14 +1196,14 @@ const UnitDetail: React.FC = () => {
     }
 
     const bullets: string[] = [];
-    const numRe = /(?:^|\s)\d+[\.\)]\s/g;
+    const numRe = /(?:^|\s)\d+[.)]\s/g;
     if (numRe.test(body)) {
-      const items = body.split(/(?:^|\s)\d+[\.\)]\s/).filter((s) => s.trim().length > 2);
+      const items = body.split(/(?:^|\s)\d+[.)]\s/).filter((s) => s.trim().length > 2);
       bullets.push(...items.map((s) => s.trim()));
     } else if (body.includes(' • ')) {
       bullets.push(...body.split(' • ').filter((s) => s.trim().length > 2));
     } else {
-      const segs = body.split(/(?<=[ฯ\?])\s|(?:\sซึ่ง\s)/).filter((s) => s.trim().length > 6);
+      const segs = body.split(/(?<=[ฯ?])\s|(?:\sซึ่ง\s)/).filter((s) => s.trim().length > 6);
       if (segs.length >= 2 && segs.length <= 8) {
         bullets.push(...segs.map((s) => s.trim()));
       } else {
@@ -1666,7 +1680,9 @@ const UnitDetail: React.FC = () => {
                                       );
                                       if (g) syncFromProgress(u.classroom, g.studentCode, u.id, s);
                                     }
-                                  } catch {}
+                                  } catch (err) {
+                                    console.error('Failed to sync grades', err);
+                                  }
                                 }
                                 const pct = maxScore > 0 ? (score / maxScore) * 100 : 0;
                                 const who = partner

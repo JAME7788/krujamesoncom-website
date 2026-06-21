@@ -1,6 +1,9 @@
 // ตารางสอนวิชาเทคโนโลยี/วิทยาการคำนวณ
 // แก้ไขผ่านหน้า Admin ได้ — เก็บใน localStorage
 
+import { db } from '../services/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+
 export interface ClassSlot {
   id: string;
   classroom: string; // 'ป.1', 'ม.2'
@@ -27,6 +30,15 @@ export const defaultSchedule: ClassSlot[] = [
 ];
 
 const KEY = 'krujames_schedule_v1';
+const SCHEDULE_DOC = 'main';
+
+const firebaseAvailable = (): boolean => {
+  try {
+    return !!db && !!import.meta.env.VITE_FIREBASE_PROJECT_ID;
+  } catch {
+    return false;
+  }
+};
 
 export const loadSchedule = (): ClassSlot[] => {
   try {
@@ -45,6 +57,42 @@ export const saveSchedule = (slots: ClassSlot[]) => {
     console.warn('saveSchedule failed', e);
   }
 };
+
+export const syncScheduleToFirebase = async (
+  slots: ClassSlot[]
+): Promise<{ ok: boolean; error?: string }> => {
+  if (!firebaseAvailable()) {
+    return { ok: false, error: 'Firebase is not configured' };
+  }
+  try {
+    const ref = doc(db, 'schedule', SCHEDULE_DOC);
+    await setDoc(ref, { slots, updatedAt: Date.now() });
+    return { ok: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    console.warn('syncScheduleToFirebase failed', e);
+    return { ok: false, error };
+  }
+};
+
+export const fetchScheduleFromFirebase = async (): Promise<ClassSlot[] | null> => {
+  if (!firebaseAvailable()) return null;
+  try {
+    const ref = doc(db, 'schedule', SCHEDULE_DOC);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      const data = snap.data() as { slots?: ClassSlot[] };
+      if (data && Array.isArray(data.slots)) {
+        localStorage.setItem(KEY, JSON.stringify(data.slots));
+        return data.slots;
+      }
+    }
+  } catch (e) {
+    console.warn('fetchScheduleFromFirebase failed', e);
+  }
+  return null;
+};
+
 
 /** แปลงเวลา 'HH:MM' เป็นนาทีตั้งแต่เที่ยงคืน */
 export const minutesOf = (hhmm: string): number => {

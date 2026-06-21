@@ -7,7 +7,7 @@ export interface UnitScore {
   maxK: number;
   p: string; // Performance (Manual by teacher)
   a: boolean; // Attitude (Manual by teacher)
-  updatedAt: any;
+  updatedAt: Date | { seconds: number; nanoseconds: number } | string | number | null;
 }
 
 export interface StudentProgress {
@@ -121,7 +121,7 @@ export const updateTeacherFields = async (
   studentId: string,
   unitNo: number,
   field: 'p' | 'a',
-  value: any
+  value: string | boolean
 ) => {
   const studentDocRef = doc(db, 'students', studentId);
   const studentDoc = await getDoc(studentDocRef);

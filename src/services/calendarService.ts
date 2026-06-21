@@ -29,8 +29,13 @@ export const loadEvents = (): CalendarEvent[] => {
 };
 
 const save = (list: CalendarEvent[]) => {
-  try { localStorage.setItem(KEY, JSON.stringify(list)); } catch {}
+  try {
+    localStorage.setItem(KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error('Failed to save calendar events', e);
+  }
 };
+
 
 export const createEvent = (data: Omit<CalendarEvent, 'id' | 'createdAt'>): CalendarEvent => {
   const e: CalendarEvent = { ...data, id: uid(), createdAt: Date.now() };

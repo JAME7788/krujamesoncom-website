@@ -25,6 +25,23 @@ interface Props {
   total: number;
 }
 
+const formatMarkdownInline = (text: string | undefined): { __html: string } => {
+  if (!text) return { __html: '' };
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+  const formatted = escaped
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code class="inline-code" style="background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">$1</code>');
+
+  return { __html: formatted };
+};
+
 const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
   const theme = themeColors[slide.theme || 'blue'];
 
@@ -45,7 +62,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
         <div className="rs-cover">
           {slide.emoji && <div className="rs-emoji-huge">{slide.emoji}</div>}
           <h1 className="rs-title-huge">{slide.title}</h1>
-          {slide.body && <p className="rs-body-large">{slide.body}</p>}
+          {slide.body && <p className="rs-body-large" dangerouslySetInnerHTML={formatMarkdownInline(slide.body)} />}
           {slide.image && (
             <div className="rs-image-cover">
               <img src={slide.image} alt={slide.imageCaption || slide.title} loading="lazy" />
@@ -60,13 +77,16 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
         <div className="rs-split">
           <div className="rs-split-text">
             <h2 className="rs-title">{slide.emoji && <span>{slide.emoji} </span>}{slide.title}</h2>
-            {slide.body && <p className="rs-body">{slide.body}</p>}
+            {slide.body && <p className="rs-body" dangerouslySetInnerHTML={formatMarkdownInline(slide.body)} />}
             {slide.bullets && (
               <ul className="rs-bullets">
                 {slide.bullets.map((b, i) => (
                   <li key={i}>
                     {b.emoji && <span className="rs-bullet-emoji">{b.emoji}</span>}
-                    <span><strong>{b.text}</strong>{b.sub && <small>{b.sub}</small>}</span>
+                    <span>
+                      <strong dangerouslySetInnerHTML={formatMarkdownInline(b.text)} />
+                      {b.sub && <small dangerouslySetInnerHTML={formatMarkdownInline(b.sub)} />}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -90,7 +110,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
               <div className="rs-compare-emoji">{slide.compareLeft.emoji}</div>
               <h3 style={{ color: slide.compareLeft.color }}>{slide.compareLeft.title}</h3>
               <ul>
-                {slide.compareLeft.items.map((it, i) => <li key={i}>{it}</li>)}
+                {slide.compareLeft.items.map((it, i) => <li key={i} dangerouslySetInnerHTML={formatMarkdownInline(it)} />)}
               </ul>
             </div>
             <div className="rs-compare-vs">VS</div>
@@ -98,7 +118,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
               <div className="rs-compare-emoji">{slide.compareRight.emoji}</div>
               <h3 style={{ color: slide.compareRight.color }}>{slide.compareRight.title}</h3>
               <ul>
-                {slide.compareRight.items.map((it, i) => <li key={i}>{it}</li>)}
+                {slide.compareRight.items.map((it, i) => <li key={i} dangerouslySetInnerHTML={formatMarkdownInline(it)} />)}
               </ul>
             </div>
           </div>
@@ -109,7 +129,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
       {slide.layout === 'quote' && (
         <div className="rs-quote">
           <div className="rs-quote-mark">"</div>
-          <p>{slide.body}</p>
+          <p dangerouslySetInnerHTML={formatMarkdownInline(slide.body)} />
           <div className="rs-quote-mark close">"</div>
         </div>
       )}
@@ -121,7 +141,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
             {slide.emoji && <span className="rs-title-emoji">{slide.emoji}</span>}
             {slide.title}
           </h2>
-          {slide.body && <p className="rs-body">{slide.body}</p>}
+          {slide.body && <p className="rs-body" dangerouslySetInnerHTML={formatMarkdownInline(slide.body)} />}
           <div className="rs-content-row">
             <div className="rs-content-text">
               {slide.bullets && (
@@ -130,8 +150,8 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
                     <li key={i}>
                       {b.emoji && <span className="rs-bullet-emoji">{b.emoji}</span>}
                       <span>
-                        <strong>{b.text}</strong>
-                        {b.sub && <small>{b.sub}</small>}
+                        <strong dangerouslySetInnerHTML={formatMarkdownInline(b.text)} />
+                        {b.sub && <small dangerouslySetInnerHTML={formatMarkdownInline(b.sub)} />}
                       </span>
                     </li>
                   ))}
@@ -165,7 +185,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
           <span className="rs-callout-icon">
             {slide.callout.emoji || calloutStyle[slide.callout.type].icon}
           </span>
-          <span>{slide.callout.text}</span>
+          <span dangerouslySetInnerHTML={formatMarkdownInline(slide.callout.text)} />
         </div>
       )}
     </motion.div>

@@ -21,7 +21,9 @@ export const adminLogin = (user: string, pass: string): boolean => {
     };
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    } catch {}
+    } catch (e) {
+      console.error('Failed to set admin session', e);
+    }
     return true;
   }
   return false;
@@ -30,7 +32,9 @@ export const adminLogin = (user: string, pass: string): boolean => {
 export const adminLogout = () => {
   try {
     localStorage.removeItem(SESSION_KEY);
-  } catch {}
+  } catch (e) {
+    console.error('Failed to remove admin session', e);
+  }
 };
 
 export const getAdminSession = (): AdminSession | null => {

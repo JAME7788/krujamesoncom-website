@@ -60,7 +60,7 @@ const AnnouncementManager: React.FC = () => {
           <div className="filter-row" style={{ width: '100%' }}>
             <div className="filter-group">
               <label>ประเภท</label>
-              <select value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as any })}>
+              <select value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as Announcement['type'] })}>
                 <option value="info">ℹ️ ข่าวสาร</option>
                 <option value="warn">⚠️ แจ้งเตือน</option>
                 <option value="urgent">🚨 ด่วน</option>

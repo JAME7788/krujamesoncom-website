@@ -51,8 +51,13 @@ export const loadErrors = (): ErrorLog[] => {
 };
 
 export const clearErrors = () => {
-  try { localStorage.removeItem(KEY); } catch {}
+  try {
+    localStorage.removeItem(KEY);
+  } catch (e) {
+    console.error('Failed to clear errors', e);
+  }
 };
+
 
 /** ติดตั้ง global error handler (เรียกครั้งเดียวใน main.tsx) */
 export const installGlobalErrorHandler = () => {

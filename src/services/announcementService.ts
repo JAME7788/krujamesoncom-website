@@ -28,8 +28,13 @@ export const loadAnnouncements = (): Announcement[] => {
 };
 
 const save = (list: Announcement[]) => {
-  try { localStorage.setItem(KEY, JSON.stringify(list)); } catch {}
+  try {
+    localStorage.setItem(KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error('Failed to save announcements', e);
+  }
 };
+
 
 export const createAnnouncement = (data: Omit<Announcement, 'id' | 'createdAt'>): Announcement => {
   const a: Announcement = { ...data, id: uid(), createdAt: Date.now() };

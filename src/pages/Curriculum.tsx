@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { BookOpen, Target, ChevronRight, X, ListChecks, Eye, Lock } from 'lucide-react';
 import { grades } from '../data/curriculum';
+import type { Grade, Unit, Indicator } from '../data/curriculum';
 import { useAuth } from '../context/AuthContext';
 import { isAdminAuthed } from '../services/authAdmin';
 import { useToast } from '../components/Toast';
@@ -28,7 +29,7 @@ const classroomToAllowedGradeIds = (classroom: string): string[] => {
 const Curriculum: React.FC = () => {
   const { user } = useAuth();
   const isAdmin = isAdminAuthed();
-  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Grade | null>(null);
   const toast = useToast();
 
   // กรองคอร์สตามสิทธิ์
@@ -159,7 +160,7 @@ const Curriculum: React.FC = () => {
                 <div className="modal-section">
                   <h3><ListChecks size={20} className="text-primary" /> เนื้อหาที่จะได้เรียน ({selectedCourse.units?.length || 0} หน่วย)</h3>
                   <div className="modal-units-list">
-                    {selectedCourse.units?.map((u: any) => {
+                    {selectedCourse.units?.map((u: Unit) => {
                       const locked = isUnitLocked(selectedCourse.id, u.no);
                       return (
                         <Link
@@ -203,7 +204,7 @@ const Curriculum: React.FC = () => {
                 <div className="modal-section">
                   <h3><Target size={20} className="text-primary" /> ตัวชี้วัดรายวิชา</h3>
                   <ul className="modal-indicators-list">
-                    {selectedCourse.indicators.map((ind: any, i: number) => (
+                    {selectedCourse.indicators.map((ind: Indicator, i: number) => (
                       <li key={i} className="modal-indicator-item">
                         <span className="ind-code-badge">{ind.code}</span>
                         <span className="ind-text-desc">{ind.text}</span>

@@ -24,10 +24,13 @@ const scanLocalProgress = (): StudentProgressData[] => {
     try {
       const data = JSON.parse(localStorage.getItem(k) || '{}') as StudentProgressData;
       if (data.studentId) result.push(data);
-    } catch {}
+    } catch (e) {
+      console.error('Failed to parse progress from localStorage key', k, e);
+    }
   }
   return result;
 };
+
 
 /** หาข้อมูลนักเรียนจาก roster โดยใช้ studentId pattern */
 const findRosterStudent = (studentId: string) => {

@@ -44,7 +44,7 @@ export const fetchAllStudents = async (): Promise<StudentRecord[]> => {
     try {
       const sSnap = await getDocs(collection(db, 'students'));
       sSnap.forEach((d) => {
-        const data = d.data() as any;
+        const data = d.data() as { id: string; name: string; classroom: string; studentNumber: string };
         records[data.id] = {
           id: data.id,
           name: data.name,
@@ -52,6 +52,7 @@ export const fetchAllStudents = async (): Promise<StudentRecord[]> => {
           studentNumber: data.studentNumber,
         };
       });
+
       const pSnap = await getDocs(collection(db, 'progress'));
       pSnap.forEach((d) => {
         const data = d.data() as StudentProgressData;

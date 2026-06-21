@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Download, Users, Search, FileText, PlayCircle, Gamepad2, Award } from 'lucide-react';
 import { getClassroomProgress, updateTeacherFields } from '../services/studentService';
 import type { StudentProgress } from '../services/studentService';
@@ -13,16 +13,19 @@ const TeacherDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     const data = await getClassroomProgress(classroom);
     setStudents(data);
     setLoading(false);
-  };
+  }, [classroom]);
 
   useEffect(() => {
-    loadData();
-  }, [classroom]);
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadData]);
 
   const handleUpdateP = async (studentId: string, unitNo: number, value: string) => {
     await updateTeacherFields(studentId, unitNo, 'p', value);
@@ -117,9 +120,9 @@ const TeacherDashboard: React.FC = () => {
             <tbody>
               {students.filter((s) => s.name.includes(searchTerm)).map((s) => {
                 const e = s.engagement;
-                const totalVideos = e ? Object.values(e.units || {}).reduce((a, u: any) => a + (u.videosClicked?.length || 0), 0) : 0;
-                const totalFun = e ? Object.values(e.units || {}).reduce((a, u: any) => a + (u.funClicked?.length || 0), 0) : 0;
-                const totalQuizAttempts = e ? Object.values(e.units || {}).reduce((a, u: any) => a + (u.quizAttempts || 0), 0) : 0;
+                const totalVideos = e ? Object.values(e.units || {}).reduce((a, u) => a + (u.videosClicked?.length || 0), 0) : 0;
+                const totalFun = e ? Object.values(e.units || {}).reduce((a, u) => a + (u.funClicked?.length || 0), 0) : 0;
+                const totalQuizAttempts = e ? Object.values(e.units || {}).reduce((a, u) => a + (u.quizAttempts || 0), 0) : 0;
                 const lastActive = e?.lastActive
                   ? new Date(e.lastActive).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
                   : '—';
