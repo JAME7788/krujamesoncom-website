@@ -53,6 +53,8 @@ export const loadSchedule = (): ClassSlot[] => {
 export const saveSchedule = (slots: ClassSlot[]) => {
   try {
     localStorage.setItem(KEY, JSON.stringify(slots));
+    // sync ขึ้น Firebase อัตโนมัติ (best-effort) — เครื่องอื่นจะได้เห็นทันที
+    void syncScheduleToFirebase(slots);
   } catch (e) {
     console.warn('saveSchedule failed', e);
   }

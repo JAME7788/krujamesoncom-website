@@ -9,6 +9,7 @@ import SearchBar from './SearchBar';
 import AchievementsBadge from './AchievementsBadge';
 import DarkModeToggle from './DarkModeToggle';
 import AITutor from './AITutor';
+import { fetchScheduleFromFirebase } from '../data/schedule';
 import './Layout.css';
 
 interface LayoutProps {
@@ -28,6 +29,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // ดึงตารางสอนจาก Firebase ครั้งแรกที่เปิดแอป + ซิงค์ทุก 5 นาที (ทุกหน้าได้ของล่าสุด)
+  useEffect(() => {
+    void fetchScheduleFromFirebase();
+    const t = setInterval(() => { void fetchScheduleFromFirebase(); }, 5 * 60 * 1000);
+    return () => clearInterval(t);
   }, []);
 
   const [prevPathname, setPrevPathname] = useState(location.pathname);
