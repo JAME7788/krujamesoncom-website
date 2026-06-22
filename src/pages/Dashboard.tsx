@@ -21,6 +21,7 @@ import type { ActivityType } from '../services/progressService';
 import { findGrade } from '../data/curriculum';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import TrendChart from '../components/TrendChart';
+import MyGradeCard from '../components/MyGradeCard';
 import { getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
 import { loadSchedule, dayNames, minutesOf, fetchScheduleFromFirebase } from '../data/schedule';
 import type { ClassSlot } from '../data/schedule';
@@ -321,6 +322,13 @@ const Dashboard: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* คะแนนของฉัน */}
+      <MyGradeCard
+        classroom={user.classroom}
+        studentNumber={user.studentNumber}
+        name={user.name}
+      />
 
       {/* STATS */}
       <div className="stats-grid">
