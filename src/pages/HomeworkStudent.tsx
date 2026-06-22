@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   getAssignmentsForStudent, submitWork, getStudentSubmissionForAssignment,
 } from '../services/homeworkService';
-import type { Assignment, Submission } from '../services/homeworkService';
+import type { Assignment } from '../services/homeworkService';
 
 const HomeworkStudent: React.FC = () => {
   const { user } = useAuth();

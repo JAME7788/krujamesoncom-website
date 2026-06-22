@@ -14,7 +14,7 @@ const Whiteboard: React.FC<{ width?: number; height?: number }> = ({ width = 800
   const [size, setSize] = useState(3);
   const [drawing, setDrawing] = useState(false);
   const [last, setLast] = useState<Point | null>(null);
-  const [history, setHistory] = useState<ImageData[]>([]);
+  const [, setHistory] = useState<ImageData[]>([]);
 
   useEffect(() => {
     const c = canvasRef.current;

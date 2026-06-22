@@ -1,6 +1,5 @@
 // Text-to-Speech — ใช้ Web Speech API ของเบราว์เซอร์ (ฟรี)
 
-let currentUtterance: SpeechSynthesisUtterance | null = null;
 let thaiVoice: SpeechSynthesisVoice | null = null;
 
 // Load Thai voice
@@ -34,7 +33,6 @@ export const speak = (
   utter.volume = options.volume ?? 1.0;
   if (options.onEnd) utter.onend = options.onEnd;
 
-  currentUtterance = utter;
   window.speechSynthesis.speak(utter);
   return true;
 };
@@ -42,7 +40,6 @@ export const speak = (
 export const stop = () => {
   if (isTTSSupported()) {
     window.speechSynthesis.cancel();
-    currentUtterance = null;
   }
 };
 

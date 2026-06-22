@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, Trash2, Copy, Download } from 'lucide-react';
 
 type Lang = 'javascript' | 'python';
