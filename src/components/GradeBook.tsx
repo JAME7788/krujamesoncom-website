@@ -70,7 +70,7 @@ const GradeBook: React.FC = () => {
 
   // Auto-seed P/A defaults for unit 1 (one-time per browser) — รันครั้งเดียวเมื่อเข้าหน้านี้ครั้งแรก
   useEffect(() => {
-    const FLAG = 'krujames_seeded_unit1_pa_v1';
+    const FLAG = 'krujames_seeded_unit1_pa_v2';
     if (localStorage.getItem(FLAG)) return;
     try {
       const res = seedUnit1ScoresForAllClasses('ปานกลาง', true);

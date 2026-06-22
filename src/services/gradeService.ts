@@ -536,6 +536,7 @@ export const seedUnit1ScoresForAllClasses = (
 
   allClassrooms2569.forEach((classroom) => {
     const subjects = getSubjectsForClassroom(classroom);
+    const primaryGradeIds = new Set(classroomToGradeIds(classroom));
     subjects.forEach((subj) => {
       // initClassroom จะสร้างข้อมูลจาก roster ถ้ายังไม่มี
       let grades = loadGrades(classroom, subj.id);
@@ -543,22 +544,23 @@ export const seedUnit1ScoresForAllClasses = (
         grades = initClassroom(classroom, subj.id);
       }
       const indicators = getIndicators(classroom, subj.id);
-      // หา indicator id ที่ unit 1 มี
+      // หา indicator ที่อยู่ใน unit 1 ของ "วิชาหลัก" (ไม่นับ AI bonus ที่อาจมี unitNo=1)
       const unit1Indicators = indicators.filter((ind) => {
         const units = findUnitsForIndicator(ind.id);
-        return units.some((u) => u.unitNo === 1);
+        return units.some((u) => u.unitNo === 1 && primaryGradeIds.has(u.gradeId));
       });
       if (unit1Indicators.length === 0) return;
 
       grades.forEach((g) => {
         unit1Indicators.forEach((ind) => {
           const existing = g.indicators[ind.id] || emptyIndicatorScore(ind.maxScore);
-          // ใส่เฉพาะที่ยังเป็น default (P=ปานกลาง คือ default ของ emptyIndicatorScore)
-          // → seed เฉพาะรายการที่ A=true (default) — ไม่ทับงานที่ครูแก้แล้ว
+          // ต้องตั้ง pAssessed/aAssessed = true ด้วย ไม่งั้น computeBreakdown จะคิด P/A เป็น 0
           g.indicators[ind.id] = {
             ...existing,
             p: defaultP,
             a: defaultA,
+            pAssessed: true,
+            aAssessed: true,
             updatedAt: Date.now(),
           };
         });
