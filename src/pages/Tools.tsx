@@ -1,10 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { PenTool, Code2 } from 'lucide-react';
 import Whiteboard from '../components/Whiteboard';
 import CodingSandbox from '../components/CodingSandbox';
+import { useAuth } from '../context/AuthContext';
+import { trackMediaClick } from '../services/progressService';
+import { syncStudentGradesFromProgress } from '../services/gameProgressService';
+import { classroomToGradeIds } from '../services/gradeService';
 
 const Tools: React.FC = () => {
   const [tab, setTab] = useState<'whiteboard' | 'sandbox'>('whiteboard');
+  const { user } = useAuth();
+  const seenRef = useRef<Set<string>>(new Set());
+
+  // นับการใช้เครื่องมือเป็น "กิจกรรมทักษะ" (P skill points) — บันทึก 1 ครั้งต่อ tool ต่อ session
+  useEffect(() => {
+    if (!user || user.id === 'admin_teacher_account') return;
+    if (seenRef.current.has(tab)) return;
+    const gradeId = classroomToGradeIds(user.classroom)[0];
+    if (!gradeId) return;
+    seenRef.current.add(tab);
+    const detail = tab === 'whiteboard' ? '[Tool] Whiteboard' : '[Tool] Coding Sandbox';
+    void trackMediaClick(user.id, gradeId, 1, 'fun', detail).then(() => {
+      syncStudentGradesFromProgress({
+        id: user.id,
+        name: user.name,
+        classroom: user.classroom,
+        studentNumber: user.studentNumber,
+      });
+    });
+  }, [tab, user]);
 
   return (
     <div className="container section-padding" style={{ paddingTop: '6rem' }}>

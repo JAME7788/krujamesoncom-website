@@ -1,17 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Users, Play, Award, X, Trophy } from 'lucide-react';
 import {
   createRoom, generateRoomCode, startQuiz, revealAnswer, nextQuestion, closeRoom, subscribeRoom,
 } from '../services/liveQuizService';
 import type { LiveQuizRoom, LiveQuizQuestion } from '../services/liveQuizService';
+import { grades as curriculumGrades } from '../data/curriculum';
 
 const LiveQuizHost: React.FC = () => {
   const [room, setRoom] = useState<LiveQuizRoom | null>(null);
   const [code, setCode] = useState('');
   const [title, setTitle] = useState('Live Quiz');
+  const [targetGradeId, setTargetGradeId] = useState('');
+  const [targetUnitNo, setTargetUnitNo] = useState<number>(1);
   const [questions, setQuestions] = useState<LiveQuizQuestion[]>([
     { q: 'อัลกอริทึมคืออะไร?', options: ['สูตรอาหาร', 'ขั้นตอนการแก้ปัญหา', 'ภาษาโปรแกรม', 'ฮาร์ดแวร์'], answer: 1 },
   ]);
+
+  const targetUnits = useMemo(() => {
+    if (!targetGradeId) return [];
+    const g = curriculumGrades.find((x) => x.id === targetGradeId);
+    return g?.units || [];
+  }, [targetGradeId]);
 
   useEffect(() => {
     if (!code) return;
@@ -21,7 +30,14 @@ const LiveQuizHost: React.FC = () => {
   const handleCreate = async () => {
     if (questions.length === 0) { alert('ต้องมีอย่างน้อย 1 คำถาม'); return; }
     const c = generateRoomCode();
-    await createRoom({ code: c, title, hostId: 'teacher', questions });
+    await createRoom({
+      code: c,
+      title,
+      hostId: 'teacher',
+      questions,
+      targetGradeId: targetGradeId || undefined,
+      targetUnitNo: targetGradeId ? targetUnitNo : undefined,
+    });
     setCode(c);
   };
 
@@ -45,6 +61,35 @@ const LiveQuizHost: React.FC = () => {
               onChange={(e) => setTitle(e.target.value)}
               style={{ width: '100%', padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, fontFamily: 'inherit', marginTop: 4 }}
             />
+          </div>
+
+          <div style={{ marginBottom: 16, padding: 12, background: '#f0fdf4', borderRadius: 10, border: '1px dashed #86efac' }}>
+            <label style={{ fontWeight: 700, fontSize: '0.9rem', display: 'block', marginBottom: 8 }}>
+              📊 ผูกคะแนนเข้า K ของหน่วย (optional — ไม่เลือกจะใช้ unit 1 ของห้องนักเรียนเป็นค่าเริ่มต้น)
+            </label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <select
+                value={targetGradeId}
+                onChange={(e) => { setTargetGradeId(e.target.value); setTargetUnitNo(1); }}
+                style={{ flex: 1, minWidth: 200, padding: 8, border: '1px solid #d1d5db', borderRadius: 8, fontFamily: 'inherit' }}
+              >
+                <option value="">(default — ตามห้องของนักเรียน)</option>
+                {curriculumGrades.map((g) => (
+                  <option key={g.id} value={g.id}>{g.title}</option>
+                ))}
+              </select>
+              {targetGradeId && (
+                <select
+                  value={targetUnitNo}
+                  onChange={(e) => setTargetUnitNo(parseInt(e.target.value, 10) || 1)}
+                  style={{ padding: 8, border: '1px solid #d1d5db', borderRadius: 8, fontFamily: 'inherit' }}
+                >
+                  {targetUnits.map((u) => (
+                    <option key={u.no} value={u.no}>หน่วยที่ {u.no} {u.title ? `— ${u.title}` : ''}</option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
 
           <h3>คำถาม</h3>

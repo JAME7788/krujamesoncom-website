@@ -4,6 +4,9 @@ import { Bot, X, Send, Trash2, Sparkles, Settings } from 'lucide-react';
 import { askAI, loadHistory, clearHistory, loadSettings, saveSettings } from '../services/aiTutorService';
 import type { ChatMessage, AISettings } from '../services/aiTutorService';
 import { useAuth } from '../context/AuthContext';
+import { trackMediaClick } from '../services/progressService';
+import { syncStudentGradesFromProgress } from '../services/gameProgressService';
+import { classroomToGradeIds } from '../services/gradeService';
 import './AITutor.css';
 
 const AITutor: React.FC = () => {
@@ -26,6 +29,7 @@ const AITutor: React.FC = () => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
+  const trackedRef = useRef(false);
   const send = async () => {
     if (!input.trim() || loading) return;
     const msg = input.trim();
@@ -36,6 +40,21 @@ const AITutor: React.FC = () => {
     try {
       await askAI(userId, msg);
       setMessages(loadHistory(userId));
+      // นับการใช้ AI Tutor เป็น "ทักษะ" (P skill points) — 1 ครั้งต่อ session
+      if (!trackedRef.current && user && user.id !== 'admin_teacher_account') {
+        const gradeId = classroomToGradeIds(user.classroom)[0];
+        if (gradeId) {
+          trackedRef.current = true;
+          void trackMediaClick(user.id, gradeId, 1, 'fun', '[AI Tutor] คำถามถึง AI').then(() => {
+            syncStudentGradesFromProgress({
+              id: user.id,
+              name: user.name,
+              classroom: user.classroom,
+              studentNumber: user.studentNumber,
+            });
+          });
+        }
+      }
     } catch (e) {
       console.warn('AI failed', e);
     }
