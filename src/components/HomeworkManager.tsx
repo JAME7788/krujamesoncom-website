@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Plus, Trash2, Eye, X, ExternalLink } from 'lucide-react';
 import {
   loadAssignments, createAssignment, deleteAssignment,
@@ -6,14 +6,26 @@ import {
 } from '../services/homeworkService';
 import type { Assignment, Submission } from '../services/homeworkService';
 import { allClassrooms2569 } from '../data/students2569';
+import { getSubjectsForClassroom, getIndicators } from '../services/gradeService';
+import type { Subject, AssessmentCategory } from '../services/gradeService';
 
 const HomeworkManager: React.FC = () => {
   const [list, setList] = useState(loadAssignments());
   const [show, setShow] = useState(false);
   const [draft, setDraft] = useState<Partial<Assignment>>({
-    title: '', description: '', classroom: '', dueDate: new Date().toISOString().slice(0, 10), maxScore: 10,
+    title: '', description: '', classroom: '', dueDate: new Date().toISOString().slice(0, 10),
+    maxScore: 10, category: 'k',
   });
   const [viewing, setViewing] = useState<Assignment | null>(null);
+
+  const draftSubjects = useMemo(
+    () => (draft.classroom ? getSubjectsForClassroom(draft.classroom) : []),
+    [draft.classroom]
+  );
+  const draftIndicators = useMemo(
+    () => (draft.classroom && draft.subject ? getIndicators(draft.classroom, draft.subject) : []),
+    [draft.classroom, draft.subject]
+  );
 
   const reload = () => setList(loadAssignments());
 
@@ -26,8 +38,11 @@ const HomeworkManager: React.FC = () => {
       dueDate: draft.dueDate!,
       maxScore: draft.maxScore || 10,
       createdBy: 'teacher',
+      subject: draft.subject,
+      indicatorId: draft.indicatorId,
+      category: draft.indicatorId ? (draft.category || 'k') : undefined,
     });
-    setDraft({ title: '', description: '', classroom: '', dueDate: new Date().toISOString().slice(0, 10), maxScore: 10 });
+    setDraft({ title: '', description: '', classroom: '', dueDate: new Date().toISOString().slice(0, 10), maxScore: 10, category: 'k' });
     setShow(false);
     reload();
   };
@@ -72,6 +87,50 @@ const HomeworkManager: React.FC = () => {
               style={{ width: '100%', padding: 8, border: '1px solid #d1d5db', borderRadius: 8, fontFamily: 'inherit' }}
             />
           </div>
+          {draft.classroom && draftSubjects.length > 0 && (
+            <div className="filter-row" style={{ width: '100%', background: '#f0fdf4', padding: 10, borderRadius: 10, border: '1px dashed #86efac' }}>
+              <div className="filter-group" style={{ flex: 1 }}>
+                <label>📊 ผูกเข้ากระดาษเกรด — เลือกวิชา</label>
+                <select
+                  value={draft.subject || ''}
+                  onChange={(e) => setDraft({ ...draft, subject: (e.target.value as Subject) || undefined, indicatorId: undefined })}
+                >
+                  <option value="">(ไม่ผูก — ให้คะแนนเฉยๆ)</option>
+                  {draftSubjects.map((s) => (
+                    <option key={s.id} value={s.id}>{s.emoji} {s.title} ({s.code})</option>
+                  ))}
+                </select>
+              </div>
+              {draft.subject && (
+                <>
+                  <div className="filter-group" style={{ flex: 2 }}>
+                    <label>ตัวชี้วัด</label>
+                    <select
+                      value={draft.indicatorId || ''}
+                      onChange={(e) => setDraft({ ...draft, indicatorId: e.target.value || undefined })}
+                    >
+                      <option value="">(ไม่ผูกตัวชี้วัด)</option>
+                      {draftIndicators.map((ind) => (
+                        <option key={ind.id} value={ind.id}>{ind.code} — {ind.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {draft.indicatorId && (
+                    <div className="filter-group">
+                      <label>หมวด</label>
+                      <select
+                        value={draft.category || 'k'}
+                        onChange={(e) => setDraft({ ...draft, category: e.target.value as AssessmentCategory })}
+                      >
+                        <option value="k">K ความรู้</option>
+                        <option value="p">P ทักษะ</option>
+                      </select>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           <button className="btn-export" onClick={submit}>สร้างการบ้าน</button>
         </div>
       )}

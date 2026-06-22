@@ -1,4 +1,9 @@
 // ระบบส่งการบ้าน — ครูสร้างงาน, นักเรียน upload, ครูตรวจให้คะแนน
+import {
+  createManualAssessment, updateManualAssessmentScore,
+  applyManualAssessmentsToGrades, loadGrades, deleteManualAssessment,
+} from './gradeService';
+import type { Subject, AssessmentCategory } from './gradeService';
 
 export interface Assignment {
   id: string;
@@ -11,6 +16,11 @@ export interface Assignment {
   acceptedFormats?: string[]; // ['image/*', '.pdf']
   createdAt: number;
   createdBy: string;
+  /** ผูกคะแนนเข้ากระดาษเกรด (ใช้ Manual Assessment ของ gradeService) */
+  subject?: Subject;
+  indicatorId?: string;
+  category?: AssessmentCategory;     // 'k' (ความรู้) หรือ 'p' (ทักษะ)
+  linkedAssessmentId?: string;       // id ของ ManualAssessment ที่สร้างเชื่อมไว้
 }
 
 export interface Submission {
@@ -49,6 +59,22 @@ const saveAssignments = (list: Assignment[]) => {
 
 export const createAssignment = (data: Omit<Assignment, 'id' | 'createdAt'>): Assignment => {
   const a: Assignment = { ...data, id: uid(), createdAt: Date.now() };
+
+  // ถ้าผูกตัวชี้วัด → สร้าง Manual Assessment ขึ้นใน gradeService ของห้องนั้น
+  if (a.classroom && a.subject && a.indicatorId && a.category) {
+    try {
+      const ma = createManualAssessment(a.classroom, a.subject, {
+        title: a.title,
+        indicatorId: a.indicatorId,
+        category: a.category,
+        maxScore: a.maxScore,
+      });
+      a.linkedAssessmentId = ma.id;
+    } catch (e) {
+      console.warn('createAssignment: link to manual assessment failed', e);
+    }
+  }
+
   const list = loadAssignments();
   list.unshift(a);
   saveAssignments(list);
@@ -56,7 +82,16 @@ export const createAssignment = (data: Omit<Assignment, 'id' | 'createdAt'>): As
 };
 
 export const deleteAssignment = (id: string) => {
-  saveAssignments(loadAssignments().filter((a) => a.id !== id));
+  const list = loadAssignments();
+  const target = list.find((a) => a.id === id);
+  if (target?.linkedAssessmentId && target.classroom && target.subject) {
+    try {
+      deleteManualAssessment(target.classroom, target.subject, target.linkedAssessmentId);
+    } catch (e) {
+      console.warn('deleteAssignment: cleanup manual assessment failed', e);
+    }
+  }
+  saveAssignments(list.filter((a) => a.id !== id));
 };
 
 export const updateAssignment = (id: string, patch: Partial<Assignment>) => {
@@ -98,8 +133,36 @@ export const reviewSubmission = (id: string, score: number, feedback: string) =>
   const list = loadSubmissions();
   const idx = list.findIndex((s) => s.id === id);
   if (idx === -1) return;
-  list[idx] = { ...list[idx], score, feedback, reviewedAt: Date.now() };
+  const sub = { ...list[idx], score, feedback, reviewedAt: Date.now() };
+  list[idx] = sub;
   saveSubmissions(list);
+
+  // ถ้าการบ้านนี้ผูก Manual Assessment → push คะแนนเข้ากระดาษเกรด
+  const assignment = loadAssignments().find((a) => a.id === sub.assignmentId);
+  if (
+    assignment?.linkedAssessmentId &&
+    assignment.classroom &&
+    assignment.subject
+  ) {
+    try {
+      const grades = loadGrades(assignment.classroom, assignment.subject);
+      const student = grades.find(
+        (g) => g.name === sub.studentName || g.studentNo === sub.studentNo
+      );
+      if (student) {
+        updateManualAssessmentScore(
+          assignment.classroom,
+          assignment.subject,
+          assignment.linkedAssessmentId,
+          student.studentCode,
+          score,
+        );
+        applyManualAssessmentsToGrades(assignment.classroom, assignment.subject);
+      }
+    } catch (e) {
+      console.warn('reviewSubmission: push to gradebook failed', e);
+    }
+  }
 };
 
 export const getSubmissionsByAssignment = (assignmentId: string): Submission[] => {

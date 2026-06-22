@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Crown, TrendingUp, Sparkles, Medal } from 'lucide-react';
-import { getLeaderboard } from '../services/leaderboardService';
+import { getLeaderboard, refreshLeaderboardFromCloud } from '../services/leaderboardService';
 import type { LeaderboardEntry } from '../services/leaderboardService';
 import { allClassrooms2569 } from '../data/students2569';
 import './LeaderboardSection.css';
@@ -19,6 +19,8 @@ const LeaderboardSection: React.FC = () => {
       setLeaders(data);
     };
     reload();
+    // ดึง progress ข้ามเครื่องจาก Firebase ครั้งแรก แล้ว reload
+    void refreshLeaderboardFromCloud().then(() => reload());
     const t = setInterval(reload, 10000); // refresh every 10s
     return () => clearInterval(t);
   }, [filter]);

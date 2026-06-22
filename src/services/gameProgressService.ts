@@ -95,7 +95,8 @@ const subjectsForClassroom = (classroom: string): Subject[] => {
   return ['main'];
 };
 
-const syncLocalGradesIfAvailable = (student: StudentLike) => {
+/** อัปเดต K/P/A ในกระดาษเกรดจาก progress ของนักเรียน (ใช้ทุกครั้งหลังบันทึกกิจกรรม) */
+export const syncStudentGradesFromProgress = (student: StudentLike) => {
   subjectsForClassroom(student.classroom).forEach((subject) => {
     const grades = loadGrades(student.classroom, subject);
     const grade = grades.find(
@@ -134,7 +135,7 @@ export const recordGameProgress = async (
       );
       saved += 1;
     }
-    syncLocalGradesIfAvailable(student);
+    syncStudentGradesFromProgress(student);
   }
 
   return { saved, students: activeStudents.length };

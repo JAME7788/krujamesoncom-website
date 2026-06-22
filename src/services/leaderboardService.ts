@@ -1,6 +1,8 @@
 // ระบบ Leaderboard — สแกน progress data ของทุกคน → จัดอันดับ
 import type { StudentProgressData } from './progressService';
 import { loadRoster, loadAllRosters } from './rosterService';
+import { db } from './firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 export interface LeaderboardEntry {
   studentId: string;
@@ -12,8 +14,18 @@ export interface LeaderboardEntry {
   totalActivities: number;
   totalSlides: number;
   unitsCompleted: number;
+  weightedScore: number;   // คะแนนถ่วงน้ำหนัก (ใช้จัดอันดับ): quiz ×3 + activities ×2 + slides ×1
   rank: number;
 }
+
+const WEIGHT_QUIZ = 3;
+const WEIGHT_ACTIVITY = 2;
+const WEIGHT_SLIDE = 1;
+
+const computeWeightedScore = (p: StudentProgressData): number =>
+  (p.totalPoints || 0) * WEIGHT_QUIZ +
+  (p.totalActivities || 0) * WEIGHT_ACTIVITY +
+  (p.totalSlidesViewed || 0) * WEIGHT_SLIDE;
 
 /** สแกน localStorage หา progress data ทั้งหมด */
 const scanLocalProgress = (): StudentProgressData[] => {
@@ -70,15 +82,16 @@ export const getLeaderboard = (
       totalActivities: prog.totalActivities || 0,
       totalSlides: prog.totalSlidesViewed || 0,
       unitsCompleted: prog.unitsCompleted || 0,
+      weightedScore: computeWeightedScore(prog),
       rank: 0,
     });
   });
 
-  // Sort by totalPoints desc, then activities, then slides
+  // Sort by weightedScore (quiz×3 + activity×2 + slide×1), then unitsCompleted as tiebreaker
   entries.sort((a, b) => {
-    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-    if (b.totalActivities !== a.totalActivities) return b.totalActivities - a.totalActivities;
-    return b.totalSlides - a.totalSlides;
+    if (b.weightedScore !== a.weightedScore) return b.weightedScore - a.weightedScore;
+    if (b.unitsCompleted !== a.unitsCompleted) return b.unitsCompleted - a.unitsCompleted;
+    return b.totalActivities - a.totalActivities;
   });
 
   // Assign ranks
@@ -96,4 +109,34 @@ export const getTopByClassrooms = (limit = 5): Record<string, LeaderboardEntry[]
     result[classroom] = getLeaderboard({ classroom, limit });
   });
   return result;
+};
+
+/**
+ * ดึง progress data ของทุกคนจาก Firebase แล้วเขียนทับ localStorage
+ * → ทำให้ leaderboard เห็นนักเรียนข้ามเครื่อง (มือถือ/แท็บเล็ตของเด็ก)
+ * call ตอนหน้า leaderboard mount
+ */
+export const refreshLeaderboardFromCloud = async (): Promise<number> => {
+  const fbAvailable = (() => {
+    try { return !!db && !!import.meta.env.VITE_FIREBASE_PROJECT_ID; } catch { return false; }
+  })();
+  if (!fbAvailable) return 0;
+  try {
+    const snap = await getDocs(collection(db, 'progress'));
+    let n = 0;
+    snap.forEach((doc) => {
+      const data = doc.data() as StudentProgressData;
+      if (!data?.studentId) return;
+      try {
+        localStorage.setItem(`krujames_progress_${data.studentId}`, JSON.stringify(data));
+        n += 1;
+      } catch (e) {
+        console.warn('refreshLeaderboardFromCloud: write skipped', e);
+      }
+    });
+    return n;
+  } catch (e) {
+    console.debug('refreshLeaderboardFromCloud: fetch failed', e);
+    return 0;
+  }
 };

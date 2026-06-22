@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trophy, Users, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { joinRoom, subscribeRoom, submitAnswer } from '../services/liveQuizService';
 import type { LiveQuizRoom } from '../services/liveQuizService';
+import { saveQuizAttempt } from '../services/progressService';
+import { syncStudentGradesFromProgress } from '../services/gameProgressService';
+import { classroomToGradeIds } from '../services/gradeService';
 
 const LiveQuizPlay: React.FC = () => {
   const { user } = useAuth();
@@ -15,6 +18,28 @@ const LiveQuizPlay: React.FC = () => {
     if (!joined || !code) return;
     return subscribeRoom(code, setRoom);
   }, [joined, code]);
+
+  // บันทึก quiz attempt ลง progress + sync เข้า K/P/A เมื่อ Live Quiz จบ
+  const savedRef = useRef(false);
+  useEffect(() => {
+    if (!user || !room || room.state !== 'finished' || savedRef.current) return;
+    const me = room.players[user.id];
+    if (!me) return;
+    savedRef.current = true;
+    const total = room.questions.length;
+    const correct = Object.values(me.answers).filter((a) => a.correct).length;
+    const targetGradeId = room.targetGradeId || classroomToGradeIds(user.classroom)[0];
+    const targetUnitNo = room.targetUnitNo || 1;
+    if (!targetGradeId) return;
+    void saveQuizAttempt(user.id, targetGradeId, targetUnitNo, correct, total, {}).then(() => {
+      syncStudentGradesFromProgress({
+        id: user.id,
+        name: user.name,
+        classroom: user.classroom,
+        studentNumber: user.studentNumber,
+      });
+    });
+  }, [room, user]);
 
   const handleJoin = () => {
     if (!user) { setError('ต้อง login ก่อน'); return; }

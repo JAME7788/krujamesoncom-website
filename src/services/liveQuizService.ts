@@ -22,6 +22,9 @@ export interface LiveQuizRoom {
   questionStartedAt?: number;
   players: Record<string, LivePlayer>;
   createdAt: number;
+  /** ผูกคะแนน Quiz เข้ากับ unit ของหลักสูตร (optional). ถ้าไม่ระบุ default = unit 1 ของห้องนักเรียน */
+  targetGradeId?: string;
+  targetUnitNo?: number;
 }
 
 export interface LivePlayer {
