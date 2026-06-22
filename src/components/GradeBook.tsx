@@ -346,10 +346,10 @@ const GradeBook: React.FC = () => {
             toast.show(`เซ็ต P/A บท 1 สำเร็จ — รวม ${total} ช่อง\n${lines}`, 'success');
             setReloadKey((k) => k + 1);
           }}
-          style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 0 }}
+          style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 0, whiteSpace: 'nowrap' }}
           title="ใส่ค่าเริ่มต้น P=ปานกลาง, A=ผ่าน ให้บท 1 ของทุกชั้น/ทุกวิชา"
         >
-          ⚡ ใส่ P/A บท 1 ทุกห้อง
+          ⚡ P/A บท 1
         </button>
         <button className="btn-secondary" onClick={handlePrint}>
           <Printer size={14} /> พิมพ์รายงานคะแนน
