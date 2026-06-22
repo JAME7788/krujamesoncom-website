@@ -298,6 +298,8 @@ export const saveQuizAttempt = async (
     timestamp: Date.now(),
   };
   if (!studentId) return attempt;
+  // ป้องกัน quiz เปล่า (maxScore=0) บันทึกลงไป → ทำ best score เพี้ยน
+  if (maxScore <= 0) return attempt;
 
   const data = loadLocal(studentId);
   const k = unitKey(gradeId, unitNo);

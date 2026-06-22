@@ -492,7 +492,11 @@ export const applyManualAssessmentsToGrades = (
           const newK = Math.round(ratio * indicator.maxScore);
           next = { ...next, k: Math.max(next.k || 0, newK), maxK: indicator.maxScore };
         } else {
-          next = { ...next, p: skillFromRatio(ratio), pAssessed: true };
+          // P ก็ใช้ max เหมือน K — homework คะแนนต่ำห้ามลด P ที่ได้จาก quiz หรือเกม
+          const newP = skillFromRatio(ratio);
+          const currentP = next.p || 'พอใช้';
+          const finalP = P_POINTS[newP] > P_POINTS[currentP] ? newP : currentP;
+          next = { ...next, p: finalP, pAssessed: true };
         }
         changedForIndicator = true;
       });

@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Award } from 'lucide-react';
 import {
   loadGrades, getSubjectsForClassroom, computeBreakdown, computeGrade,
+  fetchClassroomFromFirebase, saveGrades,
 } from '../services/gradeService';
 import type { Subject, StudentGrade } from '../services/gradeService';
 
@@ -25,7 +26,21 @@ interface SubjectCard {
 }
 
 const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name }) => {
+  // ดึงคะแนนล่าสุดจาก Firebase ตอน mount (เผื่อเครื่องใหม่ที่ localStorage ว่าง)
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    const subjects = getSubjectsForClassroom(classroom);
+    Promise.all(subjects.map((s) => fetchClassroomFromFirebase(classroom, s.id).then((data) => {
+      if (!cancelled && data && data.length > 0) saveGrades(classroom, data, s.id);
+    }))).then(() => {
+      if (!cancelled) setRevision((r) => r + 1);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [classroom]);
+
   const cards = useMemo<SubjectCard[]>(() => {
+    void revision;
     const subjects = getSubjectsForClassroom(classroom);
     const out: SubjectCard[] = [];
     subjects.forEach((s) => {
@@ -49,9 +64,24 @@ const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name }) => {
       });
     });
     return out;
-  }, [classroom, studentNumber, name]);
+  }, [classroom, studentNumber, name, revision]);
 
-  if (cards.length === 0) return null;
+  // Empty state — บอกชัดเจน ไม่ใช่ซ่อนเฉยๆ
+  if (cards.length === 0) {
+    return (
+      <div className="my-grade-card glass" style={{
+        padding: 20, borderRadius: 16, marginBottom: 20,
+        background: 'linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.06))',
+        border: '1px dashed rgba(99,102,241,0.3)', textAlign: 'center',
+      }}>
+        <Award size={28} color="#6366f1" />
+        <h3 style={{ margin: '8px 0 4px', fontSize: '1rem' }}>คะแนนของฉัน — ปีการศึกษา 2569</h3>
+        <p style={{ margin: 0, color: '#6b7280', fontSize: '0.85rem' }}>
+          ยังไม่มีคะแนน — เริ่มเรียนได้เลย คะแนนจะปรากฏที่นี่อัตโนมัติ
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="my-grade-card glass" style={{
