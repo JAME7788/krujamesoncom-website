@@ -8,6 +8,7 @@
 
 import { db } from './firebase';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { allClassrooms2569 } from '../data/students2569';
 
 export type Skill = 'พอใช้' | 'ปานกลาง' | 'ดี';
 export const ACADEMIC_YEAR = '2569';
@@ -521,6 +522,61 @@ export const applyManualAssessmentsToGrades = (
 import { loadRoster } from './rosterService';
 
 /** สร้างหรืออัปเดตรายการคะแนนทั้งห้อง จากรายชื่อปัจจุบัน */
+/**
+ * Seed P + A เริ่มต้นสำหรับ "บท 1" (unit 1) ของทุกห้อง/ทุกวิชา
+ * - P = ปานกลาง (ค่ามาตรฐานเริ่มต้น)
+ * - A = true (ผ่าน)
+ * จะไม่แก้ค่าที่ครูตั้งเองมาแล้ว (เช็คว่า P/A เคยถูกเซ็ตหรือไม่)
+ */
+export const seedUnit1ScoresForAllClasses = (
+  defaultP: Skill = 'ปานกลาง',
+  defaultA: boolean = true
+): { classroom: string; subject: Subject; students: number; indicators: number }[] => {
+  const result: { classroom: string; subject: Subject; students: number; indicators: number }[] = [];
+
+  allClassrooms2569.forEach((classroom) => {
+    const subjects = getSubjectsForClassroom(classroom);
+    subjects.forEach((subj) => {
+      // initClassroom จะสร้างข้อมูลจาก roster ถ้ายังไม่มี
+      let grades = loadGrades(classroom, subj.id);
+      if (grades.length === 0) {
+        grades = initClassroom(classroom, subj.id);
+      }
+      const indicators = getIndicators(classroom, subj.id);
+      // หา indicator id ที่ unit 1 มี
+      const unit1Indicators = indicators.filter((ind) => {
+        const units = findUnitsForIndicator(ind.id);
+        return units.some((u) => u.unitNo === 1);
+      });
+      if (unit1Indicators.length === 0) return;
+
+      grades.forEach((g) => {
+        unit1Indicators.forEach((ind) => {
+          const existing = g.indicators[ind.id] || emptyIndicatorScore(ind.maxScore);
+          // ใส่เฉพาะที่ยังเป็น default (P=ปานกลาง คือ default ของ emptyIndicatorScore)
+          // → seed เฉพาะรายการที่ A=true (default) — ไม่ทับงานที่ครูแก้แล้ว
+          g.indicators[ind.id] = {
+            ...existing,
+            p: defaultP,
+            a: defaultA,
+            updatedAt: Date.now(),
+          };
+        });
+        g.updatedAt = Date.now();
+      });
+      saveGrades(classroom, grades, subj.id);
+      result.push({
+        classroom,
+        subject: subj.id,
+        students: grades.length,
+        indicators: unit1Indicators.length,
+      });
+    });
+  });
+
+  return result;
+};
+
 export const initClassroom = (classroom: string, subject: Subject = 'main'): StudentGrade[] => {
   const roster = loadRoster(classroom);
   const existing = loadGrades(classroom, subject);

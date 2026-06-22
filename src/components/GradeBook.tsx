@@ -9,6 +9,7 @@ import {
   createManualAssessment, deleteManualAssessment, updateManualAssessmentScore,
   applyManualAssessmentsToGrades, COURSE_TEACHER_NAME,
   getGradingPeriodLabel, getExamPolicyLabel,
+  seedUnit1ScoresForAllClasses,
 } from '../services/gradeService';
 import { findGrade } from '../data/curriculum';
 import { Link as LinkIcon, Info } from 'lucide-react';
@@ -66,6 +67,24 @@ const GradeBook: React.FC = () => {
       setDraftAssessment((prev) => ({ ...prev, indicatorId: indicators[0].id }));
     }
   }
+
+  // Auto-seed P/A defaults for unit 1 (one-time per browser) — รันครั้งเดียวเมื่อเข้าหน้านี้ครั้งแรก
+  useEffect(() => {
+    const FLAG = 'krujames_seeded_unit1_pa_v1';
+    if (localStorage.getItem(FLAG)) return;
+    try {
+      const res = seedUnit1ScoresForAllClasses('ปานกลาง', true);
+      localStorage.setItem(FLAG, JSON.stringify({ at: Date.now(), result: res }));
+      const total = res.reduce((acc, r) => acc + r.students * r.indicators, 0);
+      if (total > 0) {
+        toast.show(`✅ ใส่ค่า P/A เริ่มต้น "บท 1" ให้ ${res.length} ห้อง×วิชา (รวม ${total} ช่อง) แล้ว`, 'success');
+        setReloadKey((k) => k + 1);
+      }
+    } catch (e) {
+      console.warn('Auto-seed unit 1 P/A failed:', e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const grades = useMemo(() => {
     void reloadKey;
@@ -316,6 +335,21 @@ const GradeBook: React.FC = () => {
         </button>
         <button className="btn-secondary" onClick={handleReset}>
           <RefreshCw size={14} /> รีเซ็ตจากรายชื่อ
+        </button>
+        <button
+          className="btn-secondary"
+          onClick={() => {
+            if (!confirm('ใส่ P (ปานกลาง) และ A (ผ่าน) ให้ทุกตัวชี้วัด "บท 1" ของทุกห้อง/ทุกวิชาที่สอนจริง?\n\n* P ที่เคยตั้งเองจะถูกทับด้วย "ปานกลาง"\n* A จะถูกตั้งเป็นผ่านทั้งหมด\n* คะแนน K ไม่กระทบ')) return;
+            const res = seedUnit1ScoresForAllClasses('ปานกลาง', true);
+            const total = res.reduce((acc, r) => acc + r.students * r.indicators, 0);
+            const lines = res.map((r) => `• ${r.classroom} (${r.subject}): ${r.students} คน × ${r.indicators} ตัวชี้วัด`).join('\n');
+            toast.show(`เซ็ต P/A บท 1 สำเร็จ — รวม ${total} ช่อง\n${lines}`, 'success');
+            setReloadKey((k) => k + 1);
+          }}
+          style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 0 }}
+          title="ใส่ค่าเริ่มต้น P=ปานกลาง, A=ผ่าน ให้บท 1 ของทุกชั้น/ทุกวิชา"
+        >
+          ⚡ ใส่ P/A บท 1 ทุกห้อง
         </button>
         <button className="btn-secondary" onClick={handlePrint}>
           <Printer size={14} /> พิมพ์รายงานคะแนน
