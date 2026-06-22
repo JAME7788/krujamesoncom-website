@@ -15,6 +15,7 @@
 
 import { db } from './firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { loadSchedule, isInClassTime } from '../data/schedule';
 
 // ---------- Types ----------
 
@@ -50,6 +51,8 @@ export interface UnitProgress {
   quizAttempts: number;
   lastAttempt?: QuizAttempt;
   completionPct: number;        // 0-100
+  /** วันที่ (YYYY-M-D) ที่นักเรียนทำกิจกรรมในเวลาเรียน — เก็บถาวร ใช้คิด A */
+  inClassDays?: string[];
   updatedAt: number;
 }
 
@@ -83,8 +86,27 @@ const emptyUnit = (): UnitProgress => ({
   bestQuizMax: 0,
   quizAttempts: 0,
   completionPct: 0,
+  inClassDays: [],
   updatedAt: Date.now(),
 });
+
+/** ดึง classroom จาก studentId pattern `${classroom}_${studentNo}_${name}` */
+const parseClassroomFromStudentId = (studentId: string): string | null => {
+  const m = studentId.match(/^(ป\.\d+|ม\.\d+)_/);
+  return m ? m[1] : null;
+};
+
+/** ถ้า "ตอนนี้" เป็นเวลาเรียน ของห้องนักเรียน — เก็บ dayKey ไว้ใน u.inClassDays (ถาวร) */
+const recordInClassDayIfApplicable = (studentId: string, u: UnitProgress) => {
+  const classroom = parseClassroomFromStudentId(studentId);
+  if (!classroom) return;
+  const now = Date.now();
+  if (!isInClassTime(now, classroom, loadSchedule())) return;
+  const d = new Date(now);
+  const dayKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  if (!u.inClassDays) u.inClassDays = [];
+  if (!u.inClassDays.includes(dayKey)) u.inClassDays.push(dayKey);
+};
 
 const emptyData = (studentId: string): StudentProgressData => ({
   studentId,
@@ -217,6 +239,7 @@ export const trackSlideView = async (
   if (!u.slidesViewed.includes(slideIdx)) {
     u.slidesViewed.push(slideIdx);
   }
+  recordInClassDayIfApplicable(studentId, u);
   u.updatedAt = Date.now();
   recomputeUnit(u);
   data.units[k] = u;
@@ -247,6 +270,7 @@ export const trackMediaClick = async (
   if (!list.includes(detail)) {
     list.push(detail);
   }
+  recordInClassDayIfApplicable(studentId, u);
   u.updatedAt = Date.now();
   recomputeUnit(u);
   data.units[k] = u;
@@ -279,13 +303,16 @@ export const saveQuizAttempt = async (
   const k = unitKey(gradeId, unitNo);
   const u = data.units[k] || emptyUnit();
   u.quizAttempts += 1;
-  if (score > u.bestQuizScore) {
+  // เทียบ "ความสามารถดีสุด" ด้วย percentage ไม่ใช่คะแนนดิบ
+  // (กันบั๊ก: ทำ 5/5=100% แล้วต่อด้วย 6/10=60% ห้ามให้ K ลดลง)
+  const newPct = maxScore > 0 ? score / maxScore : 0;
+  const bestPct = u.bestQuizMax > 0 ? u.bestQuizScore / u.bestQuizMax : 0;
+  if (newPct > bestPct || u.bestQuizMax === 0) {
     u.bestQuizScore = score;
-    u.bestQuizMax = maxScore;
-  } else if (u.bestQuizMax === 0) {
     u.bestQuizMax = maxScore;
   }
   u.lastAttempt = attempt;
+  recordInClassDayIfApplicable(studentId, u);
   u.updatedAt = Date.now();
   recomputeUnit(u);
   data.units[k] = u;

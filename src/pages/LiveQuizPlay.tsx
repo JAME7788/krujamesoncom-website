@@ -25,6 +25,9 @@ const LiveQuizPlay: React.FC = () => {
     if (!user || !room || room.state !== 'finished' || savedRef.current) return;
     const me = room.players[user.id];
     if (!me) return;
+    const answeredCount = Object.keys(me.answers).length;
+    // ถ้า join แต่ไม่ตอบเลย ไม่ต้องบันทึก — ป้องกัน bestQuizScore=0 ทับของเก่า
+    if (answeredCount === 0) { savedRef.current = true; return; }
     savedRef.current = true;
     const total = room.questions.length;
     const correct = Object.values(me.answers).filter((a) => a.correct).length;

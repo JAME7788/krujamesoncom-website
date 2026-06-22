@@ -488,7 +488,9 @@ export const applyManualAssessmentsToGrades = (
         if (max <= 0) return;
         const ratio = Math.max(0, Math.min(1, earned / max));
         if (category === 'k') {
-          next = { ...next, k: Math.round(ratio * indicator.maxScore), maxK: indicator.maxScore };
+          // ใช้ max(K เดิม, K ใหม่) — homework ไม่ทับ quiz, quiz ไม่ทับ homework
+          const newK = Math.round(ratio * indicator.maxScore);
+          next = { ...next, k: Math.max(next.k || 0, newK), maxK: indicator.maxScore };
         } else {
           next = { ...next, p: skillFromRatio(ratio), pAssessed: true };
         }
@@ -1141,31 +1143,39 @@ export const syncFromProgress = (
 
     if (unitsWithData === 0) return;
 
-    // K: ระดับความรู้
-    const k =
+    // K: ระดับความรู้ — ใช้ max(K เดิม, K จาก quiz) ป้องกัน sync ทับคะแนนที่ครูตั้งเอง
+    // หรือคะแนน Manual Assessment (homework) ที่ apply ไว้ก่อน
+    const quizK =
       totalQuizMax > 0
         ? Math.round((totalQuizScore / totalQuizMax) * ind.maxScore)
-        : student.indicators[ind.id]?.k || 0;
+        : 0;
+    const existingK = student.indicators[ind.id]?.k || 0;
+    const k = Math.max(quizK, existingK);
 
     // P: ระดับทักษะ — เกณฑ์ตามคะแนน skill points
     // ≥ 15 → ดี (ลงมือเยอะ), ≥ 5 → ปานกลาง, < 5 → พอใช้
     const p: Skill = skillPoints >= 15 ? 'ดี' : skillPoints >= 5 ? 'ปานกลาง' : 'พอใช้';
 
     // ============ A = จิตพิสัย ============
-    // เกณฑ์: เข้าเรียนในเวลาเรียน (ตาราง) + เข้าหน่วยที่เกี่ยวกับตัวชี้วัดนี้บ่อย
-    // นับจำนวน "วันที่แตกต่างกัน" ที่นักเรียนทำกิจกรรมในเวลาเรียน
+    // เกณฑ์: เข้าเรียนในเวลาเรียน (ตาราง) ≥ 2 วันที่ต่างกัน
+    // ใช้ u.inClassDays (persistent ต่อ unit) เป็นแหล่งหลัก — ทนต่อ activity buffer truncation
+    // fallback เป็น activities log (ถ้า progress data รุ่นเก่ายังไม่มี inClassDays)
     const inClassDays = new Set<string>();
-    allActivities.forEach((act: ActivityLog) => {
-      // 1) ต้องเป็นกิจกรรมในหน่วยที่ link กับตัวชี้วัดนี้
-      const actKey = `${act.gradeId}_${act.unitNo}`;
-      if (!linkedUnitKeys.has(actKey)) return;
-      // 2) ต้องอยู่ในเวลาเรียนของห้องนี้
-      if (!isInClassTime(act.timestamp, classroom, schedule)) return;
-      // 3) นับเป็นวัน
-      const d = new Date(act.timestamp);
-      const dayKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      inClassDays.add(dayKey);
+    linkedUnits.forEach(({ gradeId, unitNo }) => {
+      const u = prog.units?.[`${gradeId}_${unitNo}`];
+      u?.inClassDays?.forEach((d) => inClassDays.add(d));
     });
+    if (inClassDays.size === 0) {
+      // legacy fallback — สแกน activities array (อาจถูกตัดถ้าใช้นานๆ)
+      allActivities.forEach((act: ActivityLog) => {
+        const actKey = `${act.gradeId}_${act.unitNo}`;
+        if (!linkedUnitKeys.has(actKey)) return;
+        if (!isInClassTime(act.timestamp, classroom, schedule)) return;
+        const d = new Date(act.timestamp);
+        const dayKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        inClassDays.add(dayKey);
+      });
+    }
 
     // A = true ถ้าเข้าเรียนในเวลาเรียนของหน่วยนี้ ≥ 2 วันที่ต่างกัน
     // (แสดงว่ามาเรียนสม่ำเสมอ ไม่ใช่ทำตอนนอกเวลาอย่างเดียว)
