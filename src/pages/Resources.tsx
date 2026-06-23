@@ -7,8 +7,32 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { trackMediaClick } from '../services/progressService';
 import { syncFromProgress, loadGrades } from '../services/gradeService';
-import { findGrade } from '../data/curriculum';
 import './Resources.css';
+
+/** แปลง targetUnits → "ป.1-3" หรือ "ป.4-ม.3" (ภาษาเด็ก ไม่โชว์เลข unit ของหลักสูตร) */
+const formatGradeRange = (targetUnits: { gradeId: string }[]): string => {
+  const grades = new Set<string>();
+  targetUnits.forEach((tu) => {
+    if (tu.gradeId.startsWith('p')) {
+      const m = tu.gradeId.match(/^p(\d)/);
+      if (m) grades.add(`p${m[1]}`);
+    } else if (tu.gradeId.startsWith('m')) {
+      const m = tu.gradeId.match(/^m(\d)/);
+      if (m) grades.add(`m${m[1]}`);
+    }
+  });
+  const pNums = [1, 2, 3, 4, 5, 6].filter((n) => grades.has(`p${n}`));
+  const mNums = [1, 2, 3].filter((n) => grades.has(`m${n}`));
+  const fmt = (nums: number[], prefix: string): string => {
+    if (nums.length === 0) return '';
+    if (nums.length === 1) return `${prefix}${nums[0]}`;
+    const consecutive = nums.every((n, i) => i === 0 || n === nums[i - 1] + 1);
+    if (consecutive) return `${prefix}${nums[0]}-${nums[nums.length - 1]}`;
+    return nums.map((n) => `${prefix}${n}`).join(', ');
+  };
+  const parts = [fmt(pNums, 'ป.'), fmt(mNums, 'ม.')].filter(Boolean);
+  return parts.join(' + ') || 'ทุกชั้น';
+};
 
 const Resources: React.FC = () => {
   const { user, partner, getActiveIds } = useAuth();
@@ -229,20 +253,10 @@ const ResourceGrid: React.FC<{ items: LearningResource[]; onClick: (r: LearningR
           {r.targetUnits.length > 0 && (
             <div className="lr-tags">
               <CheckCircle2 size={12} />
-              <span>P สำหรับ {r.targetUnits.length} หน่วย:</span>
-              <div className="lr-tag-list">
-                {r.targetUnits.slice(0, 3).map((tu, idx) => {
-                  const g = findGrade(tu.gradeId);
-                  return (
-                    <span key={idx} className="lr-tag">
-                      {g?.emoji} หน่วย {tu.unitNo}
-                    </span>
-                  );
-                })}
-                {r.targetUnits.length > 3 && (
-                  <span className="lr-tag muted">+{r.targetUnits.length - 3}</span>
-                )}
-              </div>
+              <span>เหมาะกับ <strong>{formatGradeRange(r.targetUnits)}</strong></span>
+              <span className="lr-tag" style={{ background: '#fef3c7', color: '#92400e', fontWeight: 700 }}>
+                🎯 +P
+              </span>
             </div>
           )}
         </div>
