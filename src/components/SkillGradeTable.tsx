@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Download, Users, Save } from 'lucide-react';
+import { RefreshCw, Download, Users, Plus, Trash2, Save } from 'lucide-react';
 import {
-  loadSkillGrades, saveSkillGrades, updateSkillScore, initSkillGrades,
-  fetchSkillGradesFromFirebase, SKILL_K_MAX,
+  loadSkillGradeData, saveSkillGradeData,
+  fetchSkillGradeDataFromFirebase, resetSkillStudentsFromRoster,
+  addSkillAssignment, renameSkillAssignment, deleteSkillAssignment,
+  updateSkillStudentScore, updateSkillStudentP, totalSkillK,
 } from '../services/skillGradeService';
-import type { SkillScore } from '../services/skillGradeService';
+import type { SkillGradeData, SkillAssignment } from '../services/skillGradeService';
 import type { Skill } from '../services/gradeService';
 import { loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
@@ -13,7 +15,7 @@ const SkillGradeTable: React.FC = () => {
   const rosters = useMemo(() => loadAllRosters(), []);
   const availableClassrooms = useMemo(() => Object.keys(rosters), [rosters]);
   const [classroom, setClassroom] = useState<string>(availableClassrooms.includes('ม.1') ? 'ม.1' : (availableClassrooms[0] || 'ม.1'));
-  const [scores, setScores] = useState<SkillScore[]>([]);
+  const [data, setData] = useState<SkillGradeData>(() => loadSkillGradeData('ม.1'));
   const [loading, setLoading] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const toast = useToast();
@@ -24,19 +26,16 @@ const SkillGradeTable: React.FC = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const remote = await fetchSkillGradesFromFirebase(classroom);
+        const remote = await fetchSkillGradeDataFromFirebase(classroom);
         if (cancelled) return;
-        if (remote && remote.length > 0) {
-          saveSkillGrades(classroom, remote);
-        }
-        const local = loadSkillGrades(classroom);
+        if (remote) saveSkillGradeData(remote);
+        const local = loadSkillGradeData(classroom);
         const roster = rosters[classroom] || [];
-        if (local.length === 0 && roster.length > 0) {
-          initSkillGrades(classroom, roster);
+        if (local.students.length === 0 && roster.length > 0) {
+          resetSkillStudentsFromRoster(classroom, roster);
         }
         if (!cancelled) {
-          setScores(loadSkillGrades(classroom));
-          setReloadKey((k) => k + 1);
+          setData(loadSkillGradeData(classroom));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -46,36 +45,74 @@ const SkillGradeTable: React.FC = () => {
     return () => { cancelled = true; };
   }, [classroom, rosters]);
 
-  // re-render เมื่อมี update
+  // re-render after edits
   useEffect(() => {
     void reloadKey;
-    setScores(loadSkillGrades(classroom));
+    setData(loadSkillGradeData(classroom));
   }, [reloadKey, classroom]);
 
-  const handleK = (code: string, raw: string) => {
-    const n = parseInt(raw, 10);
+  const refresh = () => setReloadKey((k) => k + 1);
+
+  // ---------- Assignment handlers ----------
+  const handleAddAssignment = () => {
+    const title = prompt('ชื่อช่องคะแนน (เช่น "ใบงานที่ 1: Logo")');
+    if (!title) return;
+    const maxRaw = prompt(`คะแนนเต็มของ "${title}":`, '10');
+    const max = parseInt(maxRaw || '10', 10);
+    if (Number.isNaN(max) || max < 1) { alert('คะแนนเต็มต้องเป็นตัวเลขมากกว่า 0'); return; }
+    addSkillAssignment(classroom, title, max);
+    refresh();
+  };
+
+  const handleRenameAssignment = (a: SkillAssignment) => {
+    const title = prompt('ชื่อใหม่:', a.title);
+    if (title === null) return;
+    const maxRaw = prompt(`คะแนนเต็มของ "${title}":`, String(a.maxScore));
+    const max = parseInt(maxRaw || String(a.maxScore), 10);
+    renameSkillAssignment(classroom, a.id, { title, maxScore: max });
+    refresh();
+  };
+
+  const handleDeleteAssignment = (a: SkillAssignment) => {
+    if (!confirm(`ลบช่อง "${a.title}"? คะแนนของทุกคนในช่องนี้จะหายไปด้วย`)) return;
+    deleteSkillAssignment(classroom, a.id);
+    refresh();
+  };
+
+  // ---------- Score handlers ----------
+  const handleScore = (studentCode: string, assignmentId: string, raw: string) => {
+    const n = parseFloat(raw);
     if (Number.isNaN(n)) return;
-    updateSkillScore(classroom, code, { k: n });
-    setReloadKey((k) => k + 1);
+    updateSkillStudentScore(classroom, studentCode, assignmentId, n);
+    refresh();
   };
 
-  const handleP = (code: string, p: Skill) => {
-    updateSkillScore(classroom, code, { p });
-    setReloadKey((k) => k + 1);
+  const handleP = (studentCode: string, p: Skill) => {
+    updateSkillStudentP(classroom, studentCode, p);
+    refresh();
   };
 
-  const handleReset = () => {
-    if (!confirm(`รีเซ็ตคะแนนทักษะอาชีพห้อง ${classroom} จาก roster ปัจจุบัน?\n(จะเริ่มจาก 0 ใหม่ทั้งหมด)`)) return;
-    const roster = rosters[classroom] || [];
-    initSkillGrades(classroom, roster);
-    setReloadKey((k) => k + 1);
-    toast.show(`รีเซ็ตห้อง ${classroom} แล้ว`, 'success');
+  const handleResetStudents = () => {
+    if (!confirm(`รีเซ็ตรายชื่อนักเรียนห้อง ${classroom} จาก roster ปัจจุบัน?\n(คะแนน + ช่อง K ที่มีอยู่จะคงไว้)`)) return;
+    resetSkillStudentsFromRoster(classroom, rosters[classroom] || []);
+    refresh();
+    toast.show(`รีเซ็ตรายชื่อห้อง ${classroom} แล้ว`, 'success');
   };
 
   const handleExport = () => {
-    let csv = 'เลขที่,ชื่อ-สกุล,K (0-100),P\n';
-    scores.forEach((s) => {
-      csv += `${s.studentNo},"${s.name}",${s.k},${s.pAssessed ? s.p : '-'}\n`;
+    const headers = ['เลขที่', 'ชื่อ-สกุล', ...data.assignments.map((a) => `${a.title} (${a.maxScore})`), 'รวม K', 'รวมเต็ม', 'P'];
+    let csv = headers.join(',') + '\n';
+    [...data.students].sort((a, b) => a.studentNo - b.studentNo).forEach((s) => {
+      const { earned, total } = totalSkillK(s, data.assignments);
+      const row = [
+        s.studentNo,
+        `"${s.name}"`,
+        ...data.assignments.map((a) => s.scores[a.id] ?? ''),
+        earned,
+        total,
+        s.pAssessed ? s.p : '-',
+      ];
+      csv += row.join(',') + '\n';
     });
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -85,6 +122,11 @@ const SkillGradeTable: React.FC = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const sortedStudents = useMemo(
+    () => [...data.students].sort((a, b) => a.studentNo - b.studentNo),
+    [data.students],
+  );
 
   return (
     <div className="skill-grade">
@@ -97,8 +139,11 @@ const SkillGradeTable: React.FC = () => {
             ))}
           </select>
         </div>
-        <button className="btn-secondary" onClick={handleReset}>
-          <RefreshCw size={14} /> รีเซ็ตจากรายชื่อ
+        <button className="btn-secondary" onClick={handleAddAssignment}>
+          <Plus size={14} /> เพิ่มช่อง K (ใบงาน/กิจกรรม)
+        </button>
+        <button className="btn-secondary" onClick={handleResetStudents}>
+          <RefreshCw size={14} /> รีเซ็ตรายชื่อจาก roster
         </button>
         <div style={{ flex: 1 }} />
         <button className="btn-export" onClick={handleExport}>
@@ -110,8 +155,8 @@ const SkillGradeTable: React.FC = () => {
         <strong>📝 วิชาทักษะอาชีพ ({classroom})</strong> — Logo / Poster / Canva / Online Marketing
         <br />
         <small style={{ color: '#6b7280' }}>
-          K = คะแนนความรู้ (0-{SKILL_K_MAX}) — ครูใส่เอง | P = ทักษะ — เลือกจาก dropdown |
-          บันทึกอัตโนมัติทันทีลง Firebase
+          ครูสร้างช่อง K ได้กี่ช่องก็ได้ (เช่น ใบงาน 1, กิจกรรม Logo, สอบกลางภาค) แต่ละช่องตั้งคะแนนเต็มของตัวเอง |
+          P เลือกจาก dropdown | บันทึกอัตโนมัติทันทีลง Firebase
         </small>
       </div>
 
@@ -120,64 +165,103 @@ const SkillGradeTable: React.FC = () => {
           <RefreshCw size={32} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
           <p>กำลังโหลดคะแนน...</p>
         </div>
-      ) : scores.length === 0 ? (
+      ) : sortedStudents.length === 0 ? (
         <div className="empty-state-card">
-          <p>ยังไม่มีข้อมูล — กด "รีเซ็ตจากรายชื่อ" เพื่อสร้างจาก roster</p>
+          <p>ยังไม่มีรายชื่อ — กด "รีเซ็ตรายชื่อจาก roster"</p>
         </div>
       ) : (
-        <div className="att-table-wrap">
-          <table className="att-table">
+        <div className="att-table-wrap" style={{ overflowX: 'auto' }}>
+          <table className="att-table" style={{ minWidth: 700 }}>
             <thead>
               <tr>
-                <th style={{ width: 60, textAlign: 'center' }}>เลขที่</th>
-                <th>ชื่อ-สกุล</th>
-                <th style={{ width: 140, textAlign: 'center' }}>K (0-{SKILL_K_MAX})</th>
-                <th style={{ width: 140, textAlign: 'center' }}>P</th>
-                <th style={{ width: 100, textAlign: 'center' }}>สถานะ</th>
+                <th style={{ width: 60, textAlign: 'center', position: 'sticky', left: 0, background: '#f9fafb', zIndex: 1 }}>เลขที่</th>
+                <th style={{ position: 'sticky', left: 60, background: '#f9fafb', zIndex: 1, minWidth: 180 }}>ชื่อ-สกุล</th>
+                {data.assignments.map((a) => (
+                  <th key={a.id} style={{ textAlign: 'center', minWidth: 100 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <span
+                        style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+                        onClick={() => handleRenameAssignment(a)}
+                        title="คลิกเพื่อแก้ชื่อ/คะแนนเต็ม"
+                      >
+                        {a.title}
+                      </span>
+                      <small style={{ color: '#6b7280', fontSize: '0.7rem' }}>(เต็ม {a.maxScore})</small>
+                      <button
+                        className="link-btn danger"
+                        onClick={() => handleDeleteAssignment(a)}
+                        style={{ padding: 0, fontSize: '0.7rem' }}
+                      >
+                        <Trash2 size={11} /> ลบช่อง
+                      </button>
+                    </div>
+                  </th>
+                ))}
+                <th style={{ textAlign: 'center', background: '#fef3c7', minWidth: 90 }}>รวม K</th>
+                <th style={{ textAlign: 'center', minWidth: 110 }}>P</th>
+                <th style={{ textAlign: 'center', width: 90 }}>สถานะ</th>
               </tr>
             </thead>
             <tbody>
-              {scores.sort((a, b) => a.studentNo - b.studentNo).map((s) => (
-                <tr key={s.studentCode}>
-                  <td style={{ textAlign: 'center' }}>{s.studentNo}</td>
-                  <td>{s.emoji} {s.name}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <input
-                      type="number"
-                      value={s.k}
-                      min={0}
-                      max={SKILL_K_MAX}
-                      onChange={(e) => handleK(s.studentCode, e.target.value)}
-                      style={{
-                        width: 80, padding: '4px 8px', textAlign: 'center',
-                        border: '1px solid #d1d5db', borderRadius: 6, fontFamily: 'inherit',
-                      }}
-                    />
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <select
-                      value={s.p}
-                      onChange={(e) => handleP(s.studentCode, e.target.value as Skill)}
-                      style={{
-                        padding: '4px 10px',
-                        border: '1px solid #d1d5db', borderRadius: 6, fontFamily: 'inherit',
-                        background: s.pAssessed ? '#dcfce7' : 'white',
-                      }}
-                    >
-                      <option value="พอใช้">พอใช้</option>
-                      <option value="ปานกลาง">ปานกลาง</option>
-                      <option value="ดี">ดี</option>
-                    </select>
-                  </td>
-                  <td style={{ textAlign: 'center', fontSize: '0.8rem' }}>
-                    {s.pAssessed || s.k > 0 ? (
-                      <span style={{ color: '#16a34a' }}><Save size={12} /> บันทึก</span>
-                    ) : (
-                      <span style={{ color: '#9ca3af' }}>—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {sortedStudents.map((s) => {
+                const { earned, total } = totalSkillK(s, data.assignments);
+                const pct = total > 0 ? Math.round((earned / total) * 100) : 0;
+                return (
+                  <tr key={s.studentCode}>
+                    <td style={{ textAlign: 'center', position: 'sticky', left: 0, background: 'white', zIndex: 1 }}>{s.studentNo}</td>
+                    <td style={{ position: 'sticky', left: 60, background: 'white', zIndex: 1 }}>{s.emoji} {s.name}</td>
+                    {data.assignments.map((a) => (
+                      <td key={a.id} style={{ textAlign: 'center' }}>
+                        <input
+                          type="number"
+                          value={s.scores[a.id] ?? ''}
+                          min={0}
+                          max={a.maxScore}
+                          onChange={(e) => handleScore(s.studentCode, a.id, e.target.value)}
+                          placeholder="—"
+                          style={{
+                            width: 70, padding: '4px 6px', textAlign: 'center',
+                            border: '1px solid #d1d5db', borderRadius: 6, fontFamily: 'inherit',
+                          }}
+                        />
+                      </td>
+                    ))}
+                    <td style={{ textAlign: 'center', background: '#fef3c7', fontWeight: 700 }}>
+                      {total > 0 ? (
+                        <>
+                          {earned}/{total}
+                          <br />
+                          <small style={{ color: '#6b7280', fontSize: '0.7rem', fontWeight: 400 }}>({pct}%)</small>
+                        </>
+                      ) : (
+                        <small style={{ color: '#9ca3af' }}>—</small>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <select
+                        value={s.p}
+                        onChange={(e) => handleP(s.studentCode, e.target.value as Skill)}
+                        style={{
+                          padding: '4px 10px',
+                          border: '1px solid #d1d5db', borderRadius: 6, fontFamily: 'inherit',
+                          background: s.pAssessed ? '#dcfce7' : 'white',
+                        }}
+                      >
+                        <option value="พอใช้">พอใช้</option>
+                        <option value="ปานกลาง">ปานกลาง</option>
+                        <option value="ดี">ดี</option>
+                      </select>
+                    </td>
+                    <td style={{ textAlign: 'center', fontSize: '0.78rem' }}>
+                      {s.pAssessed || earned > 0 ? (
+                        <span style={{ color: '#16a34a' }}><Save size={12} /></span>
+                      ) : (
+                        <span style={{ color: '#9ca3af' }}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
