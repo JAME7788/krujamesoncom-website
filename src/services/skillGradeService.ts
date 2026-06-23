@@ -38,8 +38,13 @@ export const loadSkillGrades = (classroom: string): SkillScore[] => {
 const syncToFirebase = async (classroom: string, scores: SkillScore[]) => {
   if (!fbAvailable()) return;
   try {
-    const ref = doc(db, 'skillGrades', classroom);
-    await setDoc(ref, { classroom, students: scores, updatedAt: Date.now() }, { merge: true });
+    // เก็บใน collection 'grades' เดียวกับ K/P/A หลัก
+    // docId = 'skill_<classroom>' กันชนกับ K/P/A doc ของห้องนั้น
+    const ref = doc(db, 'grades', `skill_${classroom}`);
+    await setDoc(ref, {
+      classroom, subject: 'skill', kind: 'skill-only',
+      students: scores, updatedAt: Date.now(),
+    }, { merge: true });
   } catch (e) {
     console.debug('skill grade sync skipped', e);
   }
@@ -57,10 +62,18 @@ export const saveSkillGrades = (classroom: string, scores: SkillScore[]) => {
 export const fetchSkillGradesFromFirebase = async (classroom: string): Promise<SkillScore[] | null> => {
   if (!fbAvailable()) return null;
   try {
-    const ref = doc(db, 'skillGrades', classroom);
+    // อ่านจาก collection 'grades' เดียวกับ K/P/A หลัก (docId = 'skill_<classroom>')
+    const ref = doc(db, 'grades', `skill_${classroom}`);
     const snap = await getDoc(ref);
     if (snap.exists()) {
       const data = snap.data() as { students?: SkillScore[] };
+      return data?.students || null;
+    }
+    // fallback อ่านจาก collection เก่า (กรณีมีข้อมูลค้างจากตอน schema เก่า)
+    const legacyRef = doc(db, 'skillGrades', classroom);
+    const legacy = await getDoc(legacyRef);
+    if (legacy.exists()) {
+      const data = legacy.data() as { students?: SkillScore[] };
       return data?.students || null;
     }
   } catch (e) {
