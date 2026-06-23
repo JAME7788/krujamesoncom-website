@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
 import {
   LogIn, GraduationCap, Sparkles, Users, ChevronLeft, ChevronRight,
-  Search, Edit3, CheckCircle2, UserPlus,
+  Search, Edit3, CheckCircle2, UserPlus, Lock,
 } from 'lucide-react';
 import { allClassrooms2569 } from '../data/students2569';
 import type { StudentInfo } from '../data/students2569';
@@ -16,9 +16,17 @@ const students2569 = loadAllRosters();
 
 type Step = 'classroom' | 'student';
 
+const ACCESS_CODE = 'ajj';
+const ACCESS_FLAG = 'krujames_access_granted_v1';
+
 const Login: React.FC = () => {
   const { user, loginAsStudent, clearStudentSession } = useAuth();
   const [loginReady, setLoginReady] = useState(false);
+  const [accessGranted, setAccessGranted] = useState<boolean>(() => {
+    try { return sessionStorage.getItem(ACCESS_FLAG) === 'true'; } catch { return false; }
+  });
+  const [codeInput, setCodeInput] = useState('');
+  const [codeError, setCodeError] = useState('');
   const [step, setStep] = useState<Step>('classroom');
   const [classroom, setClassroom] = useState<string>('');
   const [pairMode, setPairMode] = useState(false);                  // โหมดนั่งคู่
@@ -66,6 +74,78 @@ const Login: React.FC = () => {
   }
   if (user?.id === 'admin_teacher_account') return <Navigate to="/dashboard" />;
   if (user) return <Navigate to="/dashboard" />;
+
+  // ขั้นที่ 0: ต้องใส่รหัสเข้าระบบก่อน (รหัสเดียวทั้งโรงเรียน — ครูแจ้ง)
+  if (!accessGranted) {
+    const tryUnlock = () => {
+      if (codeInput.trim().toLowerCase() === ACCESS_CODE) {
+        try { sessionStorage.setItem(ACCESS_FLAG, 'true'); } catch { /* ignore */ }
+        setAccessGranted(true);
+        setCodeError('');
+      } else {
+        setCodeError('รหัสไม่ถูกต้อง — ลองอีกครั้ง');
+        setCodeInput('');
+      }
+    };
+    return (
+      <div className="login-page page-transition">
+        <div className="login-bg"></div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="login-card"
+          style={{ maxWidth: 420, textAlign: 'center' }}
+        >
+          <div className="login-header">
+            <div className="auth-icon">
+              <Lock size={44} />
+            </div>
+            <span className="badge-yellow" style={{ marginBottom: '0.75rem' }}>
+              <Sparkles size={14} /> Student Portal
+            </span>
+            <h1>ใส่รหัสเข้าระบบ</h1>
+            <p>กรุณาใส่รหัสที่ครูแจ้งก่อนเข้าใช้งาน</p>
+          </div>
+
+          <input
+            type="text"
+            value={codeInput}
+            onChange={(e) => { setCodeInput(e.target.value); setCodeError(''); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') tryUnlock(); }}
+            placeholder="รหัสเข้าระบบ"
+            autoFocus
+            spellCheck={false}
+            style={{
+              width: '100%', padding: '14px 16px',
+              fontSize: '1.4rem', textAlign: 'center', letterSpacing: '0.3rem',
+              border: codeError ? '2px solid #ef4444' : '2px solid #e5e7eb',
+              borderRadius: 12, fontFamily: 'inherit', marginTop: 8,
+              boxSizing: 'border-box', textTransform: 'lowercase',
+            }}
+          />
+
+          {codeError && (
+            <p style={{ color: '#ef4444', fontSize: '0.9rem', marginTop: 8 }}>
+              {codeError}
+            </p>
+          )}
+
+          <button
+            onClick={tryUnlock}
+            disabled={!codeInput.trim()}
+            className="btn-login-submit"
+            style={{ marginTop: 16 }}
+          >
+            <LogIn size={18} /> เข้าใช้งาน
+          </button>
+
+          <p style={{ marginTop: 16, fontSize: '0.8rem', color: '#9ca3af' }}>
+            * รหัสจะใช้ได้ครั้งเดียวต่อการเปิดเบราว์เซอร์ — ปิดแล้วต้องใส่ใหม่
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   // คลิก card นักเรียน
   const handleCardClick = (s: StudentInfo) => {
