@@ -897,6 +897,7 @@ const ScheduleEditor: React.FC<{ schedule: ClassSlot[]; setSchedule: (s: ClassSl
               <th style={{ textAlign: 'center' }}>เริ่ม</th>
               <th style={{ textAlign: 'center' }}>สิ้นสุด</th>
               <th>วิชา</th>
+              <th style={{ textAlign: 'center' }} title="ติ๊กถ้าเป็นคาบ CS ที่นับ A score">นับเกรด</th>
               <th></th>
             </tr>
           </thead>
@@ -916,6 +917,14 @@ const ScheduleEditor: React.FC<{ schedule: ClassSlot[]; setSchedule: (s: ClassSl
                 <td><HourMinutePicker value={s.start} onChange={(val) => update(s.id, { start: val })} /></td>
                 <td><HourMinutePicker value={s.end} onChange={(val) => update(s.id, { end: val })} /></td>
                 <td><input type="text" value={s.subject || ''} onChange={(e) => update(s.id, { subject: e.target.value })} /></td>
+                <td style={{ textAlign: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={!s.excludeFromGrading}
+                    onChange={(e) => update(s.id, { excludeFromGrading: !e.target.checked })}
+                    title="ติ๊ก = เป็นคาบ CS ที่นับ A score / ไม่ติ๊ก = แสดงเฉยๆ ไม่ผูกเกรด"
+                  />
+                </td>
                 <td>
                   <button className="link-btn danger" onClick={() => remove(s.id)}>
                     <Trash2 size={14}/>

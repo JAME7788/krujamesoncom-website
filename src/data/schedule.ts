@@ -11,19 +11,24 @@ export interface ClassSlot {
   start: string;     // 'HH:MM' 24h
   end: string;       // 'HH:MM'
   subject?: string;
+  /** true = แสดงในตารางเฉยๆ ไม่นับเข้าคะแนน (A score, attendance) */
+  excludeFromGrading?: boolean;
 }
 
 export const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 export const dayNamesShort = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
 // ตารางเริ่มต้น — แก้ในหน้า Admin ได้
-// ตารางจริงปีการศึกษา 2569 ครูเจมส์ — เฉพาะคาบ CS (วิทยาการคำนวณ/เทคโนโลยี)
-// คาบอื่น (กิจกรรมตามความสนใจ การงานอาชีพ ทักษะอาชีพ) ไม่อยู่ในนี้
-// เพราะ A score จะนับเฉพาะเวลาที่นักเรียนทำกิจกรรมในคาบที่ ครูสอน CS เท่านั้น
+// ตารางจริงปีการศึกษา 2569 ครูเจมส์
+// คาบ CS หลัก (วิทยาการคำนวณ/เทคโนโลยี) — นับเข้า A score
+// ทักษะอาชีพ ม.1 (อังคารคาบ 6-7) — แสดงในตารางแต่ไม่นับ A score
 export const defaultSchedule: ClassSlot[] = [
   // จันทร์
   { id: 's-mon-1',  classroom: 'ม.1', day: 1, start: '08:30', end: '09:20', subject: 'วิทยาการคำนวณ' },
   { id: 's-mon-6',  classroom: 'ป.2', day: 1, start: '13:50', end: '14:40', subject: 'เทคโนโลยี' },
+  // อังคาร — ทักษะอาชีพ ม.1 (2 คาบติด) — design/marketing/Canva, แสดงเฉยๆ
+  { id: 's-tue-6',  classroom: 'ม.1', day: 2, start: '13:50', end: '14:40', subject: 'ทักษะอาชีพ', excludeFromGrading: true },
+  { id: 's-tue-7',  classroom: 'ม.1', day: 2, start: '14:40', end: '15:30', subject: 'ทักษะอาชีพ', excludeFromGrading: true },
   // พุธ
   { id: 's-wed-1',  classroom: 'ป.1', day: 3, start: '08:30', end: '09:20', subject: 'เทคโนโลยี' },
   { id: 's-wed-2',  classroom: 'ป.4', day: 3, start: '09:20', end: '10:10', subject: 'เทคโนโลยี' },
@@ -122,6 +127,7 @@ export const isInClassTime = (
     (s) =>
       s.classroom === classroom &&
       s.day === day &&
+      !s.excludeFromGrading &&            // ข้ามคาบที่ไม่เกี่ยวกับ CS (เช่น ทักษะอาชีพ กิจกรรมความสนใจ)
       minutes >= minutesOf(s.start) &&
       minutes <= minutesOf(s.end)
   );
