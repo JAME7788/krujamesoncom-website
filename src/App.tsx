@@ -6,6 +6,7 @@ import ScrollToTop from './components/ScrollToTop';
 import Loading from './components/Loading';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginPromptOverlay from './components/LoginPromptOverlay';
 
 // Code-splitting: โหลดเฉพาะหน้าที่เปิดใช้งาน → first paint เร็วขึ้น
 const Home = React.lazy(() => import('./pages/Home'));
@@ -63,21 +64,21 @@ function App() {
                   <Route path="/curriculum/:gradeId/unit/:unitNo" element={<ProtectedRoute><UnitDetail /></ProtectedRoute>} />
                   <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/admin/scores" element={<TeacherDashboard />} />
-                  <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+                  <Route path="/resources" element={<LoginPromptOverlay><Resources /></LoginPromptOverlay>} />
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/report-card" element={<ProtectedRoute><ReportCard /></ProtectedRoute>} />
                   <Route path="/quiz/:id" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
                   <Route path="/lesson/:id" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
-                  <Route path="/games" element={<ProtectedRoute><Games /></ProtectedRoute>} />
-                  <Route path="/games/mouse-practice" element={<ProtectedRoute><MousePractice /></ProtectedRoute>} />
-                  <Route path="/games/keyboard-practice" element={<ProtectedRoute><KeyboardPractice /></ProtectedRoute>} />
-                  <Route path="/games/algorithm-sorter" element={<ProtectedRoute><AlgorithmSorter /></ProtectedRoute>} />
-                  <Route path="/games/binary" element={<ProtectedRoute><BinaryGame /></ProtectedRoute>} />
-                  <Route path="/games/memory" element={<ProtectedRoute><MemoryMatch /></ProtectedRoute>} />
-                  <Route path="/games/pattern" element={<ProtectedRoute><PatternGame /></ProtectedRoute>} />
-                  <Route path="/games/coding-maze" element={<ProtectedRoute><CodingMaze /></ProtectedRoute>} />
-                  <Route path="/games/snake" element={<ProtectedRoute><SnakeGame /></ProtectedRoute>} />
-                  <Route path="/games/bug-catcher" element={<ProtectedRoute><BugCatcher /></ProtectedRoute>} />
+                  <Route path="/games" element={<LoginPromptOverlay><Games /></LoginPromptOverlay>} />
+                  <Route path="/games/mouse-practice" element={<LoginPromptOverlay><MousePractice /></LoginPromptOverlay>} />
+                  <Route path="/games/keyboard-practice" element={<LoginPromptOverlay><KeyboardPractice /></LoginPromptOverlay>} />
+                  <Route path="/games/algorithm-sorter" element={<LoginPromptOverlay><AlgorithmSorter /></LoginPromptOverlay>} />
+                  <Route path="/games/binary" element={<LoginPromptOverlay><BinaryGame /></LoginPromptOverlay>} />
+                  <Route path="/games/memory" element={<LoginPromptOverlay><MemoryMatch /></LoginPromptOverlay>} />
+                  <Route path="/games/pattern" element={<LoginPromptOverlay><PatternGame /></LoginPromptOverlay>} />
+                  <Route path="/games/coding-maze" element={<LoginPromptOverlay><CodingMaze /></LoginPromptOverlay>} />
+                  <Route path="/games/snake" element={<LoginPromptOverlay><SnakeGame /></LoginPromptOverlay>} />
+                  <Route path="/games/bug-catcher" element={<LoginPromptOverlay><BugCatcher /></LoginPromptOverlay>} />
                   <Route path="/tools" element={<Tools />} />
                   <Route path="/parent/:studentId" element={<ParentPortal />} />
                   <Route path="/live" element={<LiveQuizPlay />} />
