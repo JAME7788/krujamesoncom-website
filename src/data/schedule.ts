@@ -17,16 +17,23 @@ export const dayNames = ['อาทิตย์', 'จันทร์', 'อั�
 export const dayNamesShort = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
 // ตารางเริ่มต้น — แก้ในหน้า Admin ได้
+// ตารางจริงปีการศึกษา 2569 ครูเจมส์ — เฉพาะคาบ CS (วิทยาการคำนวณ/เทคโนโลยี)
+// คาบอื่น (กิจกรรมตามความสนใจ การงานอาชีพ ทักษะอาชีพ) ไม่อยู่ในนี้
+// เพราะ A score จะนับเฉพาะเวลาที่นักเรียนทำกิจกรรมในคาบที่ ครูสอน CS เท่านั้น
 export const defaultSchedule: ClassSlot[] = [
-  { id: 's1', classroom: 'ป.1', day: 1, start: '08:30', end: '09:30', subject: 'เทคโนโลยี' },
-  { id: 's2', classroom: 'ป.2', day: 1, start: '09:30', end: '10:30', subject: 'เทคโนโลยี' },
-  { id: 's3', classroom: 'ป.3', day: 1, start: '10:30', end: '11:30', subject: 'เทคโนโลยี' },
-  { id: 's4', classroom: 'ป.4', day: 2, start: '08:30', end: '09:30', subject: 'เทคโนโลยี' },
-  { id: 's5', classroom: 'ป.5', day: 2, start: '09:30', end: '10:30', subject: 'เทคโนโลยี' },
-  { id: 's6', classroom: 'ป.6', day: 2, start: '10:30', end: '11:30', subject: 'เทคโนโลยี' },
-  { id: 's7', classroom: 'ม.1', day: 3, start: '13:00', end: '14:00', subject: 'วิทยาการคำนวณ' },
-  { id: 's8', classroom: 'ม.2', day: 4, start: '13:00', end: '14:00', subject: 'วิทยาการคำนวณ' },
-  { id: 's9', classroom: 'ม.3', day: 5, start: '13:00', end: '14:00', subject: 'วิทยาการคำนวณ' },
+  // จันทร์
+  { id: 's-mon-1',  classroom: 'ม.1', day: 1, start: '08:30', end: '09:20', subject: 'วิทยาการคำนวณ' },
+  { id: 's-mon-6',  classroom: 'ป.2', day: 1, start: '13:50', end: '14:40', subject: 'เทคโนโลยี' },
+  // พุธ
+  { id: 's-wed-1',  classroom: 'ป.1', day: 3, start: '08:30', end: '09:20', subject: 'เทคโนโลยี' },
+  { id: 's-wed-2',  classroom: 'ป.4', day: 3, start: '09:20', end: '10:10', subject: 'เทคโนโลยี' },
+  { id: 's-wed-6',  classroom: 'ป.5', day: 3, start: '13:50', end: '14:40', subject: 'เทคโนโลยี' },
+  // พฤหัสบดี
+  { id: 's-thu-2',  classroom: 'ม.3', day: 4, start: '09:20', end: '10:10', subject: 'วิทยาการคำนวณ' },
+  { id: 's-thu-4',  classroom: 'ป.6', day: 4, start: '11:00', end: '11:50', subject: 'เทคโนโลยี' },
+  // ศุกร์
+  { id: 's-fri-3',  classroom: 'ม.2', day: 5, start: '10:10', end: '11:00', subject: 'วิทยาการคำนวณ' },
+  { id: 's-fri-4',  classroom: 'ป.3', day: 5, start: '11:00', end: '11:50', subject: 'เทคโนโลยี' },
 ];
 
 const KEY = 'krujames_schedule_v1';
