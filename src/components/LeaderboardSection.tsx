@@ -4,6 +4,7 @@ import { Trophy, Crown, TrendingUp, Sparkles, Medal } from 'lucide-react';
 import { getLeaderboard, refreshLeaderboardFromCloud } from '../services/leaderboardService';
 import type { LeaderboardEntry } from '../services/leaderboardService';
 import { allClassrooms2569 } from '../data/students2569';
+import { anonymizeStudentName } from '../utils/anonymize';
 import './LeaderboardSection.css';
 
 const LeaderboardSection: React.FC = () => {
@@ -85,7 +86,7 @@ const LeaderboardSection: React.FC = () => {
                       <span style={{ fontSize: '1.8rem' }}>{leader.emoji}</span>
                     </div>
                     <div className="leader-info">
-                      <h3>{leader.name}</h3>
+                      <h3>{anonymizeStudentName(leader.name, leader.studentNo, leader.classroom)}</h3>
                       <p>ชั้น {leader.classroom} • เลขที่ {leader.studentNo}</p>
                       <div className="leader-mini-stats">
                         📄 {leader.totalSlides} • 🎮 {leader.totalActivities} • ✓ {leader.unitsCompleted}
