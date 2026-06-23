@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, ExternalLink, Search, Award, CheckCircle2, Info } from 'lucide-react';
-import { allResources, categoryInfo } from '../data/learningResources';
+import { allResources, categoryInfo, ALL_GRADES } from '../data/learningResources';
 import type { LearningResource, ResourceCategory } from '../data/learningResources';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
@@ -15,10 +15,14 @@ const Resources: React.FC = () => {
   const toast = useToast();
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState<ResourceCategory | 'all'>('all');
+  const [activeGrade, setActiveGrade] = useState<string>('all');
 
   const filtered = useMemo(() => {
     let list = allResources;
     if (activeCat !== 'all') list = list.filter((r) => r.category === activeCat);
+    if (activeGrade !== 'all') {
+      list = list.filter((r) => r.targetUnits.some((tu) => tu.gradeId === activeGrade));
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -29,7 +33,7 @@ const Resources: React.FC = () => {
       );
     }
     return list;
-  }, [search, activeCat]);
+  }, [search, activeCat, activeGrade]);
 
   const handleClick = (r: LearningResource) => {
     if (r.targetUnits.length === 0) {
@@ -130,6 +134,30 @@ const Resources: React.FC = () => {
               onClick={() => setActiveCat(c)}
             >
               {c === 'all' ? '🌟 ทั้งหมด' : `${categoryInfo[c].emoji} ${categoryInfo[c].title.split(' ')[0]}`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grade filter — แยกตามชั้น (เลือกชั้นเดียวเพื่อดูเฉพาะที่ตรง) */}
+      <div className="resources-toolbar" style={{ marginTop: '0.5rem' }}>
+        <strong style={{ fontSize: '0.85rem', color: 'var(--text-muted, #6b7280)', alignSelf: 'center' }}>
+          📚 แยกตามชั้น:
+        </strong>
+        <div className="cat-pills">
+          <button
+            className={`cat-pill ${activeGrade === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveGrade('all')}
+          >
+            🌍 ทุกชั้น
+          </button>
+          {ALL_GRADES.map((g) => (
+            <button
+              key={g.id}
+              className={`cat-pill ${activeGrade === g.id ? 'active' : ''}`}
+              onClick={() => setActiveGrade(g.id)}
+            >
+              {g.label}
             </button>
           ))}
         </div>

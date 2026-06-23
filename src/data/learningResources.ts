@@ -1324,8 +1324,109 @@ const officialResources: LearningResource[] = [
   },
 ];
 
+// ===== External 5 sites (เว็บที่ครูเจมส์เลือก — แยกระดับชั้นชัดเจน) =====
+const externalResources: LearningResource[] = [
+  // ----- Code Their Dreams: เกมโค้ดดิ้งออนไลน์ -----
+  {
+    id: 'ctd-hub',
+    title: 'Code Their Dreams — เกมโค้ดดิ้งออนไลน์',
+    desc: 'รวมเกมเขียนโปรแกรมออนไลน์ฟรี เหมาะทุกระดับ ป.4-ม.3 — ลากบล็อก, แก้ปริศนา, สร้างเกม',
+    url: 'https://www.codetheirdreams.com/online-coding-games/',
+    emoji: '🎮',
+    category: 'programming',
+    badge: 'รวมเกม',
+    targetUnits: [
+      { gradeId: 'p4', unitNo: 2 }, { gradeId: 'p5', unitNo: 2 }, { gradeId: 'p6', unitNo: 2 },
+      { gradeId: 'm1-cs', unitNo: 1 }, { gradeId: 'm1-cs', unitNo: 2 },
+      { gradeId: 'm2-cs', unitNo: 1 }, { gradeId: 'm2-cs', unitNo: 2 },
+      { gradeId: 'm3-cs', unitNo: 1 }, { gradeId: 'm3-cs', unitNo: 2 },
+    ],
+  },
+
+  // ----- Microsoft MakeCode (hub) -----
+  {
+    id: 'msmakecode-hub',
+    title: 'Microsoft MakeCode (Hub)',
+    desc: 'ศูนย์รวมเครื่องมือเขียนโปรแกรมแบบบล็อกของ Microsoft — Arcade, micro:bit, Minecraft, LEGO',
+    url: 'https://www.microsoft.com/en-us/makecode',
+    emoji: '🟦',
+    category: 'programming',
+    badge: 'Microsoft',
+    targetUnits: [
+      { gradeId: 'p4', unitNo: 2 }, { gradeId: 'p5', unitNo: 2 }, { gradeId: 'p6', unitNo: 2 },
+      { gradeId: 'm1-cs', unitNo: 2 }, { gradeId: 'm2-cs', unitNo: 2 }, { gradeId: 'm3-cs', unitNo: 1 },
+    ],
+  },
+  {
+    id: 'msmakecode-arcade',
+    title: 'MakeCode Arcade — สร้างเกมเรโทร',
+    desc: 'เขียนเกม 16-bit แบบลากบล็อก คล้าย Game Boy เหมาะ ม.1-3',
+    url: 'https://arcade.makecode.com/',
+    emoji: '🕹️',
+    category: 'programming',
+    targetUnits: [
+      { gradeId: 'm1-cs', unitNo: 2 }, { gradeId: 'm2-cs', unitNo: 2 }, { gradeId: 'm3-cs', unitNo: 1 },
+    ],
+  },
+  {
+    id: 'msmakecode-minecraft',
+    title: 'MakeCode for Minecraft',
+    desc: 'เขียนโค้ดควบคุม Agent ใน Minecraft — สนุก เด็กชอบ ป.4-ม.2',
+    url: 'https://minecraft.makecode.com/',
+    emoji: '🧱',
+    category: 'programming',
+    badge: 'Minecraft',
+    targetUnits: [
+      { gradeId: 'p4', unitNo: 2 }, { gradeId: 'p5', unitNo: 2 }, { gradeId: 'p6', unitNo: 2 },
+      { gradeId: 'm1-cs', unitNo: 2 }, { gradeId: 'm2-cs', unitNo: 2 },
+    ],
+  },
+
+  // ----- MakeCode for micro:bit -----
+  {
+    id: 'microbit-editor',
+    title: 'micro:bit MakeCode Editor',
+    desc: 'เขียนโปรแกรม micro:bit ลาก-วาง — ทำหุ่นยนต์ ตรวจวัด IoT',
+    url: 'https://makecode.microbit.org/',
+    emoji: '🔌',
+    category: 'programming',
+    badge: 'IoT',
+    targetUnits: [
+      { gradeId: 'p5', unitNo: 2 }, { gradeId: 'p6', unitNo: 2 },
+      { gradeId: 'm1-cs', unitNo: 2 }, { gradeId: 'm1-design', unitNo: 4 },
+      { gradeId: 'm2-cs', unitNo: 2 }, { gradeId: 'm2-design', unitNo: 4 },
+      { gradeId: 'm3-cs', unitNo: 1 }, { gradeId: 'm3-design', unitNo: 4 },
+    ],
+  },
+  {
+    id: 'microbit-projects-kids',
+    title: 'micro:bit Projects (เด็กเล็ก ป.5-6)',
+    desc: 'โครงการง่ายๆ — flashing heart, name badge, dice — เริ่มต้น micro:bit',
+    url: 'https://microbit.org/projects/make-it-code-it/',
+    emoji: '💡',
+    category: 'programming',
+    targetUnits: [{ gradeId: 'p5', unitNo: 2 }, { gradeId: 'p6', unitNo: 2 }],
+  },
+
+  // ----- Think Digital Blog -----
+  {
+    id: 'think-digital-blog',
+    title: 'Think Digital Blog',
+    desc: 'บทความเรื่อง digital literacy, AI, online safety — อ่านง่าย ภาษาไทย ป.4-ม.3',
+    url: 'https://blog.think-digital.app/',
+    emoji: '📰',
+    category: 'safety',
+    badge: 'บทความ',
+    targetUnits: [
+      { gradeId: 'p4', unitNo: 5 }, { gradeId: 'p5', unitNo: 5 }, { gradeId: 'p6', unitNo: 4 },
+      { gradeId: 'm1-cs', unitNo: 4 }, { gradeId: 'm2-cs', unitNo: 4 }, { gradeId: 'm3-cs', unitNo: 4 },
+    ],
+  },
+];
+
 export const allResources: LearningResource[] = [
   ...officialResources,
+  ...externalResources,
   ...basicResources,
   ...programmingResources,
   ...computationalResources,
@@ -1334,6 +1435,23 @@ export const allResources: LearningResource[] = [
   ...aiResources,
   ...designResources,
 ];
+
+// ===== Grade helpers (สำหรับ UI filter "แยกตามชั้น") =====
+export const ALL_GRADES = [
+  { id: 'p1', label: 'ป.1', emoji: '1️⃣' },
+  { id: 'p2', label: 'ป.2', emoji: '2️⃣' },
+  { id: 'p3', label: 'ป.3', emoji: '3️⃣' },
+  { id: 'p4', label: 'ป.4', emoji: '4️⃣' },
+  { id: 'p5', label: 'ป.5', emoji: '5️⃣' },
+  { id: 'p6', label: 'ป.6', emoji: '6️⃣' },
+  { id: 'm1-cs', label: 'ม.1 (cs)', emoji: '🅼1' },
+  { id: 'm2-cs', label: 'ม.2 (cs)', emoji: '🅼2' },
+  { id: 'm3-cs', label: 'ม.3 (cs)', emoji: '🅼3' },
+] as const;
+
+/** หา resources ที่ tag กับ grade นี้ (อย่างน้อย 1 unit ตรง) */
+export const resourcesForGrade = (gradeId: string): LearningResource[] =>
+  allResources.filter((r) => r.targetUnits.some((tu) => tu.gradeId === gradeId));
 
 export const categoryInfo: Record<ResourceCategory, { title: string; emoji: string; desc: string; color: string }> = {
   basic: {
