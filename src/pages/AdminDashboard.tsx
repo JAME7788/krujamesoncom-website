@@ -1054,22 +1054,23 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
   };
 
   // Database Cleaner handlers
-  const clearStudentProgress = () => {
-    if (confirm('⚠️ ยืนยันที่จะล้างข้อมูลความก้าวหน้า (Progress) และสถิติการเรียนทั้งหมดของนักเรียนใช่ไหม?\n\nการดำเนินการนี้จะลบสถิติการเปิดสไลด์ การทำแบบทดสอบ และประวัติการเข้าเรียนของนักเรียนทุกคนในเครื่องนี้ (ข้อมูลจะไม่สามารถกู้คืนได้ ยกเว้นคุณได้ทำไฟล์สำรองไว้)')) {
-      let count = 0;
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('krujames_progress_')) {
-          keysToRemove.push(key);
-        }
+  const clearStudentProgress = async () => {
+    if (!confirm('⚠️ ยืนยันที่จะล้างข้อมูลความก้าวหน้า (Progress) ของนักเรียน "ทุกคน" บน Firebase ใช่ไหม?\n\nการลบนี้จะส่งผลกับทุกเครื่อง (ไม่ใช่แค่เครื่องนี้)\nสถิติสไลด์ ควิซ และประวัติเข้าเรียนของนักเรียนทุกคนจะหายถาวร')) return;
+    const { db } = await import('../services/firebase');
+    const { collection, getDocs, deleteDoc } = await import('firebase/firestore');
+    const { clearProgressCache } = await import('../services/progressService');
+    let count = 0;
+    try {
+      const snap = await getDocs(collection(db, 'progress'));
+      for (const d of snap.docs) {
+        await deleteDoc(d.ref);
+        count += 1;
       }
-      keysToRemove.forEach(k => {
-        localStorage.removeItem(k);
-        count++;
-      });
-      toast.show(`ล้างข้อมูลความก้าวหน้าของนักเรียนเรียบร้อยแล้ว (${count} รายการ)`, 'success');
+      clearProgressCache();
+      toast.show(`ล้างข้อมูลความก้าวหน้าจาก Firebase แล้ว (${count} รายการ)`, 'success');
       setTimeout(() => window.location.reload(), 1500);
+    } catch (e) {
+      toast.show(`ล้างไม่สำเร็จ: ${e instanceof Error ? e.message : String(e)}`, 'error');
     }
   };
 

@@ -7,7 +7,7 @@
 //   - คำนวณคะแนนรวม + เกรด อัตโนมัติ
 
 import { db } from './firebase';
-import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { allClassrooms2569 } from '../data/students2569';
 
 export type Skill = 'พอใช้' | 'ปานกลาง' | 'ดี';
@@ -801,6 +801,7 @@ export const fetchClassroomFromFirebase = async (
 import { grades as curriculumGrades } from '../data/curriculum';
 import { loadSchedule, isInClassTime } from '../data/schedule';
 import type { StudentProgressData, ActivityLog } from './progressService';
+import { getAllCachedProgress, fetchAllProgressFromFirebase } from './progressService';
 
 /**
  * Map ห้อง (classroom) → gradeId ใน curriculum
@@ -916,12 +917,13 @@ const findUnitsForIndicator = (id: string): { gradeId: string; unitNo: number }[
   return result;
 };
 
-/** ดึง progress data จาก localStorage ของ studentId */
+/** ดึง progress data จาก in-memory cache ของ progressService (Firebase-only mode) */
 const loadProgressData = (studentId: string): StudentProgressData | null => {
   try {
-    const raw = localStorage.getItem(`krujames_progress_${studentId}`);
-    if (!raw) return null;
-    return JSON.parse(raw) as StudentProgressData;
+    // ใช้ getAllCachedProgress + find เพื่อหลีกเลี่ยง circular import จาก getProgress
+    const all = getAllCachedProgress();
+    const found = all.find((p) => p.studentId === studentId);
+    return found || null;
   } catch {
     return null;
   }
@@ -954,37 +956,29 @@ const findProgressForStudent = (
   const exactProg = loadProgressData(exactId);
   if (exactProg) return { progress: exactProg, matchedKey: exactId, matchType: 'exact' };
 
-  // 2+3) scan all progress keys
+  // 2+3) scan all progress data ใน in-memory cache ของ progressService
+  // (cache ถูก populate จาก fetchAllProgressFromFirebase / fetchStudentProgress)
   const cleanedName = name.replace(/\s/g, '').toLowerCase();
   const nameTokens = name.split(/\s+/).filter((t) => t.length > 1);
 
   let numberMatch: { progress: StudentProgressData; key: string } | null = null;
   let nameMatch: { progress: StudentProgressData; key: string } | null = null;
 
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key?.startsWith('krujames_progress_')) continue;
-
-    // key format: krujames_progress_{classroom}_{studentNumber}_{nameNoSpace}
-    const idPart = key.slice('krujames_progress_'.length);
-    const parts = idPart.split('_');
+  const allProgress = getAllCachedProgress();
+  for (const prog of allProgress) {
+    const id = prog.studentId || '';
+    if (!id) continue;
+    const parts = id.split('_');
     if (parts.length < 3) continue;
     const [keyClass, keyNo, ...keyNameParts] = parts;
     if (keyClass !== classroom) continue;
 
     const keyName = keyNameParts.join('_').toLowerCase();
 
-    // 2) match เลขที่
     if (parseInt(keyNo) === studentNo) {
-      try {
-        const prog = JSON.parse(localStorage.getItem(key) || 'null');
-        if (prog) numberMatch = { progress: prog, key };
-      } catch (e) {
-        console.error('Failed to parse progress', e);
-      }
+      numberMatch = { progress: prog, key: id };
     }
 
-    // 3) match ชื่อ (ถ้ามี token ของชื่อจริงอยู่ใน key)
     if (!numberMatch) {
       const matchToken =
         keyName === cleanedName ||
@@ -992,12 +986,7 @@ const findProgressForStudent = (
         cleanedName.includes(keyName) ||
         keyName.includes(cleanedName);
       if (matchToken) {
-        try {
-          const prog = JSON.parse(localStorage.getItem(key) || 'null');
-          if (prog) nameMatch = { progress: prog, key };
-        } catch (e) {
-          console.error('Failed to parse progress', e);
-        }
+        nameMatch = { progress: prog, key: id };
       }
     }
   }
@@ -1007,60 +996,25 @@ const findProgressForStudent = (
   return null;
 };
 
-/** สำหรับ diagnostic: นับจำนวน progress key ใน localStorage แยกตามห้อง */
+/** สำหรับ diagnostic: นับจำนวน progress ใน cache แยกตามห้อง */
 export const diagnoseProgress = (
   classroom: string
 ): { totalKeys: number; classroomKeys: string[] } => {
-  const all: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith('krujames_progress_')) {
-      all.push(key.slice('krujames_progress_'.length));
-    }
-  }
+  const all = getAllCachedProgress().map((p) => p.studentId).filter(Boolean);
   const inClass = all.filter((k) => k.startsWith(classroom + '_'));
   return { totalKeys: all.length, classroomKeys: inClass };
 };
 
-const progressBelongsToClassroom = (
-  data: StudentProgressData,
-  studentId: string,
-  classroom: string
-) => {
-  const id = data.studentId || studentId;
-  if (id.startsWith(`${classroom}_`)) return true;
-  const maybeClassroom = (data as StudentProgressData & { classroom?: string }).classroom;
-  return maybeClassroom === classroom;
-};
-
-const saveProgressForSync = (data: StudentProgressData, fallbackId: string) => {
-  const studentId = data.studentId || fallbackId;
-  if (!studentId) return false;
-  try {
-    localStorage.setItem(`krujames_progress_${studentId}`, JSON.stringify({ ...data, studentId }));
-    return true;
-  } catch (e) {
-    console.warn('save progress from firebase failed', e);
-    return false;
-  }
-};
-
+/** ดึง progress ทุกคนจาก Firebase ลง cache — wrapper ของ progressService.fetchAllProgressFromFirebase */
 export const hydrateProgressFromFirebase = async (
-  classroom: string
+  _classroom: string
 ): Promise<{ available: boolean; downloaded: number; error?: string }> => {
   if (!firebaseAvailable()) {
     return { available: false, downloaded: 0, error: 'Firebase is not configured' };
   }
   try {
-    const snap = await getDocs(collection(db, 'progress'));
-    let downloaded = 0;
-    snap.forEach((d) => {
-      const data = d.data() as StudentProgressData;
-      const studentId = data.studentId || d.id;
-      if (!progressBelongsToClassroom(data, studentId, classroom)) return;
-      if (saveProgressForSync(data, studentId)) downloaded += 1;
-    });
-    return { available: true, downloaded };
+    const all = await fetchAllProgressFromFirebase();
+    return { available: true, downloaded: all.length };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     console.warn('fetch progress from firebase failed', e);

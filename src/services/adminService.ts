@@ -74,38 +74,7 @@ export const fetchAllStudents = async (): Promise<StudentRecord[]> => {
     }
   }
 
-  // 2) เสริมด้วยข้อมูล localStorage (สำหรับ browser นี้)
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key?.startsWith('krujames_progress_')) continue;
-      try {
-        const data = JSON.parse(localStorage.getItem(key) || '{}') as StudentProgressData;
-        if (!data.studentId) continue;
-        if (records[data.studentId]) {
-          // เลือกอันที่ใหม่กว่า
-          const existing = records[data.studentId].progress;
-          if (!existing || (data.lastActive || 0) > (existing.lastActive || 0)) {
-            records[data.studentId].progress = data;
-          }
-        } else {
-          // parse studentId format: classroom_number_name
-          const [classroom, studentNumber, ...nameParts] = data.studentId.split('_');
-          records[data.studentId] = {
-            id: data.studentId,
-            name: nameParts.join('_') || data.studentId,
-            classroom: classroom || '?',
-            studentNumber: studentNumber || '?',
-            progress: data,
-          };
-        }
-      } catch {
-        // skip corrupt entries
-      }
-    }
-  } catch {
-    // localStorage unavailable
-  }
+  // (online-only mode — ไม่ต้องเสริมจาก localStorage แล้ว Firebase ดึงครบหมด)
 
   return Object.values(records).sort((a, b) => {
     if (a.classroom !== b.classroom) return a.classroom.localeCompare(b.classroom);
