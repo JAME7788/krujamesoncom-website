@@ -532,6 +532,44 @@ const basicResources: LearningResource[] = [
     badge: 'Poki Kids',
     targetUnits: [{ gradeId: 'p1', unitNo: 1 }],
   },
+  {
+    id: 'typingstudy-kedmanee-lesson1',
+    title: 'TypingStudy — ฝึกพิมพ์ดีดไทย (เกษมณี) บทที่ 1',
+    desc: 'บทแรกฝึกแม่บ้านนิ้ว ฟห ก ด ่ า — เริ่มต้นพิมพ์ดีดภาษาไทยจากศูนย์',
+    url: 'https://www.typingstudy.com/th-thai_kedmanee-3/lesson/1',
+    emoji: '⌨️',
+    category: 'basic',
+    badge: 'แนะนำ',
+    targetUnits: [
+      { gradeId: 'p3', unitNo: 1 }, { gradeId: 'p4', unitNo: 1 },
+      { gradeId: 'p5', unitNo: 1 }, { gradeId: 'p6', unitNo: 1 },
+    ],
+  },
+  {
+    id: 'typingstudy-kedmanee-hub',
+    title: 'TypingStudy — รวมบททุกบท (เกษมณี)',
+    desc: 'รวม 15+ บทฝึกพิมพ์ดีดภาษาไทยแป้นเกษมณี — ทำคล่อง พิมพ์ได้เร็วขึ้น',
+    url: 'https://www.typingstudy.com/th-thai_kedmanee-3/',
+    emoji: '🇹🇭',
+    category: 'basic',
+    targetUnits: [
+      { gradeId: 'p3', unitNo: 1 }, { gradeId: 'p4', unitNo: 1 },
+      { gradeId: 'p5', unitNo: 1 }, { gradeId: 'p6', unitNo: 1 },
+      { gradeId: 'm1-cs', unitNo: 1 }, { gradeId: 'm2-cs', unitNo: 1 }, { gradeId: 'm3-cs', unitNo: 1 },
+    ],
+  },
+  {
+    id: 'typingstudy-en-hub',
+    title: 'TypingStudy — ฝึกพิมพ์ดีดภาษาอังกฤษ',
+    desc: 'ฝึกพิมพ์ดีดภาษาอังกฤษ 15 บท — ใช้คู่กับการเขียนโปรแกรม Scratch / Python',
+    url: 'https://www.typingstudy.com/th-english-3/',
+    emoji: '🅰️',
+    category: 'basic',
+    targetUnits: [
+      { gradeId: 'p4', unitNo: 1 }, { gradeId: 'p5', unitNo: 1 }, { gradeId: 'p6', unitNo: 1 },
+      { gradeId: 'm1-cs', unitNo: 2 }, { gradeId: 'm2-cs', unitNo: 2 }, { gradeId: 'm3-cs', unitNo: 1 },
+    ],
+  },
 ];
 
 // ===== หมวดคิดเชิงคำนวณ (Computational Thinking) =====
