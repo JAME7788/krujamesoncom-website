@@ -1300,6 +1300,21 @@ const externalResources: LearningResource[] = [
     targetUnits: [{ gradeId: 'p5', unitNo: 2 }, { gradeId: 'p6', unitNo: 2 }],
   },
 
+  // ----- Gimkit — live quiz game (Kahoot-style with power-ups) -----
+  {
+    id: 'gimkit',
+    title: 'Gimkit — เกมตอบคำถามสด',
+    desc: 'เกมตอบคำถามแข่งกันสดๆ คล้าย Kahoot — มีระบบเงิน อัพเกรด และ power-ups',
+    url: 'https://www.gimkit.com/',
+    emoji: '🎯',
+    category: 'computational',
+    badge: 'สนุก',
+    targetUnits: [
+      { gradeId: 'p4', unitNo: 1 }, { gradeId: 'p5', unitNo: 1 }, { gradeId: 'p6', unitNo: 1 },
+      { gradeId: 'm1-cs', unitNo: 1 }, { gradeId: 'm2-cs', unitNo: 1 }, { gradeId: 'm3-cs', unitNo: 1 },
+    ],
+  },
+
   // ----- Think Digital Blog -----
   {
     id: 'think-digital-blog',
