@@ -152,7 +152,7 @@ const Games: React.FC = () => {
     return list.filter((r) => r.targetUnits.some((tu) => tu.gradeId === extGrade));
   }, [extGrade]);
 
-  const handleExternalClick = (
+  const handleExternalClick = async (
     resourceId: string,
     title: string,
     targetUnits: { gradeId: string; unitNo: number }[],
@@ -162,17 +162,19 @@ const Games: React.FC = () => {
       return;
     }
     const ids = getActiveIds();
+    // รอ trackMediaClick เสร็จก่อน sync — ไม่งั้น sync ใช้ data เก่า
+    const writes: Promise<void>[] = [];
     targetUnits.forEach((tu) => {
       ids.forEach((id) => {
-        void trackMediaClick(id, tu.gradeId, tu.unitNo, 'fun', `[ExternalGame:${resourceId}] ${title}`);
+        writes.push(trackMediaClick(id, tu.gradeId, tu.unitNo, 'fun', `[ExternalGame:${resourceId}] ${title}`));
       });
     });
-    // sync grades
+    await Promise.all(writes);
     syncStudentGradesFromProgress({ id: user.id, name: user.name, classroom: user.classroom, studentNumber: user.studentNumber });
     if (partner) {
       syncStudentGradesFromProgress({ id: partner.id, name: partner.name, classroom: partner.classroom, studentNumber: partner.studentNumber });
     }
-    toast.show(`🎯 บันทึกกิจกรรม "${title}" ลงคะแนน P แล้ว`, 'success');
+    toast.show(`🎯 +5 XP · บันทึก "${title}" ลงคะแนน P แล้ว`, 'success');
   };
 
   return (

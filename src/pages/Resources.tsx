@@ -59,7 +59,7 @@ const Resources: React.FC = () => {
     return list;
   }, [search, activeCat, activeGrade]);
 
-  const handleClick = (r: LearningResource) => {
+  const handleClick = async (r: LearningResource) => {
     if (r.targetUnits.length === 0) {
       toast.show(`เปิดแหล่งเรียนรู้: ${r.title}`, 'info');
       return;
@@ -73,40 +73,40 @@ const Resources: React.FC = () => {
     const ids = getActiveIds();
     let totalAwards = 0;
 
-    // บันทึก fun click ให้ทุก unit ที่ resource นี้ตรงกับ
+    // บันทึก fun click ให้ทุก unit ที่ resource นี้ตรงกับ — รอเสร็จก่อน sync
+    const writes: Promise<void>[] = [];
     r.targetUnits.forEach((tu) => {
       ids.forEach((id) => {
-        trackMediaClick(id, tu.gradeId, tu.unitNo, 'fun', `[Resource] ${r.title}`);
+        writes.push(trackMediaClick(id, tu.gradeId, tu.unitNo, 'fun', `[Resource] ${r.title}`));
       });
       totalAwards += 1;
     });
+    await Promise.all(writes);
 
     // sync K/P/A ให้ครบ (P จะอัปเดต)
-    if (user) {
+    try {
+      const grades = loadGrades(user.classroom);
+      const myGrade = grades.find(
+        (g) => g.studentNo === parseInt(user.studentNumber) || g.name === user.name
+      );
+      if (myGrade) syncFromProgress(user.classroom, myGrade.studentCode, user.id);
+    } catch (e) {
+      console.warn('Sync student progress failed', e);
+    }
+    if (partner) {
       try {
-        const grades = loadGrades(user.classroom);
-        const myGrade = grades.find(
-          (g) => g.studentNo === parseInt(user.studentNumber) || g.name === user.name
+        const pGrades = loadGrades(partner.classroom);
+        const pg = pGrades.find(
+          (g) => g.studentNo === parseInt(partner.studentNumber) || g.name === partner.name
         );
-        if (myGrade) syncFromProgress(user.classroom, myGrade.studentCode, user.id);
+        if (pg) syncFromProgress(partner.classroom, pg.studentCode, partner.id);
       } catch (e) {
-        console.warn('Sync student progress failed', e);
-      }
-      if (partner) {
-        try {
-          const pGrades = loadGrades(partner.classroom);
-          const pg = pGrades.find(
-            (g) => g.studentNo === parseInt(partner.studentNumber) || g.name === partner.name
-          );
-          if (pg) syncFromProgress(partner.classroom, pg.studentCode, partner.id);
-        } catch (e) {
-          console.warn('Sync partner progress failed', e);
-        }
+        console.warn('Sync partner progress failed', e);
       }
     }
 
     toast.show(
-      `🎯 +1 ทักษะ (P) ในตัวชี้วัดที่เกี่ยวข้อง ${totalAwards} หน่วย${partner ? ' (ทั้ง 2 คน)' : ''}`,
+      `🎯 +5 XP · +1 ทักษะ (P) ใน ${totalAwards} หน่วย${partner ? ' (ทั้ง 2 คน)' : ''}`,
       'success'
     );
   };

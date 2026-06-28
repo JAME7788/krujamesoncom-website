@@ -5,6 +5,8 @@ import {
   getAssignmentsForStudent, submitWork, getStudentSubmissionForAssignment,
 } from '../services/homeworkService';
 import type { Assignment } from '../services/homeworkService';
+import { trackMediaClick } from '../services/progressService';
+import { classroomToGradeIds } from '../services/gradeService';
 
 const HomeworkStudent: React.FC = () => {
   const { user } = useAuth();
@@ -53,7 +55,12 @@ const HomeworkStudent: React.FC = () => {
       contentData: contentData || undefined,
       comment,
     });
-    alert('ส่งงานสำเร็จ ✓');
+    // นับการส่งงานเป็น activity → +5 XP + streak day + นับ P/A ทาง syncFromProgress
+    const gradeId = classroomToGradeIds(user.classroom)[0];
+    if (gradeId) {
+      void trackMediaClick(user.id, gradeId, 1, 'fun', `[Homework] ${selected.title}`);
+    }
+    alert('ส่งงานสำเร็จ ✓ +5 XP');
     setSelected(null);
     setContentUrl('');
     setContentData('');
