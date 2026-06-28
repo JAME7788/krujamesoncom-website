@@ -65,7 +65,104 @@ export interface StudentProgressData {
   totalActivities: number;
   unitsCompleted: number;
   lastActive: number;
+  /** วันที่นักเรียนเข้าใช้งาน (YYYY-M-D) — สำหรับคิด streak */
+  daysActive?: string[];
 }
+
+// ---------- Gamification ----------
+
+export interface Title {
+  name: string;
+  emoji: string;
+}
+
+export interface GamificationStats {
+  xp: number;
+  level: number;
+  levelXp: number;        // XP สะสมภายในเลเวลนี้
+  xpInLevel: number;      // XP ทั้งหมดของเลเวลนี้
+  progressPct: number;    // 0-100
+  title: Title;
+  streakDays: number;     // วันต่อเนื่อง
+  isActiveToday: boolean;
+}
+
+const XP_PER_QUIZ_POINT = 10;   // จากผลรวม bestQuizScore
+const XP_PER_ACTIVITY = 5;      // จาก totalActivities
+const XP_PER_SLIDE = 1;         // จาก totalSlidesViewed
+
+/** XP ที่ต้องสะสมเพื่อขึ้นเลเวล n (เลเวล 1 = 0 XP, เลเวล 2 = 50 XP, เลเวล 3 = 200 XP, …) */
+const xpForLevel = (n: number): number => Math.max(0, (n - 1) * (n - 1) * 50);
+
+const TITLES: { min: number; title: Title }[] = [
+  { min: 1,   title: { name: 'ผู้เริ่มต้น',    emoji: '🐣' } },
+  { min: 3,   title: { name: 'นักเรียนรู้',    emoji: '📖' } },
+  { min: 6,   title: { name: 'นักสำรวจ',       emoji: '🧭' } },
+  { min: 10,  title: { name: 'นักผจญภัย',      emoji: '⚔️' } },
+  { min: 15,  title: { name: 'นักรบ',          emoji: '🛡️' } },
+  { min: 22,  title: { name: 'จอมยุทธ์',       emoji: '🥷' } },
+  { min: 30,  title: { name: 'ปรมาจารย์',      emoji: '👑' } },
+  { min: 50,  title: { name: 'ตำนาน',          emoji: '🌟' } },
+];
+
+const todayKey = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
+
+/** เพิ่ม dayKey ของวันนี้ ใน data.daysActive (deduplicated, เก็บไว้ 365 วันล่าสุด) */
+const recordDailyActivity = (data: StudentProgressData) => {
+  if (!data.daysActive) data.daysActive = [];
+  const today = todayKey();
+  if (!data.daysActive.includes(today)) data.daysActive.push(today);
+  if (data.daysActive.length > 400) {
+    data.daysActive = data.daysActive.slice(-365);
+  }
+};
+
+const computeStreak = (daysActive: string[]): number => {
+  if (!daysActive || daysActive.length === 0) return 0;
+  const parseDay = (k: string) => {
+    const [y, m, d] = k.split('-').map(Number);
+    return new Date(y, m - 1, d, 12).getTime();   // noon เพื่อเลี่ยง DST
+  };
+  const sorted = [...new Set(daysActive)].sort((a, b) => parseDay(a) - parseDay(b));
+  const today = parseDay(todayKey());
+  const lastTs = parseDay(sorted[sorted.length - 1]);
+  // ต้องมี activity วันนี้ หรือเมื่อวาน ถึงนับเป็น streak ปัจจุบัน
+  const diffDays = (today - lastTs) / 86400000;
+  if (diffDays > 1.5) return 0;
+  let streak = 1;
+  for (let i = sorted.length - 2; i >= 0; i--) {
+    const cur = parseDay(sorted[i + 1]);
+    const prev = parseDay(sorted[i]);
+    if (Math.abs((cur - prev) / 86400000 - 1) < 0.5) streak += 1;
+    else break;
+  }
+  return streak;
+};
+
+export const computeGamification = (studentId: string): GamificationStats => {
+  const data = getCached(studentId);
+  const xp = (data.totalPoints || 0) * XP_PER_QUIZ_POINT
+    + (data.totalActivities || 0) * XP_PER_ACTIVITY
+    + (data.totalSlidesViewed || 0) * XP_PER_SLIDE;
+  // หา level — n สูงสุดที่ xpForLevel(n) ≤ xp
+  let level = 1;
+  while (xpForLevel(level + 1) <= xp) level += 1;
+  const levelStart = xpForLevel(level);
+  const levelEnd = xpForLevel(level + 1);
+  const xpInLevel = levelEnd - levelStart;
+  const levelXp = xp - levelStart;
+  const progressPct = xpInLevel > 0 ? Math.round((levelXp / xpInLevel) * 100) : 100;
+  const title = ([...TITLES].reverse().find((t) => level >= t.min) || TITLES[0]).title;
+  const days = data.daysActive || [];
+  const streakDays = computeStreak(days);
+  return {
+    xp, level, levelXp, xpInLevel, progressPct, title,
+    streakDays, isActiveToday: days.includes(todayKey()),
+  };
+};
 
 // ---------- Constants ----------
 
@@ -269,6 +366,7 @@ export const trackSlideView = async (
   u.totalSlides = Math.max(u.totalSlides, totalSlides);
   if (!u.slidesViewed.includes(slideIdx)) u.slidesViewed.push(slideIdx);
   recordInClassDayIfApplicable(studentId, u);
+  recordDailyActivity(data);
   u.updatedAt = Date.now();
   recomputeUnit(u);
   data.units[k] = u;
@@ -293,6 +391,7 @@ export const trackMediaClick = async (
   const list = type === 'video' ? u.videosClicked : type === 'fun' ? u.funClicked : u.articlesClicked;
   if (!list.includes(detail)) list.push(detail);
   recordInClassDayIfApplicable(studentId, u);
+  recordDailyActivity(data);
   u.updatedAt = Date.now();
   recomputeUnit(u);
   data.units[k] = u;
@@ -332,6 +431,7 @@ export const saveQuizAttempt = async (
   }
   u.lastAttempt = attempt;
   recordInClassDayIfApplicable(studentId, u);
+  recordDailyActivity(data);
   u.updatedAt = Date.now();
   recomputeUnit(u);
   data.units[k] = u;

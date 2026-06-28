@@ -22,6 +22,7 @@ import { findGrade } from '../data/curriculum';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import TrendChart from '../components/TrendChart';
 import MyGradeCard from '../components/MyGradeCard';
+import GamificationCard from '../components/GamificationCard';
 import { getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
 import { loadSchedule, dayNames, minutesOf, fetchScheduleFromFirebase } from '../data/schedule';
 import type { ClassSlot } from '../data/schedule';
@@ -322,6 +323,9 @@ const Dashboard: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* XP / Level / Streak — Gamification */}
+      <GamificationCard studentId={user.id} />
 
       {/* คะแนนของฉัน */}
       <MyGradeCard
