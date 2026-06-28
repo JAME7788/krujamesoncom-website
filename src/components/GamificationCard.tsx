@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Flame, Zap } from 'lucide-react';
 import { computeGamification } from '../services/progressService';
 import type { GamificationStats } from '../services/progressService';
+import { useToast } from './Toast';
 
 interface Props {
   studentId: string;
@@ -9,15 +10,32 @@ interface Props {
 
 const GamificationCard: React.FC<Props> = ({ studentId }) => {
   const [stats, setStats] = useState<GamificationStats | null>(null);
+  const [celebrate, setCelebrate] = useState(false);
+  const lastLevelRef = useRef<number | null>(null);
+  const toast = useToast();
 
   useEffect(() => {
     if (!studentId) return;
-    const recompute = () => setStats(computeGamification(studentId));
+    const recompute = () => {
+      const next = computeGamification(studentId);
+      setStats((prev) => {
+        // Level up celebration
+        if (prev && next.level > prev.level && lastLevelRef.current !== next.level) {
+          lastLevelRef.current = next.level;
+          setCelebrate(true);
+          toast.show(`🎉 LEVEL UP! ตอนนี้คุณคือ ${next.title.emoji} ${next.title.name} (Level ${next.level})`, 'success');
+          setTimeout(() => setCelebrate(false), 4000);
+        } else if (!prev) {
+          lastLevelRef.current = next.level;
+        }
+        return next;
+      });
+    };
     recompute();
     // อัปเดตทุก 3 วิ — เผื่อนักเรียนเปิด Dashboard ค้างไว้แล้ว XP/Level ขึ้น
     const t = setInterval(recompute, 3000);
     return () => clearInterval(t);
-  }, [studentId]);
+  }, [studentId, toast]);
 
   if (!stats) return null;
 
@@ -25,9 +43,21 @@ const GamificationCard: React.FC<Props> = ({ studentId }) => {
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 10,
       padding: '1.25rem 1.5rem', borderRadius: 18, marginBottom: 16,
-      background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 60%, #fbbf24 100%)',
-      boxShadow: '0 4px 14px rgba(251, 191, 36, 0.25)',
+      background: celebrate
+        ? 'linear-gradient(135deg, #fde68a 0%, #fbbf24 40%, #f59e0b 100%)'
+        : 'linear-gradient(135deg, #fef3c7 0%, #fde68a 60%, #fbbf24 100%)',
+      boxShadow: celebrate
+        ? '0 0 32px rgba(251, 191, 36, 0.7), 0 4px 14px rgba(251, 191, 36, 0.4)'
+        : '0 4px 14px rgba(251, 191, 36, 0.25)',
+      transition: 'all 0.5s ease-out',
+      animation: celebrate ? 'pulseGlow 1.2s ease-in-out 3' : undefined,
     }}>
+      <style>{`
+        @keyframes pulseGlow {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+        }
+      `}</style>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         <div style={{

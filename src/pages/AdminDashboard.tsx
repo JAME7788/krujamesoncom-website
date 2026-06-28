@@ -1166,6 +1166,9 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
         </div>
       </div>
 
+      <h3 style={{ marginTop: '2rem' }}>🔑 รหัสเข้าระบบ (Access Code)</h3>
+      <AccessCodeEditor />
+
       <h3 style={{ marginTop: '2rem' }}>💾 สำรองข้อมูลและกู้คืนระบบ (Backup & Restore)</h3>
       <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '1rem' }}>
         คุณสามารถดาวน์โหลดข้อมูลทั้งหมดในระบบ (คะแนนนักเรียน, การเช็คชื่อ, ตารางสอน, กิจกรรม) เก็บไว้เป็นไฟล์สำรอง และนำกลับมากู้คืนได้ทุกเมื่อเพื่อป้องกันข้อมูลสูญหาย
@@ -1296,6 +1299,78 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
           <tr><td>นักเรียนในระบบ</td><td>{stats.total} คน • Active 7 วัน {stats.activeWeek} คน</td></tr>
         </tbody>
       </table>
+    </div>
+  );
+};
+
+// ================= Access Code Editor =================
+const AccessCodeEditor: React.FC = () => {
+  const toast = useToast();
+  const [code, setCode] = useState<string>('');
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const init = async () => {
+      const { loadSiteSettings, fetchSiteSettingsFromFirebase } = await import('../services/siteSettingsService');
+      const remote = await fetchSiteSettingsFromFirebase();
+      const s = remote || loadSiteSettings();
+      setCode(s.accessCode);
+      setLoaded(true);
+    };
+    void init();
+  }, []);
+
+  const handleSave = async () => {
+    if (!code.trim()) { toast.show('รหัสว่างไม่ได้', 'error'); return; }
+    setSaving(true);
+    const { saveSiteSettings } = await import('../services/siteSettingsService');
+    const result = await saveSiteSettings({ accessCode: code.trim() });
+    setSaving(false);
+    if (result.ok) {
+      toast.show(`บันทึกรหัสใหม่ "${code.trim()}" ลง Firebase แล้ว ✓ — นักเรียนต้องใช้รหัสนี้เข้าระบบในครั้งถัดไป`, 'success');
+    } else {
+      toast.show(`บันทึกไม่สำเร็จ: ${result.error || 'ไม่ทราบสาเหตุ'}`, 'error');
+    }
+  };
+
+  return (
+    <div style={{
+      background: 'rgba(99, 102, 241, 0.05)', padding: '1.25rem',
+      borderRadius: 12, border: '1px solid rgba(99, 102, 241, 0.15)',
+      marginBottom: '2rem',
+    }}>
+      <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0 0 12px' }}>
+        นักเรียนต้องใส่รหัสนี้ก่อนเข้าใช้งานเว็บ ครูเปลี่ยนได้ทุกเมื่อ — เปลี่ยนแล้ว sync Firebase ไปทุกเครื่อง
+        (เครื่องที่ login อยู่แล้วยังเข้าใช้ต่อได้จนกว่าจะปิด browser)
+      </p>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input
+          type="text"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          disabled={!loaded || saving}
+          placeholder="รหัสเข้าระบบ"
+          spellCheck={false}
+          style={{
+            flex: 1, minWidth: 200, padding: '10px 14px',
+            fontSize: '1.1rem', letterSpacing: '0.2rem',
+            border: '2px solid #d1d5db', borderRadius: 10,
+            fontFamily: 'inherit', textTransform: 'lowercase',
+          }}
+        />
+        <button
+          className="btn-primary"
+          onClick={handleSave}
+          disabled={!loaded || saving}
+          style={{ padding: '10px 24px' }}
+        >
+          {saving ? 'กำลังบันทึก...' : 'บันทึกรหัสใหม่'}
+        </button>
+      </div>
+      <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: '8px 0 0' }}>
+        💡 รหัสกัน case แล้ว (ajj = AJJ = Ajj). หลีกเลี่ยงเว้นวรรค
+      </p>
     </div>
   );
 };

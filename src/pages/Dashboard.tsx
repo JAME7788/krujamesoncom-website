@@ -23,6 +23,7 @@ import AnnouncementBanner from '../components/AnnouncementBanner';
 import TrendChart from '../components/TrendChart';
 import MyGradeCard from '../components/MyGradeCard';
 import GamificationCard from '../components/GamificationCard';
+import AchievementShowcase from '../components/AchievementShowcase';
 import { getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
 import { loadSchedule, dayNames, minutesOf, fetchScheduleFromFirebase } from '../data/schedule';
 import type { ClassSlot } from '../data/schedule';
@@ -333,6 +334,9 @@ const Dashboard: React.FC = () => {
         studentNumber={user.studentNumber}
         name={user.name}
       />
+
+      {/* Achievement badges */}
+      <AchievementShowcase studentId={user.id} />
 
       {/* STATS */}
       <div className="stats-grid">

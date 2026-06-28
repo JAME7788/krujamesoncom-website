@@ -9,6 +9,7 @@ import {
 import { allClassrooms2569 } from '../data/students2569';
 import type { StudentInfo } from '../data/students2569';
 import { loadAllRosters } from '../services/rosterService';
+import { loadSiteSettings, fetchSiteSettingsFromFirebase } from '../services/siteSettingsService';
 import './Login.css';
 
 // อ่าน roster (built-in + แก้ไขจาก admin)
@@ -16,7 +17,6 @@ const students2569 = loadAllRosters();
 
 type Step = 'classroom' | 'student';
 
-const ACCESS_CODE = 'ajj';
 const ACCESS_FLAG = 'krujames_access_granted_v1';
 
 const Login: React.FC = () => {
@@ -27,6 +27,14 @@ const Login: React.FC = () => {
   });
   const [codeInput, setCodeInput] = useState('');
   const [codeError, setCodeError] = useState('');
+  const [currentCode, setCurrentCode] = useState<string>(() => loadSiteSettings().accessCode);
+
+  useEffect(() => {
+    // ดึง access code ล่าสุดจาก Firebase (เผื่อครูเปลี่ยน)
+    void fetchSiteSettingsFromFirebase().then((s) => {
+      if (s) setCurrentCode(s.accessCode);
+    });
+  }, []);
   const [step, setStep] = useState<Step>('classroom');
   const [classroom, setClassroom] = useState<string>('');
   const [pairMode, setPairMode] = useState(false);                  // โหมดนั่งคู่
@@ -78,7 +86,7 @@ const Login: React.FC = () => {
   // ขั้นที่ 0: ต้องใส่รหัสเข้าระบบก่อน (รหัสเดียวทั้งโรงเรียน — ครูแจ้ง)
   if (!accessGranted) {
     const tryUnlock = () => {
-      if (codeInput.trim().toLowerCase() === ACCESS_CODE) {
+      if (codeInput.trim().toLowerCase() === currentCode.toLowerCase()) {
         try { sessionStorage.setItem(ACCESS_FLAG, 'true'); } catch { /* ignore */ }
         setAccessGranted(true);
         setCodeError('');
