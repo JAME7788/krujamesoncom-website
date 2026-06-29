@@ -22,7 +22,7 @@ const LeaderboardSection: React.FC = () => {
     reload();
     // ดึง progress ข้ามเครื่องจาก Firebase ครั้งแรก แล้ว reload
     void refreshLeaderboardFromCloud().then(() => reload());
-    const t = setInterval(reload, 10000); // refresh every 10s
+    const t = setInterval(reload, 30000); // refresh every 30s — เด็กไม่ต้องเห็นอันดับสดๆ
     return () => clearInterval(t);
   }, [filter]);
 

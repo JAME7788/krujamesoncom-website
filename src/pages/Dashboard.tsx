@@ -97,10 +97,10 @@ const Dashboard: React.FC = () => {
     setTimeout(() => {
       if (user) setSummary(getSummary(user.id));
     }, 0);
-    // refresh ทุก 5 วิ เผื่อมี activity ใหม่จากแท็บอื่น
+    // refresh ทุก 15 วิ เผื่อมี activity ใหม่จากแท็บอื่น (ลดจาก 5 → 15 — เร็วพอ + ลด CPU)
     const id = setInterval(() => {
       if (user) setSummary(getSummary(user.id));
-    }, 5000);
+    }, 15000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);

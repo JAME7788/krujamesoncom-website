@@ -23,7 +23,8 @@ const AchievementShowcase: React.FC<Props> = ({ studentId }) => {
       setStats(getAchievementStats(studentId));
     };
     refresh();
-    const t = setInterval(refresh, 3000);
+    // 15 วิ — ลด CPU ของเครื่องเด็ก, achievements ไม่ปลดล็อกถี่ขนาดนั้น
+    const t = setInterval(refresh, 15000);
     return () => clearInterval(t);
   }, [studentId]);
 

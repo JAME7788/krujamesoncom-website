@@ -32,8 +32,8 @@ const GamificationCard: React.FC<Props> = ({ studentId }) => {
       });
     };
     recompute();
-    // อัปเดตทุก 3 วิ — เผื่อนักเรียนเปิด Dashboard ค้างไว้แล้ว XP/Level ขึ้น
-    const t = setInterval(recompute, 3000);
+    // อัปเดตทุก 10 วิ — เด็กไม่ค่อยเปิด Dashboard ค้างไว้, ลด CPU ของเครื่องเด็ก
+    const t = setInterval(recompute, 10000);
     return () => clearInterval(t);
   }, [studentId, toast]);
 

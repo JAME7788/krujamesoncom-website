@@ -37,7 +37,7 @@ const AchievementsBadge: React.FC = () => {
       setStats(getAchievementStats(user.id));
     };
     refresh();
-    const t = setInterval(refresh, 5000);
+    const t = setInterval(refresh, 20000);
     return () => clearInterval(t);
   }, [user, toast]);
 
