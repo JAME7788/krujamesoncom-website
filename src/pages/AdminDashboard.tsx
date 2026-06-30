@@ -10,6 +10,7 @@ import AdminGate from '../components/AdminGate';
 import CourseBuilder from '../components/CourseBuilder';
 import GradeBook from '../components/GradeBook';
 import SkillGradeTable from '../components/SkillGradeTable';
+import BonusAwarder from '../components/BonusAwarder';
 import StudentManager from '../components/StudentManager';
 import AnnouncementManager from '../components/AnnouncementManager';
 import CalendarManager from '../components/CalendarManager';
@@ -32,7 +33,7 @@ import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'overview' | 'roster' | 'attendance' | 'scores' | 'gradebook' | 'skill' | 'development' | 'schedule' | 'courses' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
+type Tab = 'overview' | 'roster' | 'attendance' | 'scores' | 'gradebook' | 'skill' | 'bonus' | 'development' | 'schedule' | 'courses' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -66,6 +67,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     items: [
       { id: 'gradebook', label: 'เก็บคะแนน K/P/A', icon: <Award size={16} /> },
       { id: 'skill', label: 'ทักษะอาชีพ (K/P)', icon: <Award size={16} /> },
+      { id: 'bonus', label: 'แจกรางวัล / Bonus', icon: <Award size={16} /> },
     ]
   },
   {
@@ -524,6 +526,19 @@ const AdminDashboardInner: React.FC = () => {
                   </p>
                 </div>
                 <SkillGradeTable />
+              </motion.div>
+            )}
+
+            {/* TAB: BONUS — Quick reward / sticker */}
+            {tab === 'bonus' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <div style={{ marginBottom: '1rem' }}>
+                  <h2 style={{ margin: '0 0 0.25rem' }}>🎁 แจกรางวัล / โบนัส</h2>
+                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
+                    คลิกชื่อเด็ก → เลือก preset หรือกำหนดเอง (emoji + เหตุผล + XP) → ส่ง — XP เพิ่มทันทีใน Dashboard เด็ก, sync Firebase ข้ามเครื่อง
+                  </p>
+                </div>
+                <BonusAwarder />
               </motion.div>
             )}
 

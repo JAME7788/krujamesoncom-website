@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Flame, Zap } from 'lucide-react';
-import { computeGamification } from '../services/progressService';
-import type { GamificationStats } from '../services/progressService';
+import { computeGamification, getProgress } from '../services/progressService';
+import type { GamificationStats, BonusEntry } from '../services/progressService';
 import { useToast } from './Toast';
 
 interface Props {
@@ -11,13 +11,28 @@ interface Props {
 const GamificationCard: React.FC<Props> = ({ studentId }) => {
   const [stats, setStats] = useState<GamificationStats | null>(null);
   const [celebrate, setCelebrate] = useState(false);
+  const [recentBonuses, setRecentBonuses] = useState<BonusEntry[]>([]);
   const lastLevelRef = useRef<number | null>(null);
+  const lastBonusCountRef = useRef<number | null>(null);
   const toast = useToast();
 
   useEffect(() => {
     if (!studentId) return;
     const recompute = () => {
       const next = computeGamification(studentId);
+      // ตรวจ bonus ใหม่จากครู → toast แจ้ง + อัปเดต showcase
+      const prog = getProgress(studentId);
+      const bonuses = prog.bonuses || [];
+      setRecentBonuses(bonuses.slice(0, 5));
+      const bonusCount = bonuses.length;
+      if (lastBonusCountRef.current !== null && bonusCount > lastBonusCountRef.current) {
+        const newest = bonuses[0];
+        if (newest) {
+          toast.show(`${newest.emoji} +${newest.xp} XP จากครู — ${newest.reason}`, 'success');
+        }
+      }
+      lastBonusCountRef.current = bonusCount;
+
       setStats((prev) => {
         // Level up celebration — เฉพาะกรณีที่ prev "เคยมีข้อมูลจริง" (xp > 0)
         // กันบั๊ก: cache เปล่าตอน mount → fetch เสร็จ → level พุ่งจาก 1 → 15 → fake celebrate
@@ -122,8 +137,38 @@ const GamificationCard: React.FC<Props> = ({ studentId }) => {
         </div>
       </div>
 
+      {recentBonuses.length > 0 && (
+        <div style={{
+          padding: 10, borderRadius: 10,
+          background: 'rgba(255, 255, 255, 0.55)',
+          display: 'flex', flexDirection: 'column', gap: 6,
+        }}>
+          <div style={{ fontSize: '0.78rem', color: '#78350f', fontWeight: 700 }}>
+            🎁 รางวัลจากครู
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {recentBonuses.map((b, i) => (
+              <div
+                key={i}
+                title={new Date(b.awardedAt).toLocaleString('th-TH')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  padding: '4px 10px', borderRadius: 999,
+                  background: 'white', border: '1px solid #fbbf24',
+                  fontSize: '0.78rem',
+                }}
+              >
+                <span style={{ fontSize: '1.05rem' }}>{b.emoji}</span>
+                <span>{b.reason}</span>
+                <strong style={{ color: '#d97706' }}>+{b.xp}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ fontSize: '0.72rem', color: '#78350f', opacity: 0.85, textAlign: 'center' }}>
-        💡 ทำควิซ +10 XP/คะแนน · เล่นเกม/อ่านสื่อ +5 XP · อ่านสไลด์ +1 XP · เข้าทุกวัน 🔥 streak ไม่หาย
+        💡 ทำควิซ +10 XP/คะแนน · เล่นเกม/อ่านสื่อ +5 XP · อ่านสไลด์ +1 XP · 🎁 ครูแจกรางวัล · เข้าทุกวัน 🔥 streak ไม่หาย
       </div>
     </div>
   );

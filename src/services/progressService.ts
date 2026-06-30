@@ -55,6 +55,13 @@ export interface UnitProgress {
   updatedAt: number;
 }
 
+export interface BonusEntry {
+  emoji: string;
+  reason: string;
+  xp: number;
+  awardedAt: number;
+}
+
 export interface StudentProgressData {
   studentId: string;
   units: Record<string, UnitProgress>;
@@ -67,6 +74,10 @@ export interface StudentProgressData {
   lastActive: number;
   /** วันที่นักเรียนเข้าใช้งาน (YYYY-M-D) — สำหรับคิด streak */
   daysActive?: string[];
+  /** XP โบนัสจากครู (รวม) */
+  bonusXp?: number;
+  /** ประวัติรางวัล/โบนัส ที่ครูแจก (เก็บ 50 ล่าสุด) */
+  bonuses?: BonusEntry[];
 }
 
 // ---------- Gamification ----------
@@ -146,7 +157,8 @@ export const computeGamification = (studentId: string): GamificationStats => {
   const data = getCached(studentId);
   const xp = (data.totalPoints || 0) * XP_PER_QUIZ_POINT
     + (data.totalActivities || 0) * XP_PER_ACTIVITY
-    + (data.totalSlidesViewed || 0) * XP_PER_SLIDE;
+    + (data.totalSlidesViewed || 0) * XP_PER_SLIDE
+    + (data.bonusXp || 0);
   // หา level — n สูงสุดที่ xpForLevel(n) ≤ xp
   let level = 1;
   while (xpForLevel(level + 1) <= xp) level += 1;
@@ -346,6 +358,28 @@ const persist = async (data: StudentProgressData) => {
 
 /** ดึงข้อมูล (sync from cache) — caller ควรเรียก fetchStudentProgress ก่อน */
 export const getProgress = (studentId: string): StudentProgressData => getCached(studentId);
+
+/**
+ * ครูแจกรางวัล/โบนัสให้นักเรียน — บันทึก XP โบนัส + ประวัติรางวัล
+ * ต้อง fetchStudentProgress ก่อนเพื่อ populate cache (จะ auto-fetch ถ้า miss)
+ */
+export const awardBonus = async (
+  studentId: string,
+  bonus: { emoji: string; reason: string; xp: number },
+): Promise<void> => {
+  if (!studentId) return;
+  let data = cache.get(studentId);
+  if (!data) data = await fetchStudentProgress(studentId);
+  const entry: BonusEntry = {
+    emoji: bonus.emoji,
+    reason: bonus.reason.trim() || 'รางวัลจากครู',
+    xp: Math.max(0, Math.floor(bonus.xp)),
+    awardedAt: Date.now(),
+  };
+  data.bonusXp = (data.bonusXp || 0) + entry.xp;
+  data.bonuses = [entry, ...(data.bonuses || [])].slice(0, 50);
+  await persist(data);
+};
 
 /**
  * บันทึกการดูสไลด์
