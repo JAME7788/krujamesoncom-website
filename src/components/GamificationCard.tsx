@@ -19,20 +19,23 @@ const GamificationCard: React.FC<Props> = ({ studentId }) => {
     const recompute = () => {
       const next = computeGamification(studentId);
       setStats((prev) => {
-        // Level up celebration
-        if (prev && next.level > prev.level && lastLevelRef.current !== next.level) {
+        // Level up celebration — เฉพาะกรณีที่ prev "เคยมีข้อมูลจริง" (xp > 0)
+        // กันบั๊ก: cache เปล่าตอน mount → fetch เสร็จ → level พุ่งจาก 1 → 15 → fake celebrate
+        const wasRealData = prev && prev.xp > 0;
+        const isLevelUp = prev && next.level > prev.level;
+        if (wasRealData && isLevelUp && lastLevelRef.current !== next.level) {
           lastLevelRef.current = next.level;
           setCelebrate(true);
           toast.show(`🎉 LEVEL UP! ตอนนี้คุณคือ ${next.title.emoji} ${next.title.name} (Level ${next.level})`, 'success');
           setTimeout(() => setCelebrate(false), 4000);
-        } else if (!prev) {
+        } else if (!prev || prev.xp === 0) {
+          // first mount หรือ cache เพิ่งโหลด — sync ref เงียบๆ
           lastLevelRef.current = next.level;
         }
         return next;
       });
     };
     recompute();
-    // อัปเดตทุก 10 วิ — เด็กไม่ค่อยเปิด Dashboard ค้างไว้, ลด CPU ของเครื่องเด็ก
     const t = setInterval(recompute, 10000);
     return () => clearInterval(t);
   }, [studentId, toast]);
