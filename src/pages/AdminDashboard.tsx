@@ -12,6 +12,7 @@ import GradeBook from '../components/GradeBook';
 import SkillGradeTable from '../components/SkillGradeTable';
 import BonusAwarder from '../components/BonusAwarder';
 import DailyQuestionEditor from '../components/DailyQuestionEditor';
+import QuickAttendance from '../components/QuickAttendance';
 import StudentManager from '../components/StudentManager';
 import AnnouncementManager from '../components/AnnouncementManager';
 import CalendarManager from '../components/CalendarManager';
@@ -34,7 +35,7 @@ import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'overview' | 'roster' | 'attendance' | 'scores' | 'gradebook' | 'skill' | 'bonus' | 'daily' | 'development' | 'schedule' | 'courses' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
+type Tab = 'overview' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'skill' | 'bonus' | 'daily' | 'development' | 'schedule' | 'courses' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -61,6 +62,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     items: [
       { id: 'roster', label: 'จัดการนักเรียน', icon: <Users size={16} /> },
       { id: 'attendance', label: 'เช็คชื่อตามตาราง', icon: <Calendar size={16} /> },
+      { id: 'quick-att', label: 'เช็คชื่อ Quick (มา/สาย)', icon: <Calendar size={16} /> },
     ]
   },
   {
@@ -541,6 +543,19 @@ const AdminDashboardInner: React.FC = () => {
                   </p>
                 </div>
                 <BonusAwarder />
+              </motion.div>
+            )}
+
+            {/* TAB: QUICK ATTENDANCE — ครูคลิกมา/สาย/ขาด */}
+            {tab === 'quick-att' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <div style={{ marginBottom: '1rem' }}>
+                  <h2 style={{ margin: '0 0 0.25rem' }}>✅ เช็คชื่อ Quick (มา / สาย / ขาด / ลา)</h2>
+                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
+                    คลิกสถานะหน้าห้องเรียน — เซ็ตทุกคนพร้อมกันได้ — มาเรียน +5 XP, สาย +2 XP, ขาด/ลา ไม่มี XP
+                  </p>
+                </div>
+                <QuickAttendance />
               </motion.div>
             )}
 
