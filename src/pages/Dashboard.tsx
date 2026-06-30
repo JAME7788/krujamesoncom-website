@@ -24,6 +24,7 @@ import TrendChart from '../components/TrendChart';
 import MyGradeCard from '../components/MyGradeCard';
 import GamificationCard from '../components/GamificationCard';
 import AchievementShowcase from '../components/AchievementShowcase';
+import DailyQuestionWidget from '../components/DailyQuestionWidget';
 import { getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
 import { loadSchedule, dayNames, minutesOf, fetchScheduleFromFirebase } from '../data/schedule';
 import type { ClassSlot } from '../data/schedule';
@@ -324,6 +325,9 @@ const Dashboard: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Daily Question — ครูตั้งคำถามวัน */}
+      <DailyQuestionWidget studentId={user.id} />
 
       {/* XP / Level / Streak — Gamification */}
       <GamificationCard studentId={user.id} />
