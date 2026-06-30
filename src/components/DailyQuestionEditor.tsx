@@ -1,10 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Plus, Trash2, Calendar } from 'lucide-react';
+import { Save, Plus, Trash2, Calendar, Download } from 'lucide-react';
 import {
   fetchDailyQuestion, saveDailyQuestion, todayDateKey,
 } from '../services/dailyQuestionService';
 import type { DailyQuestion } from '../services/dailyQuestionService';
+import { fetchAllProgressFromFirebase, getAllCachedProgress } from '../services/progressService';
+import { loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
+
+const downloadCsv = (csv: string, filename: string) => {
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 const DailyQuestionEditor: React.FC = () => {
   const [date, setDate] = useState<string>(todayDateKey());
@@ -52,6 +64,29 @@ const DailyQuestionEditor: React.FC = () => {
     const next = options.filter((_, idx) => idx !== i);
     setOptions(next);
     if (correctIndex >= next.length) setCorrectIndex(0);
+  };
+
+  const handleExportStats = async () => {
+    await fetchAllProgressFromFirebase();
+    const rosters = loadAllRosters();
+    const all = getAllCachedProgress();
+    const tagPrefix = `[Daily:${date}]`;
+    let csv = 'ห้อง,เลขที่,ชื่อ-สกุล,ตอบไหม,ผลลัพธ์,XP ที่ได้,เวลาที่ตอบ\n';
+    Object.keys(rosters).forEach((classroom) => {
+      (rosters[classroom] || []).forEach((s) => {
+        const studentId = `${classroom}_${s.no}_${s.name.replace(/\s/g, '')}`;
+        const prog = all.find((p) => p.studentId === studentId);
+        const bonus = prog?.bonuses?.find((b) => b.reason.startsWith(tagPrefix));
+        if (bonus) {
+          const result = bonus.reason.includes('ตอบถูก') ? 'ถูก' : 'ผิด';
+          csv += `${classroom},${s.no},"${s.name}",ตอบแล้ว,${result},${bonus.xp},${new Date(bonus.awardedAt).toLocaleString('th-TH')}\n`;
+        } else {
+          csv += `${classroom},${s.no},"${s.name}",ยังไม่ตอบ,-,0,-\n`;
+        }
+      });
+    });
+    downloadCsv(csv, `daily_question_${date}.csv`);
+    toast.show(`Export สถิติคำตอบวันที่ ${date} เรียบร้อย`, 'success');
   };
 
   const handleSave = async () => {
@@ -160,14 +195,21 @@ const DailyQuestionEditor: React.FC = () => {
           )}
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={!loaded || saving}
-          className="btn-export"
-          style={{ alignSelf: 'flex-start' }}
-        >
-          <Save size={16} /> {saving ? 'กำลังบันทึก...' : 'บันทึกคำถามนี้'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            onClick={handleSave}
+            disabled={!loaded || saving}
+            className="btn-export"
+          >
+            <Save size={16} /> {saving ? 'กำลังบันทึก...' : 'บันทึกคำถามนี้'}
+          </button>
+          <button
+            onClick={handleExportStats}
+            className="btn-secondary"
+          >
+            <Download size={16} /> Export สถิติคำตอบ ({date})
+          </button>
+        </div>
       </div>
     </div>
   );

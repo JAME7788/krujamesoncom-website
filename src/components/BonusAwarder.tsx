@@ -1,8 +1,18 @@
 import React, { useMemo, useState } from 'react';
-import { Users, Award, Send, Sparkles } from 'lucide-react';
-import { awardBonus, fetchStudentProgress, getProgress } from '../services/progressService';
+import { Users, Award, Send, Sparkles, Download } from 'lucide-react';
+import { awardBonus, fetchStudentProgress, fetchAllProgressFromFirebase, getProgress } from '../services/progressService';
 import { loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
+
+const downloadCsv = (csv: string, filename: string) => {
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 const PRESETS = [
   { emoji: '⭐', label: 'ดีมาก', xp: 10 },
@@ -39,6 +49,37 @@ const BonusAwarder: React.FC = () => {
     setXp(p.xp);
   };
 
+  const handleExport = async () => {
+    // ดึง progress ทุกคนจาก Firebase (เผื่อ cache ไม่มี)
+    await fetchAllProgressFromFirebase();
+    let csv = 'ห้อง,เลขที่,ชื่อ-สกุล,รวมโบนัส XP,จำนวนรางวัล,รางวัลล่าสุด,วันที่ล่าสุด\n';
+    roster.forEach((s) => {
+      const studentId = buildStudentId(s);
+      const prog = getProgress(studentId);
+      const bonuses = prog.bonuses || [];
+      const latest = bonuses[0];
+      const latestStr = latest ? `${latest.emoji} ${latest.reason} (+${latest.xp})` : '-';
+      const latestDate = latest ? new Date(latest.awardedAt).toLocaleDateString('th-TH') : '-';
+      csv += `${classroom},${s.no},"${s.name}",${prog.bonusXp || 0},${bonuses.length},"${latestStr}",${latestDate}\n`;
+    });
+    downloadCsv(csv, `bonus_summary_${classroom}_${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.show(`Export โบนัส ${roster.length} คนแล้ว`, 'success');
+  };
+
+  const handleExportHistory = async () => {
+    // history ทุกรางวัลแบบรายการ
+    await fetchAllProgressFromFirebase();
+    let csv = 'ห้อง,เลขที่,ชื่อ-สกุล,วันที่ได้รับ,Emoji,เหตุผล,XP\n';
+    roster.forEach((s) => {
+      const prog = getProgress(buildStudentId(s));
+      (prog.bonuses || []).forEach((b) => {
+        csv += `${classroom},${s.no},"${s.name}",${new Date(b.awardedAt).toLocaleString('th-TH')},${b.emoji},"${b.reason}",${b.xp}\n`;
+      });
+    });
+    downloadCsv(csv, `bonus_history_${classroom}_${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.show(`Export ประวัติรางวัลเรียบร้อย`, 'success');
+  };
+
   const handleAward = async () => {
     if (!selectedStudent) return;
     setBusy(true);
@@ -70,6 +111,13 @@ const BonusAwarder: React.FC = () => {
             ))}
           </select>
         </div>
+        <div style={{ flex: 1 }} />
+        <button className="btn-secondary" onClick={handleExport}>
+          <Download size={14} /> Export สรุป
+        </button>
+        <button className="btn-secondary" onClick={handleExportHistory}>
+          <Download size={14} /> Export ประวัติ
+        </button>
       </div>
 
       <div style={{ padding: 12, background: '#fef3c7', borderRadius: 10, marginBottom: 16, fontSize: '0.88rem' }}>

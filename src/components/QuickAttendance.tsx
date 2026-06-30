@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Users, Calendar, CheckCircle2 } from 'lucide-react';
+import { Users, Calendar, CheckCircle2, Download } from 'lucide-react';
 import {
   fetchAttendance, setStatus, markAllPresent, todayDateKey,
   ATTENDANCE_LABEL,
@@ -7,6 +7,16 @@ import {
 import type { AttendanceStatus, ManualAttendance } from '../services/manualAttendanceService';
 import { loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
+
+const downloadCsv = (csv: string, filename: string) => {
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 const ALL_STATUS: AttendanceStatus[] = ['present', 'late', 'absent', 'sick'];
 
@@ -61,6 +71,22 @@ const QuickAttendance: React.FC = () => {
     }
   };
 
+  const handleExport = () => {
+    const records = att?.records || {};
+    let csv = 'เลขที่,ชื่อ-สกุล,สถานะ,Emoji,XP\n';
+    [...roster].sort((a, b) => a.no - b.no).forEach((s) => {
+      const st = records[s.studentCode];
+      if (st) {
+        const info = ATTENDANCE_LABEL[st];
+        csv += `${s.no},"${s.name}",${info.th},${info.emoji},${info.xp}\n`;
+      } else {
+        csv += `${s.no},"${s.name}",ยังไม่ติ๊ก,-,0\n`;
+      }
+    });
+    downloadCsv(csv, `attendance_${classroom}_${date}.csv`);
+    toast.show(`Export CSV ${roster.length} คน เรียบร้อย`, 'success');
+  };
+
   const handleAllPresent = async () => {
     if (!confirm(`เซ็ตทุกคน (${roster.length} คน) ในห้อง ${classroom} เป็น "มาเรียน" ?`)) return;
     setBusy('__all__');
@@ -97,6 +123,9 @@ const QuickAttendance: React.FC = () => {
           />
         </div>
         <div style={{ flex: 1 }} />
+        <button className="btn-secondary" onClick={handleExport} disabled={roster.length === 0}>
+          <Download size={14} /> Export CSV
+        </button>
         <button
           className="btn-primary"
           onClick={handleAllPresent}

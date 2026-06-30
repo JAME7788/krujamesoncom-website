@@ -13,6 +13,7 @@ import SkillGradeTable from '../components/SkillGradeTable';
 import BonusAwarder from '../components/BonusAwarder';
 import DailyQuestionEditor from '../components/DailyQuestionEditor';
 import QuickAttendance from '../components/QuickAttendance';
+import MasterCsvExport from '../components/MasterCsvExport';
 import StudentManager from '../components/StudentManager';
 import AnnouncementManager from '../components/AnnouncementManager';
 import CalendarManager from '../components/CalendarManager';
@@ -265,6 +266,7 @@ const AdminDashboardInner: React.FC = () => {
             {/* TAB: OVERVIEW */}
             {tab === 'overview' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <MasterCsvExport />
                 <div className="kpi-grid">
                   <KPI icon={<Users />} color="#6366f1" label="นักเรียนทั้งหมด" value={stats.total} sub="คน" />
                   <KPI icon={<Activity />} color="#22c55e" label="เข้าใช้วันนี้" value={stats.activeToday} sub={`จากทั้งหมด ${stats.total}`} />
