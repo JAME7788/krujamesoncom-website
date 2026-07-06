@@ -1,5 +1,7 @@
 // Simple Service Worker — Cache-first สำหรับ static assets
-const CACHE_NAME = 'krujames-v1';
+// v2: บังคับล้าง cache เก่าทุกเครื่อง (ระบบปลดล็อกบทเรียน sync Firebase เพิ่งเข้า
+//     ต้องให้ทุกเครื่องได้ JS ใหม่ ไม่ค้างเวอร์ชันที่ล็อกอ่านจาก localStorage อย่างเดียว)
+const CACHE_NAME = 'krujames-v2';
 const PRECACHE_URLS = [
   '/',
   '/manifest.json',
