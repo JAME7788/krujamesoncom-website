@@ -152,6 +152,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSessionItem(STUDENT_KEY, JSON.stringify(main));
     setUser(main);
     persistStudent(main);
+    // นับ login เป็นกิจกรรม → เช็คชื่อตามตารางเห็นเวลาเข้าเรียนจริง (ไม่ตีเป็นขาด/สาย)
+    void import('../services/progressService').then(({ trackLogin }) => trackLogin(main.id));
 
     if (partnerInfo) {
       const p: Student = {
@@ -164,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSessionItem(PARTNER_KEY, JSON.stringify(p));
       setPartner(p);
       persistStudent(p);
+      void import('../services/progressService').then(({ trackLogin }) => trackLogin(p.id));
     } else {
       try {
         sessionStorage.removeItem(PARTNER_KEY);

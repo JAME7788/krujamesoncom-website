@@ -360,6 +360,27 @@ const persist = async (data: StudentProgressData) => {
 export const getProgress = (studentId: string): StudentProgressData => getCached(studentId);
 
 /**
+ * บันทึก "เข้าสู่ระบบ" เป็น activity — เพื่อให้เช็คชื่อตามตารางเห็นเวลา login จริง
+ * (เด็ก login ตรงเวลาแต่ยังไม่เปิดสไลด์ = ก่อนหน้านี้ระบบตีเป็นขาด/สาย)
+ * ไม่แตะ unit lists → ไม่เพิ่ม XP / P — แค่ log เวลา + streak day
+ */
+export const trackLogin = async (studentId: string): Promise<void> => {
+  if (!studentId) return;
+  let data = cache.get(studentId);
+  if (!data) data = await fetchStudentProgress(studentId);
+  data.activities.unshift({
+    type: 'fun',
+    gradeId: 'login',
+    unitNo: 0,
+    detail: 'เข้าสู่ระบบ',
+    timestamp: Date.now(),
+  });
+  data.activities = data.activities.slice(0, ACTIVITY_LIMIT);
+  recordDailyActivity(data);
+  await persist(data);
+};
+
+/**
  * ครูแจกรางวัล/โบนัสให้นักเรียน — บันทึก XP โบนัส + ประวัติรางวัล
  * ต้อง fetchStudentProgress ก่อนเพื่อ populate cache (จะ auto-fetch ถ้า miss)
  */

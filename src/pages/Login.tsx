@@ -85,15 +85,29 @@ const Login: React.FC = () => {
 
   // ขั้นที่ 0: ต้องใส่รหัสเข้าระบบก่อน (รหัสเดียวทั้งโรงเรียน — ครูแจ้ง)
   if (!accessGranted) {
-    const tryUnlock = () => {
-      if (codeInput.trim().toLowerCase() === currentCode.toLowerCase()) {
-        try { sessionStorage.setItem(ACCESS_FLAG, 'true'); } catch { /* ignore */ }
-        setAccessGranted(true);
-        setCodeError('');
-      } else {
-        setCodeError('รหัสไม่ถูกต้อง — ลองอีกครั้ง');
-        setCodeInput('');
+    const grant = () => {
+      try { sessionStorage.setItem(ACCESS_FLAG, 'true'); } catch { /* ignore */ }
+      setAccessGranted(true);
+      setCodeError('');
+    };
+    const tryUnlock = async () => {
+      const typed = codeInput.trim().toLowerCase();
+      if (typed === currentCode.toLowerCase()) {
+        grant();
+        return;
       }
+      // ไม่ตรง — อาจเป็นเพราะรหัสเพิ่งถูกครูเปลี่ยน / fetch ตอน mount ยังไม่เสร็จ
+      // ดึงสดจาก Firebase แล้วเทียบอีกครั้งก่อนแจ้ง error
+      const fresh = await fetchSiteSettingsFromFirebase();
+      if (fresh) {
+        setCurrentCode(fresh.accessCode);
+        if (typed === fresh.accessCode.toLowerCase()) {
+          grant();
+          return;
+        }
+      }
+      setCodeError('รหัสไม่ถูกต้อง — ลองอีกครั้ง');
+      setCodeInput('');
     };
     return (
       <div className="login-page page-transition">

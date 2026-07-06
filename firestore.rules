@@ -50,6 +50,26 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // ====== Site Settings (รหัสเข้าระบบ ฯลฯ) ======
+    match /settings/{id} {
+      allow read, write: if true;
+    }
+
+    // ====== Manual Attendance (เช็คชื่อ Quick) ======
+    match /attendance/{id} {
+      allow read, write: if true;
+    }
+
+    // ====== Daily Questions (คำถามประจำวัน) ======
+    match /dailyQuestions/{id} {
+      allow read, write: if true;
+    }
+
+    // ====== Live Quiz Rooms ======
+    match /liveQuizzes/{code} {
+      allow read, write: if true;
+    }
+
     // Default deny for any other path
     match /{document=**} {
       allow read, write: if false;
