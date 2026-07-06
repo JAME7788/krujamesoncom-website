@@ -1,8 +1,13 @@
 // Admin authentication — แยกจาก student login
-// Hardcoded credentials (สำหรับครูเจ้าของเว็บ)
-
-const ADMIN_USER = 'jameskmd';
-const ADMIN_PASS = '12345678kmd';
+//
+// ⚠️ ข้อจำกัดด้านความปลอดภัย: การตรวจรหัสฝั่ง client (browser) ไม่ใช่กำแพงจริง
+// ค่านี้ถูกฝังใน JS bundle เสมอ ใครเปิด DevTools ก็อ่านได้ → ถือเป็นแค่ "กันคนทั่วไป"
+// การป้องกันข้อมูลจริงอยู่ที่ Firestore App Check + Rules (ดู SECURITY.md)
+//
+// ตั้งค่าผ่าน .env ได้ (VITE_ADMIN_USER / VITE_ADMIN_PASS) เพื่อเปลี่ยนรหัส
+// โดยไม่ต้องแก้ซอร์ส และไม่ให้รหัสค้างอยู่ในประวัติ git ของซอร์ส
+const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || 'jameskmd';
+const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || '12345678kmd';
 const SESSION_KEY = 'krujames_admin_session_v1';
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 ชั่วโมง
 

@@ -1,8 +1,16 @@
 // ===================================================================
 // Firestore Security Rules — krujamesoncom-website
 //
-// สำหรับระบบเรียนออนไลน์ Kru James (ไม่มี Firebase Auth ล็อกอินในระบบหลังบ้าน)
-// การเข้าถึงความปลอดภัยในการบันทึกจะใช้การยืนยันตัวตนและการเข้าถึงระดับแอปพลิเคชัน
+// ระบบเรียนออนไลน์ Kru James (ไม่มี Firebase Auth ล็อกอินหลังบ้าน)
+//
+// ชั้นการป้องกัน (defense in depth):
+//   1. App Check (reCAPTCHA v3) — บล็อก client ที่ไม่ใช่เว็บจริง ★ ชั้นหลัก
+//      → ต้องเปิด "Enforce" ที่ Firestore ใน Firebase Console
+//   2. Rules ด้านล่าง — ตรวจ shape + จำกัดขนาด กันการยัด payload ระเบิด
+//      และกันการลบทั้ง collection
+//
+// หมายเหตุ: เพราะไม่มี Auth จึงแยก "แอปจริง" กับ "ผู้ไม่หวังดี" ไม่ได้จาก
+// ตัวตน — App Check คือชั้นที่ทำหน้าที่นั้น Rules ทำได้แค่ตรวจรูปร่างข้อมูล
 // ===================================================================
 
 rules_version = '2';
@@ -10,64 +18,99 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ====== Students ======
+    // ---------- helpers ----------
+    function isMap() {
+      return request.resource.data is map;
+    }
+    // จำกัดจำนวน field ต่อ document (กัน payload ระเบิด)
+    function fieldsUnder(n) {
+      return request.resource.data.keys().size() < n;
+    }
+    // string สั้นพอ (กัน storage abuse)
+    function strOk(v, maxLen) {
+      return !(v in request.resource.data)
+        || request.resource.data[v] == null
+        || (request.resource.data[v] is string && request.resource.data[v].size() <= maxLen);
+    }
+    // เขียนที่ผ่านเกณฑ์พื้นฐาน: เป็น map + จำนวน field ไม่เกิน
+    function baseWrite(maxFields) {
+      return isMap() && fieldsUnder(maxFields);
+    }
+
+    // ====== Students (รายชื่อ) ======
     match /students/{studentId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(20)
+                   && strOk('name', 200)
+                   && strOk('classroom', 20)
+                   && strOk('studentNumber', 10);
     }
 
-    // ====== Progress ======
+    // ====== Progress (ความก้าวหน้า + XP + streak + bonus) ======
     match /progress/{studentId} {
-      allow read, write: if true;
+      allow read: if true;
+      // progress มี nested arrays/maps เยอะ — จำกัดจำนวน top-level field
+      allow write: if baseWrite(40);
     }
 
-    // ====== Grades (K/P/A) ======
+    // ====== Grades (K/P/A + ทักษะอาชีพ) ======
     match /grades/{docId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(30);
     }
 
     // ====== Announcements ======
     match /announcements/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(20) && strOk('title', 300) && strOk('body', 5000);
     }
 
     // ====== Calendar Events ======
     match /events/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(20) && strOk('title', 300);
     }
 
     // ====== Custom Courses (Course Builder) ======
     match /courses/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(50);
     }
 
-    // ====== Schedule (ตารางสอน) ======
+    // ====== Schedule / courseAccess / unitLocks ======
     match /schedule/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(30);
     }
 
     // ====== Custom Slides (NotebookLM) ======
     match /custom_slides/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(60);
     }
 
     // ====== Site Settings (รหัสเข้าระบบ ฯลฯ) ======
     match /settings/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(15) && strOk('accessCode', 100);
     }
 
     // ====== Manual Attendance (เช็คชื่อ Quick) ======
     match /attendance/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(10);
     }
 
     // ====== Daily Questions (คำถามประจำวัน) ======
     match /dailyQuestions/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(10) && strOk('question', 1000);
     }
 
     // ====== Live Quiz Rooms ======
     match /liveQuizzes/{code} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if baseWrite(20);
     }
 
     // Default deny for any other path
