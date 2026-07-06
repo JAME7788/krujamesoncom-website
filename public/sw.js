@@ -1,65 +1,35 @@
-// Simple Service Worker — Cache-first สำหรับ static assets
-// v2: บังคับล้าง cache เก่าทุกเครื่อง (ระบบปลดล็อกบทเรียน sync Firebase เพิ่งเข้า
-//     ต้องให้ทุกเครื่องได้ JS ใหม่ ไม่ค้างเวอร์ชันที่ล็อกอ่านจาก localStorage อย่างเดียว)
-const CACHE_NAME = 'krujames-v3';
-const PRECACHE_URLS = [
-  '/',
-  '/manifest.json',
-];
+// ===================================================================
+// KILL SWITCH — ยกเลิก service worker เดิมทั้งหมด
+//
+// SW cache ทำให้เครื่องค้างที่หน้าโหลด (เสิร์ฟไฟล์เก่าปนใหม่) หลายรอบ
+// เว็บนี้เป็น static site + มี Vercel CDN อยู่แล้ว ไม่จำเป็นต้องมี SW cache
+//
+// เมื่อเบราว์เซอร์เครื่องไหนที่ยังมี SW เก่า มาเช็คอัปเดต จะได้ไฟล์นี้ →
+// ติดตั้ง → ล้าง cache ทั้งหมด → ถอนทะเบียนตัวเอง → reload หน้าให้โหลดสด
+// จากนั้นเครื่องนั้นจะไม่มี SW อีก (index.html เอา registration ออกแล้ว)
+// ===================================================================
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
-  );
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
-      )
-    )
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    try {
+      // 1) ลบ cache ทั้งหมด
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    } catch (e) { /* ignore */ }
+    try {
+      // 2) ถอนทะเบียน service worker ตัวเอง
+      await self.registration.unregister();
+    } catch (e) { /* ignore */ }
+    try {
+      // 3) reload ทุกหน้าที่ SW นี้คุมอยู่ → โหลดสดจาก network ไม่ผ่าน SW
+      const clients = await self.clients.matchAll({ type: 'window' });
+      clients.forEach((c) => c.navigate(c.url));
+    } catch (e) { /* ignore */ }
+  })());
 });
 
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  if (request.method !== 'GET') return;
-
-  // Network-first for HTML, cache-first for assets
-  if (request.headers.get('accept')?.includes('text/html')) {
-    event.respondWith(
-      fetch(request).catch(() => caches.match(request).then((r) => r || caches.match('/')))
-    );
-  } else {
-    event.respondWith(
-      caches.match(request).then((cached) =>
-        cached ||
-        fetch(request).then((response) => {
-          // Cache successful responses
-          if (response.ok && response.type === 'basic') {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        }).catch(() => cached)
-      )
-    );
-  }
-});
-
-// Notification click — focus existing tab or open new
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clients) => {
-      for (const client of clients) {
-        if ('focus' in client) return client.focus();
-      }
-      if (self.clients.openWindow) return self.clients.openWindow('/');
-    })
-  );
-});
+// ไม่มี fetch handler — ปล่อยทุก request ผ่านไป network ตรงๆ

@@ -35,12 +35,17 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Kru James" />
 
-    <!-- Service Worker -->
+    <!-- Service Worker: ปิดการใช้งานถาวร (SW cache ทำให้เครื่องค้างหน้าโหลด)
+         แต่ยังต้อง "ปลุก" SW เก่าให้มาโหลด /sw.js ตัว kill-switch เพื่อถอนตัวเอง -->
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW failed', err));
-        });
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          if (regs && regs.length) {
+            // มี SW เก่าค้างอยู่ → บังคับให้ไปโหลด /sw.js (kill switch) มาถอนตัวเอง
+            regs.forEach(function (r) { r.update().catch(function () {}); });
+          }
+          // ไม่ลงทะเบียน SW ใหม่อีกต่อไป
+        }).catch(function () {});
       }
     </script>
 
