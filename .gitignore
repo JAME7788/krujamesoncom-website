@@ -12,10 +12,12 @@ dist
 dist-ssr
 *.local
 
-# Secrets — อย่า commit .env จริง (commit เฉพาะ .env.example)
-.env
-.env.*
-!.env.example
+# .env ต้องอยู่ใน git — Vercel build อ่าน Firebase config จากไฟล์นี้
+# (Firebase web config ไม่ใช่ความลับ — ฝังใน bundle อยู่แล้ว)
+# ถ้าย้ายไปตั้ง env vars ใน Vercel Dashboard แล้ว ค่อยลบ .env ออกจาก git ได้
+# ลับจริง (เช่น service-account json) ห้าม commit — ใส่ .env.secret แทน
+.env.secret
+.env.*.local
 
 # Editor directories and files
 .vscode/*

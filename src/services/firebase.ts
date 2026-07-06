@@ -1,6 +1,5 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 // เว็บไซต์นี้ใช้ฐานข้อมูลแยกจากเว็บโรงเรียน (Dedicated Learning Portal Database)
@@ -18,21 +17,25 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+// Firestore = หัวใจของแอป — getFirestore ไม่ throw ตอน init แม้ config ไม่ครบ
 export const db = getFirestore(app);
-export const auth = getAuth(app);
+
+// Storage — ใช้เฉพาะ assignmentService — getStorage ไม่ throw ตอน init (lazy)
 export const storage = getStorage(app);
 
+// หมายเหตุสำคัญ: เดิมมี `export const auth = getAuth(app)` แต่แอปนี้ไม่ได้ใช้
+// Firebase Auth เลย (ล็อกอินนักเรียน/แอดมินเป็นระบบเอง) และ getAuth() จะ
+// throw แบบ synchronous ทันทีถ้า API key ว่าง/ผิด → ทำให้ทั้งแอปโหลดไม่ขึ้น
+// (เป็นต้นเหตุที่เว็บค้างหน้าโหลดเมื่อ env var บน Vercel หาย)
+// จึงถอด getAuth ออก เพื่อไม่ให้ปัญหา config ล้มทั้งเว็บอีก
+
 // ---------------------------------------------------------------
-// App Check — บล็อก request ที่ไม่ได้มาจากเว็บจริงของเรา
-// โหลดแบบ lazy (dynamic import) + หลัง app mount แล้ว เพื่อไม่ให้อยู่ใน
-// critical path ของการโหลดเว็บ ถ้าพังก็ไม่ทำให้เว็บค้าง
-//
-// เปิดใช้งาน: ใส่ VITE_RECAPTCHA_SITE_KEY ใน .env แล้วไปกด "Enforce"
+// App Check — โหลด lazy หลัง export แล้ว ไม่อยู่ใน critical path
+// เปิดใช้งาน: ใส่ VITE_RECAPTCHA_SITE_KEY ใน .env แล้วกด "Enforce"
 // ที่ Firestore ใน Firebase Console (ดู SECURITY.md)
 // ---------------------------------------------------------------
 const appCheckSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 if (appCheckSiteKey && typeof window !== "undefined") {
-  // ไม่ await — ปล่อยให้ทำงานเบื้องหลัง ไม่บล็อกการ import โมดูลนี้
   import("firebase/app-check")
     .then(({ initializeAppCheck, ReCaptchaV3Provider }) => {
       try {
