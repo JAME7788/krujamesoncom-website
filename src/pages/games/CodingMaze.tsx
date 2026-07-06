@@ -184,8 +184,6 @@ const CodingMaze: React.FC = () => {
       setMessage('🤔 ต้องวางบล็อกก่อนนะ!');
       return;
     }
-    const solvedCount = solved.filter(Boolean).length;
-    recordGame(solvedCount > 0 ? solvedCount : undefined);
     setRunning(true);
     setMessage('');
     setPos(level.start);
@@ -195,6 +193,7 @@ const CodingMaze: React.FC = () => {
     const commands = expand(program);
     let [x, y] = level.start;
     let stars = 0;
+    const collectedStars = new Set<string>();
 
     for (let i = 0; i < commands.length; i++) {
       setStepIdx(i);
@@ -221,7 +220,9 @@ const CodingMaze: React.FC = () => {
       setPos([x, y]);
 
       // Collect star
-      if (level.grid[y][x] === 'star' && grid[y][x] === 'star') {
+      const starKey = `${x},${y}`;
+      if (level.grid[y][x] === 'star' && !collectedStars.has(starKey)) {
+        collectedStars.add(starKey);
         stars += 1;
         setCollected(stars);
         setGrid((g) => {
@@ -236,14 +237,16 @@ const CodingMaze: React.FC = () => {
         const totalStars = level.grid.flat().filter(c => c === 'star').length;
         if (stars === totalStars) {
           setMessage(`🎉 เยี่ยม! ผ่านด่านนี้แล้ว เก็บดาวครบ ⭐${stars}/${totalStars}`);
+          setSolved((s) => {
+            const ns = [...s];
+            ns[levelIdx] = true;
+            const solvedCount = ns.filter(Boolean).length;
+            recordGame(solvedCount);
+            return ns;
+          });
         } else {
           setMessage(`✅ ถึงเป้าหมายแล้ว! แต่ยังไม่ครบดาว ⭐${stars}/${totalStars}`);
         }
-        setSolved((s) => {
-          const ns = [...s];
-          ns[levelIdx] = true;
-          return ns;
-        });
         setRunning(false);
         setStepIdx(-1);
         return;

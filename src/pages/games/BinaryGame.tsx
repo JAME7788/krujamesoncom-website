@@ -34,8 +34,8 @@ const BinaryGame: React.FC = () => {
   const current = binToDec(bits.join(''));
 
   const check = () => {
+    recordGame(score);
     if (current === target) {
-      recordGame(score + 10);
       setChecked('correct');
       setScore((s) => s + 10);
       setStreak((st) => {

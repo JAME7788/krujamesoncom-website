@@ -7,38 +7,41 @@ import type { Grade, Unit, Indicator } from '../data/curriculum';
 import { useAuth } from '../context/AuthContext';
 import { isAdminAuthed } from '../services/authAdmin';
 import { useToast } from '../components/Toast';
-import { isUnitLocked } from '../services/unitLockService';
+import {
+  fetchUnlockedUnits,
+  getUnlockedUnits,
+  isUnitLocked,
+  subscribeUnlockedUnits,
+  type UnitUnlockMap,
+} from '../services/unitLockService';
+import {
+  fetchCourseAccessSettings,
+  getCourseIdsForClassroom,
+  getCourseAccessSettings,
+  isCourseOpenForClassroom,
+  subscribeCourseAccessSettings,
+  type CourseAccessSettings,
+} from '../services/courseAccessService';
 import './Curriculum.css';
-
-/** map ห้องเรียน → gradeIds ใน curriculum ที่นักเรียนห้องนั้นมีสิทธิ์เข้า */
-const classroomToAllowedGradeIds = (classroom: string): string[] => {
-  const map: Record<string, string[]> = {
-    'ป.1': ['p1', 'ai-p1-3'],
-    'ป.2': ['p2', 'ai-p1-3'],
-    'ป.3': ['p3', 'ai-p1-3'],
-    'ป.4': ['p4', 'ai-p4-6'],
-    'ป.5': ['p5', 'ai-p4-6'],
-    'ป.6': ['p6', 'ai-p4-6'],
-    'ม.1': ['m1-cs', 'm1-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
-    'ม.2': ['m2-cs', 'm2-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
-    'ม.3': ['m3-cs', 'm3-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
-  };
-  return map[classroom] || [];
-};
 
 const Curriculum: React.FC = () => {
   const { user } = useAuth();
   const isAdmin = isAdminAuthed();
   const [selectedCourse, setSelectedCourse] = useState<Grade | null>(null);
+  const [unlockedMap, setUnlockedMap] = useState<UnitUnlockMap>(() => getUnlockedUnits());
+  const [courseAccessSettings, setCourseAccessSettings] = useState<CourseAccessSettings>(() => getCourseAccessSettings());
   const toast = useToast();
 
   // กรองคอร์สตามสิทธิ์
   const visibleGrades = useMemo(() => {
     if (isAdmin) return grades; // Admin เห็นทุกคอร์ส
     if (!user) return [];        // ไม่ login = ไม่เห็น
-    const allowed = classroomToAllowedGradeIds(user.classroom);
-    return grades.filter((g) => allowed.includes(g.id));
-  }, [user, isAdmin]);
+    const allowed = getCourseIdsForClassroom(user.classroom);
+    return grades.filter((g) =>
+      allowed.includes(g.id) &&
+      isCourseOpenForClassroom(user.classroom, g.id, courseAccessSettings)
+    );
+  }, [user, isAdmin, courseAccessSettings]);
 
   // Stop scrolling when modal is open
   React.useEffect(() => {
@@ -49,6 +52,40 @@ const Curriculum: React.FC = () => {
     }
     return () => { document.body.style.overflow = 'auto'; };
   }, [selectedCourse]);
+
+  React.useEffect(() => {
+    let alive = true;
+
+    fetchUnlockedUnits().then((data) => {
+      if (alive) setUnlockedMap(data);
+    });
+
+    const unsubscribe = subscribeUnlockedUnits((data) => {
+      if (alive) setUnlockedMap(data);
+    });
+
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    let alive = true;
+
+    fetchCourseAccessSettings().then((settings) => {
+      if (alive) setCourseAccessSettings(settings);
+    });
+
+    const unsubscribe = subscribeCourseAccessSettings((settings) => {
+      if (alive) setCourseAccessSettings(settings);
+    });
+
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
+  }, []);
 
   return (
     <div className="curriculum-page">
@@ -161,7 +198,7 @@ const Curriculum: React.FC = () => {
                   <h3><ListChecks size={20} className="text-primary" /> เนื้อหาที่จะได้เรียน ({selectedCourse.units?.length || 0} หน่วย)</h3>
                   <div className="modal-units-list">
                     {selectedCourse.units?.map((u: Unit) => {
-                      const locked = isUnitLocked(selectedCourse.id, u.no);
+                      const locked = isUnitLocked(selectedCourse.id, u.no, unlockedMap);
                       return (
                         <Link
                           key={u.no}

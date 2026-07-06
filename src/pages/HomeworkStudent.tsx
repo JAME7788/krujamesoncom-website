@@ -6,7 +6,8 @@ import {
 } from '../services/homeworkService';
 import type { Assignment } from '../services/homeworkService';
 import { trackMediaClick } from '../services/progressService';
-import { classroomToGradeIds } from '../services/gradeService';
+import { syncStudentGradesFromProgress } from '../services/gameProgressService';
+import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
 
 const HomeworkStudent: React.FC = () => {
   const { user } = useAuth();
@@ -56,9 +57,16 @@ const HomeworkStudent: React.FC = () => {
       comment,
     });
     // นับการส่งงานเป็น activity → +5 XP + streak day + นับ P/A ทาง syncFromProgress
-    const gradeId = classroomToGradeIds(user.classroom)[0];
+    const gradeId = getDefaultProgressGradeIdForClassroom(user.classroom);
     if (gradeId) {
-      void trackMediaClick(user.id, gradeId, 1, 'fun', `[Homework] ${selected.title}`);
+      void trackMediaClick(user.id, gradeId, 1, 'fun', `[Homework] ${selected.title}`).then(() => {
+        syncStudentGradesFromProgress({
+          id: user.id,
+          name: user.name,
+          classroom: user.classroom,
+          studentNumber: user.studentNumber,
+        });
+      });
     }
     alert('ส่งงานสำเร็จ ✓ +5 XP');
     setSelected(null);

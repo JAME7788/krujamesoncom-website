@@ -6,7 +6,7 @@ import type { ChatMessage, AISettings } from '../services/aiTutorService';
 import { useAuth } from '../context/AuthContext';
 import { trackMediaClick } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
-import { classroomToGradeIds } from '../services/gradeService';
+import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
 import './AITutor.css';
 
 const AITutor: React.FC = () => {
@@ -42,7 +42,7 @@ const AITutor: React.FC = () => {
       setMessages(loadHistory(userId));
       // นับการใช้ AI Tutor เป็น "ทักษะ" (P skill points) — 1 ครั้งต่อ session
       if (!trackedRef.current && user && user.id !== 'admin_teacher_account') {
-        const gradeId = classroomToGradeIds(user.classroom)[0];
+        const gradeId = getDefaultProgressGradeIdForClassroom(user.classroom);
         if (gradeId) {
           trackedRef.current = true;
           void trackMediaClick(user.id, gradeId, 1, 'fun', '[AI Tutor] คำถามถึง AI').then(() => {

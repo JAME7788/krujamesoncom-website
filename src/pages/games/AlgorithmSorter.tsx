@@ -176,9 +176,9 @@ const AlgorithmSorter: React.FC = () => {
 
   const check = () => {
     setChecked(true);
+    recordGame(score);
     const correct = items.every((it, i) => it === puzzle.steps[i]);
     if (correct) {
-      recordGame(score + 50);
       setScore((s) => s + 50);
       setSolvedCount((c) => c + 1);
     }

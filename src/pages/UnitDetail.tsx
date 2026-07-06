@@ -1,34 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, PlayCircle, CheckCircle2, XCircle, RotateCcw, Sparkles, Video, Gamepad2, FileText, Award, BookOpen, Menu, Maximize, Download, Lock } from 'lucide-react';
 import { findGrade, type Grade, type Unit } from '../data/curriculum';
 import { unitContent } from '../data/unitContent';
-import { unitExtras, type Article, type LearningFile, type LessonNotes } from '../data/unitExtras';
+import { unitExtras, type Article, type LearningFile, type LessonNotes, type QuizQuestion } from '../data/unitExtras';
 import { buildOfficialArticles, buildOfficialFiles, buildOfficialLessonNotes } from '../data/officialSources';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { isAdminAuthed } from '../services/authAdmin';
-import { isUnitLocked } from '../services/unitLockService';
-
-// Map ห้องเรียน → gradeIds ที่นักเรียนเข้าได้
-const classroomAllowedGrades = (classroom: string): string[] => {
-  const m: Record<string, string[]> = {
-    'ป.1': ['p1', 'ai-p1-3'], 'ป.2': ['p2', 'ai-p1-3'], 'ป.3': ['p3', 'ai-p1-3'],
-    'ป.4': ['p4', 'ai-p4-6'], 'ป.5': ['p5', 'ai-p4-6'], 'ป.6': ['p6', 'ai-p4-6'],
-    'ม.1': ['m1-cs', 'm1-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
-    'ม.2': ['m2-cs', 'm2-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
-    'ม.3': ['m3-cs', 'm3-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
-  };
-  return m[classroom] || [];
-};
+import {
+  fetchUnlockedUnits,
+  getUnlockedUnits,
+  isUnitLocked,
+  subscribeUnlockedUnits,
+  type UnitUnlockMap,
+} from '../services/unitLockService';
+import {
+  fetchCourseAccessSettings,
+  getCourseIdsForClassroom,
+  getCourseAccessSettings,
+  isCourseOpenForClassroom,
+  subscribeCourseAccessSettings,
+  type CourseAccessSettings,
+} from '../services/courseAccessService';
 import {
   saveQuizAttempt,
   trackSlideView,
   trackMediaClick,
   getUnitProgress,
 } from '../services/progressService';
-import { syncFromProgress } from '../services/gradeService';
+import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import RichSlideViewer from '../components/RichSlideViewer';
 import '../components/RichSlideViewer.css';
 import { hasRichSlides, getRichSlides, type RichSlide } from '../data/richSlides';
@@ -956,6 +958,107 @@ const buildTeachingExplanation = (title: string, bullets: string[], unitTitle: s
   };
 };
 
+const MIN_QUIZ_ITEMS = 10;
+
+const gradeDifficultyLabel = (gradeId: string) => {
+  if (/^p[1-3]/.test(gradeId)) return 'ง่าย';
+  if (/^p[4-6]/.test(gradeId)) return 'ปานกลาง';
+  return 'ท้าทาย';
+};
+
+const buildGeneratedQuizQuestion = (
+  grade: Grade,
+  unit: Unit,
+  index: number,
+): QuizQuestion => {
+  const topics = unit.topics?.length ? unit.topics : [unit.title];
+  const topic = topics[index % topics.length] || unit.title;
+  const indicator = typeof unit.indicators?.[index % Math.max(unit.indicators.length, 1)] === 'number'
+    ? grade.indicators?.[unit.indicators[index % unit.indicators.length]]
+    : undefined;
+  const code = indicator?.code || 'ตัวชี้วัด';
+  const difficulty = gradeDifficultyLabel(grade.id);
+  const templates: QuizQuestion[] = [
+    {
+      q: `(${difficulty}) เมื่อนักเรียนเรียนเรื่อง "${topic}" ขั้นแรกที่ควรทำเพื่อเข้าใจบทเรียนคืออะไร`,
+      options: [
+        'อ่านโจทย์หรือสถานการณ์ให้เข้าใจก่อนลงมือทำ',
+        'เดาคำตอบทันทีโดยไม่ดูข้อมูล',
+        'ข้ามขั้นตอนที่ไม่ถนัดทั้งหมด',
+        'ทำเฉพาะส่วนที่ง่ายแล้วหยุด',
+      ],
+      answer: 0,
+      explain: 'การเข้าใจปัญหาและข้อมูลก่อนลงมือทำช่วยให้เลือกวิธีแก้ได้ถูกต้อง',
+    },
+    {
+      q: `ข้อใดสัมพันธ์กับ ${code} ในหน่วย "${unit.title}" มากที่สุด`,
+      options: [
+        `อธิบายหรือปฏิบัติเรื่อง "${topic}" ได้อย่างมีเหตุผล`,
+        'จำคำตอบจากเพื่อนโดยไม่เข้าใจ',
+        'เปิดหลายหน้าเว็บโดยไม่ตรวจสอบแหล่งข้อมูล',
+        'ส่งงานโดยไม่ตรวจทาน',
+      ],
+      answer: 0,
+      explain: 'ตัวชี้วัดต้องการให้ผู้เรียนเข้าใจและทำได้ ไม่ใช่แค่จำคำตอบ',
+    },
+    {
+      q: `ถ้าทำกิจกรรมเรื่อง "${topic}" แล้วผลลัพธ์ไม่ตรงที่คาด ควรทำอย่างไร`,
+      options: [
+        'ตรวจทีละขั้นตอน หาเหตุผล แล้วปรับแก้',
+        'ลบทิ้งทั้งหมดทันที',
+        'บอกว่าเครื่องเสียโดยไม่ตรวจ',
+        'ส่งงานทั้งที่รู้ว่ายังผิด',
+      ],
+      answer: 0,
+      explain: 'การตรวจสอบทีละขั้นคือทักษะสำคัญของวิทยาการคำนวณและเทคโนโลยี',
+    },
+    {
+      q: `หลักฐานใดบอกว่านักเรียนเข้าใจเรื่อง "${topic}" จริง`,
+      options: [
+        'อธิบายวิธีคิดและยกตัวอย่างใหม่ได้',
+        'กดปุ่มเร็วที่สุดอย่างเดียว',
+        'จำคำตอบข้อเดิมได้ทุกครั้ง',
+        'ไม่ถามคำถามเลย',
+      ],
+      answer: 0,
+      explain: 'การอธิบายด้วยคำของตนเองและยกตัวอย่างใหม่แสดงความเข้าใจที่ลึกกว่า',
+    },
+    {
+      q: `เมื่อต้องทำงานกลุ่มในหน่วย "${unit.title}" พฤติกรรมใดเหมาะสมที่สุด`,
+      options: [
+        'แบ่งหน้าที่ ฟังเพื่อน และตรวจงานร่วมกัน',
+        'ให้คนหนึ่งทำทั้งหมด',
+        'คุยเรื่องอื่นตลอดเวลา',
+        'แก้ของเพื่อนโดยไม่บอก',
+      ],
+      answer: 0,
+      explain: 'การทำงานร่วมกันช่วยให้เกิดทักษะ P และเจตคติ A ที่ดี',
+    },
+  ];
+  return templates[index % templates.length];
+};
+
+const buildQuizItems = (
+  grade: Grade,
+  unit: Unit,
+  existing: QuizQuestion[] = [],
+): QuizQuestion[] => {
+  if (existing.length >= MIN_QUIZ_ITEMS) return existing;
+  const output = [...existing];
+  const seen = new Set(output.map((item) => item.q));
+  let i = 0;
+  while (output.length < MIN_QUIZ_ITEMS && i < 40) {
+    const item = buildGeneratedQuizQuestion(grade, unit, i);
+    const withSuffix = seen.has(item.q)
+      ? { ...item, q: `${item.q} (${output.length + 1})` }
+      : item;
+    output.push(withSuffix);
+    seen.add(withSuffix.q);
+    i += 1;
+  }
+  return output;
+};
+
 const UnitDetail: React.FC = () => {
   const { user, partner, getActiveIds } = useAuth();
   const toast = useToast();
@@ -977,6 +1080,43 @@ const UnitDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [quizIdx, setQuizIdx] = useState(0);
   const [customSlides, setCustomSlides] = useState<RichSlide[] | null>(null);
+  const [unlockedMap, setUnlockedMap] = useState<UnitUnlockMap>(() => getUnlockedUnits());
+  const [locksReady, setLocksReady] = useState(false);
+  const [courseAccessSettings, setCourseAccessSettings] = useState<CourseAccessSettings>(() => getCourseAccessSettings());
+
+  const quizItems = useMemo(
+    () => grade && unit ? buildQuizItems(grade, unit, extras.quiz || []) : [],
+    [grade, unit, extras.quiz],
+  );
+
+  const syncActiveUserGrades = React.useCallback(() => {
+    if (!user || user.id === 'admin_teacher_account') return;
+    syncStudentGradesFromProgress({
+      id: user.id,
+      name: user.name,
+      classroom: user.classroom,
+      studentNumber: user.studentNumber,
+    }, courseAccessSettings);
+    if (partner) {
+      syncStudentGradesFromProgress({
+        id: partner.id,
+        name: partner.name,
+        classroom: partner.classroom,
+        studentNumber: partner.studentNumber,
+      }, courseAccessSettings);
+    }
+  }, [courseAccessSettings, partner, user]);
+
+  const recordUnitActivity = React.useCallback(async (
+    type: 'video' | 'fun' | 'article',
+    detail: string,
+  ) => {
+    if (!user || !gradeId) return;
+    await Promise.all(
+      getActiveIds().map((id) => trackMediaClick(id, gradeId, unitNumber, type, detail)),
+    );
+    syncActiveUserGrades();
+  }, [getActiveIds, gradeId, syncActiveUserGrades, unitNumber, user]);
 
   // Reset states when changing unit + load saved attempt count
   useEffect(() => {
@@ -1004,6 +1144,47 @@ const UnitDetail: React.FC = () => {
     return () => clearTimeout(timer);
   }, [gradeId, unitNo, user, unitNumber]);
 
+  useEffect(() => {
+    let alive = true;
+
+    fetchUnlockedUnits()
+      .then((data) => {
+        if (!alive) return;
+        setUnlockedMap(data);
+      })
+      .finally(() => {
+        if (alive) setLocksReady(true);
+      });
+
+    const unsubscribe = subscribeUnlockedUnits((data) => {
+      if (!alive) return;
+      setUnlockedMap(data);
+      setLocksReady(true);
+    });
+
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    fetchCourseAccessSettings().then((settings) => {
+      if (alive) setCourseAccessSettings(settings);
+    });
+
+    const unsubscribe = subscribeCourseAccessSettings((settings) => {
+      if (alive) setCourseAccessSettings(settings);
+    });
+
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
+  }, []);
+
   // Track slide views — บันทึกทุกครั้งที่นักเรียนเปลี่ยนสไลด์
   useEffect(() => {
     const generatedTotal = grade && unit
@@ -1019,7 +1200,9 @@ const UnitDetail: React.FC = () => {
     if (!user || !gradeId || activeTab !== 'slides' || total === 0) return;
     const t = setTimeout(() => {
       // บันทึกให้ทั้ง main + partner (ถ้านั่งคู่)
-      getActiveIds().forEach((id) => trackSlideView(id, gradeId, unitNumber, slideIdx, total));
+      Promise.all(getActiveIds().map((id) => trackSlideView(id, gradeId, unitNumber, slideIdx, total)))
+        .then(syncActiveUserGrades)
+        .catch((error) => console.warn('slide progress sync failed', error));
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1046,7 +1229,9 @@ const UnitDetail: React.FC = () => {
   // 🔒 Access control: เช็คสิทธิ์ — admin เข้าได้หมด, นักเรียนเข้าได้เฉพาะคอร์สของชั้น
   const isAdmin = isAdminAuthed();
   if (!isAdmin && user) {
-    const allowed = classroomAllowedGrades(user.classroom);
+    const allowed = getCourseIdsForClassroom(user.classroom).filter((id) =>
+      isCourseOpenForClassroom(user.classroom, id, courseAccessSettings)
+    );
     if (!allowed.includes(grade.id)) {
       return (
         <div className="container section-padding" style={{ paddingTop: '6rem', textAlign: 'center' }}>
@@ -1065,7 +1250,23 @@ const UnitDetail: React.FC = () => {
   }
 
   // 🔒 Lesson Lock Gate: เช็คการล็อกบทเรียนรายหน่วย
-  if (gradeId && isUnitLocked(gradeId, unitNumber)) {
+  if (!isAdmin && gradeId && unitNumber !== 1 && !locksReady) {
+    return (
+      <div className="unit-locked-page-container container section-padding">
+        <div className="unit-locked-glass-card">
+          <div className="locked-badge-icon">
+            <Lock size={48} className="lock-icon-svg" />
+          </div>
+          <h1>กำลังตรวจสอบสิทธิ์บทเรียน</h1>
+          <p className="locked-desc">
+            ระบบกำลังโหลดสถานะปลดล็อกจากฐานข้อมูลกลาง กรุณารอสักครู่
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (gradeId && isUnitLocked(gradeId, unitNumber, unlockedMap)) {
     return (
       <div className="unit-locked-page-container container section-padding">
         <div className="unit-locked-glass-card">
@@ -1217,10 +1418,8 @@ const UnitDetail: React.FC = () => {
   const parsed = currentSlide ? parseSlide(currentSlide) : { title: '', bullets: [], emoji: '✨', note: undefined };
   const teachingExplanation = parsed.note || buildTeachingExplanation(parsed.title, parsed.bullets, unit.title);
 
-  const score = extras.quiz
-    ? extras.quiz.reduce((acc, q, i) => (quizAnswers[i] === q.answer ? acc + 1 : acc), 0)
-    : 0;
-  const maxScore = extras.quiz?.length || 0;
+  const score = quizItems.reduce((acc, q, i) => (quizAnswers[i] === q.answer ? acc + 1 : acc), 0);
+  const maxScore = quizItems.length;
 
   const toggleFullScreen = () => {
     const elem = document.querySelector('.slide-viewer');
@@ -1241,7 +1440,7 @@ const UnitDetail: React.FC = () => {
   if (extras.videos?.length) tabList.push({ id: 'videos', icon: <Video size={16} />, label: 'วิดีโอประกอบ' });
   if (fileItems.length) tabList.push({ id: 'files', icon: <Download size={16} />, label: 'ไฟล์ประกอบ' });
   if (extras.fun?.length) tabList.push({ id: 'fun', icon: <Gamepad2 size={16} />, label: 'กิจกรรมสนุก' });
-  if (extras.quiz?.length) tabList.push({ id: 'quiz', icon: <Award size={16} />, label: 'แบบทดสอบ' });
+  if (quizItems.length) tabList.push({ id: 'quiz', icon: <Award size={16} />, label: 'แบบทดสอบ' });
   if (articleItems.length) tabList.push({ id: 'articles', icon: <BookOpen size={16} />, label: 'อ่านเพิ่มเติม' });
 
   return (
@@ -1258,7 +1457,7 @@ const UnitDetail: React.FC = () => {
         <nav className="lms-sidebar-nav">
           {grade.units?.map((u) => {
             const isActive = u.no === unitNumber;
-            const isLocked = isUnitLocked(grade.id, u.no);
+            const isLocked = isUnitLocked(grade.id, u.no, unlockedMap);
             return (
               <div key={u.no} className="lms-unit-group">
                 <Link 
@@ -1319,7 +1518,7 @@ const UnitDetail: React.FC = () => {
                       {totalSlides > 0 && <span><FileText size={16} /> {totalSlides} สไลด์</span>}
                       {extras.videos && <span><Video size={16} /> {extras.videos.length} วิดีโอ</span>}
                       {fileItems.length > 0 && <span><Download size={16} /> {fileItems.length} ไฟล์/สื่อ</span>}
-                      {extras.quiz && <span><Award size={16} /> {extras.quiz.length} ข้อสอบ</span>}
+                      {quizItems.length > 0 && <span><Award size={16} /> {quizItems.length} ข้อสอบ</span>}
                       {extras.fun && <span><Gamepad2 size={16} /> {extras.fun.length} กิจกรรม</span>}
                     </div>
                     {unit.indicators && unit.indicators.length > 0 && grade.indicators && (
@@ -1523,7 +1722,7 @@ const UnitDetail: React.FC = () => {
                 <div className="video-grid">
                   {extras.videos.map((v, i) => (
                     <a key={i} href={v.url || `https://www.youtube.com/results?search_query=${encodeURIComponent(v.query || v.title)}`} target="_blank" rel="noreferrer" className="video-card"
-                      onClick={() => user && gradeId && getActiveIds().forEach(id => trackMediaClick(id, gradeId, unitNumber, 'video', v.title))}
+                      onClick={() => void recordUnitActivity('video', v.title)}
                     >
                       <div className="video-thumb"><PlayCircle size={50} /></div>
                       <div className="video-info">
@@ -1546,7 +1745,7 @@ const UnitDetail: React.FC = () => {
                     const action = f.kind === 'pdf' ? 'เปิด/ดาวน์โหลดไฟล์ PDF' : f.kind === 'video' ? 'เปิดวิดีโอ' : 'เปิดแหล่งไฟล์';
                     return (
                       <a key={i} href={f.url} target="_blank" rel="noreferrer" className="article-card glass"
-                        onClick={() => user && gradeId && getActiveIds().forEach(id => trackMediaClick(id, gradeId, unitNumber, 'article', f.title))}
+                        onClick={() => void recordUnitActivity('article', f.title)}
                       >
                         <div className="article-icon">{icon}</div>
                         <div className="article-info">
@@ -1568,7 +1767,7 @@ const UnitDetail: React.FC = () => {
                 <div className="fun-grid">
                   {extras.fun.map((f, i) => (
                     <a key={i} href={f.url} target="_blank" rel="noreferrer" className="fun-card glass"
-                      onClick={() => user && gradeId && getActiveIds().forEach(id => trackMediaClick(id, gradeId, unitNumber, 'fun', f.title))}
+                      onClick={() => void recordUnitActivity('fun', f.title)}
                     >
                       <div className="fun-emoji">{f.emoji}</div>
                       <h4 style={{ margin: '0.5rem 0' }}>{f.title}</h4>
@@ -1581,7 +1780,7 @@ const UnitDetail: React.FC = () => {
             )}
 
             {/* QUIZ TAB */}
-            {activeTab === 'quiz' && extras.quiz && (
+            {activeTab === 'quiz' && quizItems.length > 0 && (
               <motion.div key="quiz" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 <div className="lms-section-header">
                   <h2><Award size={24} /> แบบทดสอบความเข้าใจ</h2>
@@ -1593,16 +1792,16 @@ const UnitDetail: React.FC = () => {
                     // EXAM MODE: One question at a time
                     <div className="quiz-exam-mode">
                       <div className="quiz-progress-bar" style={{ marginBottom: '1.5rem', background: 'var(--border)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ width: `${((quizIdx + 1) / extras.quiz.length) * 100}%`, background: 'var(--primary)', height: '100%', transition: 'width 0.3s' }} />
+                        <div style={{ width: `${((quizIdx + 1) / quizItems.length) * 100}%`, background: 'var(--primary)', height: '100%', transition: 'width 0.3s' }} />
                       </div>
                       
                       <div className={`quiz-card-modern`}>
                         <div className="quiz-card-header">
-                          <span className="question-number">ข้อที่ {quizIdx + 1} จาก {extras.quiz.length}</span>
+                          <span className="question-number">ข้อที่ {quizIdx + 1} จาก {quizItems.length}</span>
                         </div>
-                        <h3 className="quiz-question-text">{extras.quiz[quizIdx].q}</h3>
+                        <h3 className="quiz-question-text">{quizItems[quizIdx].q}</h3>
                         <div className="quiz-options-vertical">
-                          {extras.quiz[quizIdx].options.map((opt, oi) => {
+                          {quizItems[quizIdx].options.map((opt, oi) => {
                             const isPicked = quizAnswers[quizIdx] === oi;
                             return (
                               <button 
@@ -1630,7 +1829,7 @@ const UnitDetail: React.FC = () => {
                           <ChevronLeft size={18} /> ข้อก่อนหน้า
                         </button>
 
-                        {quizIdx < extras.quiz.length - 1 ? (
+                        {quizIdx < quizItems.length - 1 ? (
                           <button 
                             className="btn-primary"
                             disabled={quizAnswers[quizIdx] === undefined}
@@ -1641,18 +1840,11 @@ const UnitDetail: React.FC = () => {
                         ) : (
                           <button 
                             className="btn-primary submit-quiz"
-                            disabled={Object.keys(quizAnswers).length < extras.quiz.length || attempts >= 2}
+                            disabled={Object.keys(quizAnswers).length < quizItems.length || attempts >= 2}
                             onClick={async () => {
                               setQuizSubmitted(true);
                               setAttempts(p => p + 1);
                               if (user && gradeId) {
-                                // เลือก subject ตาม gradeId ของหน่วยที่ทำควิซ
-                                // m1-cs/m2-cs/m3-cs → 'cs', m1-design/.../m3-design → 'dt', อื่นๆ → 'main'
-                                const subj: 'cs' | 'dt' | 'main' = gradeId.endsWith('-cs')
-                                  ? 'cs'
-                                  : gradeId.endsWith('-design')
-                                  ? 'dt'
-                                  : 'main';
                                 // บันทึกคะแนนให้ทุกคน (main + partner)
                                 const allUsers = [user, ...(partner ? [partner] : [])];
                                 for (const u of allUsers) {
@@ -1664,25 +1856,12 @@ const UnitDetail: React.FC = () => {
                                     maxScore,
                                     quizAnswers
                                   );
-                                  // sync K/P/A ใน gradebook ให้แต่ละคน (วิชาที่ตรง)
-                                  try {
-                                    const { loadGrades } = await import('../services/gradeService');
-                                    const subjectsToSync: ('cs' | 'dt' | 'main')[] =
-                                      u.classroom.startsWith('ม.')
-                                        ? subj === 'main' ? ['cs', 'dt'] : [subj]
-                                        : ['main'];
-                                    for (const s of subjectsToSync) {
-                                      const grades = loadGrades(u.classroom, s);
-                                      const g = grades.find(
-                                        (gr) =>
-                                          gr.studentNo === parseInt(u.studentNumber) ||
-                                          gr.name === u.name
-                                      );
-                                      if (g) syncFromProgress(u.classroom, g.studentCode, u.id, s);
-                                    }
-                                  } catch (err) {
-                                    console.error('Failed to sync grades', err);
-                                  }
+                                  syncStudentGradesFromProgress({
+                                    id: u.id,
+                                    name: u.name,
+                                    classroom: u.classroom,
+                                    studentNumber: u.studentNumber,
+                                  }, courseAccessSettings);
                                 }
                                 const pct = maxScore > 0 ? (score / maxScore) * 100 : 0;
                                 const who = partner
@@ -1728,7 +1907,7 @@ const UnitDetail: React.FC = () => {
                       </div>
 
                       <h3 style={{ marginBottom: '1.5rem' }}>เฉลยละเอียด</h3>
-                      {extras.quiz.map((q, qi) => (
+                      {quizItems.map((q, qi) => (
                         <div key={qi} className={`quiz-card-modern ${q.answer === quizAnswers[qi] ? 'correct-card' : 'incorrect-card'}`} style={{ marginBottom: '1.5rem' }}>
                           <div className="quiz-card-header">
                             <span className="question-number">ข้อที่ {qi + 1}</span>
@@ -1772,7 +1951,7 @@ const UnitDetail: React.FC = () => {
                 <div className="article-list">
                   {articleItems.map((a, i) => (
                     <a key={i} href={a.url} target="_blank" rel="noreferrer" className="article-card glass"
-                      onClick={() => user && gradeId && getActiveIds().forEach(id => trackMediaClick(id, gradeId, unitNumber, 'article', a.title))}
+                      onClick={() => void recordUnitActivity('article', a.title)}
                     >
                       <div className="article-icon">📰</div>
                       <div className="article-info">

@@ -7,6 +7,10 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
 import { trackMediaClick } from '../../services/progressService';
 import { syncStudentGradesFromProgress } from '../../services/gameProgressService';
+import {
+  filterTargetUnitsForCourseAccess,
+  getCourseAccessSettings,
+} from '../../services/courseAccessService';
 import './Games.css';
 import './GameStyles.css';
 
@@ -147,10 +151,14 @@ const Games: React.FC = () => {
   const externalGames = useMemo(() => {
     const list = allResources.filter((r) =>
       r.category === 'programming' || r.category === 'computational'
-    );
+    ).filter((r) => (
+      !user ||
+      r.targetUnits.length === 0 ||
+      filterTargetUnitsForCourseAccess(user.classroom, r.targetUnits).length > 0
+    ));
     if (extGrade === 'all') return list.slice(0, 24);
     return list.filter((r) => r.targetUnits.some((tu) => tu.gradeId === extGrade));
-  }, [extGrade]);
+  }, [extGrade, user]);
 
   const handleExternalClick = async (
     resourceId: string,
@@ -162,17 +170,27 @@ const Games: React.FC = () => {
       return;
     }
     const ids = getActiveIds();
+    const accessSettings = getCourseAccessSettings();
+    const activeTargets = filterTargetUnitsForCourseAccess(
+      user.classroom,
+      targetUnits,
+      accessSettings,
+    );
+    if (activeTargets.length === 0) {
+      toast.show('กิจกรรมนี้อยู่ในคอร์สที่ยังไม่เปิดในเทอมนี้ จึงไม่บันทึกคะแนน', 'info');
+      return;
+    }
     // รอ trackMediaClick เสร็จก่อน sync — ไม่งั้น sync ใช้ data เก่า
     const writes: Promise<void>[] = [];
-    targetUnits.forEach((tu) => {
+    activeTargets.forEach((tu) => {
       ids.forEach((id) => {
         writes.push(trackMediaClick(id, tu.gradeId, tu.unitNo, 'fun', `[ExternalGame:${resourceId}] ${title}`));
       });
     });
     await Promise.all(writes);
-    syncStudentGradesFromProgress({ id: user.id, name: user.name, classroom: user.classroom, studentNumber: user.studentNumber });
+    syncStudentGradesFromProgress({ id: user.id, name: user.name, classroom: user.classroom, studentNumber: user.studentNumber }, accessSettings);
     if (partner) {
-      syncStudentGradesFromProgress({ id: partner.id, name: partner.name, classroom: partner.classroom, studentNumber: partner.studentNumber });
+      syncStudentGradesFromProgress({ id: partner.id, name: partner.name, classroom: partner.classroom, studentNumber: partner.studentNumber }, accessSettings);
     }
     toast.show(`🎯 +5 XP · บันทึก "${title}" ลงคะแนน P แล้ว`, 'success');
   };

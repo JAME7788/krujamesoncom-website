@@ -25,9 +25,17 @@ const GamificationCard: React.FC<Props> = ({ studentId }) => {
       const bonuses = prog.bonuses || [];
       setRecentBonuses(bonuses.slice(0, 5));
       const bonusCount = bonuses.length;
+      // Toast ใหม่ก็ต่อเมื่อ:
+      // 1. count เพิ่ม
+      // 2. bonus ล่าสุดถูกแจกจริงๆ ไม่เกิน 30 วิที่แล้ว
+      // → กันบั๊ก: cache เพิ่งโหลดตอน mount → นับ 0→5 → fake toast
       if (lastBonusCountRef.current !== null && bonusCount > lastBonusCountRef.current) {
         const newest = bonuses[0];
-        if (newest) {
+        // ข้ามการ toast สำหรับ reason ที่ widget อื่นแสดง toast อยู่แล้ว
+        // (Daily → DailyQuestionWidget, Attend → QuickAttendance)
+        const isFromOtherWidget =
+          newest?.reason.startsWith('[Daily:') || newest?.reason.startsWith('[Attend:');
+        if (newest && !isFromOtherWidget && (Date.now() - newest.awardedAt) < 30000) {
           toast.show(`${newest.emoji} +${newest.xp} XP จากครู — ${newest.reason}`, 'success');
         }
       }
@@ -51,8 +59,11 @@ const GamificationCard: React.FC<Props> = ({ studentId }) => {
       });
     };
     recompute();
+    // Quick follow-up หลัง 800ms เผื่อ Dashboard fetchStudentProgress เพิ่งเสร็จ
+    // → นักเรียนไม่ต้องรอ 10 วิก่อนเห็น XP/Level จริง
+    const quick = setTimeout(recompute, 800);
     const t = setInterval(recompute, 10000);
-    return () => clearInterval(t);
+    return () => { clearTimeout(quick); clearInterval(t); };
   }, [studentId, toast]);
 
   if (!stats) return null;

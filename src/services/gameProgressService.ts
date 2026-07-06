@@ -1,6 +1,13 @@
 import { trackMediaClick } from './progressService';
 import { loadGrades, syncFromProgress } from './gradeService';
 import type { Subject } from './gradeService';
+import {
+  fetchCourseAccessSettings,
+  filterTargetUnitsForCourseAccess,
+  getActiveSubjectsForClassroom,
+  getCourseAccessSettings,
+  type CourseAccessSettings,
+} from './courseAccessService';
 
 export type GameProgressId =
   | 'mouse'
@@ -10,8 +17,10 @@ export type GameProgressId =
   | 'memory'
   | 'pattern'
   | 'coding-maze'
+  | 'maze'
   | 'snake'
-  | 'bug-catcher';
+  | 'bug-catcher'
+  | 'bug';
 
 type StudentLike = {
   id: string;
@@ -66,38 +75,50 @@ const middleBinaryUnit = (classroom: string): TargetUnit => ({
   unitNo: classroom === 'ม.2' ? 3 : classroom === 'ม.3' ? 2 : 1,
 });
 
+const normalizeGameId = (gameId: GameProgressId): GameProgressId => {
+  if (gameId === 'maze') return 'coding-maze';
+  if (gameId === 'bug') return 'bug-catcher';
+  return gameId;
+};
+
 export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): TargetUnit[] => {
+  const normalizedGameId = normalizeGameId(gameId);
   const isPrimary = classroom.startsWith('ป.');
   const isMiddle = classroom.startsWith('ม.');
   if (!isPrimary && !isMiddle) return [];
 
-  if (gameId === 'mouse' || gameId === 'keyboard' || gameId === 'memory') {
+  if (normalizedGameId === 'mouse' || normalizedGameId === 'keyboard' || normalizedGameId === 'memory') {
     return [isPrimary ? primaryDigitalUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
 
-  if (gameId === 'algorithm' || gameId === 'pattern') {
+  if (normalizedGameId === 'algorithm' || normalizedGameId === 'pattern') {
     return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
 
-  if (gameId === 'coding-maze' || gameId === 'snake' || gameId === 'bug-catcher') {
+  if (normalizedGameId === 'coding-maze' || normalizedGameId === 'snake' || normalizedGameId === 'bug-catcher') {
     return [isPrimary ? primaryCodingUnit(classroom) : middleCodingUnit(classroom)];
   }
 
-  if (gameId === 'binary') {
+  if (normalizedGameId === 'binary') {
     return isMiddle ? [middleBinaryUnit(classroom)] : [];
   }
 
   return [];
 };
 
-const subjectsForClassroom = (classroom: string): Subject[] => {
-  if (classroom.startsWith('ม.')) return ['cs', 'dt'];
-  return ['main'];
+const subjectsForClassroom = (
+  classroom: string,
+  settings: CourseAccessSettings = getCourseAccessSettings(),
+): Subject[] => {
+  return getActiveSubjectsForClassroom(classroom, settings);
 };
 
 /** อัปเดต K/P/A ในกระดาษเกรดจาก progress ของนักเรียน (ใช้ทุกครั้งหลังบันทึกกิจกรรม) */
-export const syncStudentGradesFromProgress = (student: StudentLike) => {
-  subjectsForClassroom(student.classroom).forEach((subject) => {
+export const syncStudentGradesFromProgress = (
+  student: StudentLike,
+  settings: CourseAccessSettings = getCourseAccessSettings(),
+) => {
+  subjectsForClassroom(student.classroom, settings).forEach((subject) => {
     const grades = loadGrades(student.classroom, subject);
     const grade = grades.find(
       (g) => g.studentNo === Number(student.studentNumber) || g.name === student.name
@@ -115,6 +136,7 @@ export const recordGameProgress = async (
   let saved = 0;
   const seen = new Set<string>();
   const activeStudents: StudentLike[] = [];
+  const courseAccessSettings = await fetchCourseAccessSettings().catch(() => getCourseAccessSettings());
 
   students.forEach((student) => {
     if (!student?.id || student.id === 'admin_teacher_account' || seen.has(student.id)) return;
@@ -123,7 +145,11 @@ export const recordGameProgress = async (
   });
 
   for (const student of activeStudents) {
-    const targets = getGameTargetUnits(gameId, student.classroom);
+    const targets = filterTargetUnitsForCourseAccess(
+      student.classroom,
+      getGameTargetUnits(gameId, student.classroom),
+      courseAccessSettings,
+    );
     for (const target of targets) {
       const scoreText = typeof score === 'number' ? ` score=${score}` : '';
       await trackMediaClick(
@@ -135,7 +161,7 @@ export const recordGameProgress = async (
       );
       saved += 1;
     }
-    syncStudentGradesFromProgress(student);
+    syncStudentGradesFromProgress(student, courseAccessSettings);
   }
 
   return { saved, students: activeStudents.length };

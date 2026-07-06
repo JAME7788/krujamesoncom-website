@@ -5,7 +5,7 @@ import { joinRoom, subscribeRoom, submitAnswer } from '../services/liveQuizServi
 import type { LiveQuizRoom } from '../services/liveQuizService';
 import { saveQuizAttempt } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
-import { classroomToGradeIds } from '../services/gradeService';
+import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
 
 const LiveQuizPlay: React.FC = () => {
   const { user } = useAuth();
@@ -31,7 +31,7 @@ const LiveQuizPlay: React.FC = () => {
     savedRef.current = true;
     const total = room.questions.length;
     const correct = Object.values(me.answers).filter((a) => a.correct).length;
-    const targetGradeId = room.targetGradeId || classroomToGradeIds(user.classroom)[0];
+    const targetGradeId = room.targetGradeId || getDefaultProgressGradeIdForClassroom(user.classroom);
     const targetUnitNo = room.targetUnitNo || 1;
     if (!targetGradeId) return;
     void saveQuizAttempt(user.id, targetGradeId, targetUnitNo, correct, total, {}).then(() => {

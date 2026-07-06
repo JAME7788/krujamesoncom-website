@@ -23,9 +23,11 @@ const AchievementShowcase: React.FC<Props> = ({ studentId }) => {
       setStats(getAchievementStats(studentId));
     };
     refresh();
+    // Quick follow-up หลัง 800ms รอ cache โหลด → ไม่โชว์ 0/30 หลอกๆ ตอนเข้ามา
+    const quick = setTimeout(refresh, 800);
     // 15 วิ — ลด CPU ของเครื่องเด็ก, achievements ไม่ปลดล็อกถี่ขนาดนั้น
     const t = setInterval(refresh, 15000);
-    return () => clearInterval(t);
+    return () => { clearTimeout(quick); clearInterval(t); };
   }, [studentId]);
 
   // หา 3 อันที่ปลดล็อกล่าสุด + 3 อันที่ยังไม่ปลดล็อก

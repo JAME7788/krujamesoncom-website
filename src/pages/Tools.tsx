@@ -1,14 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { PenTool, Code2 } from 'lucide-react';
+import { PenTool, Code2, Wallet, Calendar, Sparkles, Pin } from 'lucide-react';
 import Whiteboard from '../components/Whiteboard';
 import CodingSandbox from '../components/CodingSandbox';
+import SavingsTracker from '../components/tools/SavingsTracker';
+import ChoreTracker from '../components/tools/ChoreTracker';
+import RosterSpinner from '../components/tools/RosterSpinner';
+import PeerReminderBoard from '../components/tools/PeerReminderBoard';
 import { useAuth } from '../context/AuthContext';
 import { trackMediaClick } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
-import { classroomToGradeIds } from '../services/gradeService';
+import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
+
+type TabType = 'whiteboard' | 'sandbox' | 'savings' | 'chores' | 'spinner' | 'board';
 
 const Tools: React.FC = () => {
-  const [tab, setTab] = useState<'whiteboard' | 'sandbox'>('whiteboard');
+  const [tab, setTab] = useState<TabType>('whiteboard');
   const { user } = useAuth();
   const seenRef = useRef<Set<string>>(new Set());
 
@@ -16,10 +22,22 @@ const Tools: React.FC = () => {
   useEffect(() => {
     if (!user || user.id === 'admin_teacher_account') return;
     if (seenRef.current.has(tab)) return;
-    const gradeId = classroomToGradeIds(user.classroom)[0];
+    const gradeId = getDefaultProgressGradeIdForClassroom(user.classroom);
     if (!gradeId) return;
     seenRef.current.add(tab);
-    const detail = tab === 'whiteboard' ? '[Tool] Whiteboard' : '[Tool] Coding Sandbox';
+    
+    let detail = '';
+    switch (tab) {
+      case 'whiteboard': detail = '[Tool] Whiteboard'; break;
+      case 'sandbox': detail = '[Tool] Coding Sandbox'; break;
+      case 'savings': detail = '[Tool] Student Savings'; break;
+      case 'chores': detail = '[Tool] Daily Chore Tracker'; break;
+      case 'spinner': detail = '[Tool] Roster Wheel Spinner'; break;
+      case 'board': detail = '[Tool] Peer Homework Board'; break;
+    }
+    
+    if (!detail) return;
+    
     void trackMediaClick(user.id, gradeId, 1, 'fun', detail).then(() => {
       syncStudentGradesFromProgress({
         id: user.id,
@@ -34,28 +52,63 @@ const Tools: React.FC = () => {
     <div className="container section-padding" style={{ paddingTop: '6rem' }}>
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <span className="badge-yellow">🛠️ เครื่องมือเสริม</span>
-        <h1>เครื่องมือสร้างสรรค์</h1>
-        <p style={{ color: '#6b7280' }}>วาดบนกระดาน + เขียนโค้ดทดลอง — ไม่ต้องลงโปรแกรม</p>
+        <h1>เครื่องมือสร้างสรรค์และจัดการชั้นเรียน</h1>
+        <p style={{ color: '#6b7280' }}>กระดานวาดรูป เขียนโค้ด บันทึกเงินออม จัดเวรประจำวัน วงล้อสุ่ม และบอร์ดเตือนการบ้าน</p>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: 8, 
+        justifyContent: 'center', 
+        marginBottom: '1.5rem',
+        flexWrap: 'wrap'
+      }}>
         <button
           className={tab === 'whiteboard' ? 'btn-primary' : 'btn-secondary'}
           onClick={() => setTab('whiteboard')}
         >
-          <PenTool size={16} /> Whiteboard
+          <PenTool size={16} /> วาดรูป (Whiteboard)
         </button>
         <button
           className={tab === 'sandbox' ? 'btn-primary' : 'btn-secondary'}
           onClick={() => setTab('sandbox')}
         >
-          <Code2 size={16} /> Coding Sandbox
+          <Code2 size={16} /> เขียนโค้ด (Sandbox)
+        </button>
+        <button
+          className={tab === 'savings' ? 'btn-primary' : 'btn-secondary'}
+          onClick={() => setTab('savings')}
+        >
+          <Wallet size={16} /> บันทึกเงินออม (Savings)
+        </button>
+        <button
+          className={tab === 'chores' ? 'btn-primary' : 'btn-secondary'}
+          onClick={() => setTab('chores')}
+        >
+          <Calendar size={16} /> เวรประจำวัน (Chores)
+        </button>
+        <button
+          className={tab === 'spinner' ? 'btn-primary' : 'btn-secondary'}
+          onClick={() => setTab('spinner')}
+        >
+          <Sparkles size={16} /> วงล้อสุ่ม (Spinner)
+        </button>
+        <button
+          className={tab === 'board' ? 'btn-primary' : 'btn-secondary'}
+          onClick={() => setTab('board')}
+        >
+          <Pin size={16} /> บอร์ดเตือนความจำ (Board)
         </button>
       </div>
 
       <div className="card">
-        {tab === 'whiteboard' ? <Whiteboard /> : <CodingSandbox />}
+        {tab === 'whiteboard' && <Whiteboard />}
+        {tab === 'sandbox' && <CodingSandbox />}
+        {tab === 'savings' && <SavingsTracker />}
+        {tab === 'chores' && <ChoreTracker />}
+        {tab === 'spinner' && <RosterSpinner />}
+        {tab === 'board' && <PeerReminderBoard />}
       </div>
 
       <style>{`

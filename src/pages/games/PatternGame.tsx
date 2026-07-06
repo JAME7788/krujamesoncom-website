@@ -111,8 +111,8 @@ const PatternGame: React.FC = () => {
   const submit = (choice: string) => {
     setPicked(choice);
     setShowResult(true);
+    recordGame(score);
     if (choice === pattern.answer) {
-      recordGame(score + 20 + level * 5);
       setScore((s) => s + 20 + level * 5);
       setStreak((st) => {
         const ns = st + 1;

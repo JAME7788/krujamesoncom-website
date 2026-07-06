@@ -6,7 +6,11 @@ import type { LearningResource, ResourceCategory } from '../data/learningResourc
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { trackMediaClick } from '../services/progressService';
-import { syncFromProgress, loadGrades } from '../services/gradeService';
+import { syncStudentGradesFromProgress } from '../services/gameProgressService';
+import {
+  filterTargetUnitsForCourseAccess,
+  getCourseAccessSettings,
+} from '../services/courseAccessService';
 import './Resources.css';
 
 /** แปลง targetUnits → "ป.1-3" หรือ "ป.4-ม.3" (ภาษาเด็ก ไม่โชว์เลข unit ของหลักสูตร) */
@@ -43,6 +47,12 @@ const Resources: React.FC = () => {
 
   const filtered = useMemo(() => {
     let list = allResources;
+    if (user) {
+      list = list.filter((r) => (
+        r.targetUnits.length === 0 ||
+        filterTargetUnitsForCourseAccess(user.classroom, r.targetUnits).length > 0
+      ));
+    }
     if (activeCat !== 'all') list = list.filter((r) => r.category === activeCat);
     if (activeGrade !== 'all') {
       list = list.filter((r) => r.targetUnits.some((tu) => tu.gradeId === activeGrade));
@@ -57,7 +67,7 @@ const Resources: React.FC = () => {
       );
     }
     return list;
-  }, [search, activeCat, activeGrade]);
+  }, [search, activeCat, activeGrade, user]);
 
   const handleClick = async (r: LearningResource) => {
     if (r.targetUnits.length === 0) {
@@ -71,11 +81,21 @@ const Resources: React.FC = () => {
     }
 
     const ids = getActiveIds();
+    const accessSettings = getCourseAccessSettings();
+    const targetUnits = filterTargetUnitsForCourseAccess(
+      user.classroom,
+      r.targetUnits,
+      accessSettings,
+    );
+    if (targetUnits.length === 0) {
+      toast.show('กิจกรรมนี้อยู่ในคอร์สที่ยังไม่เปิดในเทอมนี้ จึงไม่บันทึกคะแนน', 'info');
+      return;
+    }
     let totalAwards = 0;
 
     // บันทึก fun click ให้ทุก unit ที่ resource นี้ตรงกับ — รอเสร็จก่อน sync
     const writes: Promise<void>[] = [];
-    r.targetUnits.forEach((tu) => {
+    targetUnits.forEach((tu) => {
       ids.forEach((id) => {
         writes.push(trackMediaClick(id, tu.gradeId, tu.unitNo, 'fun', `[Resource] ${r.title}`));
       });
@@ -84,25 +104,19 @@ const Resources: React.FC = () => {
     await Promise.all(writes);
 
     // sync K/P/A ให้ครบ (P จะอัปเดต)
-    try {
-      const grades = loadGrades(user.classroom);
-      const myGrade = grades.find(
-        (g) => g.studentNo === parseInt(user.studentNumber) || g.name === user.name
-      );
-      if (myGrade) syncFromProgress(user.classroom, myGrade.studentCode, user.id);
-    } catch (e) {
-      console.warn('Sync student progress failed', e);
-    }
+    syncStudentGradesFromProgress({
+      id: user.id,
+      name: user.name,
+      classroom: user.classroom,
+      studentNumber: user.studentNumber,
+    }, accessSettings);
     if (partner) {
-      try {
-        const pGrades = loadGrades(partner.classroom);
-        const pg = pGrades.find(
-          (g) => g.studentNo === parseInt(partner.studentNumber) || g.name === partner.name
-        );
-        if (pg) syncFromProgress(partner.classroom, pg.studentCode, partner.id);
-      } catch (e) {
-        console.warn('Sync partner progress failed', e);
-      }
+      syncStudentGradesFromProgress({
+        id: partner.id,
+        name: partner.name,
+        classroom: partner.classroom,
+        studentNumber: partner.studentNumber,
+      }, accessSettings);
     }
 
     toast.show(
