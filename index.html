@@ -44,6 +44,39 @@
       }
     </script>
 
+    <!-- Self-heal watchdog: ถ้าแอปไม่ mount ใน 8 วิ (JS พัง / SW cache เสีย)
+         → ล้าง service worker + cache แล้ว reload 1 ครั้ง (กัน loop ด้วย flag) -->
+    <script>
+      (function () {
+        var HEAL_FLAG = 'krujames_healed_once';
+        window.addEventListener('load', function () {
+          setTimeout(function () {
+            var root = document.getElementById('root');
+            var mounted = root && root.childElementCount > 0;
+            if (mounted) { try { sessionStorage.removeItem(HEAL_FLAG); } catch (e) {} return; }
+            // ยังไม่ mount — ลองกู้ครั้งเดียว
+            var alreadyHealed = false;
+            try { alreadyHealed = sessionStorage.getItem(HEAL_FLAG) === '1'; } catch (e) {}
+            if (alreadyHealed) return; // กู้ไปแล้วยังไม่ขึ้น — หยุด ไม่ reload วน
+            try { sessionStorage.setItem(HEAL_FLAG, '1'); } catch (e) {}
+            var done = function () { location.reload(); };
+            var tasks = [];
+            if ('serviceWorker' in navigator) {
+              tasks.push(navigator.serviceWorker.getRegistrations()
+                .then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); })
+                .catch(function () {}));
+            }
+            if (window.caches && caches.keys) {
+              tasks.push(caches.keys()
+                .then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); })
+                .catch(function () {}));
+            }
+            Promise.all(tasks).then(done, done);
+          }, 8000);
+        });
+      })();
+    </script>
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
