@@ -3,7 +3,7 @@
 // ดึงผลสัมฤทธิ์จริงจากกระดาษเกรด K/P/A → คำนวณค่าเฉลี่ย/SD/ระดับ → ประกอบเอกสาร
 
 import {
-  loadGrades, computeBreakdown, computeGrade, getSubjectsForClassroom,
+  loadGrades, computeBreakdown, computeGrade, getSubjectsForClassroom, getIndicators,
 } from './gradeService';
 import type { Subject } from './gradeService';
 import { loadAllRosters } from './rosterService';
@@ -38,6 +38,19 @@ export interface ResearchData {
   avgQuizzes: number;           // ครั้งทำแบบทดสอบเฉลี่ยต่อคน
   avgSlides: number;            // สไลด์อ่านเฉลี่ยต่อคน
   engagementRate: number;       // ร้อยละ active / ประชากรทั้งหมด
+  // ===== ผลสัมฤทธิ์รายจุดประสงค์การเรียนรู้ (ต่อตัวชี้วัด) =====
+  objectives: ObjectiveResult[];
+}
+
+export interface ObjectiveResult {
+  classroom: string;
+  code: string;      // เช่น ว 4.2 ม.1/1
+  title: string;     // จุดประสงค์/ตัวชี้วัด
+  mean: number;      // คะแนนเฉลี่ยที่ได้ของตัวชี้วัดนี้
+  max: number;       // คะแนนเต็มของตัวชี้วัดนี้
+  pct: number;       // ร้อยละ
+  level: string;     // ระดับ
+  n: number;         // จำนวนคนที่มีคะแนน
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -59,9 +72,14 @@ export const computeResearchData = (classroom: string): ResearchData => {
   const grades: string[] = [];
   const ks: number[] = []; const ps: number[] = []; const as: number[] = []; const exams: number[] = [];
 
+  // สะสมคะแนนรายตัวชี้วัด (จุดประสงค์): key = classroom|subject|indicatorId
+  const objAcc = new Map<string, { classroom: string; code: string; title: string; sum: number; count: number; max: number }>();
+
   classroomsUsed.forEach((c) => {
     const subjects: Subject[] = getSubjectsForClassroom(c).map((s) => s.id);
     subjects.forEach((subj) => {
+      const indicators = getIndicators(c, subj);
+      const titleById = new Map(indicators.map((ind) => [ind.id, ind.title]));
       const rows = loadGrades(c, subj);
       rows.forEach((g) => {
         const b = computeBreakdown(g, c, subj);
@@ -70,10 +88,36 @@ export const computeResearchData = (classroom: string): ResearchData => {
           totals.push(b.total);
           grades.push(computeGrade(g, c, subj));
           ks.push(b.k); ps.push(b.p); as.push(b.a); exams.push(b.exam);
+          // สะสมรายตัวชี้วัดจาก contributions
+          b.contributions.forEach((con) => {
+            const key = `${c}|${subj}|${con.indicatorId}`;
+            const cur = objAcc.get(key) || {
+              classroom: c, code: con.code,
+              title: titleById.get(con.indicatorId) || con.code,
+              sum: 0, count: 0, max: con.weight,
+            };
+            cur.sum += con.total;
+            cur.count += 1;
+            cur.max = con.weight;
+            objAcc.set(key, cur);
+          });
         }
       });
     });
   });
+
+  const objectives: ObjectiveResult[] = Array.from(objAcc.values())
+    .filter((o) => o.count > 0)
+    .map((o) => {
+      const m = o.sum / o.count;
+      const pct = o.max > 0 ? (m / o.max) * 100 : 0;
+      return {
+        classroom: o.classroom, code: o.code, title: o.title,
+        mean: round2(m), max: round2(o.max), pct: round2(pct),
+        level: levelFromPct(pct), n: o.count,
+      };
+    })
+    .sort((a, b) => a.code.localeCompare(b.code, 'th'));
 
   const n = totals.length;
   const mean = (arr: number[]) => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0);
@@ -125,6 +169,7 @@ export const computeResearchData = (classroom: string): ResearchData => {
     avgQuizzes: round2(mean(quizzes)),
     avgSlides: round2(mean(slides)),
     engagementRate: totalPopulation ? round2((activeStudents / totalPopulation) * 100) : 0,
+    objectives,
   };
 };
 
@@ -145,6 +190,12 @@ export const buildResearchDocument = (meta: ResearchMeta, d: ResearchData): stri
     .sort((a, b) => parseFloat(b) - parseFloat(a))
     .map((g) => `เกรด ${g}: ${d.gradeDist[g]} คน`)
     .join(' • ') || '(ยังไม่มีข้อมูลเกรด)';
+
+  const objLines = d.objectives.length
+    ? d.objectives.map((o, i) =>
+        `${i + 1}) [${o.classroom}] ${o.code} — ${o.title}\n     คะแนนเฉลี่ย ${o.mean.toFixed(2)}/${o.max.toFixed(2)} (ร้อยละ ${o.pct.toFixed(1)}) → ระดับ "${o.level}" [n=${o.n}]`
+      ).join('\n')
+    : '(ยังไม่มีคะแนนรายตัวชี้วัด — กรอกคะแนน K/P/A ก่อน)';
 
   return `เอกสารสรุปงานวิจัย
 
@@ -171,8 +222,9 @@ ${meta.title}
 ตามหลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน พ.ศ. 2551 (ฉบับปรับปรุง พ.ศ. 2560) วิชาคอมพิวเตอร์ถูกปรับเป็น "วิชาวิทยาการคำนวณ" ในกลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี ผู้วิจัยซึ่งจัดการเรียนการสอนวิชานี้ที่ ${meta.school} จึงนำแนวคิดการเรียนการสอนผ่านเว็บ (WBI) มาใช้ เพื่อให้ผู้เรียนศึกษา ค้นคว้า และทบทวนบทเรียนได้ทุกที่ทุกเวลา พร้อมระบบเกม แบบทดสอบออนไลน์ และการติดตามความก้าวหน้ารายบุคคล
 
 1.2 วัตถุประสงค์ของการวิจัย
-1) เพื่อพัฒนาการเรียนการสอนผ่านเว็บในรายวิชาวิทยาการคำนวณสำหรับนักเรียน${meta.classroomLabel}
-2) เพื่อศึกษาผลจากการใช้การเรียนการสอนผ่านเว็บดังกล่าว (ผลสัมฤทธิ์และความพึงพอใจ)
+1) เพื่อพัฒนาการเรียนการสอนผ่านเว็บเทคโนโลยีร่วมกับเกมมิฟิเคชันในรายวิชาวิทยาการคำนวณสำหรับนักเรียน${meta.classroomLabel}
+2) เพื่อศึกษาผลสัมฤทธิ์ทางการเรียน จำแนกรายจุดประสงค์การเรียนรู้ (ตามตัวชี้วัด)
+3) เพื่อศึกษาการมีส่วนร่วม (Engagement) และความพึงพอใจของผู้เรียนที่มีต่อระบบ
 
 1.3 ขอบเขตของการวิจัย
 - ด้านประชากร: นักเรียน${meta.classroomLabel} ${meta.school} ปีการศึกษา ${meta.academicYear} จำนวน ${d.n} คน
@@ -224,6 +276,9 @@ ADDIE Model ประกอบด้วย 5 ขั้น: การวิเค
 - อัตราผ่านเกณฑ์ (≥ ร้อยละ 50): ร้อยละ ${d.passRate.toFixed(1)}
 - คะแนนเฉลี่ยแยกองค์ประกอบ: K = ${d.kMean.toFixed(2)}, P = ${d.pMean.toFixed(2)}, A = ${d.aMean.toFixed(2)}, สอบ = ${d.examMean.toFixed(2)}
 - การกระจายเกรด: ${gradeLines}
+
+4.1.1 ผลสัมฤทธิ์รายจุดประสงค์การเรียนรู้ (จำแนกตามตัวชี้วัด)
+${objLines}
 
 4.2 ผลด้านการมีส่วนร่วมจากกลไกเกมมิฟิเคชัน (จากข้อมูลจริงในระบบ)
 - จำนวนนักเรียนที่เข้าใช้ระบบ: ${d.activeStudents} คน (Engagement Rate ร้อยละ ${d.engagementRate.toFixed(1)})
