@@ -14,6 +14,7 @@ import BonusAwarder from '../components/BonusAwarder';
 import DailyQuestionEditor from '../components/DailyQuestionEditor';
 import QuickAttendance from '../components/QuickAttendance';
 import MasterCsvExport from '../components/MasterCsvExport';
+import ResearchGenerator from '../components/ResearchGenerator';
 import StudentManager from '../components/StudentManager';
 import AnnouncementManager from '../components/AnnouncementManager';
 import CalendarManager from '../components/CalendarManager';
@@ -36,7 +37,7 @@ import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'overview' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'skill' | 'bonus' | 'daily' | 'development' | 'schedule' | 'courses' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
+type Tab = 'overview' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -73,6 +74,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
       { id: 'skill', label: 'ทักษะอาชีพ (K/P)', icon: <Award size={16} /> },
       { id: 'bonus', label: 'แจกรางวัล / Bonus', icon: <Award size={16} /> },
       { id: 'daily', label: 'คำถามประจำวัน', icon: <Award size={16} /> },
+      { id: 'research', label: 'สร้างงานวิจัย (WBI)', icon: <FileText size={16} /> },
     ]
   },
   {
@@ -561,6 +563,19 @@ const AdminDashboardInner: React.FC = () => {
               </motion.div>
             )}
 
+            {/* TAB: RESEARCH — สร้างเอกสารงานวิจัย */}
+            {tab === 'research' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <div style={{ marginBottom: '1rem' }}>
+                  <h2 style={{ margin: '0 0 0.25rem' }}>📄 สร้างเอกสารงานวิจัย (WBI + ADDIE)</h2>
+                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
+                    ดึงผลสัมฤทธิ์จริงจากกระดาษเกรดมาคำนวณ ประกอบเป็นเอกสารวิจัย 5 บท — พิมพ์/คัดลอก/ให้ AI เรียบเรียงต่อได้
+                  </p>
+                </div>
+                <ResearchGenerator />
+              </motion.div>
+            )}
+
             {/* TAB: DAILY — คำถามประจำวัน */}
             {tab === 'daily' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
@@ -914,7 +929,8 @@ const ScheduleEditor: React.FC<{ schedule: ClassSlot[]; setSchedule: (s: ClassSl
   const [draft, setDraft] = useState<ClassSlot[]>(schedule);
 
   useEffect(() => {
-    setDraft(schedule);
+    const timer = window.setTimeout(() => setDraft(schedule), 0);
+    return () => window.clearTimeout(timer);
   }, [schedule]);
 
   const update = (id: string, patch: Partial<ClassSlot>) => {

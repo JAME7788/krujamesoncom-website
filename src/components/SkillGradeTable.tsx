@@ -47,8 +47,11 @@ const SkillGradeTable: React.FC = () => {
 
   // re-render after edits
   useEffect(() => {
-    void reloadKey;
-    setData(loadSkillGradeData(classroom));
+    const timer = window.setTimeout(() => {
+      void reloadKey;
+      setData(loadSkillGradeData(classroom));
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [reloadKey, classroom]);
 
   const refresh = () => setReloadKey((k) => k + 1);

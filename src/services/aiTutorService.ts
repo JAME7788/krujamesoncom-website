@@ -43,7 +43,7 @@ export const loadSettings = (): AISettings => {
 };
 
 export const saveSettings = (s: AISettings) => {
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch {}
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch { /* ignore localStorage write errors */ }
 };
 
 export const loadHistory = (userId: string): ChatMessage[] => {
@@ -56,11 +56,11 @@ export const loadHistory = (userId: string): ChatMessage[] => {
 const saveHistory = (userId: string, list: ChatMessage[]) => {
   // เก็บ 30 รายการล่าสุด
   if (list.length > 30) list = list.slice(-30);
-  try { localStorage.setItem(KEY(userId), JSON.stringify(list)); } catch {}
+  try { localStorage.setItem(KEY(userId), JSON.stringify(list)); } catch { /* ignore localStorage write errors */ }
 };
 
 export const clearHistory = (userId: string) => {
-  try { localStorage.removeItem(KEY(userId)); } catch {}
+  try { localStorage.removeItem(KEY(userId)); } catch { /* ignore localStorage cleanup errors */ }
 };
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -116,6 +116,42 @@ export const askAI = async (userId: string, userMessage: string): Promise<ChatMe
   history.push(aiMsg);
   saveHistory(userId, history);
   return aiMsg;
+};
+
+/**
+ * เรียก AI แบบ one-shot (ไม่เก็บ chat history) — สำหรับงานยาว เช่น เขียน/ขยายงานวิจัย
+ * ต้องตั้ง API key ก่อน (Admin → ครู AI). ถ้าไม่มี key คืน null → caller ใช้ template แทน
+ */
+export const completeText = async (
+  prompt: string,
+  system?: string,
+  maxTokens = 4096,
+): Promise<string | null> => {
+  const settings = loadSettings();
+  if (!settings.apiKey) return null;
+  try {
+    const url = settings.apiUrl || 'https://api.anthropic.com/v1/messages';
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': settings.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: settings.model,
+        max_tokens: maxTokens,
+        system: system || 'คุณเป็นผู้ช่วยเขียนเอกสารวิชาการภาษาไทยที่เชี่ยวชาญด้านการศึกษาและวิจัย',
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const data = await res.json();
+    return data.content?.[0]?.text || null;
+  } catch (e) {
+    console.warn('completeText failed', e);
+    return null;
+  }
 };
 
 // Canned responses (ใช้เมื่อไม่มี API key)
