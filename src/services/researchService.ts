@@ -7,6 +7,7 @@ import {
 } from './gradeService';
 import type { Subject } from './gradeService';
 import { loadAllRosters } from './rosterService';
+import { getAllCachedProgress, computeGamification } from './progressService';
 
 export interface ResearchMeta {
   title: string;
@@ -27,6 +28,16 @@ export interface ResearchData {
   gradeDist: Record<string, number>; // เกรด → จำนวนคน
   passRate: number;             // ร้อยละที่ผ่าน (>=50)
   kMean: number; pMean: number; aMean: number; examMean: number;
+  // ===== เกมมิฟิเคชัน (engagement จริงจากระบบ) =====
+  activeStudents: number;       // จำนวนที่มี progress (เคยเข้าใช้)
+  avgXp: number;
+  avgLevel: number;
+  maxLevel: number;
+  avgStreak: number;
+  avgActivities: number;        // กิจกรรม/สื่อเฉลี่ยต่อคน
+  avgQuizzes: number;           // ครั้งทำแบบทดสอบเฉลี่ยต่อคน
+  avgSlides: number;            // สไลด์อ่านเฉลี่ยต่อคน
+  engagementRate: number;       // ร้อยละ active / ประชากรทั้งหมด
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -77,6 +88,24 @@ export const computeResearchData = (classroom: string): ResearchData => {
 
   const passRate = n ? (totals.filter((t) => t >= 50).length / n) * 100 : 0;
 
+  // ===== เกมมิฟิเคชัน: อ่าน progress จริงในระบบ (filter ตามชั้นที่เลือก) =====
+  const allProg = getAllCachedProgress();
+  const inClass = allProg.filter((p) => {
+    const c = classroomsUsed.find((cc) => p.studentId.startsWith(`${cc}_`));
+    return !!c;
+  });
+  const xps: number[] = []; const levels: number[] = []; const streaks: number[] = [];
+  const acts: number[] = []; const quizzes: number[] = []; const slides: number[] = [];
+  inClass.forEach((p) => {
+    const g = computeGamification(p.studentId);
+    xps.push(g.xp); levels.push(g.level); streaks.push(g.streakDays);
+    acts.push(p.totalActivities || 0);
+    quizzes.push((p.attempts || []).length);
+    slides.push(p.totalSlidesViewed || 0);
+  });
+  const activeStudents = inClass.length;
+  const totalPopulation = classroomsUsed.reduce((s, c) => s + (rosters[c]?.length || 0), 0);
+
   return {
     n,
     classroomsUsed,
@@ -87,6 +116,15 @@ export const computeResearchData = (classroom: string): ResearchData => {
     gradeDist,
     passRate: round2(passRate),
     kMean: round2(mean(ks)), pMean: round2(mean(ps)), aMean: round2(mean(as)), examMean: round2(mean(exams)),
+    activeStudents,
+    avgXp: round2(mean(xps)),
+    avgLevel: round2(mean(levels)),
+    maxLevel: levels.length ? Math.max(...levels) : 0,
+    avgStreak: round2(mean(streaks)),
+    avgActivities: round2(mean(acts)),
+    avgQuizzes: round2(mean(quizzes)),
+    avgSlides: round2(mean(slides)),
+    engagementRate: totalPopulation ? round2((activeStudents / totalPopulation) * 100) : 0,
   };
 };
 
@@ -120,11 +158,11 @@ ${meta.title}
 ──────────────────────────────────────────
 บทคัดย่อ
 
-การวิจัยครั้งนี้มีวัตถุประสงค์เพื่อ (1) พัฒนาการเรียนการสอนผ่านเว็บ (Web-Based Instruction: WBI) ในรายวิชาวิทยาการคำนวณสำหรับนักเรียน${meta.classroomLabel} ${meta.school} และ (2) ศึกษาผลจากการใช้การเรียนการสอนผ่านเว็บดังกล่าว ประชากรของการวิจัยคือนักเรียนที่เข้าใช้ระบบจำนวน ${d.n} คน เครื่องมือวิจัยได้แก่ เว็บไซต์เรียนการสอนที่พัฒนาด้วยกระบวนการ ADDIE Model แบบทดสอบวัดผลสัมฤทธิ์ (K/P/A ต่อตัวชี้วัด + สอบปลายภาค) และแบบสอบถามความพึงพอใจ
+การวิจัยครั้งนี้มีวัตถุประสงค์เพื่อ (1) พัฒนาการเรียนการสอนผ่านเว็บเทคโนโลยีร่วมกับแนวคิดเกมมิฟิเคชัน (Web-Based Instruction with Gamification) ในรายวิชาวิทยาการคำนวณสำหรับนักเรียน${meta.classroomLabel} ${meta.school} และ (2) ศึกษาผลจากการใช้การเรียนการสอนดังกล่าว ทั้งด้านผลสัมฤทธิ์ทางการเรียนและการมีส่วนร่วม (Engagement) ของผู้เรียน ประชากรของการวิจัยคือนักเรียนที่เข้าใช้ระบบจำนวน ${d.activeStudents} คน เครื่องมือวิจัยได้แก่ เว็บไซต์เรียนการสอนที่พัฒนาด้วยกระบวนการ ADDIE Model ซึ่งบูรณาการกลไกเกมมิฟิเคชัน (คะแนนประสบการณ์ XP, ระดับ Level, ยศ, ต่อเนื่องรายวัน Streak, เหรียญตรา และกระดานอันดับ) แบบทดสอบวัดผลสัมฤทธิ์ (K/P/A ต่อตัวชี้วัด + สอบปลายภาค) และแบบสอบถามความพึงพอใจ
 
-ผลการวิจัยพบว่า นักเรียนมีผลสัมฤทธิ์ทางการเรียนโดยรวมเฉลี่ย ${d.achievementMean25.toFixed(2)} จากคะแนนเต็ม 25 (คิดเป็น ${d.achievementMean100.toFixed(2)} จาก 100, S.D. = ${d.achievementSD.toFixed(2)}) อยู่ในระดับ "${d.achievementLevel}" มีอัตราการผ่านเกณฑ์ร้อยละ ${d.passRate.toFixed(1)} ด้านความพึงพอใจของนักเรียนอยู่ในระดับ "${satisfactionLevel(sat)}" (ค่าเฉลี่ย ${satStr}) โดยเห็นว่าเป็นรูปแบบที่สะดวก มีเกม แบบทดสอบ และระบบติดตามคะแนนที่เพิ่มความน่าสนใจให้บทเรียน
+ผลการวิจัยพบว่า นักเรียนมีผลสัมฤทธิ์ทางการเรียนโดยรวมเฉลี่ย ${d.achievementMean25.toFixed(2)} จากคะแนนเต็ม 25 (คิดเป็น ${d.achievementMean100.toFixed(2)} จาก 100, S.D. = ${d.achievementSD.toFixed(2)}) อยู่ในระดับ "${d.achievementLevel}" มีอัตราการผ่านเกณฑ์ร้อยละ ${d.passRate.toFixed(1)} ด้านการมีส่วนร่วม นักเรียนมีคะแนนประสบการณ์ (XP) เฉลี่ย ${d.avgXp.toFixed(0)} เลื่อนระดับเฉลี่ย Level ${d.avgLevel.toFixed(1)} (สูงสุด Level ${d.maxLevel}) เข้าเรียนต่อเนื่องเฉลี่ย ${d.avgStreak.toFixed(1)} วัน ทำกิจกรรม/สื่อเฉลี่ย ${d.avgActivities.toFixed(1)} รายการต่อคน คิดเป็นอัตราการเข้าใช้ระบบ (Engagement Rate) ร้อยละ ${d.engagementRate.toFixed(1)} ด้านความพึงพอใจอยู่ในระดับ "${satisfactionLevel(sat)}" (ค่าเฉลี่ย ${satStr}) โดยเห็นว่ากลไกเกมมิฟิเคชันช่วยเพิ่มแรงจูงใจและความสนุกในการเรียน
 
-คำสำคัญ: การเรียนการสอนผ่านเว็บ (WBI), วิทยาการคำนวณ, ADDIE Model, ผลสัมฤทธิ์ทางการเรียน, ความพึงพอใจ
+คำสำคัญ: การเรียนการสอนผ่านเว็บ (WBI), เกมมิฟิเคชัน (Gamification), วิทยาการคำนวณ, ADDIE Model, ผลสัมฤทธิ์ทางการเรียน, การมีส่วนร่วม
 
 ──────────────────────────────────────────
 บทที่ 1 บทนำ
@@ -158,9 +196,17 @@ ADDIE Model ประกอบด้วย 5 ขั้น: การวิเค
 3.1 ประชากร: นักเรียน${meta.classroomLabel} ${meta.school} จำนวน ${d.n} คน (${d.classroomsUsed.join(', ')})
 
 3.2 เครื่องมือที่ใช้ในการวิจัย
-1) เว็บไซต์เรียนการสอนวิชาวิทยาการคำนวณ พัฒนาด้วย ADDIE Model
+1) เว็บไซต์เรียนการสอนวิชาวิทยาการคำนวณ พัฒนาด้วย ADDIE Model บูรณาการกลไกเกมมิฟิเคชัน
 2) แบบวัดผลสัมฤทธิ์แบบ K/P/A ต่อตัวชี้วัด (คะแนนเก็บ 70) + สอบปลายภาค (30)
 3) แบบสอบถามความพึงพอใจ (มาตรประเมิน 5 ระดับของ Best, 1977)
+
+3.2.1 กลไกเกมมิฟิเคชันที่ออกแบบในระบบ (Gamification Design)
+- คะแนนประสบการณ์ (XP): ทำแบบทดสอบ +10/คะแนน, เล่นเกม/ใช้สื่อ +5, อ่านสไลด์ +1
+- ระดับและยศ (Level & Title): เลื่อนระดับตาม XP สะสม พร้อมยศ 8 ขั้น (ผู้เริ่มต้น → ตำนาน)
+- ความต่อเนื่องรายวัน (Streak): กระตุ้นการเข้าเรียนสม่ำเสมอ
+- เหรียญตรา (Achievement Badges): ปลดล็อกเมื่อทำเป้าหมายสำเร็จ
+- กระดานอันดับ (Leaderboard): จัดอันดับด้วยคะแนนถ่วงน้ำหนัก
+- รางวัลจากครู (Bonus) และคำถามประจำวัน (Daily Question) เพื่อเสริมแรงจูงใจ
 
 3.3 การเก็บรวบรวมข้อมูล
 จัดการเรียนการสอนผ่านเว็บกับนักเรียนตลอดภาคเรียน เก็บคะแนน K/P/A รายตัวชี้วัด คะแนนสอบ และแบบสอบถามความพึงพอใจ ผ่านระบบของเว็บไซต์โดยอัตโนมัติ
@@ -179,7 +225,15 @@ ADDIE Model ประกอบด้วย 5 ขั้น: การวิเค
 - คะแนนเฉลี่ยแยกองค์ประกอบ: K = ${d.kMean.toFixed(2)}, P = ${d.pMean.toFixed(2)}, A = ${d.aMean.toFixed(2)}, สอบ = ${d.examMean.toFixed(2)}
 - การกระจายเกรด: ${gradeLines}
 
-4.2 ความพึงพอใจของนักเรียน
+4.2 ผลด้านการมีส่วนร่วมจากกลไกเกมมิฟิเคชัน (จากข้อมูลจริงในระบบ)
+- จำนวนนักเรียนที่เข้าใช้ระบบ: ${d.activeStudents} คน (Engagement Rate ร้อยละ ${d.engagementRate.toFixed(1)})
+- คะแนนประสบการณ์ (XP) เฉลี่ย: ${d.avgXp.toFixed(0)} ต่อคน
+- ระดับ (Level) เฉลี่ย: ${d.avgLevel.toFixed(1)} (สูงสุด Level ${d.maxLevel})
+- เข้าเรียนต่อเนื่อง (Streak) เฉลี่ย: ${d.avgStreak.toFixed(1)} วัน
+- กิจกรรม/สื่อที่ใช้เฉลี่ย: ${d.avgActivities.toFixed(1)} รายการ/คน
+- ทำแบบทดสอบเฉลี่ย: ${d.avgQuizzes.toFixed(1)} ครั้ง/คน • อ่านสไลด์เฉลี่ย: ${d.avgSlides.toFixed(1)} หน้า/คน
+
+4.3 ความพึงพอใจของนักเรียน
 ความพึงพอใจโดยรวมอยู่ในระดับ "${satisfactionLevel(sat)}" (ค่าเฉลี่ย ${satStr})
 
 ──────────────────────────────────────────
@@ -189,12 +243,13 @@ ADDIE Model ประกอบด้วย 5 ขั้น: การวิเค
 การพัฒนาการเรียนการสอนผ่านเว็บด้วย ADDIE Model ทำให้ได้เว็บไซต์ที่นักเรียนใช้เรียน ทบทวน เล่นเกม และทำแบบทดสอบได้ ผลสัมฤทธิ์เฉลี่ยอยู่ในระดับ "${d.achievementLevel}" (${d.achievementMean25.toFixed(2)}/25) และความพึงพอใจอยู่ในระดับ "${satisfactionLevel(sat)}"
 
 5.2 อภิปรายผล
-ผลสัมฤทธิ์ที่อยู่ในระดับดีสอดคล้องกับงานวิจัยที่พบว่าการเรียนการสอนผ่านเว็บช่วยให้ผู้เรียนเข้าถึงบทเรียนได้ทุกที่ทุกเวลา มีปฏิสัมพันธ์ และกำกับการเรียนของตนเองได้ ระบบเกมและการติดตามคะแนนช่วยเพิ่มแรงจูงใจในการเรียน
+ผลสัมฤทธิ์ที่อยู่ในระดับดีและอัตราการมีส่วนร่วมที่สูง สอดคล้องกับทฤษฎีแรงจูงใจและงานวิจัยด้านเกมมิฟิเคชันที่พบว่ากลไก XP ระดับ ความต่อเนื่อง และเหรียญตรา ช่วยกระตุ้นแรงจูงใจภายในและภายนอกของผู้เรียน ทำให้เข้าเรียนสม่ำเสมอและทำกิจกรรมมากขึ้น เมื่อรวมกับจุดแข็งของการเรียนการสอนผ่านเว็บที่เข้าถึงได้ทุกที่ทุกเวลา จึงส่งผลดีต่อทั้งการมีส่วนร่วมและผลสัมฤทธิ์
 
 5.3 ข้อเสนอแนะ
 1) พัฒนาเนื้อหาและแบบฝึกหัดให้ครอบคลุมทุกตัวชี้วัดมากยิ่งขึ้น
 2) เก็บข้อมูลแบบสอบถามความพึงพอใจอย่างเป็นระบบทุกภาคเรียน
-3) การวิจัยครั้งต่อไปอาจใช้รูปแบบห้องเรียนกลับด้าน (Flipped Classroom) ควบคู่กับ WBI
+3) ศึกษาความสัมพันธ์ระหว่างตัวชี้วัดเกมมิฟิเคชัน (XP, Streak) กับผลสัมฤทธิ์เชิงลึก
+4) การวิจัยครั้งต่อไปอาจใช้ห้องเรียนกลับด้าน (Flipped Classroom) ควบคู่กับ WBI + Gamification
 
 ──────────────────────────────────────────
 หมายเหตุ: ตัวเลขผลสัมฤทธิ์ในบทที่ 4 คำนวณจากข้อมูลจริงในระบบ ณ วันที่ ${new Date().toLocaleDateString('th-TH')} — เมื่อครูกรอกคะแนน/นักเรียนใช้งานเพิ่ม ตัวเลขจะเปลี่ยนตาม`;

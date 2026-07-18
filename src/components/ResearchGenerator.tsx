@@ -5,6 +5,7 @@ import {
 } from '../services/researchService';
 import type { ResearchMeta } from '../services/researchService';
 import { completeText } from '../services/aiTutorService';
+import { fetchAllProgressFromFirebase } from '../services/progressService';
 import { loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
 
@@ -14,7 +15,7 @@ const ResearchGenerator: React.FC = () => {
   const toast = useToast();
 
   const [meta, setMeta] = useState<ResearchMeta>({
-    title: 'การพัฒนาการเรียนการสอนผ่านเว็บในรายวิชาวิทยาการคำนวณ',
+    title: 'การพัฒนาการเรียนการสอนผ่านเว็บเทคโนโลยีร่วมกับเกมมิฟิเคชันในรายวิชาวิทยาการคำนวณ',
     researcher: 'นายอนันตชัย เพ็ชรรี่',
     school: 'โรงเรียนบ้านคลองมดแดง',
     academicYear: '2569',
@@ -24,25 +25,33 @@ const ResearchGenerator: React.FC = () => {
   const [classroom, setClassroom] = useState<string>('all');
   const [doc, setDoc] = useState<string>('');
   const [busy, setBusy] = useState(false);
+  const [genBusy, setGenBusy] = useState(false);
   const [dataN, setDataN] = useState<number | null>(null);
 
-  const generate = () => {
-    const data = computeResearchData(classroom);
-    setDataN(data.n);
-    if (data.n === 0) {
-      toast.show('ยังไม่มีคะแนนในระบบสำหรับชั้นที่เลือก — กรอกคะแนนในกระดาษเกรดก่อน', 'info');
+  const generate = async () => {
+    setGenBusy(true);
+    try {
+      // ดึง progress ทุกคนจาก Firebase ก่อน เพื่อให้ข้อมูล engagement เกมมิฟิเคชันครบ
+      await fetchAllProgressFromFirebase();
+      const data = computeResearchData(classroom);
+      setDataN(data.n);
+      if (data.n === 0 && data.activeStudents === 0) {
+        toast.show('ยังไม่มีคะแนน/การใช้งานในระบบสำหรับชั้นที่เลือก', 'info');
+      }
+      const label = classroom === 'all' ? 'ทุกชั้น (ป.1-ม.3)' : classroom;
+      const document = buildResearchDocument({ ...meta, classroomLabel: label }, data);
+      setDoc(document);
+      toast.show(`สร้างเอกสารแล้ว — ผลสัมฤทธิ์ ${data.n} คน · เข้าใช้ระบบ ${data.activeStudents} คน`, 'success');
+    } finally {
+      setGenBusy(false);
     }
-    const label = classroom === 'all' ? 'ทุกชั้น (ป.1-ม.3)' : classroom;
-    const document = buildResearchDocument({ ...meta, classroomLabel: label }, data);
-    setDoc(document);
-    toast.show(`สร้างเอกสารจากข้อมูลจริง ${data.n} คนแล้ว`, 'success');
   };
 
   const aiExpand = async () => {
     if (!doc) { toast.show('กด"สร้างเอกสาร"ก่อน', 'info'); return; }
     setBusy(true);
     try {
-      const prompt = `นี่คือโครงร่างงานวิจัยการศึกษา (การเรียนการสอนผ่านเว็บ WBI + ADDIE) พร้อมตัวเลขผลจริง ช่วยเรียบเรียงให้เป็นภาษาวิชาการที่สละสลวยและสมบูรณ์ขึ้น โดย "ห้ามเปลี่ยนตัวเลขสถิติใดๆ" คงหัวข้อทุกบทไว้ และขยายความบทที่ 1 (ความสำคัญ) กับบทที่ 5 (อภิปรายผล) ให้ลึกขึ้น:\n\n${doc}`;
+      const prompt = `นี่คือโครงร่างงานวิจัยการศึกษาเรื่องการเรียนการสอนผ่านเว็บเทคโนโลยีร่วมกับเกมมิฟิเคชัน (WBI + Gamification + ADDIE) พร้อมตัวเลขผลจริงจากระบบ ช่วยเรียบเรียงให้เป็นภาษาวิชาการที่สละสลวยและสมบูรณ์ขึ้น โดย "ห้ามเปลี่ยนตัวเลขสถิติใดๆ" คงหัวข้อทุกบทไว้ ขยายความบทที่ 1 (ความสำคัญ) เน้นบทบาทของเกมมิฟิเคชันต่อแรงจูงใจ และบทที่ 5 (อภิปรายผล) ให้อ้างอิงทฤษฎีแรงจูงใจและงานวิจัยเกมมิฟิเคชัน:\n\n${doc}`;
     const result = await completeText(prompt, 'คุณเป็นผู้ช่วยเขียนวิทยานิพนธ์/งานวิจัยการศึกษาภาษาไทย เขียนเป็นทางการ ถูกต้องตามระเบียบวิธีวิจัย', 8000);
       if (result) {
         setDoc(result);
@@ -125,8 +134,8 @@ const ResearchGenerator: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-        <button className="btn-primary" onClick={generate}>
-          <FileText size={16} /> สร้างเอกสารจากข้อมูลจริง
+        <button className="btn-primary" onClick={generate} disabled={genBusy}>
+          {genBusy ? <Loader2 size={16} className="spin" /> : <FileText size={16} />} สร้างเอกสารจากข้อมูลจริง
         </button>
         <button className="btn-secondary" onClick={aiExpand} disabled={busy || !doc}
           style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)', color: 'white', border: 0 }}>
