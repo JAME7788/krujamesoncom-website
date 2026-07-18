@@ -132,7 +132,7 @@ const ThemeCustomizer: React.FC = () => {
           </label>
           <select
             value={importMode}
-            onChange={(e) => setImportMode(e.target.value as any)}
+            onChange={(e) => setImportMode(e.target.value as 'merge' | 'replace')}
             style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontFamily: 'inherit' }}
           >
             <option value="merge">📌 Merge (รวมข้อมูล)</option>

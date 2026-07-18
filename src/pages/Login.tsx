@@ -65,7 +65,8 @@ const Login: React.FC = () => {
     if (user && user.id !== 'admin_teacher_account') {
       clearStudentSession();
     }
-    setLoginReady(true);
+    const timer = window.setTimeout(() => setLoginReady(true), 0);
+    return () => window.clearTimeout(timer);
     // Run once on page entry. After a new login succeeds, user changes and should navigate to Dashboard.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

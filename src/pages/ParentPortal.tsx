@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { GraduationCap, BookOpen, Award, TrendingUp, Calendar, Activity } from 'lucide-react';
 import { getSummary } from '../services/progressService';
@@ -11,20 +11,19 @@ import TrendChart from '../components/TrendChart';
 
 const ParentPortal: React.FC = () => {
   const { studentId } = useParams<{ studentId: string }>();
-  const [studentInfo, setStudentInfo] = useState<{ classroom: string; no: number; name: string; emoji: string } | null>(null);
-
-  useEffect(() => {
+  const studentInfo = useMemo(() => {
     if (!studentId) return;
     // studentId format: classroom_no_nameNoSpace
     const parts = studentId.split('_');
     if (parts.length < 3) return;
     const [classroom, noStr] = parts;
-    const no = parseInt(noStr);
+    const no = parseInt(noStr, 10);
     const roster = loadRoster(classroom);
     const found = roster.find((s) => s.no === no);
     if (found) {
-      setStudentInfo({ classroom, no, name: found.name, emoji: found.emoji });
+      return { classroom, no, name: found.name, emoji: found.emoji };
     }
+    return null;
   }, [studentId]);
 
   const summary = useMemo(() => studentId ? getSummary(studentId) : null, [studentId]);

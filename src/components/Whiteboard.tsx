@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pencil, Eraser, Square, Circle, Type, Trash2, Download, Undo } from 'lucide-react';
 
 type Tool = 'pen' | 'eraser' | 'rect' | 'circle' | 'text';
@@ -16,6 +16,14 @@ const Whiteboard: React.FC<{ width?: number; height?: number }> = ({ width = 800
   const [last, setLast] = useState<Point | null>(null);
   const [, setHistory] = useState<ImageData[]>([]);
 
+  const saveHistory = useCallback(() => {
+    const c = canvasRef.current;
+    const ctx = c?.getContext('2d');
+    if (!c || !ctx) return;
+    const img = ctx.getImageData(0, 0, c.width, c.height);
+    setHistory((h) => [...h.slice(-20), img]);
+  }, []);
+
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
@@ -24,16 +32,7 @@ const Whiteboard: React.FC<{ width?: number; height?: number }> = ({ width = 800
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, c.width, c.height);
     saveHistory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const saveHistory = () => {
-    const c = canvasRef.current;
-    const ctx = c?.getContext('2d');
-    if (!c || !ctx) return;
-    const img = ctx.getImageData(0, 0, c.width, c.height);
-    setHistory((h) => [...h.slice(-20), img]);
-  };
+  }, [saveHistory]);
 
   const undo = () => {
     setHistory((h) => {

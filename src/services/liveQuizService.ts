@@ -78,7 +78,7 @@ const syncFirebase = async (room: LiveQuizRoom) => {
   try {
     const ref = doc(db, 'liveQuizzes', room.code);
     await setDoc(ref, room, { merge: true });
-  } catch {}
+  } catch { /* ignore Firebase sync errors */ }
 };
 
 // BroadcastChannel for same-origin tabs
@@ -88,7 +88,7 @@ const getChannel = (code: string) => {
   return channels[code];
 };
 const broadcastChange = (code: string) => {
-  try { getChannel(code).postMessage({ type: 'update', ts: Date.now() }); } catch {}
+  try { getChannel(code).postMessage({ type: 'update', ts: Date.now() }); } catch { /* ignore BroadcastChannel errors */ }
 };
 
 export const subscribeRoom = (code: string, cb: (room: LiveQuizRoom | null) => void): (() => void) => {
@@ -109,7 +109,7 @@ export const subscribeRoom = (code: string, cb: (room: LiveQuizRoom | null) => v
           cb(room);
         }
       });
-    } catch {}
+    } catch { /* ignore Firebase subscription errors */ }
   }
 
   // Initial load
@@ -192,6 +192,6 @@ export const closeRoom = async (code: string) => {
     try {
       const ref = doc(db, 'liveQuizzes', code);
       await deleteDoc(ref);
-    } catch {}
+    } catch { /* ignore Firebase cleanup errors */ }
   }
 };

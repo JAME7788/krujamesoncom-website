@@ -22,7 +22,9 @@ const AITutor: React.FC = () => {
   const userId = user?.id || 'guest';
 
   useEffect(() => {
-    if (open) setMessages(loadHistory(userId));
+    if (!open) return;
+    const timer = window.setTimeout(() => setMessages(loadHistory(userId)), 0);
+    return () => window.clearTimeout(timer);
   }, [open, userId]);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ const AITutor: React.FC = () => {
     setInput('');
     setLoading(true);
     // optimistic update
-    setMessages([...messages, { id: 't', role: 'user', content: msg, timestamp: Date.now() }]);
+    setMessages((current) => [...current, { id: 't', role: 'user', content: msg, timestamp: Date.now() }]);
     try {
       await askAI(userId, msg);
       setMessages(loadHistory(userId));

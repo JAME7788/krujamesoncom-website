@@ -32,7 +32,7 @@ export const loadTheme = (): ThemeConfig => {
 };
 
 export const saveTheme = (cfg: ThemeConfig) => {
-  try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch {}
+  try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch { /* ignore localStorage write errors */ }
   applyTheme(cfg);
 };
 

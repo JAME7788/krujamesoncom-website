@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Download, Trash2, ArrowUpRight, ArrowDownRight, Award, PlusCircle, MinusCircle, Users, Wallet } from 'lucide-react';
 import { loadRoster, loadAllRosters } from '../../services/rosterService';
 import type { StudentInfo } from '../../data/students2569';
@@ -14,12 +14,22 @@ interface Transaction {
 
 const STORAGE_KEY = 'krujames_savings_v1';
 
+const loadStoredTransactions = (): Transaction[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('Failed to load savings transactions', e);
+    return [];
+  }
+};
+
 const SavingsTracker: React.FC = () => {
   const allRosters = useMemo(() => loadAllRosters(), []);
   const classrooms = useMemo(() => Object.keys(allRosters).sort(), [allRosters]);
   
   const [selectedClass, setSelectedClass] = useState<string>(classrooms[0] || 'ป.1');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>(loadStoredTransactions);
   
   // Form states
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,18 +37,6 @@ const SavingsTracker: React.FC = () => {
   const [amount, setAmount] = useState('');
   const [txType, setTxType] = useState<'deposit' | 'withdraw'>('deposit');
   const [isSearching, setIsSearching] = useState(false);
-
-  // Load transactions on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        setTransactions(JSON.parse(raw));
-      }
-    } catch (e) {
-      console.error('Failed to load savings transactions', e);
-    }
-  }, []);
 
   // Save transactions when changed
   const saveTransactions = (list: Transaction[]) => {

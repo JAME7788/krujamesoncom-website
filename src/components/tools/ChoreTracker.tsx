@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Calendar, CheckSquare, Award, Clock, Star, RefreshCw } from 'lucide-react';
 import { loadRoster, loadAllRosters } from '../../services/rosterService';
 import type { StudentInfo } from '../../data/students2569';
@@ -19,26 +19,34 @@ const STORAGE_KEY_STATS = 'krujames_chore_stats_v1';
 const DAYS_TH = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'];
 const DAYS_EN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
+const loadStoredChoreRecords = (): ChoreRecord => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_RECORDS);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    console.error('Failed to load chore tracking data', e);
+    return {};
+  }
+};
+
+const loadStoredChoreStats = (): ChoreStats => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_STATS);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    console.error('Failed to load chore stats', e);
+    return {};
+  }
+};
+
 const ChoreTracker: React.FC = () => {
   const allRosters = useMemo(() => loadAllRosters(), []);
   const classrooms = useMemo(() => Object.keys(allRosters).sort(), [allRosters]);
 
   const [selectedClass, setSelectedClass] = useState<string>(classrooms[0] || 'ป.1');
-  const [choreRecords, setChoreRecords] = useState<ChoreRecord>({});
-  const [choreStats, setChoreStats] = useState<ChoreStats>({});
+  const [choreRecords, setChoreRecords] = useState<ChoreRecord>(loadStoredChoreRecords);
+  const [choreStats, setChoreStats] = useState<ChoreStats>(loadStoredChoreStats);
   const [currentDate, setCurrentDate] = useState<string>(new Date().toISOString().split('T')[0]);
-
-  // Load records on mount
-  useEffect(() => {
-    try {
-      const rawRecords = localStorage.getItem(STORAGE_KEY_RECORDS);
-      const rawStats = localStorage.getItem(STORAGE_KEY_STATS);
-      if (rawRecords) setChoreRecords(JSON.parse(rawRecords));
-      if (rawStats) setChoreStats(JSON.parse(rawStats));
-    } catch (e) {
-      console.error('Failed to load chore tracking data', e);
-    }
-  }, []);
 
   const saveChoreData = (newRecords: ChoreRecord, newStats: ChoreStats) => {
     setChoreRecords(newRecords);

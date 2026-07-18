@@ -1,7 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Play, Trash2, Copy, Download } from 'lucide-react';
 
 type Lang = 'javascript' | 'python';
+type PyodideRuntime = {
+  setStdout: (options: { batched: (text: string) => void }) => void;
+  setStderr: (options: { batched: (text: string) => void }) => void;
+  runPythonAsync: (code: string) => Promise<unknown>;
+};
+
+declare global {
+  interface Window {
+    loadPyodide?: (options: { indexURL: string }) => Promise<PyodideRuntime>;
+  }
+}
+
+const errorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
 
 const samples: Record<Lang, string> = {
   javascript: `// ลองเขียน JavaScript ดู
@@ -41,38 +54,41 @@ const CodingSandbox: React.FC = () => {
   const [code, setCode] = useState(samples.javascript);
   const [output, setOutput] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
-  const [pyodide, setPyodide] = useState<any>(null);
+  const [pyodide, setPyodide] = useState<PyodideRuntime | null>(null);
   const [pyLoading, setPyLoading] = useState(false);
 
   // load pyodide on demand
-  const loadPyodide = async () => {
+  const loadPyodide = useCallback(async () => {
     if (pyodide || pyLoading) return;
     setPyLoading(true);
     setOutput(['🐍 กำลังโหลด Python (รอสักครู่...)']);
     try {
       // load Pyodide from CDN
-      if (!(window as any).loadPyodide) {
+      if (!window.loadPyodide) {
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
         document.head.appendChild(script);
-        await new Promise((r) => { script.onload = r; });
+        await new Promise<void>((resolve) => { script.onload = () => resolve(); });
       }
-      const py = await (window as any).loadPyodide({
+      if (!window.loadPyodide) throw new Error('Pyodide loader unavailable');
+      const py = await window.loadPyodide({
         indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
       });
       setPyodide(py);
       setOutput(['✅ Python พร้อมใช้งาน!']);
-    } catch (e) {
-      setOutput([`❌ โหลด Python ไม่สำเร็จ: ${e}`]);
+    } catch (e: unknown) {
+      setOutput([`❌ โหลด Python ไม่สำเร็จ: ${errorMessage(e)}`]);
     }
     setPyLoading(false);
-  };
+  }, [pyLoading, pyodide]);
 
   useEffect(() => {
     if (lang === 'python' && !pyodide && !pyLoading) {
-      loadPyodide();
+      const timer = window.setTimeout(() => { void loadPyodide(); }, 0);
+      return () => window.clearTimeout(timer);
     }
-  }, [lang]);
+    return undefined;
+  }, [lang, loadPyodide, pyLoading, pyodide]);
 
   const run = async () => {
     setRunning(true);
@@ -82,17 +98,18 @@ const CodingSandbox: React.FC = () => {
     if (lang === 'javascript') {
       // Capture console.log
       const originalLog = console.log;
-      console.log = (...args: any[]) => {
+      console.log = (...args: unknown[]) => {
         logs.push(args.map((a) => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
       };
       try {
         // Run JavaScript
         const fn = new Function(code);
         fn();
-      } catch (e: any) {
-        logs.push(`❌ ${e.message}`);
+      } catch (e: unknown) {
+        logs.push(`❌ ${errorMessage(e)}`);
+      } finally {
+        console.log = originalLog;
       }
-      console.log = originalLog;
       setOutput(logs);
     } else if (lang === 'python' && pyodide) {
       try {
@@ -100,8 +117,8 @@ const CodingSandbox: React.FC = () => {
         pyodide.setStderr({ batched: (s: string) => logs.push(`❌ ${s}`) });
         await pyodide.runPythonAsync(code);
         setOutput(logs);
-      } catch (e: any) {
-        logs.push(`❌ ${e.message}`);
+      } catch (e: unknown) {
+        logs.push(`❌ ${errorMessage(e)}`);
         setOutput(logs);
       }
     } else if (lang === 'python' && !pyodide) {

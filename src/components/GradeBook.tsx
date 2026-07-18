@@ -78,7 +78,7 @@ const GradeBook: React.FC = () => {
       const total = res.reduce((acc, r) => acc + r.students * r.indicators, 0);
       if (total > 0) {
         toast.show(`✅ ใส่ค่า P/A เริ่มต้น "บท 1" ให้ ${res.length} ห้อง×วิชา (รวม ${total} ช่อง) แล้ว`, 'success');
-        setReloadKey((k) => k + 1);
+        window.setTimeout(() => setReloadKey((k) => k + 1), 0);
       }
     } catch (e) {
       console.warn('Auto-seed unit 1 P/A failed:', e);
@@ -131,7 +131,7 @@ const GradeBook: React.FC = () => {
 
         setLoadedGradebookKey(gradebookKey);
         setReloadKey((k) => k + 1);
-      } catch (e) {
+      } catch {
         if (!cancelled && loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
           initClassroom(classroom, subject);
           setReloadKey((k) => k + 1);
@@ -146,7 +146,7 @@ const GradeBook: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [gradebookKey]);
+  }, [classroom, gradebookKey, subject]);
 
   const handleK = (studentCode: string, indicatorId: string, value: string) => {
     const ind = indicators.find((i) => i.id === indicatorId);

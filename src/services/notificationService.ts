@@ -29,7 +29,7 @@ export const showBrowserNotification = (title: string, options?: NotificationOpt
       badge: '/icon-192.png',
       ...options,
     });
-  } catch {}
+  } catch { /* ignore notification display errors */ }
 };
 
 // In-app notifications
@@ -39,7 +39,7 @@ export const addNotification = (userId: string, n: Omit<InAppNotification, 'id' 
   list.unshift(notif);
   // เก็บแค่ 50 ล่าสุด
   if (list.length > 50) list.length = 50;
-  try { localStorage.setItem(KEY(userId), JSON.stringify(list)); } catch {}
+  try { localStorage.setItem(KEY(userId), JSON.stringify(list)); } catch { /* ignore localStorage write errors */ }
   return notif;
 };
 
@@ -52,12 +52,12 @@ export const loadNotifications = (userId: string): InAppNotification[] => {
 
 export const markAllRead = (userId: string) => {
   const list = loadNotifications(userId).map((n) => ({ ...n, read: true }));
-  try { localStorage.setItem(KEY(userId), JSON.stringify(list)); } catch {}
+  try { localStorage.setItem(KEY(userId), JSON.stringify(list)); } catch { /* ignore localStorage write errors */ }
 };
 
 export const deleteNotification = (userId: string, id: string) => {
   const list = loadNotifications(userId).filter((n) => n.id !== id);
-  try { localStorage.setItem(KEY(userId), JSON.stringify(list)); } catch {}
+  try { localStorage.setItem(KEY(userId), JSON.stringify(list)); } catch { /* ignore localStorage write errors */ }
 };
 
 export const getUnreadCount = (userId: string): number => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Pin, Calendar, User, Plus, CheckCircle, Trash2, Clock, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -22,6 +22,16 @@ const COLORS = {
   emerald: { bg: '#a7f3d0', border: '#34d399', text: '#065f46', pin: '#10b981' }
 };
 
+const loadStoredNotes = (): StickyNote[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('Failed to load sticky notes', e);
+    return [];
+  }
+};
+
 const PeerReminderBoard: React.FC = () => {
   const { user } = useAuth();
   
@@ -29,7 +39,7 @@ const PeerReminderBoard: React.FC = () => {
   const defaultClass = user?.classroom || 'ป.1';
   
   const [selectedClass, setSelectedClass] = useState<string>(defaultClass);
-  const [notes, setNotes] = useState<StickyNote[]>([]);
+  const [notes, setNotes] = useState<StickyNote[]>(loadStoredNotes);
   const [showAddForm, setShowAddForm] = useState(false);
   
   // Form states
@@ -38,16 +48,6 @@ const PeerReminderBoard: React.FC = () => {
   const [dueDate, setDueDate] = useState('');
   const [author, setAuthor] = useState(user?.name.split(' ')[0] || '');
   const [noteColor, setNoteColor] = useState<'yellow' | 'blue' | 'pink' | 'emerald'>('yellow');
-
-  // Load notes on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setNotes(JSON.parse(raw));
-    } catch (e) {
-      console.error('Failed to load sticky notes', e);
-    }
-  }, []);
 
   // Save notes
   const saveNotes = (list: StickyNote[]) => {

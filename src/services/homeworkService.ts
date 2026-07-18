@@ -54,7 +54,7 @@ export const loadAssignments = (): Assignment[] => {
 };
 
 const saveAssignments = (list: Assignment[]) => {
-  try { localStorage.setItem(ASS_KEY, JSON.stringify(list)); } catch {}
+  try { localStorage.setItem(ASS_KEY, JSON.stringify(list)); } catch { /* ignore localStorage write errors */ }
 };
 
 export const createAssignment = (data: Omit<Assignment, 'id' | 'createdAt'>): Assignment => {
@@ -115,7 +115,7 @@ export const loadSubmissions = (): Submission[] => {
 };
 
 const saveSubmissions = (list: Submission[]) => {
-  try { localStorage.setItem(SUB_KEY, JSON.stringify(list)); } catch {}
+  try { localStorage.setItem(SUB_KEY, JSON.stringify(list)); } catch { /* ignore localStorage write errors */ }
 };
 
 export const submitWork = (data: Omit<Submission, 'id' | 'submittedAt'>): Submission => {

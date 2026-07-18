@@ -20,7 +20,8 @@ export type GameProgressId =
   | 'maze'
   | 'snake'
   | 'bug-catcher'
-  | 'bug';
+  | 'bug'
+  | 'quick-answer';
 
 type StudentLike = {
   id: string;
@@ -75,6 +76,11 @@ const middleBinaryUnit = (classroom: string): TargetUnit => ({
   unitNo: classroom === 'ม.2' ? 3 : classroom === 'ม.3' ? 2 : 1,
 });
 
+const middleDesignUnit = (classroom: string): TargetUnit => ({
+  gradeId: `m${classroom.replace('ม.', '')}-design`,
+  unitNo: 1,
+});
+
 const normalizeGameId = (gameId: GameProgressId): GameProgressId => {
   if (gameId === 'maze') return 'coding-maze';
   if (gameId === 'bug') return 'bug-catcher';
@@ -101,6 +107,17 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
 
   if (normalizedGameId === 'binary') {
     return isMiddle ? [middleBinaryUnit(classroom)] : [];
+  }
+
+  if (normalizedGameId === 'quick-answer') {
+    if (isPrimary) {
+      return [
+        classroom === 'ป.1' || classroom === 'ป.2' || classroom === 'ป.3'
+          ? primaryDigitalUnit(classroom)
+          : primaryAlgorithmUnit(classroom),
+      ];
+    }
+    return [middleAlgorithmUnit(classroom), middleDesignUnit(classroom)];
   }
 
   return [];

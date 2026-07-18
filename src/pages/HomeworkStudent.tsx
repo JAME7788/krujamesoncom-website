@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Upload, CheckCircle2, Clock, AlertCircle, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -11,16 +11,15 @@ import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessS
 
 const HomeworkStudent: React.FC = () => {
   const { user } = useAuth();
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selected, setSelected] = useState<Assignment | null>(null);
   const [contentUrl, setContentUrl] = useState('');
   const [contentData, setContentData] = useState('');
   const [comment, setComment] = useState('');
 
-  useEffect(() => {
-    if (!user) return;
-    setAssignments(getAssignmentsForStudent(user.classroom));
-  }, [user]);
+  const assignments = useMemo(
+    () => (user ? getAssignmentsForStudent(user.classroom) : []),
+    [user],
+  );
 
   if (!user) {
     return <div className="container section-padding" style={{ paddingTop: '6rem', textAlign: 'center' }}>

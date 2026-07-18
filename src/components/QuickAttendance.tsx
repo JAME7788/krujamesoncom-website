@@ -29,7 +29,7 @@ const QuickAttendance: React.FC = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const toast = useToast();
 
-  const roster = rosters[classroom] || [];
+  const roster = useMemo(() => rosters[classroom] || [], [classroom, rosters]);
 
   useEffect(() => {
     let cancelled = false;

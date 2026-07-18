@@ -184,6 +184,7 @@ const CodingMaze: React.FC = () => {
       setMessage('🤔 ต้องวางบล็อกก่อนนะ!');
       return;
     }
+    recordGame(solved.filter(Boolean).length);
     setRunning(true);
     setMessage('');
     setPos(level.start);

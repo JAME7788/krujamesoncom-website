@@ -1009,6 +1009,7 @@ export const diagnoseProgress = (
 export const hydrateProgressFromFirebase = async (
   _classroom: string
 ): Promise<{ available: boolean; downloaded: number; error?: string }> => {
+  void _classroom;
   if (!firebaseAvailable()) {
     return { available: false, downloaded: 0, error: 'Firebase is not configured' };
   }

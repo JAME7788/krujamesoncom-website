@@ -33,6 +33,7 @@ const PatternGame = React.lazy(() => import('./pages/games/PatternGame'));
 const CodingMaze = React.lazy(() => import('./pages/games/CodingMaze'));
 const SnakeGame = React.lazy(() => import('./pages/games/SnakeGame'));
 const BugCatcher = React.lazy(() => import('./pages/games/BugCatcher'));
+const QuickAnswerComputing = React.lazy(() => import('./pages/games/QuickAnswerComputing'));
 const Tools = React.lazy(() => import('./pages/Tools'));
 const ParentPortal = React.lazy(() => import('./pages/ParentPortal'));
 const LiveQuizHost = React.lazy(() => import('./pages/LiveQuizHost'));
@@ -79,6 +80,7 @@ function App() {
                   <Route path="/games/coding-maze" element={<LoginPromptOverlay><CodingMaze /></LoginPromptOverlay>} />
                   <Route path="/games/snake" element={<LoginPromptOverlay><SnakeGame /></LoginPromptOverlay>} />
                   <Route path="/games/bug-catcher" element={<LoginPromptOverlay><BugCatcher /></LoginPromptOverlay>} />
+                  <Route path="/games/quick-answer-computing" element={<LoginPromptOverlay><QuickAnswerComputing /></LoginPromptOverlay>} />
                   <Route path="/tools" element={<Tools />} />
                   <Route path="/parent/:studentId" element={<ParentPortal />} />
                   <Route path="/live" element={<LiveQuizPlay />} />

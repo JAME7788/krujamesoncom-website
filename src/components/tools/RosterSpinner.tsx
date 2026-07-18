@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { Volume2, Play, RefreshCw, Sparkles } from 'lucide-react';
 import { loadRoster, loadAllRosters } from '../../services/rosterService';
 import type { StudentInfo } from '../../data/students2569';
@@ -8,6 +8,8 @@ const COLORS = [
   '#51cf66', '#94d82d', '#fcc419', '#ff922b', '#ff8787',
   '#f06595', '#cc5de8', '#845ef7', '#7048e8', '#e8590c'
 ];
+
+const createSpinVelocity = () => 0.3 + Math.random() * 0.25;
 
 const RosterSpinner: React.FC = () => {
   const allRosters = useMemo(() => loadAllRosters(), []);
@@ -36,16 +38,8 @@ const RosterSpinner: React.FC = () => {
     return currentRoster.filter(s => !excludedIds.has(s.studentCode));
   }, [currentRoster, excludedIds]);
 
-  // Redraw wheel whenever roster or selected class changes
-  useEffect(() => {
-    drawWheel();
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [selectedClass, excludedIds, currentRoster]);
-
   // Draw the wheel using Canvas API
-  const drawWheel = () => {
+  const drawWheel = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -114,7 +108,15 @@ const RosterSpinner: React.FC = () => {
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.stroke();
-  };
+  }, [activeRoster]);
+
+  // Redraw wheel whenever roster or selected class changes
+  useEffect(() => {
+    drawWheel();
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [drawWheel]);
 
   // Run the physics spin logic
   const spinTick = () => {
@@ -145,7 +147,7 @@ const RosterSpinner: React.FC = () => {
     isSpinningRef.current = true;
 
     // Set a high initial velocity
-    angularVelocityRef.current = 0.3 + Math.random() * 0.25; 
+    angularVelocityRef.current = createSpinVelocity();
     
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
     animationRef.current = requestAnimationFrame(spinTick);
