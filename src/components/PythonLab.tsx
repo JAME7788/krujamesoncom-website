@@ -1,10 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Play, RotateCcw, Lightbulb, Blocks, FileCode2, CheckCircle2, Loader2, Trash2 } from 'lucide-react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Play, RotateCcw, Lightbulb, Blocks, FileCode2, CheckCircle2, Loader2 } from 'lucide-react';
 import { PY_CHALLENGES } from '../data/pythonChallenges';
 import type { PyChallenge } from '../data/pythonChallenges';
 import { useAuth } from '../context/AuthContext';
 import { awardBonus } from '../services/progressService';
 import { useToast } from './Toast';
+
+// Blockly workspace — โหลดแบบ lazy (bundle หนัก โหลดเฉพาะตอนเปิดโหมดบล็อก)
+const BlocklyPython = React.lazy(() => import('./BlocklyPython'));
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // window.loadPyodide ถูกประกาศ type ไว้แล้วใน CodingSandbox.tsx (ใช้ร่วมกัน)
@@ -20,19 +23,6 @@ const markSolved = (id: string) => {
   } catch { /* ignore */ }
 };
 
-// บล็อกคำสั่ง — คลิกแล้วแทรกโค้ดลง editor
-const BLOCKS: { label: string; snippet: string; color: string }[] = [
-  { label: 'พิมพ์ข้อความ', snippet: 'print("ข้อความ")', color: '#3b82f6' },
-  { label: 'พิมพ์ตัวแปร', snippet: 'print(x)', color: '#3b82f6' },
-  { label: 'ตัวแปร =', snippet: 'x = 0', color: '#a855f7' },
-  { label: 'บวกค่า', snippet: 'x = x + 1', color: '#a855f7' },
-  { label: 'วนซ้ำ for', snippet: 'for i in range(1, 6):\n    print(i)', color: '#22c55e' },
-  { label: 'เงื่อนไข if', snippet: 'if x > 0:\n    print("มากกว่า 0")', color: '#f59e0b' },
-  { label: 'if / else', snippet: 'if x % 2 == 0:\n    print("คู่")\nelse:\n    print("คี่")', color: '#f59e0b' },
-  { label: 'รับค่า input', snippet: 'name = input("ชื่อ: ")', color: '#ec4899' },
-  { label: 'คอมเมนต์', snippet: '# อธิบายโค้ด', color: '#6b7280' },
-];
-
 const normalize = (s: string) =>
   s.replace(/\r/g, '').split('\n').map((l) => l.trimEnd()).join('\n').trim();
 
@@ -41,6 +31,7 @@ const PythonLab: React.FC = () => {
   const toast = useToast();
   const [challenge, setChallenge] = useState<PyChallenge>(PY_CHALLENGES[0]);
   const [code, setCode] = useState<string>(PY_CHALLENGES[0].starter);
+  const [blocklyCode, setBlocklyCode] = useState<string>('');
   const [mode, setMode] = useState<'editor' | 'blocks'>('editor');
   const [output, setOutput] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'pass' | 'fail'>('idle');
@@ -79,23 +70,19 @@ const PythonLab: React.FC = () => {
     setChallenge(c); setCode(c.starter); setOutput([]); setStatus('idle'); setShowHint(false);
   };
 
-  const insertBlock = (snippet: string) => {
-    const ta = taRef.current;
-    const needNL = code.length > 0 && !code.endsWith('\n');
-    const next = code + (needNL ? '\n' : '') + snippet + '\n';
-    setCode(next);
-    setTimeout(() => { ta?.focus(); ta?.setSelectionRange(next.length, next.length); }, 0);
-  };
+  // แหล่งโค้ดที่จะรัน — โหมดบล็อกใช้โค้ดที่ Blockly สร้าง
+  const activeCode = mode === 'blocks' ? blocklyCode : code;
 
   const run = async () => {
     if (!pyodide) { toast.show('Python ยังโหลดไม่เสร็จ รอสักครู่', 'info'); return; }
+    if (mode === 'blocks' && !blocklyCode.trim()) { toast.show('ลากบล็อกมาต่อกันก่อนนะ', 'info'); return; }
     setRunning(true);
     setStatus('idle');
     const logs: string[] = [];
     try {
       pyodide.setStdout({ batched: (s: string) => logs.push(s) });
       pyodide.setStderr({ batched: (s: string) => logs.push(`⚠️ ${s}`) });
-      await pyodide.runPythonAsync(code);
+      await pyodide.runPythonAsync(activeCode);
       const got = normalize(logs.join('\n'));
       const want = normalize(challenge.expectedOutput);
       setOutput(logs.length ? logs : ['(ไม่มีผลลัพธ์ — ลองใช้ print())']);
@@ -175,37 +162,43 @@ const PythonLab: React.FC = () => {
         </button>
       </div>
 
-      {/* Block palette */}
+      {/* โหมดบล็อก — ลากบล็อกจริง (Blockly) → สร้าง Python อัตโนมัติ */}
       {mode === 'blocks' && (
-        <div style={{ padding: 12, background: '#f9fafb', borderRadius: 10, border: '1px dashed #d1d5db' }}>
-          <div style={{ fontSize: '0.82rem', color: '#6b7280', marginBottom: 8 }}>คลิกบล็อกเพื่อแทรกโค้ด ↓ (แก้ไขต่อในกล่องได้)</div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {BLOCKS.map((b) => (
-              <button key={b.label} onClick={() => insertBlock(b.snippet)}
-                style={{ padding: '8px 12px', borderRadius: 10, background: 'white', border: `2px solid ${b.color}`, color: b.color, fontWeight: 700, fontSize: '0.85rem', fontFamily: 'inherit', cursor: 'pointer' }}>
-                🧱 {b.label}
-              </button>
-            ))}
-            <button onClick={() => setCode('')} style={{ padding: '8px 12px', borderRadius: 10, background: '#fee2e2', border: '2px solid #ef4444', color: '#dc2626', fontWeight: 700, fontSize: '0.85rem', fontFamily: 'inherit', cursor: 'pointer' }}>
-              <Trash2 size={13} style={{ verticalAlign: 'middle' }} /> ล้างโค้ด
-            </button>
+        <>
+          <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
+            🧱 ลากบล็อกจากกล่องซ้ายมาต่อกัน — โปรแกรมจะแปลงเป็นโค้ด Python ให้อัตโนมัติด้านล่าง
           </div>
-        </div>
+          <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}><Loader2 className="spin" /> กำลังโหลดตัวต่อบล็อก...</div>}>
+            <BlocklyPython onCode={setBlocklyCode} />
+          </Suspense>
+          <div>
+            <strong style={{ fontSize: '0.82rem', color: '#6b7280' }}>🐍 โค้ด Python ที่ได้จากบล็อก:</strong>
+            <pre style={{
+              margin: '4px 0 0', padding: 12, background: '#1e293b', color: '#e2e8f0',
+              borderRadius: 10, minHeight: 60, maxHeight: 180, overflow: 'auto',
+              fontFamily: '"JetBrains Mono", Consolas, monospace', fontSize: '0.85rem', whiteSpace: 'pre-wrap',
+            }}>
+              {blocklyCode.trim() || <span style={{ color: '#64748b' }}>(ยังไม่มีบล็อก — ลากบล็อกมาต่อกัน)</span>}
+            </pre>
+          </div>
+        </>
       )}
 
-      {/* Code editor */}
-      <textarea
-        ref={taRef}
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        spellCheck={false}
-        style={{
-          width: '100%', minHeight: 220, padding: 14,
-          fontFamily: '"JetBrains Mono", Consolas, monospace', fontSize: '0.9rem',
-          background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: 10,
-          resize: 'vertical', boxSizing: 'border-box', lineHeight: 1.6,
-        }}
-      />
+      {/* Text Editor — พิมพ์โค้ดเอง */}
+      {mode === 'editor' && (
+        <textarea
+          ref={taRef}
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          spellCheck={false}
+          style={{
+            width: '100%', minHeight: 220, padding: 14,
+            fontFamily: '"JetBrains Mono", Consolas, monospace', fontSize: '0.9rem',
+            background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: 10,
+            resize: 'vertical', boxSizing: 'border-box', lineHeight: 1.6,
+          }}
+        />
+      )}
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
