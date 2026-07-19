@@ -21,7 +21,10 @@ export type GameProgressId =
   | 'snake'
   | 'bug-catcher'
   | 'bug'
-  | 'quick-answer';
+  | 'quick-answer'
+  | 'safety'
+  | 'step-sort'
+  | 'device-match';
 
 type StudentLike = {
   id: string;
@@ -107,6 +110,18 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
 
   if (normalizedGameId === 'binary') {
     return isMiddle ? [middleBinaryUnit(classroom)] : [];
+  }
+
+  // เกมเสริมย้ำเนื้อหา (เด็กเล็ก)
+  if (normalizedGameId === 'device-match') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  if (normalizedGameId === 'step-sort') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  if (normalizedGameId === 'safety') {
+    // ความปลอดภัยดิจิทัล — ป.ใช้หน่วยดิจิทัลพื้นฐาน, ม.ใช้หน่วยที่มี ม.1/4
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleCodingUnit(classroom)];
   }
 
   if (normalizedGameId === 'quick-answer') {

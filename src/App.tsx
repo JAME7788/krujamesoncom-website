@@ -34,6 +34,9 @@ const CodingMaze = React.lazy(() => import('./pages/games/CodingMaze'));
 const SnakeGame = React.lazy(() => import('./pages/games/SnakeGame'));
 const BugCatcher = React.lazy(() => import('./pages/games/BugCatcher'));
 const QuickAnswerComputing = React.lazy(() => import('./pages/games/QuickAnswerComputing'));
+const DeviceMatch = React.lazy(() => import('./pages/games/DeviceMatch'));
+const StepSort = React.lazy(() => import('./pages/games/StepSort'));
+const SafetyGame = React.lazy(() => import('./pages/games/SafetyGame'));
 const Tools = React.lazy(() => import('./pages/Tools'));
 const ParentPortal = React.lazy(() => import('./pages/ParentPortal'));
 const LiveQuizHost = React.lazy(() => import('./pages/LiveQuizHost'));
@@ -81,6 +84,9 @@ function App() {
                   <Route path="/games/snake" element={<LoginPromptOverlay><SnakeGame /></LoginPromptOverlay>} />
                   <Route path="/games/bug-catcher" element={<LoginPromptOverlay><BugCatcher /></LoginPromptOverlay>} />
                   <Route path="/games/quick-answer-computing" element={<LoginPromptOverlay><QuickAnswerComputing /></LoginPromptOverlay>} />
+                  <Route path="/games/device-match" element={<LoginPromptOverlay><DeviceMatch /></LoginPromptOverlay>} />
+                  <Route path="/games/step-sort" element={<LoginPromptOverlay><StepSort /></LoginPromptOverlay>} />
+                  <Route path="/games/safety" element={<LoginPromptOverlay><SafetyGame /></LoginPromptOverlay>} />
                   <Route path="/tools" element={<Tools />} />
                   <Route path="/parent/:studentId" element={<ParentPortal />} />
                   <Route path="/live" element={<LiveQuizPlay />} />

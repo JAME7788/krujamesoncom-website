@@ -150,6 +150,36 @@ const games: GameInfo[] = [
     color: '#dc2626',
     path: '/games/bug-catcher',
   },
+  {
+    id: 'device-match',
+    title: '🔌 จับคู่อุปกรณ์คอมพิวเตอร์',
+    desc: 'ดูรูปอุปกรณ์แล้วเลือกชื่อให้ถูก — เมาส์ แป้นพิมพ์ จอ ฯลฯ ย้ำเนื้อหาบทเรียน',
+    emoji: '🔌',
+    level: 'ป.1-3',
+    skill: 'รู้จักอุปกรณ์',
+    color: '#0ea5e9',
+    path: '/games/device-match',
+  },
+  {
+    id: 'step-sort',
+    title: '🔢 เรียงขั้นตอนด้วยรูป',
+    desc: 'กดการ์ดให้ถูกลำดับก่อน-หลัง (แปรงฟัน ล้างมือ เปิดคอม) — พื้นฐานอัลกอริทึม',
+    emoji: '🔢',
+    level: 'ป.1-3',
+    skill: 'คิดเป็นขั้นตอน',
+    color: '#f97316',
+    path: '/games/step-sort',
+  },
+  {
+    id: 'safety',
+    title: '🛡️ ปลอดภัยหรือไม่ปลอดภัย?',
+    desc: 'อ่านสถานการณ์ออนไลน์แล้วเลือกปลอดภัย/ไม่ปลอดภัย — รู้เท่าทันภัยดิจิทัล',
+    emoji: '🛡️',
+    level: 'ป.4-ม.3',
+    skill: 'ความปลอดภัยดิจิทัล',
+    color: '#16a34a',
+    path: '/games/safety',
+  },
 ];
 
 const Games: React.FC = () => {
