@@ -6,6 +6,7 @@ import {
 import type { ResearchMeta } from '../services/researchService';
 import { completeText } from '../services/aiTutorService';
 import { fetchAllProgressFromFirebase } from '../services/progressService';
+import { fetchAllSurveys, computeSurveyStats } from '../services/satisfactionSurveyService';
 import { loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
 
@@ -31,17 +32,20 @@ const ResearchGenerator: React.FC = () => {
   const generate = async () => {
     setGenBusy(true);
     try {
-      // ดึง progress ทุกคนจาก Firebase ก่อน เพื่อให้ข้อมูล engagement เกมมิฟิเคชันครบ
+      // ดึง progress + แบบสอบถามทุกคนจาก Firebase ก่อน
       await fetchAllProgressFromFirebase();
+      const surveys = await fetchAllSurveys();
+      const surveyStats = computeSurveyStats(surveys, classroom);
       const data = computeResearchData(classroom);
       setDataN(data.n);
       if (data.n === 0 && data.activeStudents === 0) {
         toast.show('ยังไม่มีคะแนน/การใช้งานในระบบสำหรับชั้นที่เลือก', 'info');
       }
       const label = classroom === 'all' ? 'ทุกชั้น (ป.1-ม.3)' : classroom;
-      const document = buildResearchDocument({ ...meta, classroomLabel: label }, data);
+      const document = buildResearchDocument({ ...meta, classroomLabel: label }, data, surveyStats);
       setDoc(document);
-      toast.show(`สร้างเอกสารแล้ว — ผลสัมฤทธิ์ ${data.n} คน · เข้าใช้ระบบ ${data.activeStudents} คน`, 'success');
+      const satNote = surveyStats.n > 0 ? ` · แบบสอบถาม ${surveyStats.n} คน` : '';
+      toast.show(`สร้างเอกสารแล้ว — ผลสัมฤทธิ์ ${data.n} คน · เข้าใช้ ${data.activeStudents} คน${satNote}`, 'success');
     } finally {
       setGenBusy(false);
     }

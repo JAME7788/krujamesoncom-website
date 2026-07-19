@@ -8,6 +8,8 @@ import {
 import type { Subject } from './gradeService';
 import { loadAllRosters } from './rosterService';
 import { getAllCachedProgress, computeGamification } from './progressService';
+import { SURVEY_QUESTIONS } from './satisfactionSurveyService';
+import type { SurveyStats } from './satisfactionSurveyService';
 
 export interface ResearchMeta {
   title: string;
@@ -40,6 +42,14 @@ export interface ResearchData {
   engagementRate: number;       // ร้อยละ active / ประชากรทั้งหมด
   // ===== ผลสัมฤทธิ์รายจุดประสงค์การเรียนรู้ (ต่อตัวชี้วัด) =====
   objectives: ObjectiveResult[];
+  // ===== ประสิทธิภาพ E1/E2 =====
+  e1: number;                   // ประสิทธิภาพระหว่างเรียน (คะแนนเก็บ %)
+  e2: number;                   // ประสิทธิภาพหลังเรียน (คะแนนสอบ %)
+  // ===== Pre-test / Post-test (จากประวัติการทำแบบทดสอบ) =====
+  preMean: number;              // % ครั้งแรกที่ทำ (ก่อนเรียนรู้)
+  postMean: number;             // % ครั้งที่ดีที่สุด (หลังเรียนรู้)
+  learningGain: number;         // post - pre
+  prePostN: number;             // จำนวนคู่ที่คำนวณได้
 }
 
 export interface ObjectiveResult {
@@ -71,6 +81,7 @@ export const computeResearchData = (classroom: string): ResearchData => {
   const totals: number[] = [];
   const grades: string[] = [];
   const ks: number[] = []; const ps: number[] = []; const as: number[] = []; const exams: number[] = [];
+  const collecteds: number[] = [];
 
   // สะสมคะแนนรายตัวชี้วัด (จุดประสงค์): key = classroom|subject|indicatorId
   const objAcc = new Map<string, { classroom: string; code: string; title: string; sum: number; count: number; max: number }>();
@@ -88,6 +99,7 @@ export const computeResearchData = (classroom: string): ResearchData => {
           totals.push(b.total);
           grades.push(computeGrade(g, c, subj));
           ks.push(b.k); ps.push(b.p); as.push(b.a); exams.push(b.exam);
+          collecteds.push(b.collected);
           // สะสมรายตัวชี้วัดจาก contributions
           b.contributions.forEach((con) => {
             const key = `${c}|${subj}|${con.indicatorId}`;
@@ -150,6 +162,29 @@ export const computeResearchData = (classroom: string): ResearchData => {
   const activeStudents = inClass.length;
   const totalPopulation = classroomsUsed.reduce((s, c) => s + (rosters[c]?.length || 0), 0);
 
+  // ===== ประสิทธิภาพ E1/E2 (E1 = คะแนนเก็บ/70, E2 = คะแนนสอบ/30) =====
+  const e1 = collecteds.length ? (mean(collecteds) / 70) * 100 : 0;
+  const e2 = exams.length ? (mean(exams) / 30) * 100 : 0;
+
+  // ===== Pre/Post จากประวัติแบบทดสอบ: ครั้งแรก(pre) เทียบครั้งดีสุด(post) ต่อ unit =====
+  const pres: number[] = []; const posts: number[] = [];
+  inClass.forEach((p) => {
+    const byUnit = new Map<string, { first: number; best: number; firstTs: number }>();
+    (p.attempts || []).forEach((att) => {
+      const key = `${att.gradeId}_${att.unitNo}`;
+      const cur = byUnit.get(key);
+      if (!cur) {
+        byUnit.set(key, { first: att.percentage, best: att.percentage, firstTs: att.timestamp });
+      } else {
+        if (att.timestamp < cur.firstTs) { cur.first = att.percentage; cur.firstTs = att.timestamp; }
+        if (att.percentage > cur.best) cur.best = att.percentage;
+      }
+    });
+    byUnit.forEach((u) => { pres.push(u.first); posts.push(u.best); });
+  });
+  const preMean = pres.length ? mean(pres) : 0;
+  const postMean = posts.length ? mean(posts) : 0;
+
   return {
     n,
     classroomsUsed,
@@ -170,6 +205,12 @@ export const computeResearchData = (classroom: string): ResearchData => {
     avgSlides: round2(mean(slides)),
     engagementRate: totalPopulation ? round2((activeStudents / totalPopulation) * 100) : 0,
     objectives,
+    e1: round2(e1),
+    e2: round2(e2),
+    preMean: round2(preMean),
+    postMean: round2(postMean),
+    learningGain: round2(postMean - preMean),
+    prePostN: pres.length,
   };
 };
 
@@ -182,10 +223,15 @@ const satisfactionLevel = (m?: number): string => {
   return 'น้อยที่สุด';
 };
 
-/** ประกอบเอกสารงานวิจัยฉบับเต็ม (ภาษาไทย) จาก meta + data จริง */
-export const buildResearchDocument = (meta: ResearchMeta, d: ResearchData): string => {
-  const sat = meta.satisfactionMean;
+/** ประกอบเอกสารงานวิจัยฉบับเต็ม (ภาษาไทย) จาก meta + data จริง + แบบสอบถามจริง (ถ้ามี) */
+export const buildResearchDocument = (meta: ResearchMeta, d: ResearchData, survey?: SurveyStats): string => {
+  // ถ้ามีแบบสอบถามจริงในระบบ ใช้ค่านั้น มิฉะนั้นใช้ค่าที่ครูกรอก
+  const sat = (survey && survey.n > 0) ? survey.mean : meta.satisfactionMean;
   const satStr = sat !== undefined ? `${sat.toFixed(2)}` : '—';
+  const satSource = (survey && survey.n > 0) ? `จากแบบสอบถามจริง ${survey.n} คน` : '(ครูกรอก)';
+  const perQLines = (survey && survey.n > 0)
+    ? SURVEY_QUESTIONS.map((q, i) => `   ${i + 1}) ${q} — เฉลี่ย ${survey.perQuestion[i].toFixed(2)}`).join('\n')
+    : '';
   const gradeLines = Object.keys(d.gradeDist)
     .sort((a, b) => parseFloat(b) - parseFloat(a))
     .map((g) => `เกรด ${g}: ${d.gradeDist[g]} คน`)
@@ -211,7 +257,7 @@ ${meta.title}
 
 การวิจัยครั้งนี้มีวัตถุประสงค์เพื่อ (1) พัฒนาการเรียนการสอนผ่านเว็บเทคโนโลยีร่วมกับแนวคิดเกมมิฟิเคชัน (Web-Based Instruction with Gamification) ในรายวิชาวิทยาการคำนวณสำหรับนักเรียน${meta.classroomLabel} ${meta.school} และ (2) ศึกษาผลจากการใช้การเรียนการสอนดังกล่าว ทั้งด้านผลสัมฤทธิ์ทางการเรียนและการมีส่วนร่วม (Engagement) ของผู้เรียน ประชากรของการวิจัยคือนักเรียนที่เข้าใช้ระบบจำนวน ${d.activeStudents} คน เครื่องมือวิจัยได้แก่ เว็บไซต์เรียนการสอนที่พัฒนาด้วยกระบวนการ ADDIE Model ซึ่งบูรณาการกลไกเกมมิฟิเคชัน (คะแนนประสบการณ์ XP, ระดับ Level, ยศ, ต่อเนื่องรายวัน Streak, เหรียญตรา และกระดานอันดับ) แบบทดสอบวัดผลสัมฤทธิ์ (K/P/A ต่อตัวชี้วัด + สอบปลายภาค) และแบบสอบถามความพึงพอใจ
 
-ผลการวิจัยพบว่า นักเรียนมีผลสัมฤทธิ์ทางการเรียนโดยรวมเฉลี่ย ${d.achievementMean25.toFixed(2)} จากคะแนนเต็ม 25 (คิดเป็น ${d.achievementMean100.toFixed(2)} จาก 100, S.D. = ${d.achievementSD.toFixed(2)}) อยู่ในระดับ "${d.achievementLevel}" มีอัตราการผ่านเกณฑ์ร้อยละ ${d.passRate.toFixed(1)} ด้านการมีส่วนร่วม นักเรียนมีคะแนนประสบการณ์ (XP) เฉลี่ย ${d.avgXp.toFixed(0)} เลื่อนระดับเฉลี่ย Level ${d.avgLevel.toFixed(1)} (สูงสุด Level ${d.maxLevel}) เข้าเรียนต่อเนื่องเฉลี่ย ${d.avgStreak.toFixed(1)} วัน ทำกิจกรรม/สื่อเฉลี่ย ${d.avgActivities.toFixed(1)} รายการต่อคน คิดเป็นอัตราการเข้าใช้ระบบ (Engagement Rate) ร้อยละ ${d.engagementRate.toFixed(1)} ด้านความพึงพอใจอยู่ในระดับ "${satisfactionLevel(sat)}" (ค่าเฉลี่ย ${satStr}) โดยเห็นว่ากลไกเกมมิฟิเคชันช่วยเพิ่มแรงจูงใจและความสนุกในการเรียน
+ผลการวิจัยพบว่า บทเรียนมีประสิทธิภาพ E1/E2 = ${d.e1.toFixed(2)}/${d.e2.toFixed(2)} นักเรียนมีผลสัมฤทธิ์ทางการเรียนโดยรวมเฉลี่ย ${d.achievementMean25.toFixed(2)} จากคะแนนเต็ม 25 (คิดเป็น ${d.achievementMean100.toFixed(2)} จาก 100, S.D. = ${d.achievementSD.toFixed(2)}) อยู่ในระดับ "${d.achievementLevel}" มีอัตราการผ่านเกณฑ์ร้อยละ ${d.passRate.toFixed(1)} และมีผลการเรียนรู้ที่เพิ่มขึ้นจากก่อนเรียน (Learning Gain) ร้อยละ ${d.learningGain.toFixed(2)} ด้านการมีส่วนร่วม นักเรียนมีคะแนนประสบการณ์ (XP) เฉลี่ย ${d.avgXp.toFixed(0)} เลื่อนระดับเฉลี่ย Level ${d.avgLevel.toFixed(1)} (สูงสุด Level ${d.maxLevel}) เข้าเรียนต่อเนื่องเฉลี่ย ${d.avgStreak.toFixed(1)} วัน ทำกิจกรรม/สื่อเฉลี่ย ${d.avgActivities.toFixed(1)} รายการต่อคน คิดเป็นอัตราการเข้าใช้ระบบ (Engagement Rate) ร้อยละ ${d.engagementRate.toFixed(1)} ด้านความพึงพอใจอยู่ในระดับ "${satisfactionLevel(sat)}" (ค่าเฉลี่ย ${satStr}) โดยเห็นว่ากลไกเกมมิฟิเคชันช่วยเพิ่มแรงจูงใจและความสนุกในการเรียน
 
 คำสำคัญ: การเรียนการสอนผ่านเว็บ (WBI), เกมมิฟิเคชัน (Gamification), วิทยาการคำนวณ, ADDIE Model, ผลสัมฤทธิ์ทางการเรียน, การมีส่วนร่วม
 
@@ -288,8 +334,19 @@ ${objLines}
 - กิจกรรม/สื่อที่ใช้เฉลี่ย: ${d.avgActivities.toFixed(1)} รายการ/คน
 - ทำแบบทดสอบเฉลี่ย: ${d.avgQuizzes.toFixed(1)} ครั้ง/คน • อ่านสไลด์เฉลี่ย: ${d.avgSlides.toFixed(1)} หน้า/คน
 
-4.3 ความพึงพอใจของนักเรียน
-ความพึงพอใจโดยรวมอยู่ในระดับ "${satisfactionLevel(sat)}" (ค่าเฉลี่ย ${satStr})
+4.3 ประสิทธิภาพของบทเรียน (E1/E2)
+- E1 (ประสิทธิภาพระหว่างเรียน — คะแนนเก็บ): ร้อยละ ${d.e1.toFixed(2)}
+- E2 (ประสิทธิภาพหลังเรียน — คะแนนสอบ): ร้อยละ ${d.e2.toFixed(2)}
+- สรุปประสิทธิภาพ E1/E2 = ${d.e1.toFixed(2)}/${d.e2.toFixed(2)} ${(d.e1 >= 80 && d.e2 >= 80) ? '(ผ่านเกณฑ์มาตรฐาน 80/80)' : '(เทียบเกณฑ์มาตรฐาน 80/80)'}
+
+4.4 ผลการเปรียบเทียบก่อน-หลังเรียน (Pre-test / Post-test)
+คำนวณจากประวัติการทำแบบทดสอบ (ครั้งแรก = ก่อนเรียนรู้, ครั้งดีที่สุด = หลังเรียนรู้) จำนวน ${d.prePostN} คู่คะแนน
+- คะแนนเฉลี่ยก่อนเรียน (Pre): ร้อยละ ${d.preMean.toFixed(2)}
+- คะแนนเฉลี่ยหลังเรียน (Post): ร้อยละ ${d.postMean.toFixed(2)}
+- ผลการเรียนรู้ที่เพิ่มขึ้น (Learning Gain): ร้อยละ ${d.learningGain.toFixed(2)} ${d.learningGain > 0 ? '(สูงขึ้น)' : ''}
+
+4.5 ความพึงพอใจของนักเรียน ${satSource}
+ความพึงพอใจโดยรวมอยู่ในระดับ "${satisfactionLevel(sat)}" (ค่าเฉลี่ย ${satStr})${perQLines ? '\nรายข้อ:\n' + perQLines : ''}
 
 ──────────────────────────────────────────
 บทที่ 5 สรุป อภิปรายผล และข้อเสนอแนะ

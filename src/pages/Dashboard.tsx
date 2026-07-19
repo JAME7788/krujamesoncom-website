@@ -25,6 +25,7 @@ import MyGradeCard from '../components/MyGradeCard';
 import GamificationCard from '../components/GamificationCard';
 import AchievementShowcase from '../components/AchievementShowcase';
 import DailyQuestionWidget from '../components/DailyQuestionWidget';
+import SatisfactionSurvey from '../components/SatisfactionSurvey';
 import { getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
 import { loadSchedule, dayNames, minutesOf, fetchScheduleFromFirebase } from '../data/schedule';
 import type { ClassSlot } from '../data/schedule';
@@ -35,6 +36,7 @@ const activityIcon: Record<ActivityType, React.ReactNode> = {
   video: <PlayCircle size={16} />,
   fun: <Gamepad2 size={16} />,
   article: <BookOpen size={16} />,
+  practice: <CheckCircle size={16} />,
   quiz: <Award size={16} />,
 };
 
@@ -43,6 +45,7 @@ const activityLabel: Record<ActivityType, string> = {
   video: 'ดูวิดีโอ',
   fun: 'เล่นกิจกรรม',
   article: 'อ่านบทความ',
+  practice: 'ทำกิจกรรมปฏิบัติ',
   quiz: 'ทำแบบทดสอบ',
 };
 
@@ -328,6 +331,9 @@ const Dashboard: React.FC = () => {
 
       {/* Daily Question — ครูตั้งคำถามวัน */}
       <DailyQuestionWidget studentId={user.id} />
+
+      {/* แบบสอบถามความพึงพอใจ (ตอบครั้งเดียว) */}
+      <SatisfactionSurvey studentId={user.id} classroom={user.classroom} />
 
       {/* XP / Level / Streak — Gamification */}
       <GamificationCard studentId={user.id} />

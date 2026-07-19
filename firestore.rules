@@ -107,6 +107,12 @@ service cloud.firestore {
       allow write: if baseWrite(10) && strOk('question', 1000);
     }
 
+    // ====== Satisfaction Surveys (แบบสอบถามความพึงพอใจ) ======
+    match /surveys/{studentId} {
+      allow read: if true;
+      allow write: if baseWrite(10);
+    }
+
     // ====== Live Quiz Rooms ======
     match /liveQuizzes/{code} {
       allow read: if true;
