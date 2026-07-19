@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { BookOpen, Target, ChevronRight, X, ListChecks, Eye, Lock } from 'lucide-react';
+import { BookOpen, Target, ChevronRight, X, ListChecks, Eye, Lock, ClipboardCheck } from 'lucide-react';
 import { grades } from '../data/curriculum';
 import type { Grade, Unit, Indicator } from '../data/curriculum';
 import { useAuth } from '../context/AuthContext';
@@ -193,6 +193,40 @@ const Curriculum: React.FC = () => {
                   💡 <strong>กดที่หน่วยใดก็ได้</strong>เพื่อเข้าเรียนหน่วยนั้นโดยตรง
                 </div>
 
+                {selectedCourse.technologyProfile && (
+                  <div className="modal-section">
+                    <h3><ClipboardCheck size={20} className="text-primary" /> กรอบรายวิชาเทคโนโลยี</h3>
+                    <div className="technology-profile">
+                      <div className="technology-profile-summary">
+                        <span className="tech-hours">เวลาเรียน {selectedCourse.technologyProfile.hours} ชั่วโมง</span>
+                        <p>{selectedCourse.technologyProfile.courseSummary}</p>
+                        <small>อ้างอิงเอกสาร: {selectedCourse.technologyProfile.source}</small>
+                      </div>
+
+                      <div className="technology-profile-grid">
+                        <section>
+                          <h4>เน้นให้เด็กทำได้</h4>
+                          <ul>
+                            {selectedCourse.technologyProfile.focus.map((item, i) => <li key={i}>{item}</li>)}
+                          </ul>
+                        </section>
+                        <section>
+                          <h4>ผลลัพธ์ปลายทาง</h4>
+                          <ul>
+                            {selectedCourse.technologyProfile.learningOutcomes.map((item, i) => <li key={i}>{item}</li>)}
+                          </ul>
+                        </section>
+                        <section>
+                          <h4>หลักฐานการประเมิน</h4>
+                          <ul>
+                            {selectedCourse.technologyProfile.assessmentEvidence.map((item, i) => <li key={i}>{item}</li>)}
+                          </ul>
+                        </section>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Units List — แต่ละหน่วยกดได้ */}
                 <div className="modal-section">
                   <h3><ListChecks size={20} className="text-primary" /> เนื้อหาที่จะได้เรียน ({selectedCourse.units?.length || 0} หน่วย)</h3>
@@ -225,6 +259,11 @@ const Curriculum: React.FC = () => {
                                 ))}
                               </ul>
                             )}
+                            {u.activities?.length ? (
+                              <div className="unit-activity-preview">
+                                <strong>กิจกรรม:</strong> {u.activities.slice(0, 2).join(' • ')}
+                              </div>
+                            ) : null}
                           </div>
                           {locked ? (
                             <Lock size={18} className="unit-lock-icon" />

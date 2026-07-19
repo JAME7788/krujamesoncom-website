@@ -27,6 +27,12 @@ export interface RichSlide {
   callout?: { type: 'tip' | 'warn' | 'fun' | 'quote'; emoji?: string; text: string };
   /** ตัวอย่าง code (สำหรับ programming) */
   code?: { lang?: string; content: string };
+  /** คำอธิบายสำหรับครูและเด็ก ใช้ขยายความโดยไม่ยัดข้อความยาวไว้ใน bullet */
+  teachingNote?: {
+    explain: string;
+    example: string;
+    prompt: string;
+  };
 }
 
 // Unsplash CDN ฟรี (ไม่ต้อง API key)

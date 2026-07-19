@@ -28,6 +28,8 @@ import {
   saveQuizAttempt,
   trackSlideView,
   trackMediaClick,
+  trackPracticeCompletion,
+  fetchStudentProgress,
   getUnitProgress,
 } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
@@ -312,6 +314,98 @@ const makeLessonSlide = (title: string, bullets: string[], note?: SlideTeachingN
   const body = `${title}\n${bullets.slice(0, 3).map((bullet, index) => `${index + 1}. ${cleanSlideBullet(bullet)}`).join('\n')}`;
   if (!note) return body;
   return `${body}\n@@NOTE@@\nEXPLAIN: ${note.explain}\nEXAMPLE: ${note.example}\nPROMPT: ${note.prompt}`;
+};
+
+type ParsedLessonSlide = {
+  title: string;
+  bullets: string[];
+  emoji: string;
+  note?: SlideTeachingNote;
+};
+
+const slideEmoji = (text: string): string => {
+  const map: [RegExp, string][] = [
+    [/ตัวชี้วัด|เป้าหมาย|หน่วยการเรียน/, '🎯'],
+    [/กิจกรรม|ภารกิจ|ลงมือ/, '🛠️'],
+    [/ตรวจ|ทบทวน|คำถาม|เกณฑ์/, '✅'],
+    [/คีย์บอร์ด|แป้น/, '⌨️'],
+    [/เมาส์|Mouse/i, '🖱️'],
+    [/อันตราย|คำเตือน|ปลอดภัย/, '🛡️'],
+    [/ซอฟต์แวร์|โปรแกรม|โค้ด|Coding/i, '💻'],
+    [/Arduino|ไมโครคอนโทรลเลอร์|บอร์ด|วงจร|LED|เซนเซอร์/i, '🔌'],
+    [/ผังงาน|Flowchart|ลำดับ/i, '🔀'],
+    [/ข้อมูล|Data|กราฟ|แผนภูมิ/i, '📊'],
+    [/ปัญหา|Problem/i, '🧩'],
+    [/คำสำคัญ|ศัพท์/, '🔤'],
+    [/สรุป|สาระสำคัญ|แนวคิด|คิด/i, '💡'],
+    [/เกม|Game/i, '🎮'],
+  ];
+  return map.find(([pattern]) => pattern.test(text))?.[1] || '✨';
+};
+
+const parseLessonSlide = (text: string): ParsedLessonSlide => {
+  const [slideText, noteText] = text.trim().split('\n@@NOTE@@\n');
+  const raw = slideText.trim();
+  const note = noteText ? {
+    explain: noteText.match(/EXPLAIN:\s*([\s\S]*?)(?=\nEXAMPLE:|\nPROMPT:|$)/)?.[1]?.trim() || '',
+    example: noteText.match(/EXAMPLE:\s*([\s\S]*?)(?=\nPROMPT:|$)/)?.[1]?.trim() || '',
+    prompt: noteText.match(/PROMPT:\s*([\s\S]*)/)?.[1]?.trim() || '',
+  } : undefined;
+  const lines = raw.split('\n').map((line) => line.trim()).filter(Boolean);
+  const title = lines[0] || 'เนื้อหาบทเรียน';
+  const body = lines.slice(1).join(' ');
+  const numbered = body
+    .split(/(?:^|\s)\d+[.)]\s/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 2);
+  const bullets = numbered.length
+    ? numbered
+    : body
+      ? [body]
+      : [];
+  return { title, bullets, emoji: slideEmoji(`${title} ${body}`), note };
+};
+
+const generatedSlideThemes: NonNullable<RichSlide['theme']>[] = [
+  'blue', 'green', 'orange', 'yellow', 'pink', 'blue', 'green',
+];
+
+const lessonSlideToRichSlide = (text: string, index: number): RichSlide => {
+  const parsed = parseLessonSlide(text);
+  const bulletEmoji = ['1️⃣', '2️⃣', '3️⃣'];
+  return {
+    title: parsed.title,
+    emoji: parsed.emoji,
+    theme: generatedSlideThemes[index % generatedSlideThemes.length],
+    layout: 'standard',
+    bullets: parsed.bullets.map((bullet, bulletIndex) => ({
+      emoji: bulletEmoji[bulletIndex] || '•',
+      text: bullet,
+    })),
+    teachingNote: parsed.note,
+  };
+};
+
+const richSlideKey = (slide: RichSlide) => slide.title
+  .replace(/[^\u0E00-\u0E7Fa-zA-Z0-9]+/g, '')
+  .toLocaleLowerCase();
+
+const mergeRichSlideSets = (...sets: RichSlide[][]): RichSlide[] => {
+  const seen = new Set<string>();
+  return sets.flat().filter((slide) => {
+    const key = richSlideKey(slide);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const getVisibleSlideIndexes = (total: number, current: number, maxVisible = 15): number[] => {
+  const visible = Math.min(total, maxVisible);
+  const start = total <= visible
+    ? 0
+    : Math.min(Math.max(current - Math.floor(visible / 2), 0), total - visible);
+  return Array.from({ length: visible }, (_, index) => start + index);
 };
 
 type LessonTheme = 'ai' | 'data' | 'coding' | 'safety' | 'file' | 'internet' | 'problem' | 'default';
@@ -614,6 +708,18 @@ const buildIndicatorSlides = (grade: Grade, unit: Unit, notes: LessonNotes): str
     ...(notes.vocabulary || []),
     ...getThemeVocabulary(theme),
   ]).slice(0, 3);
+  const evidenceItems = uniqueCleanItems([
+    ...(grade.technologyProfile?.assessmentEvidence || []),
+    activityItems[0] ? `ผลงานจากกิจกรรม: ${activityItems[0]}` : undefined,
+    'คำตอบแบบทดสอบท้ายหน่วยและคำอธิบายเหตุผลของนักเรียน',
+  ]).slice(0, 3);
+  const alignmentItems = uniqueCleanItems([
+    indicatorLabels[0]
+      ? `เป้าหมาย: ${indicatorLabels[0]}`
+      : `เป้าหมาย: เข้าใจและนำเรื่อง "${unit.title}" ไปใช้ได้`,
+    `เรียนและฝึก: ${topics[0] || unit.title} ผ่านกิจกรรม ${activityItems[0] || 'ฝึกปฏิบัติตามขั้นตอน'}`,
+    `หลักฐานความสำเร็จ: ${evidenceItems[0] || 'ผลงาน คำอธิบาย และผลแบบทดสอบของนักเรียน'}`,
+  ]).slice(0, 3);
 
   const fastTrackItems = uniqueCleanItems([
     topics[0] ? `จำคำสำคัญของเรื่องนี้ให้ได้ก่อน: ${topics[0]}` : `จำชื่อเรื่องให้ได้ก่อน: ${unit.title}`,
@@ -673,6 +779,11 @@ const buildIndicatorSlides = (grade: Grade, unit: Unit, notes: LessonNotes): str
       explain: `เป้าหมายของบทเรียนควรจับต้องได้สำหรับเด็กระดับ${tone.label} จึงควรให้เด็กได้พูด คิด ทำ และตรวจงานของตนเอง ไม่ใช่เพียงอ่านเนื้อหาบนสไลด์`,
       example: tone.evidence,
       prompt: 'ถ้าครูให้เลือก 1 ผลงานเพื่อแสดงความเข้าใจ นักเรียนจะเลือกทำอะไร',
+    }),
+    makeLessonSlide('จากตัวชี้วัดสู่การลงมือทำ', alignmentItems, {
+      explain: 'หน้านี้เชื่อมทุกส่วนของบทเรียนเข้าด้วยกัน เด็กจะเห็นว่าเรียนเรื่องใด ต้องลงมือทำอะไร และต้องมีหลักฐานแบบใดจึงถือว่าเรียนสำเร็จ ครูใช้หน้านี้กำกับกิจกรรมและการประเมินได้ตลอดคาบ',
+      example: `เมื่อเรียนเรื่อง "${unit.title}" นักเรียนต้องทำกิจกรรมจริง เก็บผลงานหรือคำตอบ แล้วใช้ตัวชี้วัดตรวจว่าผลงานแสดงความเข้าใจครบหรือยัง`,
+      prompt: 'กิจกรรมและหลักฐานข้อใดช่วยพิสูจน์ตัวชี้วัดของหน่วยนี้ได้ชัดที่สุด เพราะอะไร',
     }),
     makeLessonSlide('สาระสำคัญของบทเรียน', conceptItems, {
       explain: 'สาระสำคัญคือใจความหลักที่ผู้เรียนควรเข้าใจก่อนลงรายละเอียด สไลด์นี้ใช้ภาษาทางการขึ้น แต่ยังคงสั้นและชัดเจน เพื่อให้นักเรียนอ่านเองได้และครูใช้เป็นแกนในการอธิบายต่อ',
@@ -858,6 +969,15 @@ const buildIndicatorSlides = (grade: Grade, unit: Unit, notes: LessonNotes): str
   }
 
   slides.push(
+    makeLessonSlide('หลักฐานที่ครูและนักเรียนจะตรวจ', evidenceItems.length ? evidenceItems : [
+      'คำอธิบายแนวคิดด้วยภาษาของตนเอง',
+      'ผลงานจากการลงมือทำที่ตรวจสอบและปรับปรุงแล้ว',
+      'ผลแบบทดสอบและการสะท้อนสิ่งที่ได้เรียนรู้',
+    ], {
+      explain: 'หลักฐานการเรียนรู้ช่วยให้การให้คะแนนตรงกับสิ่งที่เด็กได้เรียนจริง ควรดูทั้งคำตอบ ความสามารถในการลงมือทำ และความรับผิดชอบระหว่างทำกิจกรรม ไม่ใช้คะแนนแบบทดสอบเพียงอย่างเดียว',
+      example: evidenceItems[0] || `เก็บภาพผลงานหรือคำตอบจากกิจกรรมเรื่อง "${unit.title}" แล้วให้นักเรียนอธิบายว่าทำอย่างไรและแก้ไขจุดใด`,
+      prompt: 'ถ้าต้องเลือกหลักฐานเพียงหนึ่งชิ้น นักเรียนจะเลือกชิ้นใดเพื่อแสดงว่าเข้าใจบทเรียนมากที่สุด',
+    }),
     makeLessonSlide('กิจกรรมฝึกปฏิบัติ', activityItems.length ? activityItems : [
       'อ่านหัวข้อสำคัญ แล้วเขียนสรุปด้วยภาษาของตนเอง',
       'ทำกิจกรรมหรือเกมที่เกี่ยวข้องกับบทเรียน',
@@ -1076,6 +1196,8 @@ const UnitDetail: React.FC = () => {
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [attempts, setAttempts] = useState(0);
+  const [completedPractices, setCompletedPractices] = useState<string[]>([]);
+  const [savingPractice, setSavingPractice] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [activeTab, setActiveTab] = useState('overview');
   const [quizIdx, setQuizIdx] = useState(0);
@@ -1118,17 +1240,51 @@ const UnitDetail: React.FC = () => {
     syncActiveUserGrades();
   }, [getActiveIds, gradeId, syncActiveUserGrades, unitNumber, user]);
 
+  const completePracticeActivity = React.useCallback(async (activity: string) => {
+    if (!user || !gradeId || user.id === 'admin_teacher_account') {
+      toast.show('นักเรียนต้องเข้าสู่ระบบก่อนจึงจะบันทึกกิจกรรมได้', 'info');
+      return;
+    }
+    if (completedPractices.includes(activity)) return;
+
+    setSavingPractice(activity);
+    try {
+      const saved = await Promise.all(
+        getActiveIds().map((id) => trackPracticeCompletion(id, gradeId, unitNumber, activity)),
+      );
+      if (!saved.every(Boolean)) {
+        toast.show('ยังบันทึกกิจกรรมขึ้นฐานข้อมูลไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วกดอีกครั้ง', 'error');
+        return;
+      }
+      setCompletedPractices((current) => current.includes(activity) ? current : [...current, activity]);
+      syncActiveUserGrades();
+      toast.show('บันทึกกิจกรรมแล้ว ระบบนำผลไปคำนวณทักษะ P ให้เรียบร้อย', 'success');
+    } catch (error) {
+      console.warn('practice progress sync failed', error);
+      toast.show('บันทึกกิจกรรมไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', 'error');
+    } finally {
+      setSavingPractice(null);
+    }
+  }, [completedPractices, getActiveIds, gradeId, syncActiveUserGrades, toast, unitNumber, user]);
+
   // Reset states when changing unit + load saved attempt count
   useEffect(() => {
+    let alive = true;
     const timer = setTimeout(() => {
       setSlideIdx(0);
       setQuizAnswers({});
       setQuizSubmitted(false);
       setQuizIdx(0);
       setActiveTab('overview');
+      setCompletedPractices([]);
+      setSavingPractice(null);
       if (user && gradeId) {
-        const u = getUnitProgress(user.id, gradeId, unitNumber);
-        setAttempts(u.quizAttempts || 0);
+        void fetchStudentProgress(user.id).then(() => {
+          if (!alive) return;
+          const u = getUnitProgress(user.id, gradeId, unitNumber);
+          setAttempts(u.quizAttempts || 0);
+          setCompletedPractices(u.practiceCompleted || []);
+        });
       } else {
         setAttempts(0);
       }
@@ -1141,7 +1297,10 @@ const UnitDetail: React.FC = () => {
         setCustomSlides(null);
       }
     }, 0);
-    return () => clearTimeout(timer);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
   }, [gradeId, unitNo, user, unitNumber]);
 
   useEffect(() => {
@@ -1295,22 +1454,35 @@ const UnitDetail: React.FC = () => {
   const topics = unit.topics || [];
   const lessonNotes: LessonNotes = mergeLessonNotes(
     buildDefaultLessonNotes(unit.title, topics),
+    { activities: unit.activities || [] },
     buildOfficialLessonNotes(grade, unit),
     extras.lessonNotes
   );
   const articleItems = mergeArticles(extras.articles, buildOfficialArticles(grade, unit));
   const fileItems = mergeFiles(extras.files, buildOfficialFiles(grade, unit));
   const generatedSlides = buildIndicatorSlides(grade, unit, lessonNotes);
-  // ตรวจสอบ Custom Slides หรือ Rich Slides ก่อน — ถ้ามี ใช้แทน slides ปกติ
+  // สไลด์ที่ครูสร้าง/สไลด์เฉพาะหน่วยเป็นชุดนำ แล้วเติมชุดอธิบายตามตัวชี้วัด
+  // เพื่อไม่ให้สไลด์สวยเพียงไม่กี่หน้าทับเนื้อหาพร้อมสอนทั้งบท
   const hasCustom = !!(customSlides && customSlides.length > 0);
-  const useRichSlides = hasCustom ? true : hasRichSlides(gradeId || '', unitNumber);
-  const richSlideList = hasCustom ? customSlides! : (useRichSlides ? getRichSlides(gradeId || '', unitNumber) : []);
+  const authoredRichSlides = hasCustom
+    ? customSlides!
+    : hasRichSlides(gradeId || '', unitNumber)
+      ? getRichSlides(gradeId || '', unitNumber)
+      : [];
+  const shouldCompleteLessonDeck = /^p[1-6]$/.test(grade.id)
+    || shouldUseGeneratedSlides(slides, slidesEntry?.slideImages);
+  const generatedRichSlides = shouldCompleteLessonDeck
+    ? generatedSlides.map(lessonSlideToRichSlide)
+    : [];
+  const richSlideList = mergeRichSlideSets(authoredRichSlides, generatedRichSlides);
+  const useRichSlides = richSlideList.length > 0;
   const useGeneratedSlides = !useRichSlides && shouldUseGeneratedSlides(slides, slidesEntry?.slideImages);
   const displaySlides = useGeneratedSlides ? generatedSlides : slides;
   const displaySlideImages = useGeneratedSlides ? [] : slidesEntry?.slideImages;
   const totalSlides = useRichSlides
     ? richSlideList.length
     : (displaySlideImages?.length || displaySlides.length);
+  const visibleSlideIndexes = getVisibleSlideIndexes(totalSlides, slideIdx);
   const currentSlide = displaySlides[slideIdx] || '';
   const currentSlideImage = displaySlideImages?.[slideIdx];
   const selfStudyGuide = [
@@ -1336,86 +1508,7 @@ const UnitDetail: React.FC = () => {
     },
   ];
 
-  // Parse a slide string into a title + body bullets
-  const parseSlide = (text: string) => {
-    const [slideText, noteText] = text.trim().split('\n@@NOTE@@\n');
-    const raw = slideText.trim();
-    const note = noteText ? {
-      explain: noteText.match(/EXPLAIN:\s*([\s\S]*?)(?=\nEXAMPLE:|\nPROMPT:|$)/)?.[1]?.trim() || '',
-      example: noteText.match(/EXAMPLE:\s*([\s\S]*?)(?=\nPROMPT:|$)/)?.[1]?.trim() || '',
-      prompt: noteText.match(/PROMPT:\s*([\s\S]*)/)?.[1]?.trim() || '',
-    } : undefined;
-    const cleaned = raw.replace(/[ \t]+/g, ' ').trim();
-    const emojiFor = (s: string): string => {
-      const map: [RegExp, string][] = [
-        [/ตัวชี้วัด|หน่วยการเรียน/, '🎯'],
-        [/คีย์บอร์ด|แป้น/, '⌨️'],
-        [/เมาส์|Mouse/i, '🖱️'],
-        [/เปิด.?ปิด|Power/i, '🔌'],
-        [/อันตราย|คำเตือน|ปลอดภัย/, '⚠️'],
-        [/วิดีโอ|VDO|คลิป/, '🎬'],
-        [/ซอฟต์แวร์|สื่อ|โปรแกรม/, '💻'],
-        [/Arduino|ไมโครคอนโทรลเลอร์|บอร์ด|วงจร|LED|เซนเซอร์/i, '🔌'],
-        [/ผังงาน|Flowchart/i, '🔀'],
-        [/ข้อมูล|Data/i, '📊'],
-        [/ปัญหา|Problem/i, '🧩'],
-        [/แนวคิด|คิด/i, '💡'],
-        [/เกม|Game/i, '🎮'],
-      ];
-      for (const [re, e] of map) {
-        if (re.test(s)) return e;
-      }
-      return '✨';
-    };
-
-    let title = '';
-    let body = cleaned;
-
-    if (cleaned.length > 50) {
-      if (raw.includes('\n')) {
-        const parts = raw.split('\n').map((part) => part.trim()).filter(Boolean);
-        title = parts[0];
-        body = parts.slice(1).join(' ');
-      } else {
-        const idx = cleaned.search(/[.!?]\s|(?:\sคือ\s)|(?:\sได้แก่\s)/);
-        if (idx > 0 && idx < 80) {
-          title = cleaned.slice(0, idx).trim();
-          body = cleaned.slice(idx + 1).trim();
-        } else {
-          const words = cleaned.split(' ');
-          const t: string[] = [];
-          let count = 0;
-          for (const w of words) {
-            count += w.length + 1;
-            if (count > 45) break;
-            t.push(w);
-          }
-          title = t.join(' ') || cleaned.slice(0, 45);
-          body = cleaned.slice(title.length).trim();
-        }
-      }
-    }
-
-    const bullets: string[] = [];
-    const numRe = /(?:^|\s)\d+[.)]\s/g;
-    if (numRe.test(body)) {
-      const items = body.split(/(?:^|\s)\d+[.)]\s/).filter((s) => s.trim().length > 2);
-      bullets.push(...items.map((s) => s.trim()));
-    } else if (body.includes(' • ')) {
-      bullets.push(...body.split(' • ').filter((s) => s.trim().length > 2));
-    } else {
-      const segs = body.split(/(?<=[ฯ?])\s|(?:\sซึ่ง\s)/).filter((s) => s.trim().length > 6);
-      if (segs.length >= 2 && segs.length <= 8) {
-        bullets.push(...segs.map((s) => s.trim()));
-      } else {
-        bullets.push(body);
-      }
-    }
-
-    return { title, bullets, emoji: emojiFor(cleaned), note };
-  };
-
-  const parsed = currentSlide ? parseSlide(currentSlide) : { title: '', bullets: [], emoji: '✨', note: undefined };
+  const parsed = currentSlide ? parseLessonSlide(currentSlide) : { title: '', bullets: [], emoji: '✨', note: undefined };
   const teachingExplanation = parsed.note || buildTeachingExplanation(parsed.title, parsed.bullets, unit.title);
 
   const score = quizItems.reduce((acc, q, i) => (quizAnswers[i] === q.answer ? acc + 1 : acc), 0);
@@ -1537,6 +1630,16 @@ const UnitDetail: React.FC = () => {
                         </div>
                       </div>
                     )}
+                    {grade.technologyProfile && (
+                      <div className="unit-technology-focus">
+                        <strong>🎯 เป้าหมายเทคโนโลยีระดับชั้น:</strong>
+                        <ul>
+                          {grade.technologyProfile.focus.slice(0, 3).map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1553,6 +1656,44 @@ const UnitDetail: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {unit.activities?.length ? (
+                  <div className="lms-section">
+                    <h2><Gamepad2 size={24} /> กิจกรรมตามตัวชี้วัดเทคโนโลยี</h2>
+                    <div className="unit-activity-grid">
+                      {unit.activities.map((activity, i) => {
+                        const completed = completedPractices.includes(activity);
+                        const saving = savingPractice === activity;
+                        return (
+                        <section key={i} className={`unit-activity-card ${completed ? 'completed' : ''}`}>
+                          <div className="unit-activity-card-header">
+                            <div className="unit-activity-no">กิจกรรม {i + 1}</div>
+                            {completed && <span className="unit-activity-status"><CheckCircle2 size={16} /> ทำแล้ว</span>}
+                          </div>
+                          <p>{activity}</p>
+                          <button
+                            type="button"
+                            className="unit-activity-complete-btn"
+                            disabled={!user || isAdmin || completed || saving}
+                            onClick={() => void completePracticeActivity(activity)}
+                          >
+                            <CheckCircle2 size={18} />
+                            {completed
+                              ? 'บันทึกเข้าทักษะ P แล้ว'
+                              : saving
+                                ? 'กำลังบันทึก...'
+                                : isAdmin
+                                  ? 'มุมมองสำหรับนักเรียน'
+                                  : user
+                                    ? 'บันทึกว่าทำแล้ว'
+                                    : 'เข้าสู่ระบบเพื่อบันทึกผล'}
+                          </button>
+                        </section>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="lms-section">
                   <div className="self-study-guide">
@@ -1646,8 +1787,15 @@ const UnitDetail: React.FC = () => {
                     <div className="slide-counter">สไลด์ {slideIdx + 1} จาก {totalSlides}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div className="dots-container">
-                        {Array.from({ length: Math.min(totalSlides, 15) }).map((_, i) => (
-                          <button key={i} className={`dot-modern ${i === slideIdx ? 'active' : ''}`} onClick={() => setSlideIdx(i)} />
+                        {visibleSlideIndexes.map((slideNumber) => (
+                          <button
+                            key={slideNumber}
+                            type="button"
+                            className={`dot-modern ${slideNumber === slideIdx ? 'active' : ''}`}
+                            onClick={() => setSlideIdx(slideNumber)}
+                            aria-label={`ไปสไลด์ที่ ${slideNumber + 1}`}
+                            title={`สไลด์ ${slideNumber + 1}`}
+                          />
                         ))}
                       </div>
                       <button onClick={toggleFullScreen} className="control-icon-btn" style={{ background: 'var(--surface)' }} title="ขยายเต็มจอ">

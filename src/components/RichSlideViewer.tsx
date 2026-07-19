@@ -188,6 +188,25 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
           <span dangerouslySetInnerHTML={formatMarkdownInline(slide.callout.text)} />
         </div>
       )}
+
+      {slide.teachingNote && (
+        <div className="rs-teaching-guide">
+          <div className="rs-teaching-guide-main">
+            <span className="rs-guide-label">อธิบายให้เข้าใจ</span>
+            <p>{slide.teachingNote.explain}</p>
+          </div>
+          <div className="rs-teaching-guide-row">
+            <div>
+              <span className="rs-guide-label">ตัวอย่างใกล้ตัว</span>
+              <p>{slide.teachingNote.example}</p>
+            </div>
+            <div>
+              <span className="rs-guide-label">ชวนคิด</span>
+              <p>{slide.teachingNote.prompt}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

@@ -31,3 +31,7 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Course material downloads (do not commit large binaries)
+*.zip
+วิทยาศาสตร์และเทคโนโลยี*/

@@ -289,6 +289,48 @@
   line-height: 1;
 }
 
+/* ============ TEACHING GUIDE ============ */
+.rs-teaching-guide {
+  margin-top: 1.25rem;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #1f2937;
+  overflow: hidden;
+}
+
+.rs-teaching-guide-main {
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.rs-teaching-guide-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rs-teaching-guide-row > div {
+  padding: 1rem 1.15rem;
+}
+
+.rs-teaching-guide-row > div + div {
+  border-left: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.rs-guide-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.rs-teaching-guide p {
+  margin: 0;
+  font-size: 0.94rem;
+  line-height: 1.65;
+}
+
 /* ============ Responsive ============ */
 @media (max-width: 768px) {
   .rich-slide { min-height: 400px; padding: 2rem 1.25rem; }
@@ -299,4 +341,6 @@
   .rs-image-side { flex: none; max-width: 100%; }
   .rs-comparison { grid-template-columns: 1fr; }
   .rs-compare-vs { padding: 0.5rem; transform: rotate(0deg); }
+  .rs-teaching-guide-row { grid-template-columns: 1fr; }
+  .rs-teaching-guide-row > div + div { border-left: 0; border-top: 1px solid rgba(15, 23, 42, 0.1); }
 }

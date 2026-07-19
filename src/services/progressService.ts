@@ -18,7 +18,7 @@ import { loadSchedule, isInClassTime } from '../data/schedule';
 
 // ---------- Types ----------
 
-export type ActivityType = 'slide' | 'video' | 'fun' | 'article' | 'quiz';
+export type ActivityType = 'slide' | 'video' | 'fun' | 'article' | 'practice' | 'quiz';
 
 export interface QuizAttempt {
   gradeId: string;
@@ -45,6 +45,8 @@ export interface UnitProgress {
   videosClicked: string[];
   funClicked: string[];
   articlesClicked: string[];
+  /** กิจกรรมลงมือปฏิบัติตามตัวชี้วัดที่นักเรียนยืนยันว่าทำเสร็จ */
+  practiceCompleted: string[];
   bestQuizScore: number;
   bestQuizMax: number;
   quizAttempts: number;
@@ -191,6 +193,7 @@ const emptyUnit = (): UnitProgress => ({
   videosClicked: [],
   funClicked: [],
   articlesClicked: [],
+  practiceCompleted: [],
   bestQuizScore: 0,
   bestQuizMax: 0,
   quizAttempts: 0,
@@ -210,6 +213,53 @@ const emptyData = (studentId: string): StudentProgressData => ({
   unitsCompleted: 0,
   lastActive: 0,
 });
+
+const normalizeStringList = (value: unknown): string[] => (
+  Array.isArray(value)
+    ? Array.from(new Set(value.map(String).map((item) => item.trim()).filter(Boolean)))
+    : []
+);
+
+/** เติม field รุ่นใหม่ให้ progress เก่าก่อนนำไปคำนวณ ป้องกัน undefined จาก Firebase */
+const normalizeUnitProgress = (raw: unknown): UnitProgress => {
+  const base = emptyUnit();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return base;
+  const data = raw as Partial<UnitProgress>;
+  return {
+    ...base,
+    ...data,
+    slidesViewed: Array.isArray(data.slidesViewed)
+      ? Array.from(new Set(data.slidesViewed.map(Number).filter(Number.isFinite)))
+      : [],
+    videosClicked: normalizeStringList(data.videosClicked),
+    funClicked: normalizeStringList(data.funClicked),
+    articlesClicked: normalizeStringList(data.articlesClicked),
+    practiceCompleted: normalizeStringList(data.practiceCompleted),
+    inClassDays: normalizeStringList(data.inClassDays),
+  };
+};
+
+const normalizeProgressData = (studentId: string, raw: unknown): StudentProgressData => {
+  const source = raw && typeof raw === 'object' && !Array.isArray(raw)
+    ? raw as Partial<StudentProgressData>
+    : {};
+  const rawUnits = source.units && typeof source.units === 'object' && !Array.isArray(source.units)
+    ? source.units
+    : {};
+  const units = Object.fromEntries(
+    Object.entries(rawUnits).map(([key, value]) => [key, normalizeUnitProgress(value)]),
+  );
+  return {
+    ...emptyData(studentId),
+    ...source,
+    studentId,
+    units,
+    attempts: Array.isArray(source.attempts) ? source.attempts : [],
+    activities: Array.isArray(source.activities) ? source.activities : [],
+    daysActive: normalizeStringList(source.daysActive),
+    bonuses: Array.isArray(source.bonuses) ? source.bonuses : [],
+  };
+};
 
 const fbAvailable = (): boolean => {
   try { return !!db && !!import.meta.env.VITE_FIREBASE_PROJECT_ID; } catch { return false; }
@@ -231,7 +281,7 @@ const getCached = (studentId: string): StudentProgressData =>
   cache.get(studentId) ? structuredClone(cache.get(studentId)!) : emptyData(studentId);
 
 const setCached = (data: StudentProgressData) => {
-  cache.set(data.studentId, structuredClone(data));
+  cache.set(data.studentId, structuredClone(normalizeProgressData(data.studentId, data)));
 };
 
 // ---------- Firebase ----------
@@ -257,7 +307,7 @@ const readFromFirebase = async (studentId: string): Promise<StudentProgressData>
   try {
     const snap = await getDoc(docRef(studentId));
     if (snap.exists()) {
-      return { ...emptyData(studentId), ...snap.data(), studentId };
+      return normalizeProgressData(studentId, snap.data());
     }
   } catch (e) {
     console.warn('[progress] firebase read failed', e);
@@ -282,7 +332,7 @@ export const fetchAllProgressFromFirebase = async (): Promise<StudentProgressDat
     snap.forEach((d) => {
       const data = d.data() as StudentProgressData;
       if (data?.studentId) {
-        const full = { ...emptyData(data.studentId), ...data };
+        const full = normalizeProgressData(data.studentId, data);
         result.push(full);
         setCached(full);
       }
@@ -316,7 +366,8 @@ const recordInClassDayIfApplicable = (studentId: string, u: UnitProgress) => {
 
 const recomputeUnit = (u: UnitProgress) => {
   const slidePct = u.totalSlides > 0 ? (u.slidesViewed.length / u.totalSlides) * 100 : 0;
-  const hasMedia = u.videosClicked.length + u.funClicked.length + u.articlesClicked.length;
+  const hasMedia = u.videosClicked.length + u.funClicked.length + u.articlesClicked.length
+    + u.practiceCompleted.length;
   const mediaPct = hasMedia > 0 ? Math.min(100, hasMedia * 25) : 0;
   const quizPct = u.bestQuizMax > 0 ? (u.bestQuizScore / u.bestQuizMax) * 100 : 0;
   let pct = slidePct * 0.4 + mediaPct * 0.2 + quizPct * 0.4;
@@ -332,7 +383,8 @@ const recomputeTotals = (data: StudentProgressData) => {
   for (const k of Object.keys(data.units)) {
     const u = data.units[k];
     slides += u.slidesViewed.length;
-    acts += u.videosClicked.length + u.funClicked.length + u.articlesClicked.length;
+    acts += u.videosClicked.length + u.funClicked.length + u.articlesClicked.length
+      + u.practiceCompleted.length;
     points += u.bestQuizScore;
     if (u.completionPct >= 80) completed += 1;
   }
@@ -344,13 +396,15 @@ const recomputeTotals = (data: StudentProgressData) => {
 };
 
 /** เขียนลง Firebase + อัปเดต in-memory cache (await ให้ครบ — Firebase เป็น source of truth) */
-const persist = async (data: StudentProgressData) => {
+const persist = async (data: StudentProgressData): Promise<boolean> => {
   recomputeTotals(data);
   setCached(data);
   try {
     await writeToFirebase(data);
+    return true;
   } catch (e) {
     console.warn('[progress] write failed — data ยังอยู่ใน cache ของ session แต่ไม่ขึ้น cloud', e);
+    return false;
   }
 };
 
@@ -453,6 +507,41 @@ export const trackMediaClick = async (
   data.activities.unshift({ type, gradeId, unitNo, detail, timestamp: Date.now() });
   data.activities = data.activities.slice(0, ACTIVITY_LIMIT);
   await persist(data);
+};
+
+/** บันทึกกิจกรรมลงมือปฏิบัติตามตัวชี้วัด และคืนผลว่าเขียน Firebase สำเร็จหรือไม่ */
+export const trackPracticeCompletion = async (
+  studentId: string,
+  gradeId: string,
+  unitNo: number,
+  detail: string,
+): Promise<boolean> => {
+  if (!studentId || !detail.trim()) return false;
+  let data = cache.get(studentId);
+  if (!data) data = await fetchStudentProgress(studentId);
+  const k = unitKey(gradeId, unitNo);
+  const u = normalizeUnitProgress(data.units[k]);
+  const normalizedDetail = detail.replace(/\s+/g, ' ').trim();
+  const isNewCompletion = !u.practiceCompleted.includes(normalizedDetail);
+
+  if (isNewCompletion) {
+    u.practiceCompleted.push(normalizedDetail);
+    data.activities.unshift({
+      type: 'practice',
+      gradeId,
+      unitNo,
+      detail: normalizedDetail,
+      timestamp: Date.now(),
+    });
+    data.activities = data.activities.slice(0, ACTIVITY_LIMIT);
+  }
+
+  recordInClassDayIfApplicable(studentId, u);
+  recordDailyActivity(data);
+  u.updatedAt = Date.now();
+  recomputeUnit(u);
+  data.units[k] = u;
+  return persist(data);
 };
 
 /** บันทึกการทำแบบทดสอบ */
