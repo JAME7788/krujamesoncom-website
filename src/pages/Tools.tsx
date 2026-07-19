@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { PenTool, Code2, Wallet, Calendar, Sparkles, Pin } from 'lucide-react';
 import Whiteboard from '../components/Whiteboard';
 import CodingSandbox from '../components/CodingSandbox';
+import PythonLab from '../components/PythonLab';
 import SavingsTracker from '../components/tools/SavingsTracker';
 import ChoreTracker from '../components/tools/ChoreTracker';
 import RosterSpinner from '../components/tools/RosterSpinner';
@@ -11,7 +12,7 @@ import { trackMediaClick } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
 
-type TabType = 'whiteboard' | 'sandbox' | 'savings' | 'chores' | 'spinner' | 'board';
+type TabType = 'whiteboard' | 'sandbox' | 'python' | 'savings' | 'chores' | 'spinner' | 'board';
 
 const Tools: React.FC = () => {
   const [tab, setTab] = useState<TabType>('whiteboard');
@@ -24,12 +25,11 @@ const Tools: React.FC = () => {
     if (seenRef.current.has(tab)) return;
     const gradeId = getDefaultProgressGradeIdForClassroom(user.classroom);
     if (!gradeId) return;
-    seenRef.current.add(tab);
-    
     let detail = '';
     switch (tab) {
       case 'whiteboard': detail = '[Tool] Whiteboard'; break;
       case 'sandbox': detail = '[Tool] Coding Sandbox'; break;
+      case 'python': detail = '[Tool] Python Lab'; break;
       case 'savings': detail = '[Tool] Student Savings'; break;
       case 'chores': detail = '[Tool] Daily Chore Tracker'; break;
       case 'spinner': detail = '[Tool] Roster Wheel Spinner'; break;
@@ -38,8 +38,10 @@ const Tools: React.FC = () => {
     
     if (!detail) return;
     
-    void trackMediaClick(user.id, gradeId, 1, 'fun', detail).then(() => {
-      syncStudentGradesFromProgress({
+    void trackMediaClick(user.id, gradeId, 1, 'fun', detail).then((saved) => {
+      if (!saved) return;
+      seenRef.current.add(tab);
+      return syncStudentGradesFromProgress({
         id: user.id,
         name: user.name,
         classroom: user.classroom,
@@ -77,6 +79,12 @@ const Tools: React.FC = () => {
           <Code2 size={16} /> เขียนโค้ด (Sandbox)
         </button>
         <button
+          className={tab === 'python' ? 'btn-primary' : 'btn-secondary'}
+          onClick={() => setTab('python')}
+        >
+          🐍 Python Lab (โจทย์+บล็อก)
+        </button>
+        <button
           className={tab === 'savings' ? 'btn-primary' : 'btn-secondary'}
           onClick={() => setTab('savings')}
         >
@@ -105,6 +113,7 @@ const Tools: React.FC = () => {
       <div className="card">
         {tab === 'whiteboard' && <Whiteboard />}
         {tab === 'sandbox' && <CodingSandbox />}
+        {tab === 'python' && <PythonLab />}
         {tab === 'savings' && <SavingsTracker />}
         {tab === 'chores' && <ChoreTracker />}
         {tab === 'spinner' && <RosterSpinner />}
