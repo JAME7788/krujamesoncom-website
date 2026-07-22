@@ -374,21 +374,6 @@ const GradeBook: React.FC = () => {
         <button className="btn-secondary" onClick={handleReset}>
           <RefreshCw size={14} /> รีเซ็ตจากรายชื่อ
         </button>
-        <button
-          className="btn-secondary"
-          onClick={() => {
-            if (!confirm('ใส่ P (ปานกลาง) และ A (ผ่าน) ให้ทุกตัวชี้วัด "บท 1" ของทุกห้อง/ทุกวิชาที่สอนจริง?\n\n* P ที่เคยตั้งเองจะถูกทับด้วย "ปานกลาง"\n* A จะถูกตั้งเป็นผ่านทั้งหมด\n* คะแนน K ไม่กระทบ')) return;
-            const res = seedUnit1ScoresForAllClasses('ปานกลาง', true);
-            const total = res.reduce((acc, r) => acc + r.students * r.indicators, 0);
-            const lines = res.map((r) => `• ${r.classroom} (${r.subject}): ${r.students} คน × ${r.indicators} ตัวชี้วัด`).join('\n');
-            toast.show(`เซ็ต P/A บท 1 สำเร็จ — รวม ${total} ช่อง\n${lines}`, 'success');
-            setReloadKey((k) => k + 1);
-          }}
-          style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 0, whiteSpace: 'nowrap' }}
-          title="ใส่ค่าเริ่มต้น P=ปานกลาง, A=ผ่าน ให้บท 1 ของทุกชั้น/ทุกวิชา"
-        >
-          ⚡ P/A บท 1
-        </button>
         <button className="btn-secondary" onClick={handlePrint}>
           <Printer size={14} /> พิมพ์รายงานคะแนน
         </button>
