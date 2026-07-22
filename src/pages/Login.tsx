@@ -8,12 +8,9 @@ import {
 } from 'lucide-react';
 import { allClassrooms2569 } from '../data/students2569';
 import type { StudentInfo } from '../data/students2569';
-import { loadAllRosters } from '../services/rosterService';
+import { fetchRostersFromFirebase, loadAllRosters } from '../services/rosterService';
 import { loadSiteSettings, fetchSiteSettingsFromFirebase } from '../services/siteSettingsService';
 import './Login.css';
-
-// อ่าน roster (built-in + แก้ไขจาก admin)
-const students2569 = loadAllRosters();
 
 type Step = 'classroom' | 'student';
 
@@ -21,6 +18,7 @@ const ACCESS_FLAG = 'krujames_access_granted_v1';
 
 const Login: React.FC = () => {
   const { user, loginAsStudent, clearStudentSession } = useAuth();
+  const [students2569, setStudents2569] = useState<Record<string, StudentInfo[]>>(() => loadAllRosters());
   const [loginReady, setLoginReady] = useState(false);
   const [accessGranted, setAccessGranted] = useState<boolean>(() => {
     try { return sessionStorage.getItem(ACCESS_FLAG) === 'true'; } catch { return false; }
@@ -34,6 +32,8 @@ const Login: React.FC = () => {
     void fetchSiteSettingsFromFirebase().then((s) => {
       if (s) setCurrentCode(s.accessCode);
     });
+    // รายชื่อนักเรียนใช้ Firebase เป็นชุดกลาง เครื่องนักเรียนจึงเห็นรายการที่ครูแก้ล่าสุด
+    void fetchRostersFromFirebase().then(setStudents2569);
   }, []);
   const [step, setStep] = useState<Step>('classroom');
   const [classroom, setClassroom] = useState<string>('');
@@ -59,7 +59,7 @@ const Login: React.FC = () => {
         s.studentCode.includes(q) ||
         String(s.no).includes(q)
     );
-  }, [classroom, search]);
+  }, [classroom, search, students2569]);
 
   useEffect(() => {
     if (user && user.id !== 'admin_teacher_account') {

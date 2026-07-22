@@ -1,4 +1,6 @@
-// ระบบประกาศข่าว — ครูประกาศใน Admin → นักเรียนเห็นบน Home/Dashboard
+// ระบบประกาศข่าวกลาง: Firestore เป็นข้อมูลจริงและ localStorage เป็น cache
+import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
+import { db } from './firebase';
 
 export interface Announcement {
   id: string;
@@ -6,7 +8,6 @@ export interface Announcement {
   body: string;
   emoji?: string;
   type: 'info' | 'warn' | 'urgent' | 'celebration';
-  /** target classroom — '' = ทุกห้อง */
   classroom?: string;
   createdAt: number;
   expiresAt?: number;
@@ -14,54 +15,69 @@ export interface Announcement {
 }
 
 const KEY = 'krujames_announcements_v1';
-
+const COLLECTION = 'announcements';
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 export const loadAnnouncements = (): Announcement[] => {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
+    return raw ? JSON.parse(raw) as Announcement[] : [];
+  } catch { return []; }
 };
 
-const save = (list: Announcement[]) => {
+const cache = (list: Announcement[]) => {
+  localStorage.setItem(KEY, JSON.stringify(list));
+};
+
+const clean = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+export const fetchAnnouncementsFromFirebase = async (): Promise<Announcement[]> => {
   try {
-    localStorage.setItem(KEY, JSON.stringify(list));
-  } catch (e) {
-    console.error('Failed to save announcements', e);
+    const snap = await getDocs(collection(db, COLLECTION));
+    const remote = snap.docs.map((item) => item.data() as Announcement);
+    if (remote.length > 0) {
+      const sorted = remote.sort((a, b) => b.createdAt - a.createdAt);
+      cache(sorted);
+      return sorted;
+    }
+    const local = loadAnnouncements();
+    await Promise.all(local.map((item) => setDoc(doc(db, COLLECTION, item.id), clean(item))));
+    return local;
+  } catch (error) {
+    console.warn('fetch announcements failed, using local cache', error);
+    return loadAnnouncements();
   }
 };
 
+export const createAnnouncement = async (
+  data: Omit<Announcement, 'id' | 'createdAt'>,
+): Promise<Announcement> => {
+  const announcement: Announcement = { ...data, id: uid(), createdAt: Date.now() };
+  await setDoc(doc(db, COLLECTION, announcement.id), clean(announcement));
+  cache([announcement, ...loadAnnouncements()]);
+  return announcement;
+};
 
-export const createAnnouncement = (data: Omit<Announcement, 'id' | 'createdAt'>): Announcement => {
-  const a: Announcement = { ...data, id: uid(), createdAt: Date.now() };
+export const updateAnnouncement = async (id: string, patch: Partial<Announcement>): Promise<void> => {
   const list = loadAnnouncements();
-  list.unshift(a);
-  save(list);
-  return a;
+  const index = list.findIndex((item) => item.id === id);
+  if (index === -1) return;
+  const updated = { ...list[index], ...patch };
+  await setDoc(doc(db, COLLECTION, id), clean(updated));
+  list[index] = updated;
+  cache(list);
 };
 
-export const updateAnnouncement = (id: string, patch: Partial<Announcement>) => {
-  const list = loadAnnouncements();
-  const i = list.findIndex((a) => a.id === id);
-  if (i === -1) return;
-  list[i] = { ...list[i], ...patch };
-  save(list);
+export const deleteAnnouncement = async (id: string): Promise<void> => {
+  await deleteDoc(doc(db, COLLECTION, id));
+  cache(loadAnnouncements().filter((item) => item.id !== id));
 };
 
-export const deleteAnnouncement = (id: string) => {
-  save(loadAnnouncements().filter((a) => a.id !== id));
-};
-
-/** ดึงประกาศที่ active สำหรับห้องที่ระบุ */
 export const getActiveAnnouncements = (classroom?: string): Announcement[] => {
   const now = Date.now();
   return loadAnnouncements()
-    .filter((a) => !a.expiresAt || a.expiresAt > now)
-    .filter((a) => !a.classroom || !classroom || a.classroom === classroom)
+    .filter((item) => !item.expiresAt || item.expiresAt > now)
+    .filter((item) => !item.classroom || !classroom || item.classroom === classroom)
     .sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;

@@ -95,10 +95,11 @@ export const answerDailyQuestion = async (
   }
   const correct = choice === question.correctIndex;
   const xp = correct ? 10 : 3;
-  await awardBonus(studentId, {
+  const stored = await awardBonus(studentId, {
     emoji: correct ? '✅' : '📝',
     reason: `[Daily:${date}] ${correct ? 'ตอบถูก' : 'พยายามตอบ'}`,
     xp,
   });
+  if (!stored) throw new Error('บันทึกคำตอบเข้า Firebase ไม่สำเร็จ');
   return { correct, xpAwarded: xp };
 };

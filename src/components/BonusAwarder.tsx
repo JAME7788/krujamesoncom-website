@@ -87,7 +87,8 @@ const BonusAwarder: React.FC = () => {
       const studentId = buildStudentId({ studentCode: selectedStudent.code, no: selectedStudent.no, name: selectedStudent.name });
       // ensure cache populated
       await fetchStudentProgress(studentId);
-      await awardBonus(studentId, { emoji, reason, xp });
+      const stored = await awardBonus(studentId, { emoji, reason, xp });
+      if (!stored) throw new Error('บันทึกรางวัลเข้า Firebase ไม่สำเร็จ');
       toast.show(`${emoji} +${xp} XP → ${selectedStudent.name} (${reason || 'รางวัลจากครู'})`, 'success');
       setSelectedStudent(null);
       setReason('');

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Plus, Trash2, Edit3, Save, X, Users, Search,
   Download, RefreshCw, ArrowRightLeft, ListOrdered,
@@ -6,6 +6,7 @@ import {
 import {
   loadRoster, addStudent, updateStudent, deleteStudent,
   moveStudent, renumberClassroom, resetClassroom, downloadRosterCSV,
+  fetchRostersFromFirebase,
 } from '../services/rosterService';
 import { allClassrooms2569 } from '../data/students2569';
 import type { StudentInfo } from '../data/students2569';
@@ -14,8 +15,8 @@ const emojiOptions = ['👦', '👧', '🧒', '👨', '👩', '🧑', '👶', '�
 
 const StudentManager: React.FC = () => {
   const [classroom, setClassroom] = useState<string>('ป.1');
-  const [prevClassroom, setPrevClassroom] = useState('ป.1');
   const [list, setList] = useState<StudentInfo[]>(() => loadRoster('ป.1'));
+  const [syncing, setSyncing] = useState(true);
   const [search, setSearch] = useState('');
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -27,13 +28,26 @@ const StudentManager: React.FC = () => {
 
   const reload = () => setList(loadRoster(classroom));
 
-  if (classroom !== prevClassroom) {
-    setPrevClassroom(classroom);
-    setList(loadRoster(classroom));
+  useEffect(() => {
+    let active = true;
+    void fetchRostersFromFirebase()
+      .then(() => {
+        if (active) setList(loadRoster(classroom));
+      })
+      .finally(() => {
+        if (active) setSyncing(false);
+      });
+    return () => { active = false; };
+  }, [classroom]);
+
+  const changeClassroom = (nextClassroom: string) => {
+    setClassroom(nextClassroom);
     setSearch('');
     setEditingCode(null);
     setShowAdd(false);
-  }
+    setList(loadRoster(nextClassroom));
+    setSyncing(true);
+  };
 
 
   const filtered = useMemo(() => {
@@ -47,54 +61,92 @@ const StudentManager: React.FC = () => {
     );
   }, [list, search]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!draft.name?.trim()) {
       alert('กรอกชื่อก่อน');
       return;
     }
-    addStudent(classroom, {
-      name: draft.name.trim(),
-      studentCode: draft.studentCode?.trim() || `s${Date.now()}`,
-      emoji: draft.emoji || '👦',
-    });
-    setDraft({ name: '', studentCode: '', emoji: '👦' });
-    setShowAdd(false);
-    reload();
+    setSyncing(true);
+    try {
+      await addStudent(classroom, {
+        name: draft.name.trim(),
+        studentCode: draft.studentCode?.trim() || `s${Date.now()}`,
+        emoji: draft.emoji || '👦',
+      });
+      setDraft({ name: '', studentCode: '', emoji: '👦' });
+      setShowAdd(false);
+      reload();
+    } catch {
+      alert('บันทึกรายชื่อขึ้นฐานข้อมูลไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
+    } finally {
+      setSyncing(false);
+    }
   };
 
-  const handleSave = (code: string, patch: Partial<StudentInfo>) => {
-    updateStudent(classroom, code, patch);
-    setEditingCode(null);
-    reload();
+  const handleSave = async (code: string, patch: Partial<StudentInfo>) => {
+    setSyncing(true);
+    try {
+      await updateStudent(classroom, code, patch);
+      setEditingCode(null);
+      reload();
+    } catch {
+      alert('บันทึกการแก้ไขขึ้นฐานข้อมูลไม่สำเร็จ');
+    } finally {
+      setSyncing(false);
+    }
   };
 
-  const handleDelete = (s: StudentInfo) => {
+  const handleDelete = async (s: StudentInfo) => {
     if (!confirm(`ลบ "${s.name}" (เลข ${s.no})?\nคะแนนที่บันทึกไว้จะยังอยู่ในระบบ — แค่ลบออกจากรายชื่อ`)) return;
-    deleteStudent(classroom, s.studentCode);
-    reload();
+    setSyncing(true);
+    try {
+      await deleteStudent(classroom, s.studentCode);
+      reload();
+    } catch {
+      alert('ลบรายชื่อในฐานข้อมูลไม่สำเร็จ');
+    } finally {
+      setSyncing(false);
+    }
   };
 
-  const handleMove = (s: StudentInfo) => {
+  const handleMove = async (s: StudentInfo) => {
     const target = prompt(
       `ย้าย "${s.name}" จาก ${classroom} ไปห้องไหน?\n\nห้องที่มี: ${allClassrooms2569.join(', ')}`,
       ''
     );
     if (!target || !allClassrooms2569.includes(target)) return;
-    moveStudent(classroom, s.studentCode, target);
-    reload();
-    alert(`ย้าย ${s.name} ไปห้อง ${target} แล้ว ✓`);
+    setSyncing(true);
+    try {
+      await moveStudent(classroom, s.studentCode, target);
+      reload();
+      alert(`ย้าย ${s.name} ไปห้อง ${target} และบันทึกฐานข้อมูลแล้ว`);
+    } catch {
+      alert('ย้ายห้องในฐานข้อมูลไม่สำเร็จ');
+    } finally {
+      setSyncing(false);
+    }
   };
 
-  const handleRenumber = () => {
+  const handleRenumber = async () => {
     if (!confirm(`จัดเรียงเลขที่ในห้อง ${classroom} ใหม่ตามลำดับ (1, 2, 3, ...)?`)) return;
-    renumberClassroom(classroom);
-    reload();
+    setSyncing(true);
+    try {
+      await renumberClassroom(classroom);
+      reload();
+    } finally {
+      setSyncing(false);
+    }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!confirm(`รีเซ็ตห้อง ${classroom} กลับเป็นค่าเดิมจากไฟล์ Excel?\nการแก้ไขทั้งหมดจะหายไป`)) return;
-    resetClassroom(classroom);
-    reload();
+    setSyncing(true);
+    try {
+      await resetClassroom(classroom);
+      reload();
+    } finally {
+      setSyncing(false);
+    }
   };
 
   return (
@@ -103,7 +155,7 @@ const StudentManager: React.FC = () => {
       <div className="sm-toolbar">
         <div className="filter-group">
           <label><Users size={14} /> ห้องเรียน</label>
-          <select value={classroom} onChange={(e) => setClassroom(e.target.value)}>
+          <select value={classroom} onChange={(e) => changeClassroom(e.target.value)}>
             {allClassrooms2569.map((c) => (
               <option key={c} value={c}>{c} ({loadRoster(c).length} คน)</option>
             ))}
@@ -118,13 +170,13 @@ const StudentManager: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button className="btn-primary" onClick={() => setShowAdd(!showAdd)}>
+        <button className="btn-primary" disabled={syncing} onClick={() => setShowAdd(!showAdd)}>
           <Plus size={16} /> {showAdd ? 'ยกเลิก' : 'เพิ่มนักเรียน'}
         </button>
-        <button className="btn-secondary" onClick={handleRenumber} title="จัดเรียงเลขที่ใหม่">
+        <button className="btn-secondary" disabled={syncing} onClick={handleRenumber} title="จัดเรียงเลขที่ใหม่">
           <ListOrdered size={14} /> จัดเรียงเลข
         </button>
-        <button className="btn-secondary" onClick={handleReset} title="รีเซ็ตจากไฟล์ Excel">
+        <button className="btn-secondary" disabled={syncing} onClick={handleReset} title="รีเซ็ตจากไฟล์ Excel">
           <RefreshCw size={14} /> รีเซ็ต
         </button>
         <button className="btn-export" onClick={() => downloadRosterCSV(classroom)}>
@@ -219,7 +271,7 @@ const StudentManager: React.FC = () => {
       <div className="sm-help">
         <strong>💡 หมายเหตุ:</strong>
         <ul style={{ margin: '4px 0 0', paddingLeft: 20 }}>
-          <li>การแก้ไขจะบันทึกใน localStorage (ไม่กระทบไฟล์ต้นฉบับ Excel)</li>
+          <li>การแก้ไขจะบันทึกใน Firebase และเก็บสำเนาไว้ในเครื่อง (ไม่กระทบไฟล์ต้นฉบับ Excel)</li>
           <li>ถ้าเปลี่ยน <strong>ชื่อ</strong> ของนักเรียนที่เคย login มาก่อน → คะแนนเก่ายังอยู่ใน progress data ของ id เก่า</li>
           <li>ปุ่ม <strong>"รีเซ็ต"</strong> จะลบการแก้ไขทั้งหมดของห้องนี้ → กลับเป็นรายชื่อจาก Excel</li>
         </ul>

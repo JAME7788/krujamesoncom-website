@@ -26,7 +26,8 @@ import GamificationCard from '../components/GamificationCard';
 import AchievementShowcase from '../components/AchievementShowcase';
 import DailyQuestionWidget from '../components/DailyQuestionWidget';
 import SatisfactionSurvey from '../components/SatisfactionSurvey';
-import { getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
+import { fetchEventsFromFirebase, getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
+import type { CalendarEvent } from '../services/calendarService';
 import { loadSchedule, dayNames, minutesOf, fetchScheduleFromFirebase } from '../data/schedule';
 import type { ClassSlot } from '../data/schedule';
 import './Dashboard.css';
@@ -68,6 +69,7 @@ const Dashboard: React.FC = () => {
   );
   const [now, setNow] = useState(new Date());
   const [schedule, setSchedule] = useState<ClassSlot[]>(() => loadSchedule());
+  const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -92,6 +94,8 @@ const Dashboard: React.FC = () => {
         if (remoteSlots) {
           setSchedule(remoteSlots);
         }
+        await fetchEventsFromFirebase();
+        setUpcomingEvents(getUpcomingEvents(user.classroom, 14));
       } catch (e) {
         console.warn('Sync student progress/schedule failed', e);
       }
@@ -170,8 +174,6 @@ const Dashboard: React.FC = () => {
       .map(([date, v]) => ({ date, value: Math.round(v.total / v.count) }))
       .sort((a, b) => a.date.localeCompare(b.date));
   })();
-
-  const upcomingEvents = getUpcomingEvents(user.classroom, 14);
 
   // Calculate schedule information for user
   const mySlots = schedule.filter((s) => s.classroom === user.classroom);

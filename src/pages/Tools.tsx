@@ -1,18 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { PenTool, Code2, Wallet, Calendar, Sparkles, Pin } from 'lucide-react';
+import { PenTool, Code2, Wallet, Calendar, Sparkles, Pin, Users } from 'lucide-react';
 import Whiteboard from '../components/Whiteboard';
 import CodingSandbox from '../components/CodingSandbox';
 import PythonLab from '../components/PythonLab';
 import SavingsTracker from '../components/tools/SavingsTracker';
 import ChoreTracker from '../components/tools/ChoreTracker';
 import RosterSpinner from '../components/tools/RosterSpinner';
+import GroupMaker from '../components/tools/GroupMaker';
 import PeerReminderBoard from '../components/tools/PeerReminderBoard';
 import { useAuth } from '../context/AuthContext';
 import { trackMediaClick } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
 
-type TabType = 'whiteboard' | 'sandbox' | 'python' | 'savings' | 'chores' | 'spinner' | 'board';
+type TabType = 'whiteboard' | 'sandbox' | 'python' | 'savings' | 'chores' | 'spinner' | 'groups' | 'board';
 
 const Tools: React.FC = () => {
   const [tab, setTab] = useState<TabType>('whiteboard');
@@ -33,6 +34,7 @@ const Tools: React.FC = () => {
       case 'savings': detail = '[Tool] Student Savings'; break;
       case 'chores': detail = '[Tool] Daily Chore Tracker'; break;
       case 'spinner': detail = '[Tool] Roster Wheel Spinner'; break;
+      case 'groups': detail = '[Tool] Group Maker'; break;
       case 'board': detail = '[Tool] Peer Homework Board'; break;
     }
     
@@ -103,6 +105,12 @@ const Tools: React.FC = () => {
           <Sparkles size={16} /> วงล้อสุ่ม (Spinner)
         </button>
         <button
+          className={tab === 'groups' ? 'btn-primary' : 'btn-secondary'}
+          onClick={() => setTab('groups')}
+        >
+          <Users size={16} /> สุ่มแบ่งกลุ่ม (Groups)
+        </button>
+        <button
           className={tab === 'board' ? 'btn-primary' : 'btn-secondary'}
           onClick={() => setTab('board')}
         >
@@ -117,6 +125,7 @@ const Tools: React.FC = () => {
         {tab === 'savings' && <SavingsTracker />}
         {tab === 'chores' && <ChoreTracker />}
         {tab === 'spinner' && <RosterSpinner />}
+        {tab === 'groups' && <GroupMaker />}
         {tab === 'board' && <PeerReminderBoard />}
       </div>
 

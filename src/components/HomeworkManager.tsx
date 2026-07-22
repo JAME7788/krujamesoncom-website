@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Eye, X, ExternalLink } from 'lucide-react';
 import {
   loadAssignments, createAssignment, deleteAssignment,
   getSubmissionsByAssignment, reviewSubmission,
+  fetchAssignmentsFromFirebase, fetchSubmissionsFromFirebase,
 } from '../services/homeworkService';
 import type { Assignment, Submission } from '../services/homeworkService';
 import { allClassrooms2569 } from '../data/students2569';
@@ -17,6 +18,7 @@ const HomeworkManager: React.FC = () => {
     maxScore: 10, category: 'k',
   });
   const [viewing, setViewing] = useState<Assignment | null>(null);
+  const [syncing, setSyncing] = useState(true);
 
   const draftSubjects = useMemo(
     () => (draft.classroom ? getSubjectsForClassroom(draft.classroom) : []),
@@ -29,22 +31,42 @@ const HomeworkManager: React.FC = () => {
 
   const reload = () => setList(loadAssignments());
 
-  const submit = () => {
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([fetchAssignmentsFromFirebase(), fetchSubmissionsFromFirebase()])
+      .then(([assignments]) => {
+        if (!cancelled) setList(assignments);
+      })
+      .finally(() => {
+        if (!cancelled) setSyncing(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const submit = async () => {
     if (!draft.title || !draft.dueDate) { alert('กรอกข้อมูลให้ครบ'); return; }
-    createAssignment({
-      title: draft.title!,
-      description: draft.description || '',
-      classroom: draft.classroom!,
-      dueDate: draft.dueDate!,
-      maxScore: draft.maxScore || 10,
-      createdBy: 'teacher',
-      subject: draft.subject,
-      indicatorId: draft.indicatorId,
-      category: draft.indicatorId ? (draft.category || 'k') : undefined,
-    });
-    setDraft({ title: '', description: '', classroom: '', dueDate: new Date().toISOString().slice(0, 10), maxScore: 10, category: 'k' });
-    setShow(false);
-    reload();
+    setSyncing(true);
+    try {
+      await createAssignment({
+        title: draft.title,
+        description: draft.description || '',
+        classroom: draft.classroom || '',
+        dueDate: draft.dueDate,
+        maxScore: draft.maxScore || 10,
+        createdBy: 'teacher',
+        subject: draft.subject,
+        indicatorId: draft.indicatorId,
+        category: draft.indicatorId ? (draft.category || 'k') : undefined,
+      });
+      setDraft({ title: '', description: '', classroom: '', dueDate: new Date().toISOString().slice(0, 10), maxScore: 10, category: 'k' });
+      setShow(false);
+      reload();
+    } catch (error) {
+      console.error(error);
+      alert('สร้างการบ้านไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
+    } finally {
+      setSyncing(false);
+    }
   };
 
   return (
@@ -131,7 +153,9 @@ const HomeworkManager: React.FC = () => {
               )}
             </div>
           )}
-          <button className="btn-export" onClick={submit}>สร้างการบ้าน</button>
+          <button className="btn-export" onClick={() => void submit()} disabled={syncing}>
+            {syncing ? 'กำลังบันทึก...' : 'สร้างการบ้าน'}
+          </button>
         </div>
       )}
 
@@ -157,7 +181,14 @@ const HomeworkManager: React.FC = () => {
                     <td>{subs.length} คน</td>
                     <td>
                       <button className="cb-icon-btn" onClick={() => setViewing(a)}><Eye size={14} /></button>
-                      <button className="cb-icon-btn danger" onClick={() => { if (confirm('ลบ?')) { deleteAssignment(a.id); reload(); } }}>
+                      <button className="cb-icon-btn danger" disabled={syncing} onClick={() => {
+                        if (!confirm('ลบ?')) return;
+                        setSyncing(true);
+                        void deleteAssignment(a.id)
+                          .then(reload)
+                          .catch(() => alert('ลบไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase'))
+                          .finally(() => setSyncing(false));
+                      }}>
                         <Trash2 size={14} />
                       </button>
                     </td>
@@ -178,16 +209,33 @@ const HomeworkManager: React.FC = () => {
 
 const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void }> = ({ assignment, onClose }) => {
   const [subs, setSubs] = useState<Submission[]>(getSubmissionsByAssignment(assignment.id));
+  const [syncing, setSyncing] = useState(true);
   const reload = () => setSubs(getSubmissionsByAssignment(assignment.id));
 
-  const score = (id: string) => {
+  useEffect(() => {
+    let cancelled = false;
+    fetchSubmissionsFromFirebase()
+      .then(() => { if (!cancelled) setSubs(getSubmissionsByAssignment(assignment.id)); })
+      .finally(() => { if (!cancelled) setSyncing(false); });
+    return () => { cancelled = true; };
+  }, [assignment.id]);
+
+  const score = async (id: string) => {
     const s = prompt(`คะแนน (เต็ม ${assignment.maxScore}):`);
     if (s === null) return;
     const sc = parseFloat(s);
     if (isNaN(sc)) return;
     const fb = prompt('Feedback (optional):') || '';
-    reviewSubmission(id, sc, fb);
-    reload();
+    setSyncing(true);
+    try {
+      await reviewSubmission(id, Math.max(0, Math.min(assignment.maxScore, sc)), fb);
+      reload();
+    } catch (error) {
+      console.error(error);
+      alert('บันทึกคะแนนไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
+    } finally {
+      setSyncing(false);
+    }
   };
 
   return (
@@ -217,7 +265,7 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                     {s.score !== undefined ? (
                       <strong style={{ color: '#22c55e' }}>{s.score}/{assignment.maxScore}</strong>
                     ) : (
-                      <button className="btn-primary" onClick={() => score(s.id)} style={{ padding: '4px 12px', fontSize: '0.85rem' }}>
+                      <button className="btn-primary" disabled={syncing} onClick={() => void score(s.id)} style={{ padding: '4px 12px', fontSize: '0.85rem' }}>
                         ให้คะแนน
                       </button>
                     )}

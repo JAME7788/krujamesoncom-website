@@ -1,25 +1,39 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Upload, CheckCircle2, Clock, AlertCircle, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
   getAssignmentsForStudent, submitWork, getStudentSubmissionForAssignment,
+  fetchAssignmentsFromFirebase, fetchSubmissionsFromFirebase, uploadHomeworkFile,
 } from '../services/homeworkService';
 import type { Assignment } from '../services/homeworkService';
 import { trackMediaClick } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
+import { getLinkedUnits } from '../services/gradeService';
 
 const HomeworkStudent: React.FC = () => {
   const { user } = useAuth();
   const [selected, setSelected] = useState<Assignment | null>(null);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [contentUrl, setContentUrl] = useState('');
-  const [contentData, setContentData] = useState('');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [comment, setComment] = useState('');
+  const [syncing, setSyncing] = useState(true);
+  const [, setDataVersion] = useState(0);
 
-  const assignments = useMemo(
-    () => (user ? getAssignmentsForStudent(user.classroom) : []),
-    [user],
-  );
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    Promise.all([fetchAssignmentsFromFirebase(), fetchSubmissionsFromFirebase()])
+      .then(() => {
+        if (!cancelled) {
+          setAssignments(getAssignmentsForStudent(user.classroom));
+          setDataVersion((version) => version + 1);
+        }
+      })
+      .finally(() => { if (!cancelled) setSyncing(false); });
+    return () => { cancelled = true; };
+  }, [user]);
 
   if (!user) {
     return <div className="container section-padding" style={{ paddingTop: '6rem', textAlign: 'center' }}>
@@ -34,44 +48,58 @@ const HomeworkStudent: React.FC = () => {
       alert('ไฟล์ใหญ่เกิน 2MB — ใส่ลิงก์ Google Drive แทน');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setContentData(reader.result as string);
-    reader.readAsDataURL(file);
+    setUploadFile(file);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selected) return;
-    if (!contentUrl && !contentData) {
+    if (!contentUrl && !uploadFile) {
       alert('ใส่ลิงก์หรืออัปโหลดไฟล์ก่อน');
       return;
     }
-    submitWork({
-      assignmentId: selected.id,
-      studentId: user.id,
-      studentName: user.name,
-      classroom: user.classroom,
-      studentNo: parseInt(user.studentNumber),
-      contentUrl: contentUrl || undefined,
-      contentData: contentData || undefined,
-      comment,
-    });
-    // นับการส่งงานเป็น activity → +5 XP + streak day + นับ P/A ทาง syncFromProgress
-    const gradeId = getDefaultProgressGradeIdForClassroom(user.classroom);
-    if (gradeId) {
-      void trackMediaClick(user.id, gradeId, 1, 'fun', `[Homework] ${selected.title}`).then(() => {
-        syncStudentGradesFromProgress({
+    setSyncing(true);
+    try {
+      const uploadedUrl = uploadFile
+        ? await uploadHomeworkFile(uploadFile, user.id, selected.id)
+        : '';
+      await submitWork({
+        assignmentId: selected.id,
+        studentId: user.id,
+        studentName: user.name,
+        classroom: user.classroom,
+        studentNo: parseInt(user.studentNumber),
+        contentUrl: contentUrl || uploadedUrl || undefined,
+        comment,
+      });
+
+      let progressSaved = true;
+      const linkedTarget = selected.indicatorId && selected.subject
+        ? getLinkedUnits(user.classroom, selected.subject)
+            .find((item) => item.indicator.id === selected.indicatorId)?.units[0]
+        : undefined;
+      const gradeId = linkedTarget?.gradeId || getDefaultProgressGradeIdForClassroom(user.classroom);
+      const unitNo = linkedTarget?.unitNo || 1;
+      if (gradeId) {
+        progressSaved = await trackMediaClick(user.id, gradeId, unitNo, 'fun', `[Homework] ${selected.title}`);
+        if (progressSaved) await syncStudentGradesFromProgress({
           id: user.id,
           name: user.name,
           classroom: user.classroom,
           studentNumber: user.studentNumber,
         });
-      });
+      }
+      setDataVersion((version) => version + 1);
+      alert(progressSaved ? 'ส่งงานสำเร็จ ✓ +5 XP' : 'ส่งงานสำเร็จ แต่ยังบันทึก XP ไม่สำเร็จ กรุณาแจ้งครู');
+      setSelected(null);
+      setContentUrl('');
+      setUploadFile(null);
+      setComment('');
+    } catch (error) {
+      console.error(error);
+      alert('ส่งงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
+    } finally {
+      setSyncing(false);
     }
-    alert('ส่งงานสำเร็จ ✓ +5 XP');
-    setSelected(null);
-    setContentUrl('');
-    setContentData('');
-    setComment('');
   };
 
   return (
@@ -79,7 +107,9 @@ const HomeworkStudent: React.FC = () => {
       <h1>📝 งานที่ครูสั่ง</h1>
       <p style={{ color: '#6b7280' }}>รายการการบ้านของชั้น {user.classroom}</p>
 
-      {assignments.length === 0 ? (
+      {syncing && assignments.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>กำลังดึงงานจากฐานข้อมูล...</div>
+      ) : assignments.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <FileText size={48} color="#9ca3af" />
           <h3>ยังไม่มีการบ้าน 🎉</h3>
@@ -170,7 +200,7 @@ const HomeworkStudent: React.FC = () => {
                 onChange={handleUpload}
                 style={{ display: 'block', marginTop: 4 }}
               />
-              {contentData && <div style={{ marginTop: 4, fontSize: '0.78rem', color: '#22c55e' }}>✓ เลือกไฟล์แล้ว</div>}
+              {uploadFile && <div style={{ marginTop: 4, fontSize: '0.78rem', color: '#22c55e' }}>✓ {uploadFile.name}</div>}
             </div>
 
             <div style={{ marginTop: 12 }}>
@@ -185,7 +215,9 @@ const HomeworkStudent: React.FC = () => {
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
               <button onClick={() => setSelected(null)} className="btn-secondary">ยกเลิก</button>
-              <button onClick={handleSubmit} className="btn-primary">ส่งงาน</button>
+              <button onClick={() => void handleSubmit()} className="btn-primary" disabled={syncing}>
+                {syncing ? 'กำลังส่ง...' : 'ส่งงาน'}
+              </button>
             </div>
           </div>
         </div>

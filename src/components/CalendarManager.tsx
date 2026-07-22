@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, Calendar as CalIcon } from 'lucide-react';
 import {
-  loadEvents, createEvent, deleteEvent, eventTypeInfo,
+  loadEvents, createEvent, deleteEvent, eventTypeInfo, fetchEventsFromFirebase,
 } from '../services/calendarService';
 import type { CalendarEvent, EventType } from '../services/calendarService';
 import { allClassrooms2569 } from '../data/students2569';
@@ -9,6 +9,7 @@ import { allClassrooms2569 } from '../data/students2569';
 const CalendarManager: React.FC = () => {
   const [list, setList] = useState(loadEvents());
   const [show, setShow] = useState(false);
+  const [syncing, setSyncing] = useState(true);
   const [draft, setDraft] = useState<Partial<CalendarEvent>>({
     title: '', desc: '', type: 'homework', date: new Date().toISOString().split('T')[0],
     time: '', classroom: '', emoji: '', url: '',
@@ -16,30 +17,46 @@ const CalendarManager: React.FC = () => {
 
   const reload = () => setList(loadEvents());
 
-  const submit = () => {
+  useEffect(() => {
+    let cancelled = false;
+    fetchEventsFromFirebase()
+      .then((events) => { if (!cancelled) setList(events); })
+      .finally(() => { if (!cancelled) setSyncing(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const submit = async () => {
     if (!draft.title || !draft.date) {
       alert('กรอกหัวข้อและวันที่');
       return;
     }
-    createEvent({
-      title: draft.title!,
+    setSyncing(true);
+    try {
+      await createEvent({
+      title: draft.title,
       desc: draft.desc,
       type: draft.type as EventType || 'homework',
-      date: draft.date!,
+      date: draft.date,
       time: draft.time,
       classroom: draft.classroom || undefined,
       emoji: draft.emoji || eventTypeInfo[draft.type as EventType || 'homework'].emoji,
       url: draft.url,
-    });
-    setDraft({ title: '', desc: '', type: 'homework', date: new Date().toISOString().split('T')[0], time: '', classroom: '', emoji: '', url: '' });
-    setShow(false);
-    reload();
+      });
+      setDraft({ title: '', desc: '', type: 'homework', date: new Date().toISOString().split('T')[0], time: '', classroom: '', emoji: '', url: '' });
+      setShow(false);
+      reload();
+    } catch {
+      alert('บันทึกกิจกรรมไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ต');
+    } finally {
+      setSyncing(false);
+    }
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (!confirm('ลบกิจกรรมนี้?')) return;
-    deleteEvent(id);
-    reload();
+    setSyncing(true);
+    try { await deleteEvent(id); reload(); }
+    finally { setSyncing(false); }
   };
 
   const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
@@ -96,8 +113,8 @@ const CalendarManager: React.FC = () => {
               <input value={draft.url} onChange={(e) => setDraft({ ...draft, url: e.target.value })} placeholder="/curriculum/p5/unit/3" />
             </div>
           </div>
-          <button className="btn-export" onClick={submit}>
-            <CalIcon size={16} /> เพิ่มกิจกรรม
+          <button className="btn-export" onClick={() => void submit()} disabled={syncing}>
+            <CalIcon size={16} /> {syncing ? 'กำลังบันทึก...' : 'เพิ่มกิจกรรม'}
           </button>
         </div>
       )}
@@ -130,7 +147,7 @@ const CalendarManager: React.FC = () => {
                     <td><strong>{e.emoji || info.emoji}</strong> {e.title}{e.desc && <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{e.desc}</div>}</td>
                     <td>{e.classroom || 'ทุกห้อง'}</td>
                     <td>
-                      <button className="cb-icon-btn danger" onClick={() => remove(e.id)}>
+                      <button className="cb-icon-btn danger" disabled={syncing} onClick={() => void remove(e.id)}>
                         <Trash2 size={14} />
                       </button>
                     </td>

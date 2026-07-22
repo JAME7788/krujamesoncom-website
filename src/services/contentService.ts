@@ -1,5 +1,6 @@
-// ระบบจัดการเนื้อหา — สร้าง/แก้ไข/ลบ รายวิชา, หน่วย, สไลด์, สื่อ, ควิซ
-// บันทึกใน localStorage layer ทับกับ curriculum.ts ที่ build-in
+// ระบบจัดการเนื้อหา — localStorage เป็น cache และ Firestore เป็นข้อมูลกลาง
+import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
+import { db } from './firebase';
 
 export interface CustomLink {
   id: string;
@@ -54,12 +55,46 @@ export const loadCourses = (): CustomCourse[] => {
   }
 };
 
+const firebaseAvailable = () => {
+  try { return !!db && !!import.meta.env.VITE_FIREBASE_PROJECT_ID; } catch { return false; }
+};
+
+const persistCourse = async (course: CustomCourse) => {
+  if (!firebaseAvailable()) return;
+  await setDoc(doc(db, 'courses', course.id), JSON.parse(JSON.stringify(course)));
+};
+
+/** ดึงรายวิชาที่ครูสร้างจากฐานข้อมูลกลาง แล้วลง cache ของเครื่อง */
+export const fetchCoursesFromFirebase = async (): Promise<CustomCourse[]> => {
+  if (!firebaseAvailable()) return loadCourses();
+  try {
+    const snap = await getDocs(collection(db, 'courses'));
+    const remote = snap.docs
+      .map((item) => item.data() as CustomCourse)
+      .filter((course) => course?.id && Array.isArray(course.units));
+    if (remote.length > 0) {
+      const sorted = remote.sort((a, b) => b.updatedAt - a.updatedAt);
+      localStorage.setItem(KEY, JSON.stringify(sorted));
+      return sorted;
+    }
+    const local = loadCourses();
+    await Promise.all(local.map(persistCourse));
+    return local;
+  } catch (error) {
+    console.warn('fetchCoursesFromFirebase failed, using local cache', error);
+    return loadCourses();
+  }
+};
+
 export const saveCourses = (courses: CustomCourse[]) => {
   try {
     localStorage.setItem(KEY, JSON.stringify(courses));
   } catch (e) {
     console.warn('saveCourses failed', e);
   }
+  void Promise.all(courses.map(persistCourse)).catch((error) => {
+    console.warn('course Firebase sync failed', error);
+  });
 };
 
 // ---------- Course CRUD ----------
@@ -92,6 +127,11 @@ export const updateCourse = (id: string, patch: Partial<CustomCourse>): CustomCo
 
 export const deleteCourse = (id: string) => {
   saveCourses(loadCourses().filter((c) => c.id !== id));
+  if (firebaseAvailable()) {
+    void deleteDoc(doc(db, 'courses', id)).catch((error) => {
+      console.warn('delete course from Firebase failed', error);
+    });
+  }
 };
 
 // ---------- Unit CRUD ----------
@@ -220,6 +260,14 @@ export const importJSON = (json: string): boolean => {
     const data = JSON.parse(json);
     if (!Array.isArray(data)) return false;
     saveCourses(data);
+    if (firebaseAvailable()) {
+      void getDocs(collection(db, 'courses')).then((snap) => {
+        const keep = new Set((data as CustomCourse[]).map((course) => course.id));
+        return Promise.all(snap.docs
+          .filter((item) => !keep.has(item.id))
+          .map((item) => deleteDoc(item.ref)));
+      }).catch((error) => console.warn('replace imported courses in Firebase failed', error));
+    }
     return true;
   } catch {
     return false;

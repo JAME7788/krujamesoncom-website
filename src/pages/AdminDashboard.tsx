@@ -4,7 +4,7 @@ import {
   Users, Calendar, BarChart3, TrendingUp, Activity, Clock,
   Download, Search, RefreshCw, Plus, Trash2, Save, CheckCircle2,
   XCircle, AlertTriangle, BookOpen, Award, FileText, Gamepad2, PlayCircle,
-  LogOut, Pencil, Lock,
+  LogOut, Pencil, Lock, MonitorPlay,
 } from 'lucide-react';
 import AdminGate from '../components/AdminGate';
 import CourseBuilder from '../components/CourseBuilder';
@@ -22,6 +22,8 @@ import HomeworkManager from '../components/HomeworkManager';
 import ThemeCustomizer from '../components/ThemeCustomizer';
 import LessonLockManager from '../components/LessonLockManager';
 import SlideManager from '../components/SlideManager';
+import VirtualClassroomManager from '../components/VirtualClassroomManager';
+import PrimaryTechnologyPlans from '../components/PrimaryTechnologyPlans';
 import { loadErrors, clearErrors } from '../services/errorLogger';
 import { Megaphone, Calendar as CalIcon, Bug } from 'lucide-react';
 import { adminLogout, getAdminSession } from '../services/authAdmin';
@@ -37,7 +39,7 @@ import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'overview' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
+type Tab = 'overview' | 'world' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -55,6 +57,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     title: '📊 หน้าหลักและสถิติ',
     items: [
       { id: 'overview', label: 'ภาพรวมระบบ', icon: <BarChart3 size={16} /> },
+      { id: 'world', label: 'ห้องเรียน 3D', icon: <MonitorPlay size={16} /> },
       { id: 'scores', label: 'สถิตินักเรียนในเว็บ', icon: <BarChart3 size={16} /> },
       { id: 'development', label: 'พัฒนาการรายคน', icon: <TrendingUp size={16} /> },
     ]
@@ -81,6 +84,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     title: '📚 จัดการบทเรียน',
     items: [
       { id: 'courses', label: 'จัดการรายวิชา', icon: <Pencil size={16} /> },
+      { id: 'p1-plan', label: 'แผนเทคโนโลยี ป.1-6', icon: <FileText size={16} /> },
       { id: 'locks', label: 'ปลดล็อกบทเรียน', icon: <Lock size={16} /> },
       { id: 'slides', label: 'จัดการสไลด์', icon: <BookOpen size={16} /> },
       { id: 'schedule', label: 'จัดการตารางสอน', icon: <Clock size={16} /> },
@@ -326,6 +330,12 @@ const AdminDashboardInner: React.FC = () => {
                     })
                   )}
                 </div>
+              </motion.div>
+            )}
+
+            {tab === 'world' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <VirtualClassroomManager />
               </motion.div>
             )}
 
@@ -713,6 +723,13 @@ const AdminDashboardInner: React.FC = () => {
                   </p>
                 </div>
                 <CourseBuilder />
+              </motion.div>
+            )}
+
+            {/* TAB: PRIMARY TECHNOLOGY TEACHING PLANS */}
+            {tab === 'p1-plan' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <PrimaryTechnologyPlans />
               </motion.div>
             )}
 

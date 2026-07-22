@@ -59,6 +59,17 @@ service cloud.firestore {
       allow write: if baseWrite(30);
     }
 
+    // ====== Primary Technology Outcome 5 Assessments ======
+    match /primaryCompetencyAssessments/{recordId} {
+      allow read: if true;
+      allow write: if baseWrite(30)
+                   && strOk('planId', 100)
+                   && strOk('classroom', 20)
+                   && strOk('studentCode', 100)
+                   && strOk('studentName', 300)
+                   && strOk('note', 3000);
+    }
+
     // ====== Announcements ======
     match /announcements/{id} {
       allow read: if true;
@@ -75,6 +86,25 @@ service cloud.firestore {
     match /courses/{id} {
       allow read: if true;
       allow write: if baseWrite(50);
+    }
+
+    // ====== Homework (งานที่ครูสั่ง + งานที่นักเรียนส่ง) ======
+    match /homeworkAssignments/{id} {
+      allow read: if true;
+      allow write: if baseWrite(30)
+                   && strOk('title', 500)
+                   && strOk('description', 10000)
+                   && strOk('classroom', 20);
+    }
+
+    match /homeworkSubmissions/{id} {
+      allow read: if true;
+      allow write: if baseWrite(30)
+                   && strOk('studentName', 300)
+                   && strOk('classroom', 20)
+                   && strOk('contentUrl', 3000)
+                   && strOk('comment', 5000)
+                   && strOk('feedback', 5000);
     }
 
     // ====== Schedule / courseAccess / unitLocks ======
@@ -117,6 +147,48 @@ service cloud.firestore {
     match /liveQuizzes/{code} {
       allow read: if true;
       allow write: if baseWrite(20);
+    }
+
+    // ====== Virtual 3D Classroom ======
+    match /virtualWorlds/{roomId} {
+      allow read: if true;
+      allow create, update: if baseWrite(10);
+      allow delete: if true;
+    }
+
+    match /virtualPlayers/{playerId} {
+      allow read: if true;
+      allow create, update: if baseWrite(20)
+                   && strOk('name', 300)
+                   && strOk('classroom', 20)
+                   && strOk('roomId', 100);
+      allow delete: if true;
+    }
+
+    // สถานะห้องที่ครูควบคุม: ล็อกการเดิน/สร้าง, สไลด์ร่วม, รหัสห้อง และการอนุมัติ
+    match /virtualRooms/{roomId} {
+      allow read: if true;
+      allow create, update: if baseWrite(40)
+                   && strOk('roomId', 100)
+                   && strOk('classroom', 20)
+                   && strOk('accessCodeHash', 100)
+                   && strOk('activeGamePath', 300)
+                   && strOk('activeGameTitle', 300)
+                   && strOk('updatedBy', 300);
+      allow delete: if true;
+    }
+
+    // เหตุการณ์หลักฐานในห้อง 3D ใช้ document id คงที่เพื่อไม่บันทึกซ้ำ
+    match /virtualActivityEvents/{eventId} {
+      allow read: if true;
+      allow create, update: if baseWrite(20)
+                   && strOk('eventId', 200)
+                   && strOk('roomId', 100)
+                   && strOk('playerId', 300)
+                   && strOk('playerName', 300)
+                   && strOk('classroom', 20)
+                   && strOk('detail', 1000);
+      allow delete: if true;
     }
 
     // Default deny for any other path

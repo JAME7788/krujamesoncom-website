@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Plus, Trash2, Edit3, ChevronDown, ChevronRight, Save, X,
   Video, Gamepad2, BookOpen, Link as LinkIcon, FileText, Award,
   Download, Upload,
 } from 'lucide-react';
 import {
-  loadCourses, createCourse, updateCourse, deleteCourse,
+  loadCourses, fetchCoursesFromFirebase, createCourse, updateCourse, deleteCourse,
   addUnit, updateUnit, deleteUnit,
   addSlide, updateSlide, removeSlide,
   addLink, removeLink,
@@ -20,8 +20,17 @@ const CourseBuilder: React.FC = () => {
   const [openUnit, setOpenUnit] = useState<string | null>(null);
   const [editingCourse, setEditingCourse] = useState<string | null>(null);
   const [editingUnit, setEditingUnit] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(true);
 
   const refresh = () => setCourses(loadCourses());
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCoursesFromFirebase()
+      .then((remote) => { if (!cancelled) setCourses(remote); })
+      .finally(() => { if (!cancelled) setSyncing(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   // ----- Course actions -----
   const handleAddCourse = () => {
@@ -107,7 +116,9 @@ const CourseBuilder: React.FC = () => {
         </button>
       </div>
 
-      {courses.length === 0 ? (
+      {syncing && courses.length === 0 ? (
+        <div className="empty-state-card"><p>กำลังดึงรายวิชาจากฐานข้อมูล...</p></div>
+      ) : courses.length === 0 ? (
         <div className="empty-state-card">
           <BookOpen size={48} style={{ color: '#6366f1' }} />
           <h3>ยังไม่มีรายวิชา</h3>

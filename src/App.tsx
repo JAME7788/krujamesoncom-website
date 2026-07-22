@@ -42,6 +42,7 @@ const ParentPortal = React.lazy(() => import('./pages/ParentPortal'));
 const LiveQuizHost = React.lazy(() => import('./pages/LiveQuizHost'));
 const LiveQuizPlay = React.lazy(() => import('./pages/LiveQuizPlay'));
 const HomeworkStudent = React.lazy(() => import('./pages/HomeworkStudent'));
+const VirtualClassroom = React.lazy(() => import('./pages/VirtualClassroom'));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -92,6 +93,7 @@ function App() {
                   <Route path="/live" element={<LiveQuizPlay />} />
                   <Route path="/live/host" element={<LiveQuizHost />} />
                   <Route path="/homework" element={<ProtectedRoute><HomeworkStudent /></ProtectedRoute>} />
+                  <Route path="/world" element={<ProtectedRoute><VirtualClassroom /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

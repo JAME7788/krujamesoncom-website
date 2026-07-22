@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Check, Layers, Search, ShieldAlert } from 'lucide-react';
 import { grades } from '../data/curriculum';
-import { loadCourses } from '../services/contentService';
+import { fetchCoursesFromFirebase, loadCourses } from '../services/contentService';
+import type { CustomCourse } from '../services/contentService';
 import {
   fetchUnlockedUnits,
   getUnlockedUnits,
@@ -38,9 +39,9 @@ const LessonLockManager: React.FC = () => {
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [courseAccessSettings, setCourseAccessSettings] = useState<CourseAccessSettings>(() => getCourseAccessSettings());
   const [savingAccess, setSavingAccess] = useState(false);
+  const [customCourses, setCustomCourses] = useState<CustomCourse[]>(loadCourses);
 
   const allCourses = useMemo<UnifiedCourse[]>(() => {
-    const customCourses = loadCourses();
     return [
       ...grades.map((g) => ({
         id: g.id,
@@ -57,7 +58,7 @@ const LessonLockManager: React.FC = () => {
         units: c.units.map((u) => ({ no: u.no, title: u.title })),
       })),
     ];
-  }, []);
+  }, [customCourses]);
 
   const courseById = useMemo(() => new Map(allCourses.map((course) => [course.id, course])), [allCourses]);
 
@@ -65,6 +66,10 @@ const LessonLockManager: React.FC = () => {
 
   useEffect(() => {
     let alive = true;
+
+    fetchCoursesFromFirebase().then((courses) => {
+      if (alive) setCustomCourses(courses);
+    });
 
     fetchUnlockedUnits().then((data) => {
       if (alive) setUnlockedMap(data);

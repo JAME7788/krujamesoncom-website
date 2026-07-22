@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, Megaphone, Pin } from 'lucide-react';
 import {
   loadAnnouncements, createAnnouncement, deleteAnnouncement, updateAnnouncement,
+  fetchAnnouncementsFromFirebase,
 } from '../services/announcementService';
 import type { Announcement } from '../services/announcementService';
 import { allClassrooms2569 } from '../data/students2569';
@@ -9,39 +10,57 @@ import { allClassrooms2569 } from '../data/students2569';
 const AnnouncementManager: React.FC = () => {
   const [list, setList] = useState(loadAnnouncements());
   const [show, setShow] = useState(false);
+  const [syncing, setSyncing] = useState(true);
   const [draft, setDraft] = useState<Partial<Announcement>>({
     title: '', body: '', type: 'info', emoji: '', classroom: '',
   });
 
   const reload = () => setList(loadAnnouncements());
 
-  const submit = () => {
+  useEffect(() => {
+    let cancelled = false;
+    fetchAnnouncementsFromFirebase()
+      .then((items) => { if (!cancelled) setList(items); })
+      .finally(() => { if (!cancelled) setSyncing(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const submit = async () => {
     if (!draft.title || !draft.body) {
       alert('กรอกหัวข้อและเนื้อหา');
       return;
     }
-    createAnnouncement({
-      title: draft.title!,
-      body: draft.body!,
-      type: draft.type || 'info',
-      emoji: draft.emoji,
-      classroom: draft.classroom || undefined,
-      pinned: draft.pinned || false,
-    });
-    setDraft({ title: '', body: '', type: 'info', emoji: '', classroom: '' });
-    setShow(false);
-    reload();
+    setSyncing(true);
+    try {
+      await createAnnouncement({
+        title: draft.title,
+        body: draft.body,
+        type: draft.type || 'info',
+        emoji: draft.emoji,
+        classroom: draft.classroom || undefined,
+        pinned: draft.pinned || false,
+      });
+      setDraft({ title: '', body: '', type: 'info', emoji: '', classroom: '' });
+      setShow(false);
+      reload();
+    } catch {
+      alert('บันทึกประกาศไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ต');
+    } finally {
+      setSyncing(false);
+    }
   };
 
-  const togglePin = (id: string, current: boolean) => {
-    updateAnnouncement(id, { pinned: !current });
-    reload();
+  const togglePin = async (id: string, current: boolean) => {
+    setSyncing(true);
+    try { await updateAnnouncement(id, { pinned: !current }); reload(); }
+    finally { setSyncing(false); }
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (!confirm('ลบประกาศนี้?')) return;
-    deleteAnnouncement(id);
-    reload();
+    setSyncing(true);
+    try { await deleteAnnouncement(id); reload(); }
+    finally { setSyncing(false); }
   };
 
   return (
@@ -96,8 +115,8 @@ const AnnouncementManager: React.FC = () => {
             <input type="checkbox" checked={draft.pinned} onChange={(e) => setDraft({ ...draft, pinned: e.target.checked })} />
             📌 ปักหมุดด้านบน (ไม่ให้ปิด)
           </label>
-          <button className="btn-export" onClick={submit}>
-            <Megaphone size={16} /> ประกาศเลย
+          <button className="btn-export" onClick={() => void submit()} disabled={syncing}>
+            <Megaphone size={16} /> {syncing ? 'กำลังบันทึก...' : 'ประกาศเลย'}
           </button>
         </div>
       )}
@@ -134,10 +153,10 @@ const AnnouncementManager: React.FC = () => {
                   <td style={{ fontSize: '0.78rem' }}>{new Date(a.createdAt).toLocaleDateString('th-TH')}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 4 }}>
-                      <button className="cb-icon-btn" onClick={() => togglePin(a.id, !!a.pinned)} title={a.pinned ? 'ยกเลิกหมุด' : 'ปักหมุด'}>
+                      <button className="cb-icon-btn" disabled={syncing} onClick={() => void togglePin(a.id, !!a.pinned)} title={a.pinned ? 'ยกเลิกหมุด' : 'ปักหมุด'}>
                         <Pin size={14} fill={a.pinned ? '#6366f1' : 'none'} color={a.pinned ? '#6366f1' : '#6b7280'} />
                       </button>
-                      <button className="cb-icon-btn danger" onClick={() => remove(a.id)}>
+                      <button className="cb-icon-btn danger" disabled={syncing} onClick={() => void remove(a.id)}>
                         <Trash2 size={14} />
                       </button>
                     </div>

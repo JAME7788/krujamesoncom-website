@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Award } from 'lucide-react';
 import {
   loadGrades, getSubjectsForClassroom, computeBreakdown, computeGrade,
-  fetchClassroomFromFirebase, saveGrades,
+  fetchClassroomFromFirebase, cacheGradesLocally,
 } from '../services/gradeService';
 import type { Subject, StudentGrade } from '../services/gradeService';
 
@@ -32,7 +32,7 @@ const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name }) => {
     let cancelled = false;
     const subjects = getSubjectsForClassroom(classroom);
     Promise.all(subjects.map((s) => fetchClassroomFromFirebase(classroom, s.id).then((data) => {
-      if (!cancelled && data && data.length > 0) saveGrades(classroom, data, s.id);
+      if (!cancelled && data && data.length > 0) cacheGradesLocally(classroom, data, s.id);
     }))).then(() => {
       if (!cancelled) setRevision((r) => r + 1);
     }).catch(() => {});

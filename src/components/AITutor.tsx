@@ -46,9 +46,10 @@ const AITutor: React.FC = () => {
       if (!trackedRef.current && user && user.id !== 'admin_teacher_account') {
         const gradeId = getDefaultProgressGradeIdForClassroom(user.classroom);
         if (gradeId) {
-          trackedRef.current = true;
-          void trackMediaClick(user.id, gradeId, 1, 'fun', '[AI Tutor] คำถามถึง AI').then(() => {
-            syncStudentGradesFromProgress({
+          void trackMediaClick(user.id, gradeId, 1, 'fun', '[AI Tutor] คำถามถึง AI').then((saved) => {
+            if (!saved) return;
+            trackedRef.current = true;
+            return syncStudentGradesFromProgress({
               id: user.id,
               name: user.name,
               classroom: user.classroom,

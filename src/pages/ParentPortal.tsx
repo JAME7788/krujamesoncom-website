@@ -1,17 +1,28 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { GraduationCap, BookOpen, Award, TrendingUp, Calendar, Activity } from 'lucide-react';
-import { getSummary } from '../services/progressService';
-import { loadGrades, getSubjectsForClassroom, computeBreakdown, computeGrade } from '../services/gradeService';
+import { fetchStudentProgress, getSummary } from '../services/progressService';
+import { loadGrades, getSubjectsForClassroom, computeBreakdown, computeGrade, fetchClassroomFromFirebase, cacheGradesLocally } from '../services/gradeService';
 import type { Subject } from '../services/gradeService';
-import { loadRoster } from '../services/rosterService';
-import { getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
+import { fetchRostersFromFirebase, loadRoster } from '../services/rosterService';
+import { fetchEventsFromFirebase, getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
+import type { CalendarEvent } from '../services/calendarService';
 import { getAchievementStats } from '../services/achievementService';
 import TrendChart from '../components/TrendChart';
 
 const ParentPortal: React.FC = () => {
   const { studentId } = useParams<{ studentId: string }>();
+  const [rosterVersion, setRosterVersion] = useState(0);
+  const [summary, setSummary] = useState(() => studentId ? getSummary(studentId) : null);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [, setDataVersion] = useState(0);
+
+  useEffect(() => {
+    fetchRostersFromFirebase().then(() => setRosterVersion((version) => version + 1));
+  }, []);
+
   const studentInfo = useMemo(() => {
+    void rosterVersion;
     if (!studentId) return;
     // studentId format: classroom_no_nameNoSpace
     const parts = studentId.split('_');
@@ -24,10 +35,29 @@ const ParentPortal: React.FC = () => {
       return { classroom, no, name: found.name, emoji: found.emoji };
     }
     return null;
+  }, [rosterVersion, studentId]);
+
+  const achievements = useMemo(() => studentId ? getAchievementStats(studentId) : null, [studentId]);
+
+  useEffect(() => {
+    if (!studentId) return;
+    fetchStudentProgress(studentId).then(() => setSummary(getSummary(studentId)));
   }, [studentId]);
 
-  const summary = useMemo(() => studentId ? getSummary(studentId) : null, [studentId]);
-  const achievements = useMemo(() => studentId ? getAchievementStats(studentId) : null, [studentId]);
+  useEffect(() => {
+    if (!studentInfo) return;
+    const subjects = getSubjectsForClassroom(studentInfo.classroom);
+    Promise.all([
+      fetchEventsFromFirebase(),
+      ...subjects.map(async (subjectInfo) => {
+        const remote = await fetchClassroomFromFirebase(studentInfo.classroom, subjectInfo.id);
+        if (remote) cacheGradesLocally(studentInfo.classroom, remote, subjectInfo.id);
+      }),
+    ]).then(() => {
+      setEvents(getUpcomingEvents(studentInfo.classroom, 14));
+      setDataVersion((version) => version + 1);
+    });
+  }, [studentInfo]);
 
   if (!studentId || !studentInfo) {
     return (
@@ -40,7 +70,6 @@ const ParentPortal: React.FC = () => {
   }
 
   const subjects = getSubjectsForClassroom(studentInfo.classroom);
-  const events = getUpcomingEvents(studentInfo.classroom, 14);
 
   // Trend
   const trendData = (() => {

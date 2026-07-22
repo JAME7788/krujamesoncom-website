@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, ChevronRight, ExternalLink, Globe } from 'lucide-react';
+import { Sparkles, ChevronRight, ExternalLink, Globe, Volume2, VolumeX } from 'lucide-react';
+import { isSfxMuted, setSfxMuted, playWinSound } from '../../utils/celebrate';
 import { allResources, ALL_GRADES } from '../../data/learningResources';
+import { gamesCatalog } from '../../data/gamesCatalog';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
 import { trackMediaClick } from '../../services/progressService';
@@ -38,154 +40,13 @@ const formatGradeRange = (targetUnits: { gradeId: string }[]): string => {
   return [fmt(pNums, 'ป.'), fmt(mNums, 'ม.')].filter(Boolean).join(' + ') || 'ทุกชั้น';
 };
 
-interface GameInfo {
-  id: string;
-  title: string;
-  desc: string;
-  emoji: string;
-  level: string;
-  skill: string;
-  color: string;
-  path: string;
-}
-
-const games: GameInfo[] = [
-  {
-    id: 'quick-answer',
-    title: '⚡ เกมตอบไวคอมพิวเตอร์',
-    desc: 'กระดานคำตอบ 25 ช่อง วิชาคอมพิวเตอร์ วิทยาการคำนวณ และออกแบบเทคโนโลยี — ใช้ทบทวนเร็ว เก็บคะแนนและเวลาได้',
-    emoji: '⚡',
-    level: 'ป.1-ม.3',
-    skill: 'ตอบเร็ว + ทบทวน',
-    color: '#0f766e',
-    path: '/games/quick-answer-computing',
-  },
-  {
-    id: 'mouse',
-    title: 'ภารกิจเมาส์แม่นยำ',
-    desc: 'ฝึกคลิก ดับเบิลคลิก ลากวาง — เป้าหมายเคลื่อนที่ได้!',
-    emoji: '🖱️',
-    level: 'ป.1-3',
-    skill: 'ใช้เมาส์',
-    color: '#3b82f6',
-    path: '/games/mouse-practice',
-  },
-  {
-    id: 'keyboard',
-    title: 'นักสำรวจคีย์บอร์ด',
-    desc: 'พิมพ์ตามตัวอักษรที่ตกลงมา — เร็วที่สุด!',
-    emoji: '⌨️',
-    level: 'ป.1-6',
-    skill: 'พิมพ์',
-    color: '#8b5cf6',
-    path: '/games/keyboard-practice',
-  },
-  {
-    id: 'algorithm',
-    title: 'จัดอัลกอริทึม',
-    desc: 'ลากขั้นตอนให้เรียงถูกลำดับ — ฝึกคิดเป็นขั้นตอน',
-    emoji: '🧩',
-    level: 'ป.4-ม.3',
-    skill: 'อัลกอริทึม',
-    color: '#22c55e',
-    path: '/games/algorithm-sorter',
-  },
-  {
-    id: 'binary',
-    title: 'แปลงเลขฐานสอง',
-    desc: 'แปลงเลข 0-255 เป็น binary — ฝึกคิดแบบคอมพิวเตอร์',
-    emoji: '🔢',
-    level: 'ม.1-3',
-    skill: 'เลขฐาน',
-    color: '#f59e0b',
-    path: '/games/binary',
-  },
-  {
-    id: 'memory',
-    title: 'จับคู่ความจำ',
-    desc: 'พลิกการ์ดหาคู่ที่เหมือนกัน — ฝึกความจำและสมาธิ',
-    emoji: '🃏',
-    level: 'ป.1-6',
-    skill: 'ความจำ',
-    color: '#ec4899',
-    path: '/games/memory',
-  },
-  {
-    id: 'pattern',
-    title: 'หาแพทเทิร์น',
-    desc: 'ทายตัวต่อไปในลำดับ — ฝึก Pattern Recognition',
-    emoji: '🔍',
-    level: 'ป.3-ม.3',
-    skill: 'หาแพทเทิร์น',
-    color: '#06b6d4',
-    path: '/games/pattern',
-  },
-  {
-    id: 'maze',
-    title: '🤖 Coding Maze',
-    desc: 'ลากบล็อก ↑↓←→ พาหุ่นยนต์ฝ่ามาเก็บดาวและหาเป้าหมาย — เริ่มต้นเขียนโปรแกรมแบบจริงจัง!',
-    emoji: '🤖',
-    level: 'ป.2-ม.3',
-    skill: 'เขียนโปรแกรม',
-    color: '#7c3aed',
-    path: '/games/coding-maze',
-  },
-  {
-    id: 'snake',
-    title: '🐍 งูกินผลไม้',
-    desc: 'เกมงูคลาสสิก! บังคับงูกินผลไม้ให้นานที่สุด — ฝึก Loop และ Conditional แบบเห็นภาพ',
-    emoji: '🐍',
-    level: 'ทุกระดับ',
-    skill: 'การคิดเชิงตรรกะ',
-    color: '#16a34a',
-    path: '/games/snake',
-  },
-  {
-    id: 'bug',
-    title: '🐞 จับบั๊ก',
-    desc: 'จับบั๊กให้ทันก่อนหนี! แต่ระวัง 🦋 ห้ามตี — สนุก ตื่นเต้น เร็วขึ้นเรื่อยๆ',
-    emoji: '🐞',
-    level: 'ทุกระดับ',
-    skill: 'Debug + ตอบสนอง',
-    color: '#dc2626',
-    path: '/games/bug-catcher',
-  },
-  {
-    id: 'device-match',
-    title: '🔌 จับคู่อุปกรณ์คอมพิวเตอร์',
-    desc: 'ดูรูปอุปกรณ์แล้วเลือกชื่อให้ถูก — เมาส์ แป้นพิมพ์ จอ ฯลฯ ย้ำเนื้อหาบทเรียน',
-    emoji: '🔌',
-    level: 'ป.1-3',
-    skill: 'รู้จักอุปกรณ์',
-    color: '#0ea5e9',
-    path: '/games/device-match',
-  },
-  {
-    id: 'step-sort',
-    title: '🔢 เรียงขั้นตอนด้วยรูป',
-    desc: 'กดการ์ดให้ถูกลำดับก่อน-หลัง (แปรงฟัน ล้างมือ เปิดคอม) — พื้นฐานอัลกอริทึม',
-    emoji: '🔢',
-    level: 'ป.1-3',
-    skill: 'คิดเป็นขั้นตอน',
-    color: '#f97316',
-    path: '/games/step-sort',
-  },
-  {
-    id: 'safety',
-    title: '🛡️ ปลอดภัยหรือไม่ปลอดภัย?',
-    desc: 'อ่านสถานการณ์ออนไลน์แล้วเลือกปลอดภัย/ไม่ปลอดภัย — รู้เท่าทันภัยดิจิทัล',
-    emoji: '🛡️',
-    level: 'ป.4-ม.3',
-    skill: 'ความปลอดภัยดิจิทัล',
-    color: '#16a34a',
-    path: '/games/safety',
-  },
-];
+const games = gamesCatalog;
 
 const Games: React.FC = () => {
   const { user, partner, getActiveIds } = useAuth();
   const toast = useToast();
   const [extGrade, setExtGrade] = useState<string>('all');
+  const [muted, setMuted] = useState<boolean>(isSfxMuted());
 
   // กรอง resources ที่เป็นเกมโค้ดดิ้งภายนอก (category = programming หรือ computational)
   const externalGames = useMemo(() => {
@@ -221,16 +82,20 @@ const Games: React.FC = () => {
       return;
     }
     // รอ trackMediaClick เสร็จก่อน sync — ไม่งั้น sync ใช้ data เก่า
-    const writes: Promise<void>[] = [];
+    const writes: Promise<boolean>[] = [];
     activeTargets.forEach((tu) => {
       ids.forEach((id) => {
         writes.push(trackMediaClick(id, tu.gradeId, tu.unitNo, 'fun', `[ExternalGame:${resourceId}] ${title}`));
       });
     });
-    await Promise.all(writes);
-    syncStudentGradesFromProgress({ id: user.id, name: user.name, classroom: user.classroom, studentNumber: user.studentNumber }, accessSettings);
+    const stored = await Promise.all(writes);
+    if (!stored.every(Boolean)) {
+      toast.show('บันทึกผลเกมลงฐานข้อมูลไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่', 'error');
+      return;
+    }
+    await syncStudentGradesFromProgress({ id: user.id, name: user.name, classroom: user.classroom, studentNumber: user.studentNumber }, accessSettings);
     if (partner) {
-      syncStudentGradesFromProgress({ id: partner.id, name: partner.name, classroom: partner.classroom, studentNumber: partner.studentNumber }, accessSettings);
+      await syncStudentGradesFromProgress({ id: partner.id, name: partner.name, classroom: partner.classroom, studentNumber: partner.studentNumber }, accessSettings);
     }
     toast.show(`🎯 +5 XP · บันทึก "${title}" ลงคะแนน P แล้ว`, 'success');
   };
@@ -243,6 +108,26 @@ const Games: React.FC = () => {
         </span>
         <h1>🎮 เล่นและเรียนรู้</h1>
         <p>เกมที่สร้างขึ้นเพื่อฝึกทักษะคอมพิวเตอร์ — ไม่ต้องล็อกอิน เปิดเล่นได้เลย!</p>
+        <button
+          onClick={() => {
+            const next = !muted;
+            setMuted(next);
+            setSfxMuted(next);
+            if (!next) playWinSound();
+          }}
+          aria-label={muted ? 'เปิดเสียงฉลองเกม' : 'ปิดเสียงฉลองเกม'}
+          title={muted ? 'เปิดเสียงฉลองเมื่อเล่นเกมจบ' : 'ปิดเสียงฉลองเมื่อเล่นเกมจบ'}
+          style={{
+            marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '6px 14px', borderRadius: 999, cursor: 'pointer',
+            border: `1.5px solid ${muted ? '#e5e7eb' : '#a5b4fc'}`,
+            background: muted ? '#f9fafb' : '#eef2ff',
+            color: muted ? '#9ca3af' : '#4f46e5', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit',
+          }}
+        >
+          {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+          {muted ? 'เสียงฉลอง: ปิด' : 'เสียงฉลอง: เปิด'}
+        </button>
       </div>
 
       <div className="games-grid">

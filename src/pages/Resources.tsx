@@ -94,24 +94,28 @@ const Resources: React.FC = () => {
     let totalAwards = 0;
 
     // บันทึก fun click ให้ทุก unit ที่ resource นี้ตรงกับ — รอเสร็จก่อน sync
-    const writes: Promise<void>[] = [];
+    const writes: Promise<boolean>[] = [];
     targetUnits.forEach((tu) => {
       ids.forEach((id) => {
         writes.push(trackMediaClick(id, tu.gradeId, tu.unitNo, 'fun', `[Resource] ${r.title}`));
       });
       totalAwards += 1;
     });
-    await Promise.all(writes);
+    const stored = await Promise.all(writes);
+    if (!stored.every(Boolean)) {
+      toast.show('บันทึกกิจกรรมลงฐานข้อมูลไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่', 'error');
+      return;
+    }
 
     // sync K/P/A ให้ครบ (P จะอัปเดต)
-    syncStudentGradesFromProgress({
+    await syncStudentGradesFromProgress({
       id: user.id,
       name: user.name,
       classroom: user.classroom,
       studentNumber: user.studentNumber,
     }, accessSettings);
     if (partner) {
-      syncStudentGradesFromProgress({
+      await syncStudentGradesFromProgress({
         id: partner.id,
         name: partner.name,
         classroom: partner.classroom,

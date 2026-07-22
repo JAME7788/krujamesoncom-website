@@ -61,12 +61,8 @@ export const fetchAttendance = async (date: string, classroom: string): Promise<
 };
 
 const syncToFirebase = async (data: ManualAttendance) => {
-  if (!fbAvailable()) return;
-  try {
-    await setDoc(doc(db, 'attendance', docId(data.date, data.classroom)), data, { merge: true });
-  } catch (e) {
-    console.debug('attendance sync skipped', e);
-  }
+  if (!fbAvailable()) throw new Error('Firebase ยังไม่ได้ตั้งค่า');
+  await setDoc(doc(db, 'attendance', docId(data.date, data.classroom)), data, { merge: true });
 };
 
 const saveLocal = (data: ManualAttendance) => {
@@ -81,23 +77,24 @@ export const setStatus = async (
   studentId: string,
   status: AttendanceStatus,
 ): Promise<void> => {
-  const data = loadAttendance(date, classroom);
+  const data = await fetchAttendance(date, classroom);
   const prev = data.records[studentCode];
   data.records = { ...data.records, [studentCode]: status };
   data.updatedAt = Date.now();
+  await syncToFirebase(data);
   saveLocal(data);
-  void syncToFirebase(data);
 
   // ถ้าเปลี่ยนจาก absent/sick → present/late ให้ XP, แต่ครั้งเดียวต่อวัน
   const info = ATTENDANCE_LABEL[status];
   if (info.xp > 0 && prev !== status) {
     try {
       await fetchStudentProgress(studentId);
-      await awardBonus(studentId, {
+      const stored = await awardBonus(studentId, {
         emoji: info.emoji,
         reason: `[Attend:${date}] ${info.th}`,
         xp: info.xp,
       });
+      if (!stored) throw new Error('บันทึก XP เข้า Firebase ไม่สำเร็จ');
     } catch (e) {
       console.warn('attendance bonus failed', e);
     }

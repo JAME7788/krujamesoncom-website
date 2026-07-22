@@ -28,14 +28,19 @@ const LiveQuizPlay: React.FC = () => {
     const answeredCount = Object.keys(me.answers).length;
     // ถ้า join แต่ไม่ตอบเลย ไม่ต้องบันทึก — ป้องกัน bestQuizScore=0 ทับของเก่า
     if (answeredCount === 0) { savedRef.current = true; return; }
-    savedRef.current = true;
     const total = room.questions.length;
     const correct = Object.values(me.answers).filter((a) => a.correct).length;
     const targetGradeId = room.targetGradeId || getDefaultProgressGradeIdForClassroom(user.classroom);
     const targetUnitNo = room.targetUnitNo || 1;
     if (!targetGradeId) return;
-    void saveQuizAttempt(user.id, targetGradeId, targetUnitNo, correct, total, {}).then(() => {
-      syncStudentGradesFromProgress({
+    savedRef.current = true;
+    void saveQuizAttempt(user.id, targetGradeId, targetUnitNo, correct, total, {}).then((attempt) => {
+      if (!attempt.saved) {
+        savedRef.current = false;
+        return;
+      }
+      savedRef.current = true;
+      return syncStudentGradesFromProgress({
         id: user.id,
         name: user.name,
         classroom: user.classroom,

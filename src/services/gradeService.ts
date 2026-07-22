@@ -7,7 +7,7 @@
 //   - คำนวณคะแนนรวม + เกรด อัตโนมัติ
 
 import { db } from './firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, runTransaction } from 'firebase/firestore';
 import { allClassrooms2569 } from '../data/students2569';
 
 export type Skill = 'พอใช้' | 'ปานกลาง' | 'ดี';
@@ -219,6 +219,49 @@ export const emptyIndicatorScore = (maxK = 15): IndicatorScore => ({
   updatedAt: Date.now(),
 });
 
+/** สร้างแถวคะแนนเฉพาะนักเรียนที่กำลังใช้งาน หากเครื่องนี้ยังไม่มีกระดาษเกรด */
+export const ensureStudentGrade = (
+  classroom: string,
+  student: {
+    studentCode: string;
+    studentNo: number;
+    name: string;
+    emoji?: string;
+  },
+  subject: Subject = 'main',
+): StudentGrade => {
+  const grades = loadGrades(classroom, subject);
+  const existing = grades.find((grade) => (
+    grade.studentCode === student.studentCode
+    || grade.studentNo === student.studentNo
+    || grade.name === student.name
+  ));
+  if (existing) {
+    existing.studentNo = student.studentNo;
+    existing.name = student.name;
+    existing.emoji = student.emoji || existing.emoji || '👤';
+    cacheGradesLocally(classroom, grades, subject);
+    return existing;
+  }
+
+  const indicators: Record<string, IndicatorScore> = {};
+  getIndicators(classroom, subject).forEach((indicator) => {
+    indicators[indicator.id] = emptyIndicatorScore(indicator.maxScore);
+  });
+  const created: StudentGrade = {
+    studentCode: student.studentCode,
+    classroom,
+    studentNo: student.studentNo,
+    name: student.name,
+    emoji: student.emoji || '👤',
+    indicators,
+    updatedAt: Date.now(),
+  };
+  grades.push(created);
+  cacheGradesLocally(classroom, grades, subject);
+  return created;
+};
+
 // ---------- CRUD ----------
 
 export const loadGrades = (classroom: string, subject: Subject = 'main'): StudentGrade[] => {
@@ -250,13 +293,18 @@ export const loadGrades = (classroom: string, subject: Subject = 'main'): Studen
   }
 };
 
-export const saveGrades = (classroom: string, grades: StudentGrade[], subject: Subject = 'main') => {
+/** เก็บ cache ของกระดาษเกรดในเครื่อง โดยไม่เขียนกลับ Firebase */
+export const cacheGradesLocally = (classroom: string, grades: StudentGrade[], subject: Subject = 'main') => {
   try {
     localStorage.setItem(storageKey(classroom, subject), JSON.stringify(grades));
-    syncClassroomToFirebase(classroom, grades, subject);
   } catch (e) {
-    console.warn('saveGrades failed', e);
+    console.warn('cacheGradesLocally failed', e);
   }
+};
+
+export const saveGrades = (classroom: string, grades: StudentGrade[], subject: Subject = 'main') => {
+  cacheGradesLocally(classroom, grades, subject);
+  void syncClassroomToFirebase(classroom, grades, subject);
 };
 
 export const updateStudentScore = (
@@ -278,7 +326,11 @@ export const updateStudentScore = (
     updatedAt: Date.now(),
   };
   student.updatedAt = Date.now();
-  saveGrades(classroom, grades, subject);
+  cacheGradesLocally(classroom, grades, subject);
+  void patchStudentGradeInFirebase(classroom, student, subject, {
+    indicatorId,
+    indicatorScore: student.indicators[indicatorId],
+  });
 };
 
 export const updateFinalExam = (
@@ -292,7 +344,8 @@ export const updateFinalExam = (
   if (!student) return;
   student.finalExam = score;
   student.updatedAt = Date.now();
-  saveGrades(classroom, grades, subject);
+  cacheGradesLocally(classroom, grades, subject);
+  void patchStudentGradeInFirebase(classroom, student, subject, { finalExam: score });
 };
 
 /** อัปเดตคะแนนสอบกลางภาค */
@@ -307,7 +360,8 @@ export const updateMidtermExam = (
   if (!student) return;
   student.midtermExam = score;
   student.updatedAt = Date.now();
-  saveGrades(classroom, grades, subject);
+  cacheGradesLocally(classroom, grades, subject);
+  void patchStudentGradeInFirebase(classroom, student, subject, { midtermExam: score });
 };
 
 // ---------- Manual/outside-web assessments ----------
@@ -335,6 +389,32 @@ const assessmentKey = (classroom: string, subject: Subject = 'main') =>
 const assessmentScoreKey = (classroom: string, subject: Subject = 'main') =>
   `${ASSESSMENT_SCORE_PREFIX}${classroom}_${subject}`;
 
+const gradeDocumentId = (classroom: string, subject: Subject = 'main') => (
+  subject === 'main' ? classroom : `${classroom}_${subject}`
+);
+
+/** เก็บโครงสร้างใบงานนอกเว็บและคะแนนดิบไว้ในเอกสารเดียวกับกระดาษเกรด */
+const syncManualAssessmentData = async (classroom: string, subject: Subject = 'main') => {
+  try {
+    if (!db || !import.meta.env.VITE_FIREBASE_PROJECT_ID) return;
+    await setDoc(doc(db, 'grades', gradeDocumentId(classroom, subject)), {
+      classroom,
+      subject,
+      manualAssessments: loadManualAssessments(classroom, subject),
+      manualAssessmentScores: loadManualAssessmentScores(classroom, subject),
+      manualUpdatedAt: Date.now(),
+    }, { merge: true });
+  } catch (error) {
+    console.warn('manual assessment Firebase sync failed', error);
+  }
+};
+
+let manualAssessmentSyncQueue: Promise<void> = Promise.resolve();
+const queueManualAssessmentSync = (classroom: string, subject: Subject) => {
+  manualAssessmentSyncQueue = manualAssessmentSyncQueue
+    .then(() => syncManualAssessmentData(classroom, subject));
+};
+
 const makeAssessmentId = () =>
   `ma_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -360,6 +440,7 @@ export const saveManualAssessments = (
   subject: Subject = 'main'
 ) => {
   localStorage.setItem(assessmentKey(classroom, subject), JSON.stringify(assessments));
+  queueManualAssessmentSync(classroom, subject);
 };
 
 export const loadManualAssessmentScores = (
@@ -381,6 +462,7 @@ export const saveManualAssessmentScores = (
   subject: Subject = 'main'
 ) => {
   localStorage.setItem(assessmentScoreKey(classroom, subject), JSON.stringify(scores));
+  queueManualAssessmentSync(classroom, subject);
 };
 
 export const createManualAssessment = (
@@ -519,7 +601,12 @@ export const applyManualAssessmentsToGrades = (
     }
   });
 
-  if (studentsUpdated > 0) saveGrades(classroom, grades, subject);
+  if (studentsUpdated > 0) {
+    cacheGradesLocally(classroom, grades, subject);
+    void Promise.all(grades.map((student) => (
+      upsertStudentGradeToFirebase(classroom, student, subject)
+    ))).catch((error) => console.warn('manual grade upsert failed', error));
+  }
   return { studentsUpdated, indicatorsUpdated, assessmentsUsed: assessments.length };
 };
 
@@ -572,7 +659,10 @@ export const seedUnit1ScoresForAllClasses = (
         });
         g.updatedAt = Date.now();
       });
-      saveGrades(classroom, grades, subj.id);
+      cacheGradesLocally(classroom, grades, subj.id);
+      void Promise.all(grades.map((student) => (
+        upsertStudentGradeToFirebase(classroom, student, subj.id)
+      ))).catch((error) => console.warn('seed grade upsert failed', error));
       result.push({
         classroom,
         subject: subj.id,
@@ -770,7 +860,7 @@ const syncClassroomToFirebase = async (
 ) => {
   if (!firebaseAvailable()) return;
   try {
-    const docId = subject === 'main' ? classroom : `${classroom}_${subject}`;
+    const docId = gradeDocumentId(classroom, subject);
     const ref = doc(db, 'grades', docId);
     await setDoc(ref, { classroom, subject, students: grades, updatedAt: Date.now() }, { merge: true });
   } catch (e) {
@@ -783,17 +873,150 @@ export const fetchClassroomFromFirebase = async (
 ): Promise<StudentGrade[] | null> => {
   if (!firebaseAvailable()) return null;
   try {
-    const docId = subject === 'main' ? classroom : `${classroom}_${subject}`;
+    const docId = gradeDocumentId(classroom, subject);
     const ref = doc(db, 'grades', docId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      const data = snap.data() as { students?: StudentGrade[] } | undefined;
+      const data = snap.data() as {
+        students?: StudentGrade[];
+        manualAssessments?: ManualAssessment[];
+        manualAssessmentScores?: ManualAssessmentScores;
+      } | undefined;
+      if (data?.manualAssessments) {
+        localStorage.setItem(
+          assessmentKey(classroom, subject),
+          JSON.stringify(data.manualAssessments),
+        );
+      }
+      if (data?.manualAssessmentScores) {
+        localStorage.setItem(
+          assessmentScoreKey(classroom, subject),
+          JSON.stringify(data.manualAssessmentScores),
+        );
+      }
       return data?.students || null;
     }
   } catch (e) {
     console.debug('grade fetch failed', e);
   }
   return null;
+};
+
+const skillRank: Record<Skill, number> = { 'พอใช้': 1, 'ปานกลาง': 2, 'ดี': 3 };
+
+const mergeIndicatorForStudent = (
+  remote: IndicatorScore | undefined,
+  incoming: IndicatorScore,
+): IndicatorScore => {
+  if (!remote) return incoming;
+  const p = skillRank[incoming.p] >= skillRank[remote.p] ? incoming.p : remote.p;
+  return {
+    ...remote,
+    ...incoming,
+    k: Math.max(remote.k || 0, incoming.k || 0),
+    maxK: Math.max(remote.maxK || 0, incoming.maxK || 0),
+    p,
+    a: Boolean(remote.a || incoming.a),
+    pAssessed: Boolean(remote.pAssessed || incoming.pAssessed),
+    aAssessed: Boolean(remote.aAssessed || incoming.aAssessed),
+    updatedAt: Math.max(remote.updatedAt || 0, incoming.updatedAt || 0),
+  };
+};
+
+type TeacherGradePatch = {
+  indicatorId?: string;
+  indicatorScore?: IndicatorScore;
+  midtermExam?: number;
+  finalExam?: number;
+};
+
+/** ครูแก้เฉพาะช่องด้วย transaction โดยไม่ส่งสำเนาคะแนนทั้งห้องไปทับข้อมูลล่าสุด */
+const patchStudentGradeInFirebase = async (
+  classroom: string,
+  fallbackStudent: StudentGrade,
+  subject: Subject,
+  patch: TeacherGradePatch,
+): Promise<void> => {
+  if (!firebaseAvailable()) return;
+  const ref = doc(db, 'grades', gradeDocumentId(classroom, subject));
+  try {
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(ref);
+      const students = snap.exists()
+        ? [...((snap.data().students as StudentGrade[] | undefined) || [])]
+        : [];
+      let index = students.findIndex((student) => student.studentCode === fallbackStudent.studentCode);
+      const current = index >= 0 ? students[index] : fallbackStudent;
+      const next: StudentGrade = {
+        ...current,
+        updatedAt: Date.now(),
+        indicators: { ...(current.indicators || {}) },
+      };
+      if (patch.indicatorId && patch.indicatorScore) {
+        next.indicators[patch.indicatorId] = patch.indicatorScore;
+      }
+      if (patch.midtermExam !== undefined) next.midtermExam = patch.midtermExam;
+      if (patch.finalExam !== undefined) next.finalExam = patch.finalExam;
+      if (index < 0) {
+        index = students.length;
+        students.push(next);
+      } else {
+        students[index] = next;
+      }
+      transaction.set(ref, { classroom, subject, students, updatedAt: Date.now() }, { merge: true });
+    });
+  } catch (error) {
+    console.warn('teacher grade patch failed', error);
+  }
+};
+
+/**
+ * เขียนคะแนนเฉพาะนักเรียนคนเดียวด้วย transaction
+ * ป้องกันเครื่องนักเรียนส่งสำเนาเก่าของทั้งห้องไปทับคะแนนเพื่อน
+ */
+export const upsertStudentGradeToFirebase = async (
+  classroom: string,
+  incoming: StudentGrade,
+  subject: Subject = 'main',
+): Promise<void> => {
+  if (!firebaseAvailable()) throw new Error('Firebase is not configured');
+  const docId = gradeDocumentId(classroom, subject);
+  const ref = doc(db, 'grades', docId);
+
+  await runTransaction(db, async (transaction) => {
+    const snap = await transaction.get(ref);
+    const current = snap.exists()
+      ? (snap.data().students as StudentGrade[] | undefined) || []
+      : [];
+    const index = current.findIndex((student) => (
+      student.studentCode === incoming.studentCode
+      || student.studentNo === incoming.studentNo
+      || student.name === incoming.name
+    ));
+    const remote = index >= 0 ? current[index] : undefined;
+    const mergedIndicators: Record<string, IndicatorScore> = { ...(remote?.indicators || {}) };
+    Object.entries(incoming.indicators || {}).forEach(([indicatorId, score]) => {
+      mergedIndicators[indicatorId] = mergeIndicatorForStudent(mergedIndicators[indicatorId], score);
+    });
+    const merged: StudentGrade = {
+      ...remote,
+      ...incoming,
+      midtermExam: remote?.midtermExam ?? incoming.midtermExam,
+      finalExam: remote?.finalExam ?? incoming.finalExam,
+      comment: remote?.comment ?? incoming.comment,
+      indicators: mergedIndicators,
+      updatedAt: Date.now(),
+    };
+    const students = [...current];
+    if (index >= 0) students[index] = merged;
+    else students.push(merged);
+    transaction.set(ref, {
+      classroom,
+      subject,
+      students,
+      updatedAt: Date.now(),
+    }, { merge: true });
+  });
 };
 
 // ---------- Sync K from progress (เชื่อมกับ quiz score อัตโนมัติ) ----------
@@ -1033,7 +1256,8 @@ export const syncFromProgress = (
   classroom: string,
   studentCode: string,
   studentId?: string,
-  subject: Subject = 'main'
+  subject: Subject = 'main',
+  persistScope: 'classroom' | 'local' = 'classroom',
 ): { changed: number; matchType?: string } => {
   const grades = loadGrades(classroom, subject);
   const student = grades.find((g) => g.studentCode === studentCode);
@@ -1073,6 +1297,8 @@ export const syncFromProgress = (
     // คำนวณจากคะแนนควิซเฉลี่ย × maxScore ของทุก unit ที่ link กับตัวชี้วัดนี้
     let totalQuizScore = 0;
     let totalQuizMax = 0;
+    let totalWorldKnowledgeScore = 0;
+    let totalWorldKnowledgeMax = 0;
 
     // ============ P = ทักษะที่เกี่ยวกับตัวชี้วัด ============
     // นับการลงมือทำ — เน้น hands-on (เกม) > วิดีโอ > สไลด์
@@ -1090,6 +1316,10 @@ export const syncFromProgress = (
       if (u.bestQuizMax > 0) {
         totalQuizScore += u.bestQuizScore;
         totalQuizMax += u.bestQuizMax;
+      }
+      if ((u.worldKnowledgeMax || 0) > 0) {
+        totalWorldKnowledgeScore += u.worldKnowledgeCorrect || 0;
+        totalWorldKnowledgeMax += Math.max(2, u.worldKnowledgeMax || 0);
       }
 
       // P: งานปฏิบัติ ×5 + เกม ×3 + วิดีโอ ×2 + สไลด์ ×1 + บทความ ×1
@@ -1109,8 +1339,17 @@ export const syncFromProgress = (
       totalQuizMax > 0
         ? Math.round((totalQuizScore / totalQuizMax) * ind.maxScore)
         : 0;
+    // คำถามสั้นในห้อง 3D เป็นหลักฐาน K แบบ formative และมีน้ำหนักสูงสุด 50%
+    // เพื่อไม่ให้ตอบเพียงข้อเดียวแล้วได้คะแนนความรู้เต็มตัวชี้วัด
+    const worldK =
+      totalWorldKnowledgeMax > 0
+        ? Math.min(
+          Math.round(ind.maxScore * 0.5),
+          Math.round((totalWorldKnowledgeScore / totalWorldKnowledgeMax) * ind.maxScore),
+        )
+        : 0;
     const existingK = student.indicators[ind.id]?.k || 0;
-    const k = Math.max(quizK, existingK);
+    const k = Math.max(quizK, worldK, existingK);
 
     // P: ระดับทักษะ — เกณฑ์ตามคะแนน skill points
     // ≥ 15 → ดี (ลงมือเยอะ), ≥ 5 → ปานกลาง, < 5 → พอใช้
@@ -1156,7 +1395,13 @@ export const syncFromProgress = (
 
   if (changed > 0) {
     student.updatedAt = Date.now();
-    saveGrades(classroom, grades, subject);
+    if (persistScope === 'local') cacheGradesLocally(classroom, grades, subject);
+    else {
+      cacheGradesLocally(classroom, grades, subject);
+      void Promise.all(grades.map((student) => (
+        upsertStudentGradeToFirebase(classroom, student, subject)
+      ))).catch((error) => console.warn('progress grade upsert failed', error));
+    }
   }
   return { changed, matchType };
 };

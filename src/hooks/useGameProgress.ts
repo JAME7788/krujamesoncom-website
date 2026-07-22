@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { recordGameProgress } from '../services/gameProgressService';
 import type { GameProgressId } from '../services/gameProgressService';
+import { celebrate } from '../utils/celebrate';
 
 export const useGameProgress = (gameId: GameProgressId, gameTitle: string) => {
   const { user, partner } = useAuth();
@@ -11,8 +12,10 @@ export const useGameProgress = (gameId: GameProgressId, gameTitle: string) => {
 
   return useCallback(
     async (score?: number) => {
-      if (recordedRef.current || !user || user.id === 'admin_teacher_account') return;
+      if (recordedRef.current) return;
       recordedRef.current = true;
+      celebrate(); // 🎉 ฉลองทุกครั้งที่เล่นจบ (เสียง + confetti) — เด็กทุกคนรวม guest
+      if (!user || user.id === 'admin_teacher_account') return;
       try {
         const result = await recordGameProgress(gameId, gameTitle, [user, partner], score);
         if (result.saved > 0) {

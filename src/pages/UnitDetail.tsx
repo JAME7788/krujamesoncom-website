@@ -1195,6 +1195,7 @@ const UnitDetail: React.FC = () => {
   const [slideIdx, setSlideIdx] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [savingQuiz, setSavingQuiz] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [completedPractices, setCompletedPractices] = useState<string[]>([]);
   const [savingPractice, setSavingPractice] = useState<string | null>(null);
@@ -1211,22 +1212,23 @@ const UnitDetail: React.FC = () => {
     [grade, unit, extras.quiz],
   );
 
-  const syncActiveUserGrades = React.useCallback(() => {
+  const syncActiveUserGrades = React.useCallback(async () => {
     if (!user || user.id === 'admin_teacher_account') return;
-    syncStudentGradesFromProgress({
+    const writes = [syncStudentGradesFromProgress({
       id: user.id,
       name: user.name,
       classroom: user.classroom,
       studentNumber: user.studentNumber,
-    }, courseAccessSettings);
+    }, courseAccessSettings)];
     if (partner) {
-      syncStudentGradesFromProgress({
+      writes.push(syncStudentGradesFromProgress({
         id: partner.id,
         name: partner.name,
         classroom: partner.classroom,
         studentNumber: partner.studentNumber,
-      }, courseAccessSettings);
+      }, courseAccessSettings));
     }
+    await Promise.all(writes);
   }, [courseAccessSettings, partner, user]);
 
   const recordUnitActivity = React.useCallback(async (
@@ -1234,11 +1236,15 @@ const UnitDetail: React.FC = () => {
     detail: string,
   ) => {
     if (!user || !gradeId) return;
-    await Promise.all(
+    const stored = await Promise.all(
       getActiveIds().map((id) => trackMediaClick(id, gradeId, unitNumber, type, detail)),
     );
-    syncActiveUserGrades();
-  }, [getActiveIds, gradeId, syncActiveUserGrades, unitNumber, user]);
+    if (!stored.every(Boolean)) {
+      toast.show('บันทึกกิจกรรมไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่', 'error');
+      return;
+    }
+    await syncActiveUserGrades();
+  }, [getActiveIds, gradeId, syncActiveUserGrades, toast, unitNumber, user]);
 
   const completePracticeActivity = React.useCallback(async (activity: string) => {
     if (!user || !gradeId || user.id === 'admin_teacher_account') {
@@ -1257,7 +1263,7 @@ const UnitDetail: React.FC = () => {
         return;
       }
       setCompletedPractices((current) => current.includes(activity) ? current : [...current, activity]);
-      syncActiveUserGrades();
+      await syncActiveUserGrades();
       toast.show('บันทึกกิจกรรมแล้ว ระบบนำผลไปคำนวณทักษะ P ให้เรียบร้อย', 'success');
     } catch (error) {
       console.warn('practice progress sync failed', error);
@@ -1274,6 +1280,7 @@ const UnitDetail: React.FC = () => {
       setSlideIdx(0);
       setQuizAnswers({});
       setQuizSubmitted(false);
+      setSavingQuiz(false);
       setQuizIdx(0);
       setActiveTab('overview');
       setCompletedPractices([]);
@@ -1360,7 +1367,7 @@ const UnitDetail: React.FC = () => {
     const t = setTimeout(() => {
       // บันทึกให้ทั้ง main + partner (ถ้านั่งคู่)
       Promise.all(getActiveIds().map((id) => trackSlideView(id, gradeId, unitNumber, slideIdx, total)))
-        .then(syncActiveUserGrades)
+        .then((stored) => stored.every(Boolean) ? syncActiveUserGrades() : undefined)
         .catch((error) => console.warn('slide progress sync failed', error));
     }, 800);
     return () => clearTimeout(t);
@@ -1988,29 +1995,29 @@ const UnitDetail: React.FC = () => {
                         ) : (
                           <button 
                             className="btn-primary submit-quiz"
-                            disabled={Object.keys(quizAnswers).length < quizItems.length || attempts >= 2}
+                            disabled={Object.keys(quizAnswers).length < quizItems.length || attempts >= 2 || savingQuiz}
                             onClick={async () => {
-                              setQuizSubmitted(true);
-                              setAttempts(p => p + 1);
-                              if (user && gradeId) {
-                                // บันทึกคะแนนให้ทุกคน (main + partner)
+                              if (!user || !gradeId) {
+                                toast.show('กรุณาเข้าสู่ระบบก่อนส่งคำตอบเพื่อบันทึกคะแนน', 'info');
+                                return;
+                              }
+                              setSavingQuiz(true);
+                              try {
                                 const allUsers = [user, ...(partner ? [partner] : [])];
                                 for (const u of allUsers) {
-                                  await saveQuizAttempt(
-                                    u.id,
-                                    gradeId,
-                                    unitNumber,
-                                    score,
-                                    maxScore,
-                                    quizAnswers
+                                  const attempt = await saveQuizAttempt(
+                                    u.id, gradeId, unitNumber, score, maxScore, quizAnswers
                                   );
-                                  syncStudentGradesFromProgress({
+                                  if (!attempt.saved) throw new Error(`quiz write failed for ${u.id}`);
+                                  await syncStudentGradesFromProgress({
                                     id: u.id,
                                     name: u.name,
                                     classroom: u.classroom,
                                     studentNumber: u.studentNumber,
                                   }, courseAccessSettings);
                                 }
+                                setQuizSubmitted(true);
+                                setAttempts((current) => current + 1);
                                 const pct = maxScore > 0 ? (score / maxScore) * 100 : 0;
                                 const who = partner
                                   ? `ทั้ง 2 คน (${user.name.split(' ').pop()} + ${partner.name.split(' ').pop()})`
@@ -2019,12 +2026,15 @@ const UnitDetail: React.FC = () => {
                                   `บันทึก ${score}/${maxScore} (${Math.round(pct)}%) ${who} ✓`,
                                   pct >= 50 ? 'success' : 'info'
                                 );
-                              } else {
-                                toast.show('คะแนนถูกบันทึกในเครื่องเท่านั้น (เข้าสู่ระบบเพื่อ sync)', 'info');
+                              } catch (error) {
+                                console.warn('quiz progress sync failed', error);
+                                toast.show('บันทึกคะแนนไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วกดส่งอีกครั้ง', 'error');
+                              } finally {
+                                setSavingQuiz(false);
                               }
                             }}
                           >
-                            ส่งคำตอบ ({score}/{maxScore})
+                            {savingQuiz ? 'กำลังบันทึก...' : `ส่งคำตอบ (${score}/${maxScore})`}
                           </button>
                         )}
                       </div>

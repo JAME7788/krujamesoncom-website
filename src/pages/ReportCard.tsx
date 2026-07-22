@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   loadGrades, getIndicators, computeBreakdown, computeGrade,
   getSubjectsForClassroom, examMaxScores, SCORE_WEIGHT,
-  fetchClassroomFromFirebase, saveGrades, COURSE_TEACHER_NAME,
+  fetchClassroomFromFirebase, cacheGradesLocally, COURSE_TEACHER_NAME,
   getGradingPeriodLabel, getExamPolicyLabel,
 } from '../services/gradeService';
 import type { Subject } from '../services/gradeService';
@@ -31,7 +31,7 @@ const ReportCard: React.FC = () => {
         for (const subj of subjects) {
           const remoteGrades = await fetchClassroomFromFirebase(user.classroom, subj.id);
           if (remoteGrades) {
-            saveGrades(user.classroom, remoteGrades, subj.id);
+            cacheGradesLocally(user.classroom, remoteGrades, subj.id);
             updated = true;
           }
         }

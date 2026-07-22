@@ -19,6 +19,14 @@ import { loadSchedule, isInClassTime } from '../data/schedule';
 // ---------- Types ----------
 
 export type ActivityType = 'slide' | 'video' | 'fun' | 'article' | 'practice' | 'quiz';
+export type MissionEvidenceKind = 'slide' | 'question' | 'game' | 'artifact';
+
+export interface MissionEvidence {
+  id: string;
+  kind: MissionEvidenceKind;
+  detail: string;
+  timestamp: number;
+}
 
 export interface QuizAttempt {
   gradeId: string;
@@ -28,6 +36,7 @@ export interface QuizAttempt {
   percentage: number;
   answers: Record<number, number>;
   timestamp: number;
+  saved?: boolean;
 }
 
 export interface ActivityLog {
@@ -54,6 +63,11 @@ export interface UnitProgress {
   completionPct: number;
   /** วันที่ (YYYY-M-D) ที่นักเรียนทำกิจกรรมในเวลาเรียน — เก็บถาวร ใช้คิด A */
   inClassDays?: string[];
+  /** หลักฐานภารกิจในห้อง 3D ใช้ id คงที่เพื่อกันการปั๊มคะแนนจากการทำซ้ำ */
+  worldEvidence: MissionEvidence[];
+  /** คะแนนตรวจความเข้าใจย่อยในห้อง 3D (เต็มอย่างน้อย 2 เพื่อไม่ให้คำถามเดียวได้ K เต็ม) */
+  worldKnowledgeCorrect: number;
+  worldKnowledgeMax: number;
   updatedAt: number;
 }
 
@@ -199,6 +213,9 @@ const emptyUnit = (): UnitProgress => ({
   quizAttempts: 0,
   completionPct: 0,
   inClassDays: [],
+  worldEvidence: [],
+  worldKnowledgeCorrect: 0,
+  worldKnowledgeMax: 0,
   updatedAt: Date.now(),
 });
 
@@ -236,6 +253,16 @@ const normalizeUnitProgress = (raw: unknown): UnitProgress => {
     articlesClicked: normalizeStringList(data.articlesClicked),
     practiceCompleted: normalizeStringList(data.practiceCompleted),
     inClassDays: normalizeStringList(data.inClassDays),
+    worldEvidence: Array.isArray(data.worldEvidence)
+      ? data.worldEvidence
+        .filter((item): item is MissionEvidence => Boolean(
+          item && typeof item.id === 'string' && typeof item.kind === 'string',
+        ))
+        .filter((item, index, all) => all.findIndex((other) => other.id === item.id) === index)
+        .slice(-80)
+      : [],
+    worldKnowledgeCorrect: Math.max(0, Number(data.worldKnowledgeCorrect) || 0),
+    worldKnowledgeMax: Math.max(0, Number(data.worldKnowledgeMax) || 0),
   };
 };
 
@@ -441,8 +468,8 @@ export const trackLogin = async (studentId: string): Promise<void> => {
 export const awardBonus = async (
   studentId: string,
   bonus: { emoji: string; reason: string; xp: number },
-): Promise<void> => {
-  if (!studentId) return;
+): Promise<boolean> => {
+  if (!studentId) return false;
   let data = cache.get(studentId);
   if (!data) data = await fetchStudentProgress(studentId);
   const entry: BonusEntry = {
@@ -453,7 +480,7 @@ export const awardBonus = async (
   };
   data.bonusXp = (data.bonusXp || 0) + entry.xp;
   data.bonuses = [entry, ...(data.bonuses || [])].slice(0, 50);
-  await persist(data);
+  return persist(data);
 };
 
 /**
@@ -466,8 +493,8 @@ export const trackSlideView = async (
   unitNo: number,
   slideIdx: number,
   totalSlides: number
-) => {
-  if (!studentId) return;
+): Promise<boolean> => {
+  if (!studentId) return false;
   let data = cache.get(studentId);
   if (!data) data = await fetchStudentProgress(studentId);
   const k = unitKey(gradeId, unitNo);
@@ -481,7 +508,7 @@ export const trackSlideView = async (
   data.units[k] = u;
   data.activities.unshift({ type: 'slide', gradeId, unitNo, index: slideIdx, timestamp: Date.now() });
   data.activities = data.activities.slice(0, ACTIVITY_LIMIT);
-  await persist(data);
+  return persist(data);
 };
 
 /** บันทึกการกดสื่อ (video/fun/article) */
@@ -491,14 +518,17 @@ export const trackMediaClick = async (
   unitNo: number,
   type: 'video' | 'fun' | 'article',
   detail: string
-) => {
-  if (!studentId) return;
+): Promise<boolean> => {
+  if (!studentId) return false;
   let data = cache.get(studentId);
   if (!data) data = await fetchStudentProgress(studentId);
   const k = unitKey(gradeId, unitNo);
   const u = data.units[k] || emptyUnit();
   const list = type === 'video' ? u.videosClicked : type === 'fun' ? u.funClicked : u.articlesClicked;
-  if (!list.includes(detail)) list.push(detail);
+  // รายการเดิมยังถือว่าบันทึกสำเร็จ แต่ไม่เขียน Firebase/เพิ่ม activity ซ้ำ
+  // ช่วยกันการกดซ้ำเพื่อปั๊ม XP และลดจำนวน write ในห้องเรียนจริง
+  if (list.includes(detail)) return true;
+  list.push(detail);
   recordInClassDayIfApplicable(studentId, u);
   recordDailyActivity(data);
   u.updatedAt = Date.now();
@@ -506,7 +536,104 @@ export const trackMediaClick = async (
   data.units[k] = u;
   data.activities.unshift({ type, gradeId, unitNo, detail, timestamp: Date.now() });
   data.activities = data.activities.slice(0, ACTIVITY_LIMIT);
-  await persist(data);
+  return persist(data);
+};
+
+export interface TrackMissionEvidenceInput {
+  studentId: string;
+  gradeId: string;
+  unitNo: number;
+  eventId: string;
+  kind: MissionEvidenceKind;
+  detail: string;
+  slideIndex?: number;
+  totalSlides?: number;
+}
+
+export interface TrackMissionEvidenceResult {
+  saved: boolean;
+  awarded: boolean;
+  reason?: 'duplicate' | 'limit' | 'invalid';
+  unit: UnitProgress;
+}
+
+const missionEvidenceLimit: Record<MissionEvidenceKind, number> = {
+  slide: 20,
+  question: 10,
+  game: 4,
+  artifact: 3,
+};
+
+/**
+ * บันทึกหลักฐานภารกิจห้อง 3D แบบ idempotent
+ * eventId ต้องคงที่ตามงานจริง เช่น slide-1, question-0, game-maze, artifact-wood
+ */
+export const trackWorldMissionEvidence = async (
+  input: TrackMissionEvidenceInput,
+): Promise<TrackMissionEvidenceResult> => {
+  const normalizedEventId = input.eventId.replace(/\s+/g, '-').trim().slice(0, 120);
+  if (!input.studentId || !input.gradeId || !normalizedEventId) {
+    return { saved: false, awarded: false, reason: 'invalid', unit: emptyUnit() };
+  }
+  let data = cache.get(input.studentId);
+  if (!data) data = await fetchStudentProgress(input.studentId);
+  const k = unitKey(input.gradeId, input.unitNo);
+  const u = normalizeUnitProgress(data.units[k]);
+  const existing = u.worldEvidence.find((item) => item.id === normalizedEventId);
+  if (existing) return { saved: true, awarded: false, reason: 'duplicate', unit: u };
+
+  const sameKind = u.worldEvidence.filter((item) => item.kind === input.kind);
+  if (sameKind.length >= missionEvidenceLimit[input.kind]) {
+    return { saved: true, awarded: false, reason: 'limit', unit: u };
+  }
+
+  const evidence: MissionEvidence = {
+    id: normalizedEventId,
+    kind: input.kind,
+    detail: input.detail.replace(/\s+/g, ' ').trim().slice(0, 300),
+    timestamp: Date.now(),
+  };
+  u.worldEvidence.push(evidence);
+  u.worldEvidence = u.worldEvidence.slice(-80);
+
+  if (input.kind === 'slide') {
+    const slideIndex = Math.max(0, Number(input.slideIndex) || 0);
+    if (!u.slidesViewed.includes(slideIndex)) u.slidesViewed.push(slideIndex);
+    u.totalSlides = Math.max(u.totalSlides, Number(input.totalSlides) || slideIndex + 1);
+  } else if (input.kind === 'question') {
+    u.worldKnowledgeCorrect += 1;
+    u.worldKnowledgeMax = Math.max(2, u.worldKnowledgeMax, u.worldKnowledgeCorrect);
+  } else if (input.kind === 'game') {
+    const key = `[3D Game] ${evidence.detail}`;
+    if (!u.funClicked.includes(key)) u.funClicked.push(key);
+  } else {
+    const key = `[3D Artifact] ${evidence.detail}`;
+    if (!u.practiceCompleted.includes(key)) u.practiceCompleted.push(key);
+  }
+
+  recordInClassDayIfApplicable(input.studentId, u);
+  recordDailyActivity(data);
+  u.updatedAt = Date.now();
+  recomputeUnit(u);
+  data.units[k] = u;
+  const activityType: ActivityType = input.kind === 'slide'
+    ? 'slide'
+    : input.kind === 'artifact'
+      ? 'practice'
+      : input.kind === 'question'
+        ? 'quiz'
+        : 'fun';
+  data.activities.unshift({
+    type: activityType,
+    gradeId: input.gradeId,
+    unitNo: input.unitNo,
+    detail: `[3D ${input.kind}] ${evidence.detail}`,
+    index: input.slideIndex,
+    timestamp: evidence.timestamp,
+  });
+  data.activities = data.activities.slice(0, ACTIVITY_LIMIT);
+  const saved = await persist(data);
+  return { saved, awarded: saved, unit: u };
 };
 
 /** บันทึกกิจกรรมลงมือปฏิบัติตามตัวชี้วัด และคืนผลว่าเขียน Firebase สำเร็จหรือไม่ */
@@ -558,6 +685,7 @@ export const saveQuizAttempt = async (
     percentage: maxScore > 0 ? Math.round((score / maxScore) * 100) : 0,
     answers,
     timestamp: Date.now(),
+    saved: false,
   };
   if (!studentId) return attempt;
   if (maxScore <= 0) return attempt;
@@ -583,8 +711,8 @@ export const saveQuizAttempt = async (
   data.attempts = data.attempts.slice(0, ATTEMPT_LIMIT);
   data.activities.unshift({ type: 'quiz', gradeId, unitNo, detail: `${score}/${maxScore}`, timestamp: Date.now() });
   data.activities = data.activities.slice(0, ACTIVITY_LIMIT);
-  await persist(data);
-  return attempt;
+  const saved = await persist(data);
+  return { ...attempt, saved };
 };
 
 /** ดึงข้อมูลของหน่วยเดียว */

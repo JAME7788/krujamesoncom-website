@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Menu, X, Home, Award, LogOut, Gamepad2,
-  LayoutDashboard, Library, GraduationCap, Mail, Phone, MapPin, Globe
+  LayoutDashboard, Library, GraduationCap, Mail, Phone, MapPin, Globe, Box
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
@@ -24,6 +24,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isCookieOpen, setIsCookieOpen] = useState(false);
+  const isImmersive = location.pathname.startsWith('/world');
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -57,6 +58,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'คอร์สเรียน', path: '/courses', icon: <Award size={18} /> },
     { name: 'แหล่งเรียนรู้', path: '/resources', icon: <Library size={18} /> },
     { name: 'เกมฝึก', path: '/games', icon: <Gamepad2 size={18} /> },
+    { name: 'ห้องเรียน 3D', path: '/world', icon: <Box size={18} /> },
   ];
 
   if (user) {
@@ -200,10 +202,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <main>{children}</main>
 
       {/* Floating AI Tutor (เฉพาะ login แล้ว) */}
-      {user && <AITutor />}
+      {user && !isImmersive && <AITutor />}
 
-      <div className="footer-top-gradient"></div>
-      <footer className="footer">
+      {!isImmersive && <div className="footer-top-gradient"></div>}
+      {!isImmersive && <footer className="footer">
         <div className="container footer-content">
           <div className="footer-brand-section">
             <div className="footer-logo">
@@ -258,7 +260,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
         </div>
-      </footer>
+      </footer>}
 
       {isContactOpen && (
         <div className="contact-overlay" onClick={() => setIsContactOpen(false)}>

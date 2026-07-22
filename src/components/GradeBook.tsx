@@ -4,7 +4,7 @@ import {
   loadGrades, initClassroom, updateStudentScore, updateFinalExam, updateMidtermExam,
   computeBreakdown, computeGrade, getIndicators, examMaxScores,
   syncAllFromProgressAsync, downloadCSV, fetchClassroomFromFirebase,
-  getLinkedUnits, diagnoseProgress, getSubjectsForClassroom, saveGrades,
+  getLinkedUnits, diagnoseProgress, getSubjectsForClassroom, cacheGradesLocally,
   SCORE_WEIGHT, loadManualAssessments, loadManualAssessmentScores,
   createManualAssessment, deleteManualAssessment, updateManualAssessmentScore,
   applyManualAssessmentsToGrades, COURSE_TEACHER_NAME,
@@ -15,10 +15,8 @@ import { findGrade } from '../data/curriculum';
 import { Link as LinkIcon, Info } from 'lucide-react';
 import type { Skill, Subject, ManualAssessment, AssessmentCategory } from '../services/gradeService';
 import { allClassrooms2569 } from '../data/students2569';
-import { loadAllRosters } from '../services/rosterService';
+import { fetchRostersFromFirebase, loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
-
-const students2569 = loadAllRosters();
 
 const GradeBook: React.FC = () => {
   const [classroom, setClassroom] = useState<string>('ป.1');
@@ -34,9 +32,18 @@ const GradeBook: React.FC = () => {
   });
   const [reloadKey, setReloadKey] = useState(0);
   const [loadedGradebookKey, setLoadedGradebookKey] = useState('');
+  const [students2569, setStudents2569] = useState(loadAllRosters);
   const toast = useToast();
   const gradebookKey = `${classroom}_${subject}`;
   const gradebookReady = loadedGradebookKey === gradebookKey;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchRostersFromFirebase().then((rosters) => {
+      if (!cancelled) setStudents2569(rosters);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const handlePrint = () => {
     setPrintableMode(true);
@@ -116,7 +123,7 @@ const GradeBook: React.FC = () => {
         if (cancelled) return;
 
         if (remote && remote.length > 0) {
-          saveGrades(classroom, remote, subject);
+          cacheGradesLocally(classroom, remote, subject);
         } else if (loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
           initClassroom(classroom, subject);
         }
@@ -146,7 +153,7 @@ const GradeBook: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [classroom, gradebookKey, subject]);
+  }, [classroom, gradebookKey, students2569, subject]);
 
   const handleK = (studentCode: string, indicatorId: string, value: string) => {
     const ind = indicators.find((i) => i.id === indicatorId);
@@ -245,7 +252,7 @@ const GradeBook: React.FC = () => {
     setLoading(true);
     const remote = await fetchClassroomFromFirebase(classroom, subject);
     if (remote) {
-      saveGrades(classroom, remote, subject);
+      cacheGradesLocally(classroom, remote, subject);
       reload();
       toast.show('ดึงข้อมูลจาก Firebase สำเร็จ ✓', 'success');
     } else {

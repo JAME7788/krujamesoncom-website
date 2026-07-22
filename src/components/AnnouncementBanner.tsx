@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Megaphone, X, Pin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getActiveAnnouncements } from '../services/announcementService';
+import { fetchAnnouncementsFromFirebase, getActiveAnnouncements } from '../services/announcementService';
+import type { Announcement } from '../services/announcementService';
 
 const typeStyles = {
   info:        { bg: 'linear-gradient(135deg,#dbeafe,#e0e7ff)', border: '#3b82f6', emoji: 'ℹ️' },
@@ -13,10 +14,18 @@ const typeStyles = {
 
 const AnnouncementBanner: React.FC = () => {
   const { user } = useAuth();
-  const items = React.useMemo(() => getActiveAnnouncements(user?.classroom), [user?.classroom]);
+  const [items, setItems] = useState<Announcement[]>(() => getActiveAnnouncements(user?.classroom));
   const [dismissed, setDismissed] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('kj_dismissed_ann') || '[]'); } catch { return []; }
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAnnouncementsFromFirebase().then(() => {
+      if (!cancelled) setItems(getActiveAnnouncements(user?.classroom));
+    });
+    return () => { cancelled = true; };
+  }, [user?.classroom]);
 
   const dismiss = (id: string) => {
     const next = [...dismissed, id];

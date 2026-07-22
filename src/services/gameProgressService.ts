@@ -1,6 +1,14 @@
 import { trackMediaClick } from './progressService';
-import { loadGrades, syncFromProgress } from './gradeService';
+import {
+  cacheGradesLocally,
+  ensureStudentGrade,
+  fetchClassroomFromFirebase,
+  loadGrades,
+  syncFromProgress,
+  upsertStudentGradeToFirebase,
+} from './gradeService';
 import type { Subject } from './gradeService';
+import { loadRoster } from './rosterService';
 import {
   fetchCourseAccessSettings,
   filterTargetUnitsForCourseAccess,
@@ -145,18 +153,47 @@ const subjectsForClassroom = (
   return getActiveSubjectsForClassroom(classroom, settings);
 };
 
+const hydratedGradebooks = new Set<string>();
+
 /** อัปเดต K/P/A ในกระดาษเกรดจาก progress ของนักเรียน (ใช้ทุกครั้งหลังบันทึกกิจกรรม) */
-export const syncStudentGradesFromProgress = (
+export const syncStudentGradesFromProgress = async (
   student: StudentLike,
   settings: CourseAccessSettings = getCourseAccessSettings(),
-) => {
-  subjectsForClassroom(student.classroom, settings).forEach((subject) => {
-    const grades = loadGrades(student.classroom, subject);
-    const grade = grades.find(
-      (g) => g.studentNo === Number(student.studentNumber) || g.name === student.name
+): Promise<void> => {
+  await Promise.all(subjectsForClassroom(student.classroom, settings).map(async (subject) => {
+    const gradebookKey = `${student.classroom}_${subject}`;
+    if (!hydratedGradebooks.has(gradebookKey)) {
+      const remote = await fetchClassroomFromFirebase(student.classroom, subject);
+      if (remote) cacheGradesLocally(student.classroom, remote, subject);
+      hydratedGradebooks.add(gradebookKey);
+    }
+
+    const rosterStudent = loadRoster(student.classroom).find((entry) => (
+      entry.no === Number(student.studentNumber) || entry.name === student.name
+    ));
+    const grade = ensureStudentGrade(student.classroom, {
+      studentCode: rosterStudent?.studentCode || student.id,
+      studentNo: Number(student.studentNumber),
+      name: student.name,
+      emoji: rosterStudent?.emoji || '👤',
+    }, subject);
+
+    const result = syncFromProgress(
+      student.classroom,
+      grade.studentCode,
+      student.id,
+      subject,
+      'local',
     );
-    if (grade) syncFromProgress(student.classroom, grade.studentCode, student.id, subject);
-  });
+    if (result.changed === 0) return;
+
+    const updated = loadGrades(student.classroom, subject).find((entry) => (
+      entry.studentCode === grade.studentCode
+    ));
+    if (updated) {
+      await upsertStudentGradeToFirebase(student.classroom, updated, subject);
+    }
+  }));
 };
 
 export const recordGameProgress = async (
@@ -184,16 +221,19 @@ export const recordGameProgress = async (
     );
     for (const target of targets) {
       const scoreText = typeof score === 'number' ? ` score=${score}` : '';
-      await trackMediaClick(
+      const stored = await trackMediaClick(
         student.id,
         target.gradeId,
         target.unitNo,
         'fun',
         `[Game] ${gameTitle}${scoreText}`
       );
+      if (!stored) {
+        throw new Error(`บันทึกผลเกมของ ${student.name} ลง Firebase ไม่สำเร็จ`);
+      }
       saved += 1;
     }
-    syncStudentGradesFromProgress(student, courseAccessSettings);
+    await syncStudentGradesFromProgress(student, courseAccessSettings);
   }
 
   return { saved, students: activeStudents.length };

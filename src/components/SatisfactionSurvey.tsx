@@ -37,7 +37,8 @@ const SatisfactionSurvey: React.FC<Props> = ({ studentId, classroom }) => {
     try {
       await submitSurvey(studentId, classroom, answers);
       // ให้รางวัลเล็กน้อยเป็นการขอบคุณ
-      await awardBonus(studentId, { emoji: '📝', reason: 'ทำแบบสอบถามความพึงพอใจ', xp: 10 });
+      const stored = await awardBonus(studentId, { emoji: '📝', reason: 'ทำแบบสอบถามความพึงพอใจ', xp: 10 });
+      if (!stored) throw new Error('บันทึก XP เข้า Firebase ไม่สำเร็จ');
       setDone(true);
       toast.show('ขอบคุณที่ทำแบบสอบถาม! +10 XP 🎉', 'success');
     } catch (e) {

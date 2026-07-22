@@ -41,6 +41,9 @@ main { flex: 1; }
   width: 100%;
 }
 
+/* Navbar ใช้พื้นที่กว้างกว่าเนื้อหาหน้า (ไม่ถูกจำกัดที่ container 1300px) กันแถบขวา (ค้นหา/แต้ม/โปรไฟล์) ล้นจอ */
+.navbar .nav-content { max-width: 1560px; }
+
 /* Logo */
 .logo {
   display: flex;
@@ -75,6 +78,7 @@ main { flex: 1; }
   gap: 4px;
   align-items: center;
   flex: 1;
+  min-width: 0;
   margin-left: 1rem;
 }
 
@@ -540,6 +544,15 @@ main { flex: 1; }
 
 
 /* ========================== RESPONSIVE ========================== */
+/* จอโน้ตบุ๊ก/สเกล 125% (≈1280–1500px): ยุบช่องค้นหาเป็นไอคอน + บีบลิงก์ ให้แถบขวาไม่ล้นจอ */
+@media (max-width: 1500px) {
+  .nav-content { gap: 0.7rem; }
+  .nav-links-desktop { margin-left: 0.5rem; }
+  .nav-item { padding: 7px 10px; font-size: 0.84rem; }
+  .search-hint, .search-kbd { display: none; }
+  .search-trigger { padding: 6px; width: 36px; justify-content: center; }
+}
+
 @media (max-width: 1200px) {
   .nav-item {
     padding: 6px 10px;
