@@ -18,6 +18,18 @@ import { allClassrooms2569 } from '../data/students2569';
 import { fetchRostersFromFirebase, loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
 
+const withTimeout = async <T,>(promise: Promise<T>, milliseconds: number, label: string): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} ใช้เวลานานเกิน ${milliseconds / 1000} วินาที`)), milliseconds);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+};
+
 const GradeBook: React.FC = () => {
   const [classroom, setClassroom] = useState<string>('ป.1');
   const [subject, setSubject] = useState<Subject>('main');
@@ -115,41 +127,47 @@ const GradeBook: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
 
-    const loadRemoteFirst = async () => {
-      setLoading(true);
-      setLoadedGradebookKey('');
+    const loadLocalThenRefresh = async () => {
+      // ให้ครูใช้ตารางจากเครื่องได้ทันที ไม่บล็อกทั้งหน้าระหว่างรอเครือข่าย
+      if (loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
+        initClassroom(classroom, subject);
+      }
+      if (cancelled) return;
+      setLoadedGradebookKey(gradebookKey);
+      setReloadKey((key) => key + 1);
+
       try {
-        const remote = await fetchClassroomFromFirebase(classroom, subject);
+        const remote = await withTimeout(
+          fetchClassroomFromFirebase(classroom, subject),
+          6000,
+          'การดึงสมุดคะแนนจาก Firebase',
+        );
         if (cancelled) return;
 
         if (remote && remote.length > 0) {
           cacheGradesLocally(classroom, remote, subject);
-        } else if (loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
-          initClassroom(classroom, subject);
+          setReloadKey((key) => key + 1);
         }
 
-        // Pull the latest lesson/game progress into K/P/A whenever the teacher opens a gradebook.
+        // อัปเดตกิจกรรมเบื้องหลัง แต่ไม่ปล่อยให้คำขอเครือข่ายค้างหน้าเว็บ
         try {
-          await syncAllFromProgressAsync(classroom, subject);
+          await withTimeout(
+            syncAllFromProgressAsync(classroom, subject),
+            8000,
+            'การดึงกิจกรรมของนักเรียน',
+          );
         } catch (syncError) {
           console.debug('Auto progress sync skipped', syncError);
         }
         if (cancelled) return;
 
-        setLoadedGradebookKey(gradebookKey);
         setReloadKey((k) => k + 1);
-      } catch {
-        if (!cancelled && loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
-          initClassroom(classroom, subject);
-          setReloadKey((k) => k + 1);
-        }
-        if (!cancelled) setLoadedGradebookKey(gradebookKey);
-      } finally {
-        if (!cancelled) setLoading(false);
+      } catch (error) {
+        console.debug('Background grade refresh skipped', error);
       }
     };
 
-    loadRemoteFirst();
+    void loadLocalThenRefresh();
     return () => {
       cancelled = true;
     };
@@ -190,7 +208,11 @@ const GradeBook: React.FC = () => {
   const handleSync = async () => {
     setLoading(true);
     try {
-      const r = await syncAllFromProgressAsync(classroom, subject);
+      const r = await withTimeout(
+        syncAllFromProgressAsync(classroom, subject),
+        12000,
+        'การนำเข้าคะแนนจากกิจกรรม',
+      );
       reload();
       let msg = `🔄 ผลการนำเข้าคะแนนจากเว็บ — ${classroom}\n\n`;
       msg += `☁️ ดึง progress จาก Firebase: ${r.firebaseProgressDownloaded} คน\n`;
@@ -250,15 +272,24 @@ const GradeBook: React.FC = () => {
 
   const handleFetchFirebase = async () => {
     setLoading(true);
-    const remote = await fetchClassroomFromFirebase(classroom, subject);
-    if (remote) {
-      cacheGradesLocally(classroom, remote, subject);
-      reload();
-      toast.show('ดึงข้อมูลจาก Firebase สำเร็จ ✓', 'success');
-    } else {
-      toast.show('ไม่พบข้อมูลสำหรับห้องเรียนนี้บน Firebase', 'error');
+    try {
+      const remote = await withTimeout(
+        fetchClassroomFromFirebase(classroom, subject),
+        12000,
+        'การดึงสมุดคะแนนจาก Firebase',
+      );
+      if (remote) {
+        cacheGradesLocally(classroom, remote, subject);
+        reload();
+        toast.show('ดึงข้อมูลจาก Firebase สำเร็จ ✓', 'success');
+      } else {
+        toast.show('ไม่พบข้อมูลสำหรับห้องเรียนนี้บน Firebase', 'error');
+      }
+    } catch (error) {
+      toast.show(`${error instanceof Error ? error.message : String(error)} — แสดงข้อมูลที่บันทึกในเครื่องแทน`, 'error');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleCreateManualAssessment = () => {
