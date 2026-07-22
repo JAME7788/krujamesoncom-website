@@ -17,6 +17,9 @@ export const COURSE_TEACHER_NAME = 'นายอนันตชัย เพ็�
 export interface IndicatorScore {
   k: number;        // คะแนนความรู้ 0-15 (จากการทำควิซ ครูแก้ได้)
   maxK: number;     // คะแนนเต็ม (default 15)
+  webK?: number;    // คะแนนอัตโนมัติจากควิซ/กิจกรรมในเว็บ
+  manualK?: number; // คะแนนที่คำนวณจากการบ้าน/งานเพิ่มเติม
+  teacherK?: number;// คะแนน K ที่ครูใส่ตรง
   p: Skill;         // ทักษะ
   a: boolean;       // จิตพิสัย/คุณลักษณะ
   pAssessed?: boolean;
@@ -318,18 +321,54 @@ export const updateStudentScore = (
   const student = grades.find((g) => g.studentCode === studentCode);
   if (!student) return;
   const cur = student.indicators[indicatorId] || emptyIndicatorScore();
-  student.indicators[indicatorId] = {
+  const next: IndicatorScore = {
     ...cur,
     ...patch,
     pAssessed: patch.p !== undefined ? true : cur.pAssessed,
     aAssessed: patch.a !== undefined ? true : cur.aAssessed,
     updatedAt: Date.now(),
   };
+  if (patch.k !== undefined) {
+    next.teacherK = Math.max(0, Math.min(next.maxK || 15, patch.k));
+    next.k = Math.max(next.teacherK, next.webK || 0, next.manualK || 0);
+  }
+  student.indicators[indicatorId] = next;
   student.updatedAt = Date.now();
   cacheGradesLocally(classroom, grades, subject);
   void patchStudentGradeInFirebase(classroom, student, subject, {
     indicatorId,
     indicatorScore: student.indicators[indicatorId],
+  });
+};
+
+/** ตั้งหรือล้างคะแนน K ที่ครูกรอกเอง โดยยังรักษาคะแนนจากเว็บและภาระงานไว้ */
+export const updateTeacherKnowledgeScore = (
+  classroom: string,
+  studentCode: string,
+  indicatorId: string,
+  score: number | null,
+  subject: Subject = 'main',
+) => {
+  const grades = loadGrades(classroom, subject);
+  const student = grades.find((grade) => grade.studentCode === studentCode);
+  if (!student) return;
+  const indicator = getIndicators(classroom, subject).find((item) => item.id === indicatorId);
+  const current = student.indicators[indicatorId] || emptyIndicatorScore(indicator?.maxScore || 15);
+  const maxK = indicator?.maxScore || current.maxK || 15;
+  const next: IndicatorScore = {
+    ...current,
+    maxK,
+    updatedAt: Date.now(),
+  };
+  if (score === null) delete next.teacherK;
+  else next.teacherK = Math.max(0, Math.min(maxK, score));
+  next.k = Math.max(next.teacherK || 0, next.webK || 0, next.manualK || 0);
+  student.indicators[indicatorId] = next;
+  student.updatedAt = Date.now();
+  cacheGradesLocally(classroom, grades, subject);
+  void patchStudentGradeInFirebase(classroom, student, subject, {
+    indicatorId,
+    indicatorScore: next,
   });
 };
 
@@ -483,6 +522,34 @@ export const createManualAssessment = (
   return assessment;
 };
 
+export const updateManualAssessment = (
+  classroom: string,
+  subject: Subject,
+  assessmentId: string,
+  patch: Partial<Pick<ManualAssessment, 'title' | 'maxScore'>>,
+): ManualAssessment | null => {
+  const assessments = loadManualAssessments(classroom, subject);
+  const index = assessments.findIndex((assessment) => assessment.id === assessmentId);
+  if (index < 0) return null;
+  const current = assessments[index];
+  const updated: ManualAssessment = {
+    ...current,
+    title: patch.title === undefined ? current.title : (patch.title.trim() || current.title),
+    maxScore: patch.maxScore === undefined ? current.maxScore : Math.max(1, patch.maxScore || 1),
+  };
+  assessments[index] = updated;
+  saveManualAssessments(classroom, assessments, subject);
+
+  if (updated.maxScore !== current.maxScore) {
+    const scores = loadManualAssessmentScores(classroom, subject);
+    Object.keys(scores[assessmentId] || {}).forEach((studentCode) => {
+      scores[assessmentId][studentCode] = clampManualScore(scores[assessmentId][studentCode], updated.maxScore);
+    });
+    saveManualAssessmentScores(classroom, scores, subject);
+  }
+  return updated;
+};
+
 export const deleteManualAssessment = (
   classroom: string,
   subject: Subject,
@@ -549,9 +616,18 @@ export const applyManualAssessmentsToGrades = (
 
     indicators.forEach((indicator) => {
       const related = byIndicator.get(indicator.id) || [];
-      if (related.length === 0) return;
-
       const current = student.indicators[indicator.id] || emptyIndicatorScore(indicator.maxScore);
+      if (related.length === 0) {
+        if (current.manualK !== undefined) {
+          const next = { ...current, manualK: 0, updatedAt: Date.now() };
+          next.k = Math.max(next.webK || 0, next.teacherK || 0);
+          student.indicators[indicator.id] = next;
+          indicatorsUpdated += 1;
+          changedForStudent = true;
+        }
+        return;
+      }
+
       let next: IndicatorScore = { ...current, maxK: indicator.maxScore };
       let changedForIndicator = false;
 
@@ -567,12 +643,32 @@ export const applyManualAssessmentsToGrades = (
           max += assessment.maxScore;
         });
 
-        if (max <= 0) return;
+        if (max <= 0) {
+          if (category === 'k' && next.manualK !== undefined) {
+            next = {
+              ...next,
+              manualK: 0,
+              k: Math.max(next.webK || 0, next.teacherK || 0),
+            };
+            changedForIndicator = true;
+          }
+          return;
+        }
         const ratio = Math.max(0, Math.min(1, earned / max));
         if (category === 'k') {
-          // ใช้ max(K เดิม, K ใหม่) — homework ไม่ทับ quiz, quiz ไม่ทับ homework
           const newK = Math.round(ratio * indicator.maxScore);
-          next = { ...next, k: Math.max(next.k || 0, newK), maxK: indicator.maxScore };
+          const legacyTeacherK = next.webK === undefined
+            && next.manualK === undefined
+            && next.teacherK === undefined
+            ? next.k || 0
+            : next.teacherK || 0;
+          next = {
+            ...next,
+            teacherK: legacyTeacherK || next.teacherK,
+            manualK: newK,
+            k: Math.max(next.webK || 0, legacyTeacherK, newK),
+            maxK: indicator.maxScore,
+          };
         } else {
           // P ก็ใช้ max เหมือน K — homework คะแนนต่ำห้ามลด P ที่ได้จาก quiz หรือเกม
           const newP = skillFromRatio(ratio);
@@ -914,6 +1010,9 @@ const mergeIndicatorForStudent = (
     ...remote,
     ...incoming,
     k: Math.max(remote.k || 0, incoming.k || 0),
+    webK: Math.max(remote.webK || 0, incoming.webK || 0),
+    manualK: Math.max(remote.manualK || 0, incoming.manualK || 0),
+    teacherK: Math.max(remote.teacherK || 0, incoming.teacherK || 0),
     maxK: Math.max(remote.maxK || 0, incoming.maxK || 0),
     p,
     a: Boolean(remote.a || incoming.a),
@@ -1348,8 +1447,14 @@ export const syncFromProgress = (
           Math.round((totalWorldKnowledgeScore / totalWorldKnowledgeMax) * ind.maxScore),
         )
         : 0;
-    const existingK = student.indicators[ind.id]?.k || 0;
-    const k = Math.max(quizK, worldK, existingK);
+    const currentScore = student.indicators[ind.id] || emptyIndicatorScore(ind.maxScore);
+    const webK = Math.max(quizK, worldK, currentScore.webK || 0);
+    const legacyTeacherK = currentScore.webK === undefined
+      && currentScore.manualK === undefined
+      && currentScore.teacherK === undefined
+      ? currentScore.k || 0
+      : currentScore.teacherK || 0;
+    const k = Math.max(webK, currentScore.manualK || 0, legacyTeacherK);
 
     // P: ระดับทักษะ — เกณฑ์ตามคะแนน skill points
     // ≥ 15 → ดี (ลงมือเยอะ), ≥ 5 → ปานกลาง, < 5 → พอใช้
@@ -1381,8 +1486,10 @@ export const syncFromProgress = (
     const a = inClassDays.size >= 2;
 
     student.indicators[ind.id] = {
-      ...student.indicators[ind.id],
+      ...currentScore,
       k,
+      webK,
+      teacherK: legacyTeacherK || currentScore.teacherK,
       maxK: ind.maxScore,
       p,
       a,

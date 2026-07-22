@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Download, Users, RefreshCw, FileSpreadsheet, BookOpen, Calculator, Printer, Plus, Trash2 } from 'lucide-react';
+import { Download, Users, RefreshCw, FileSpreadsheet, BookOpen, Calculator, Printer, Plus, Trash2, X } from 'lucide-react';
 import {
   loadGrades, initClassroom, updateStudentScore, updateFinalExam, updateMidtermExam,
   computeBreakdown, computeGrade, getIndicators, examMaxScores,
@@ -7,6 +7,7 @@ import {
   getLinkedUnits, diagnoseProgress, getSubjectsForClassroom, cacheGradesLocally,
   SCORE_WEIGHT, loadManualAssessments, loadManualAssessmentScores,
   createManualAssessment, deleteManualAssessment, updateManualAssessmentScore,
+  updateManualAssessment, updateTeacherKnowledgeScore,
   applyManualAssessmentsToGrades, COURSE_TEACHER_NAME,
   getGradingPeriodLabel, getExamPolicyLabel,
   seedUnit1ScoresForAllClasses,
@@ -17,6 +18,7 @@ import type { Skill, Subject, ManualAssessment, AssessmentCategory } from '../se
 import { allClassrooms2569 } from '../data/students2569';
 import { fetchRostersFromFirebase, loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
+import { loadAssignments } from '../services/homeworkService';
 
 const withTimeout = async <T,>(promise: Promise<T>, milliseconds: number, label: string): Promise<T> => {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -44,6 +46,8 @@ const GradeBook: React.FC = () => {
   });
   const [reloadKey, setReloadKey] = useState(0);
   const [loadedGradebookKey, setLoadedGradebookKey] = useState('');
+  const [scoreDialog, setScoreDialog] = useState<{ studentCode: string; indicatorId: string } | null>(null);
+  const [newKnowledgeItem, setNewKnowledgeItem] = useState({ title: '', maxScore: 10 });
   const [students2569, setStudents2569] = useState(loadAllRosters);
   const toast = useToast();
   const gradebookKey = `${classroom}_${subject}`;
@@ -173,11 +177,53 @@ const GradeBook: React.FC = () => {
     };
   }, [classroom, gradebookKey, students2569, subject]);
 
-  const handleK = (studentCode: string, indicatorId: string, value: string) => {
-    const ind = indicators.find((i) => i.id === indicatorId);
-    const max = ind?.maxScore || 15;
-    const k = Math.max(0, Math.min(max, parseInt(value) || 0));
-    updateStudentScore(classroom, studentCode, indicatorId, { k, maxK: max }, subject);
+  const handleTeacherK = (studentCode: string, indicatorId: string, value: string) => {
+    const score = value.trim() === '' ? null : Number(value);
+    updateTeacherKnowledgeScore(classroom, studentCode, indicatorId, score, subject);
+    reload();
+  };
+
+  const openKnowledgeDialog = (studentCode: string, indicatorId: string) => {
+    setNewKnowledgeItem({ title: '', maxScore: 10 });
+    setScoreDialog({ studentCode, indicatorId });
+  };
+
+  const handleCreateKnowledgeItem = () => {
+    if (!scoreDialog || !newKnowledgeItem.title.trim()) {
+      toast.show('กรุณาใส่ชื่อการบ้านหรืองานเพิ่มเติม', 'error');
+      return;
+    }
+    createManualAssessment(classroom, subject, {
+      title: newKnowledgeItem.title,
+      indicatorId: scoreDialog.indicatorId,
+      category: 'k',
+      maxScore: Math.max(1, newKnowledgeItem.maxScore || 1),
+    });
+    setNewKnowledgeItem({ title: '', maxScore: 10 });
+    reload();
+    toast.show('เพิ่มช่องคะแนนและบันทึกอัตโนมัติแล้ว', 'success');
+  };
+
+  const handleKnowledgeItemScore = (assessment: ManualAssessment, studentCode: string, raw: string) => {
+    const score = raw.trim() === '' ? null : Number(raw);
+    updateManualAssessmentScore(classroom, subject, assessment.id, studentCode, score);
+    applyManualAssessmentsToGrades(classroom, subject);
+    reload();
+  };
+
+  const handleKnowledgeItemUpdate = (
+    assessmentId: string,
+    patch: Partial<Pick<ManualAssessment, 'title' | 'maxScore'>>,
+  ) => {
+    updateManualAssessment(classroom, subject, assessmentId, patch);
+    applyManualAssessmentsToGrades(classroom, subject);
+    reload();
+  };
+
+  const handleKnowledgeItemDelete = (assessmentId: string) => {
+    if (!confirm('ลบช่องคะแนนนี้และคะแนนของนักเรียนทุกคนในงานนี้?')) return;
+    deleteManualAssessment(classroom, subject, assessmentId);
+    applyManualAssessmentsToGrades(classroom, subject);
     reload();
   };
 
@@ -317,6 +363,7 @@ const GradeBook: React.FC = () => {
   const handleManualScore = (assessment: ManualAssessment, studentCode: string, raw: string) => {
     const score = raw.trim() === '' ? null : Number(raw);
     updateManualAssessmentScore(classroom, subject, assessment.id, studentCode, score);
+    applyManualAssessmentsToGrades(classroom, subject);
     reload();
   };
 
@@ -335,6 +382,39 @@ const GradeBook: React.FC = () => {
     applyManualAssessmentsToGrades(classroom, subject);
     reload();
   };
+
+  useEffect(() => {
+    if (!scoreDialog) return undefined;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setScoreDialog(null);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [scoreDialog]);
+
+  const dialogStudent = scoreDialog
+    ? grades.find((grade) => grade.studentCode === scoreDialog.studentCode)
+    : undefined;
+  const dialogIndicator = scoreDialog
+    ? indicators.find((indicator) => indicator.id === scoreDialog.indicatorId)
+    : undefined;
+  const dialogIndicatorScore = dialogStudent && scoreDialog
+    ? dialogStudent.indicators[scoreDialog.indicatorId]
+    : undefined;
+  const dialogHasSourceBreakdown = dialogIndicatorScore
+    && (dialogIndicatorScore.webK !== undefined
+      || dialogIndicatorScore.manualK !== undefined
+      || dialogIndicatorScore.teacherK !== undefined);
+  const dialogWebK = dialogIndicatorScore?.webK
+    ?? (dialogHasSourceBreakdown ? 0 : dialogIndicatorScore?.k || 0);
+  const dialogKnowledgeItems = scoreDialog
+    ? manualAssessments.filter((assessment) => (
+        assessment.indicatorId === scoreDialog.indicatorId && assessment.category === 'k'
+      ))
+    : [];
+  const homeworkAssessmentIds = new Set(
+    loadAssignments().map((assignment) => assignment.linkedAssessmentId).filter(Boolean),
+  );
 
   return (
     <div className={`gradebook ${printableMode ? 'print-mode' : ''}`}>
@@ -679,14 +759,14 @@ const GradeBook: React.FC = () => {
                         return (
                           <React.Fragment key={ind.id}>
                             <td className="text-center">
-                              <input
-                                type="number"
-                                className="k-input"
-                                value={s.k}
-                                min={0}
-                                max={ind.maxScore}
-                                onChange={(e) => handleK(g.studentCode, ind.id, e.target.value)}
-                              />
+                              <button
+                                type="button"
+                                className="k-score-button"
+                                onClick={() => openKnowledgeDialog(g.studentCode, ind.id)}
+                                title="เปิดรายละเอียดและใส่คะแนน K"
+                              >
+                                {s.k}
+                              </button>
                             </td>
                             <td className="text-center">
                               <select
@@ -796,6 +876,140 @@ const GradeBook: React.FC = () => {
         </>
       )}
 
+      {scoreDialog && dialogStudent && dialogIndicator && (
+        <div
+          className="gb-score-modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setScoreDialog(null);
+          }}
+        >
+          <section className="gb-score-modal" role="dialog" aria-modal="true" aria-labelledby="gb-score-modal-title">
+            <header className="gb-score-modal-header">
+              <div>
+                <span>{dialogIndicator.code} • คะแนนเต็ม K {dialogIndicator.maxScore}</span>
+                <h3 id="gb-score-modal-title">ใส่คะแนน: {dialogStudent.name}</h3>
+                <p>{dialogIndicator.title}</p>
+              </div>
+              <button type="button" onClick={() => setScoreDialog(null)} title="ปิดหน้าต่าง" aria-label="ปิดหน้าต่างคะแนน">
+                <X size={20} />
+              </button>
+            </header>
+
+            <div className="gb-score-source-summary">
+              <div><span>แบบทดสอบ/กิจกรรมอัตโนมัติ</span><strong>{dialogWebK}/{dialogIndicator.maxScore}</strong></div>
+              <div><span>การบ้านและงานเพิ่มเติม</span><strong>{dialogIndicatorScore?.manualK || 0}/{dialogIndicator.maxScore}</strong></div>
+              <div><span>ครูกรอกเอง</span><strong>{dialogIndicatorScore?.teacherK ?? '-'}/{dialogIndicator.maxScore}</strong></div>
+              <div className="total"><span>คะแนน K ที่ใช้จริง</span><strong>{dialogIndicatorScore?.k || 0}/{dialogIndicator.maxScore}</strong></div>
+            </div>
+
+            <div className="gb-teacher-k-row">
+              <div>
+                <strong>ครูใส่คะแนน K โดยตรง</strong>
+                <p>เว้นว่างเพื่อล้างคะแนนที่ครูกรอก ระบบจะใช้คะแนนสูงสุดจากเว็บหรืองานแทน</p>
+              </div>
+              <label>
+                <input
+                  type="number"
+                  min={0}
+                  max={dialogIndicator.maxScore}
+                  value={dialogIndicatorScore?.teacherK ?? ''}
+                  onChange={(event) => handleTeacherK(dialogStudent.studentCode, dialogIndicator.id, event.target.value)}
+                  aria-label="คะแนน K ที่ครูกรอกเอง"
+                />
+                <span>/ {dialogIndicator.maxScore}</span>
+              </label>
+            </div>
+
+            <div className="gb-score-items-heading">
+              <div>
+                <h4>ช่องคะแนนการบ้านและงานเพิ่มเติม</h4>
+                <p>การบ้านที่ผูกกับตัวชี้วัดนี้จะปรากฏอัตโนมัติ ทุกช่องบันทึกทันทีเมื่อแก้คะแนน</p>
+              </div>
+              <span>{dialogKnowledgeItems.length} รายการ</span>
+            </div>
+
+            <div className="gb-score-item-list">
+              {dialogKnowledgeItems.length === 0 ? (
+                <div className="gb-score-item-empty">ยังไม่มีการบ้านหรืองานเพิ่มเติมสำหรับตัวชี้วัดนี้</div>
+              ) : dialogKnowledgeItems.map((assessment) => {
+                const isHomework = homeworkAssessmentIds.has(assessment.id);
+                return (
+                  <div className="gb-score-item" key={assessment.id}>
+                    <div className="gb-score-item-type">{isHomework ? 'การบ้าน' : 'งานเพิ่มเติม'}</div>
+                    {isHomework ? (
+                      <div className="gb-score-item-title"><strong>{assessment.title}</strong><small>แก้รายละเอียดงานที่เมนูการบ้าน</small></div>
+                    ) : (
+                      <label className="gb-score-item-title">
+                        <span>ชื่องาน</span>
+                        <input
+                          type="text"
+                          defaultValue={assessment.title}
+                          onBlur={(event) => handleKnowledgeItemUpdate(assessment.id, { title: event.target.value })}
+                        />
+                      </label>
+                    )}
+                    <label>
+                      <span>คะแนนเต็ม</span>
+                      <input
+                        type="number"
+                        min={1}
+                        defaultValue={assessment.maxScore}
+                        disabled={isHomework}
+                        onBlur={(event) => handleKnowledgeItemUpdate(assessment.id, { maxScore: Number(event.target.value) || 1 })}
+                      />
+                    </label>
+                    <label className="gb-score-earned">
+                      <span>คะแนนที่ได้</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={assessment.maxScore}
+                        value={manualScores[assessment.id]?.[dialogStudent.studentCode] ?? ''}
+                        onChange={(event) => handleKnowledgeItemScore(assessment, dialogStudent.studentCode, event.target.value)}
+                      />
+                    </label>
+                    {isHomework ? (
+                      <span className="gb-score-linked" title="ลบการบ้านได้จากเมนูการบ้าน">เชื่อมการบ้าน</span>
+                    ) : (
+                      <button type="button" className="gb-score-delete" onClick={() => handleKnowledgeItemDelete(assessment.id)} title="ลบช่องคะแนน">
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="gb-score-add-row">
+              <label>
+                <span>ชื่องานใหม่</span>
+                <input
+                  type="text"
+                  value={newKnowledgeItem.title}
+                  onChange={(event) => setNewKnowledgeItem((current) => ({ ...current, title: event.target.value }))}
+                  placeholder="เช่น ใบงานที่ 2 หรือกิจกรรมเพิ่มเติม"
+                />
+              </label>
+              <label>
+                <span>คะแนนเต็ม</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={newKnowledgeItem.maxScore}
+                  onChange={(event) => setNewKnowledgeItem((current) => ({ ...current, maxScore: Number(event.target.value) || 1 }))}
+                />
+              </label>
+              <button type="button" onClick={handleCreateKnowledgeItem}><Plus size={17} /> เพิ่มช่องคะแนน</button>
+            </div>
+
+            <footer className="gb-score-modal-footer">
+              <span>บันทึกในเครื่องทันทีและส่งต่อไปยัง Firebase อัตโนมัติ</span>
+              <button type="button" onClick={() => setScoreDialog(null)}>เสร็จสิ้น</button>
+            </footer>
+          </section>
+        </div>
+      )}
+
       <div className="gb-help">
         <h4>💡 ระบบคำนวณ K / P / A อัตโนมัติ (กดปุ่ม "นำเข้า K/P/A จากเว็บ")</h4>
         <ul>
@@ -814,8 +1028,8 @@ const GradeBook: React.FC = () => {
             (ต้องเข้าหน่วยที่เกี่ยวกับตัวชี้วัดนี้ ≥ <strong>2 วันที่ต่างกัน</strong> ในเวลาเรียน)
             <br/>👉 ตั้งตารางสอนได้ที่ Tab "จัดการตารางสอน"
           </li>
-          <li><strong>ครูแก้ค่าเองได้</strong> — กรอก K, เลือก P, ติ๊ก A ในตารางได้ตลอด (ระบบ auto-sync เป็นแค่ตัวช่วย)</li>
-          <li><strong>งานนอกเว็บ/ใบงาน</strong> — เพิ่มงาน เลือกตัวชี้วัด เลือก K หรือ P กรอกคะแนน แล้วกด “คำนวณเข้า K/P” ระบบจะหารคะแนนตามคะแนนเต็มของงานนั้น</li>
+          <li><strong>ครูแก้ค่าเองได้</strong> — คลิกคะแนน K เพื่อเปิดรายละเอียด เพิ่มงานและกรอกคะแนน หรือเลือก P และติ๊ก A ในตารางได้ตลอด</li>
+          <li><strong>งานนอกเว็บ/ใบงาน</strong> — เมื่อกรอกคะแนน ระบบบันทึกและคำนวณเข้า K/P อัตโนมัติตามคะแนนเต็มของงาน</li>
           <li><strong>AI ป.1-6</strong> — คิดเป็นคะแนนเสริมในตัวชี้วัดที่เกี่ยวข้องเมื่อครูกด “นำเข้า K/P/A จากเว็บ” ไม่แยกเป็นวิชาหลักอีกหนึ่งเกรด</li>
           <li><strong>โครงสร้างสอบ</strong> — {getExamPolicyLabel(classroom)}</li>
           <li><strong>เกรด</strong>: คำนวณอัตโนมัติตามเกณฑ์ไทย (≥80%=4, ≥75%=3.5, ≥70%=3, ≥65%=2.5...)</li>
