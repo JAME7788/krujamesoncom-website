@@ -63,6 +63,9 @@
   border-radius: 16px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* KPI Cards */
@@ -682,12 +685,31 @@
 .cb-quiz-item li { padding: 2px 0; }
 
 /* ================= GradeBook (K/P/A) ================= */
-.gradebook { display: flex; flex-direction: column; gap: 1rem; }
+.gradebook {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
 .gb-toolbar {
   display: flex; gap: 0.5rem; flex-wrap: wrap;
   align-items: flex-end;
   padding-bottom: 1rem;
   border-bottom: 1px solid #e5e7eb;
+}
+.gb-toolbar > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.gb-toolbar .filter-group {
+  flex: 0 1 210px;
+}
+.gb-toolbar button {
+  flex: 0 1 auto;
+  white-space: normal;
+  text-align: center;
 }
 
 .gb-indicators {
@@ -711,13 +733,19 @@
 }
 
 .gb-table-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   max-height: 70vh;
 }
 .gb-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
 }
@@ -836,6 +864,9 @@
 
 /* ===== Manual assessments (outside web) ===== */
 .gb-manual {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 1rem 1.25rem;
   background: #f8fafc;
   border: 1px solid #dbeafe;
@@ -892,6 +923,9 @@
   font-size: 0.86rem;
 }
 .gb-manual-table-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -1378,6 +1412,13 @@
   grid-template-columns: 260px 1fr;
   gap: 2rem;
   align-items: start;
+  min-width: 0;
+}
+
+.admin2-content {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .admin2-sidebar {
