@@ -32,7 +32,9 @@ export type GameProgressId =
   | 'quick-answer'
   | 'safety'
   | 'step-sort'
-  | 'device-match';
+  | 'device-match'
+  | 'pixel-art'
+  | 'logic-gates';
 
 type StudentLike = {
   id: string;
@@ -130,6 +132,14 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
   if (normalizedGameId === 'safety') {
     // ความปลอดภัยดิจิทัล — ป.ใช้หน่วยดิจิทัลพื้นฐาน, ม.ใช้หน่วยที่มี ม.1/4
     return [isPrimary ? primaryDigitalUnit(classroom) : middleCodingUnit(classroom)];
+  }
+  // การแทนข้อมูล/เลขฐานสอง (บิต→พิกเซล→รูปภาพ)
+  if (normalizedGameId === 'pixel-art') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleBinaryUnit(classroom)];
+  }
+  // ตรรกะบูลีน AND/OR/NOT — แนวคิดเชิงคำนวณ
+  if (normalizedGameId === 'logic-gates') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
 
   if (normalizedGameId === 'quick-answer') {
