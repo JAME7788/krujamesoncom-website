@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   Users, Calendar, BarChart3, TrendingUp, Activity, Clock,
   Download, Search, RefreshCw, Plus, Trash2, Save, CheckCircle2,
-  XCircle, AlertTriangle, BookOpen, Award, FileText, Gamepad2, PlayCircle,
+  XCircle, BookOpen, Award, FileText, Gamepad2, PlayCircle,
   LogOut, Pencil, Lock, MonitorPlay,
 } from 'lucide-react';
 import AdminGate from '../components/AdminGate';
@@ -23,7 +23,7 @@ import ThemeCustomizer from '../components/ThemeCustomizer';
 import LessonLockManager from '../components/LessonLockManager';
 import SlideManager from '../components/SlideManager';
 import VirtualClassroomManager from '../components/VirtualClassroomManager';
-import PrimaryTechnologyPlans from '../components/PrimaryTechnologyPlans';
+import P1TechnologyPlan from '../components/P1TechnologyPlan';
 import CoursePlan5 from '../components/CoursePlan5';
 import { loadErrors, clearErrors } from '../services/errorLogger';
 import { Megaphone, Calendar as CalIcon, Bug } from 'lucide-react';
@@ -68,7 +68,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     items: [
       { id: 'roster', label: 'จัดการนักเรียน', icon: <Users size={16} /> },
       { id: 'attendance', label: 'เช็คชื่อตามตาราง', icon: <Calendar size={16} /> },
-      { id: 'quick-att', label: 'เช็คชื่อ Quick (มา/สาย)', icon: <Calendar size={16} /> },
+      { id: 'quick-att', label: 'เช็คชื่อ Quick (มา/ขาด/ลา)', icon: <Calendar size={16} /> },
     ]
   },
   {
@@ -85,7 +85,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     title: '📚 จัดการบทเรียน',
     items: [
       { id: 'courses', label: 'จัดการรายวิชา', icon: <Pencil size={16} /> },
-      { id: 'p1-plan', label: 'แผนเทคโนโลยี ป.1-6', icon: <FileText size={16} /> },
+      { id: 'p1-plan', label: 'แผนเทคโนโลยี ป.1 + หลังสอน', icon: <FileText size={16} /> },
       { id: 'course-plan5', label: 'แผนสอนข้อ 5 (ป.1-6)', icon: <FileText size={16} /> },
       { id: 'locks', label: 'ปลดล็อกบทเรียน', icon: <Lock size={16} /> },
       { id: 'slides', label: 'จัดการสไลด์', icon: <BookOpen size={16} /> },
@@ -362,7 +362,6 @@ const AdminDashboardInner: React.FC = () => {
 
                 <div className="attendance-summary">
                   <SummaryPill label="มาเรียน" count={attendance.filter(a => a.status === 'present').length} color="#22c55e" />
-                  <SummaryPill label="สาย" count={attendance.filter(a => a.status === 'late').length} color="#f59e0b" />
                   <SummaryPill label="เรียนเอง (นอกเวลา)" count={attendance.filter(a => a.status === 'self-study').length} color="#3b82f6" />
                   <SummaryPill label="ขาด" count={attendance.filter(a => a.status === 'absent').length} color="#ef4444" />
                 </div>
@@ -562,13 +561,13 @@ const AdminDashboardInner: React.FC = () => {
               </motion.div>
             )}
 
-            {/* TAB: QUICK ATTENDANCE — ครูคลิกมา/สาย/ขาด */}
+            {/* TAB: QUICK ATTENDANCE — ครูคลิกมา/ขาด/ลา */}
             {tab === 'quick-att' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
                 <div style={{ marginBottom: '1rem' }}>
-                  <h2 style={{ margin: '0 0 0.25rem' }}>✅ เช็คชื่อ Quick (มา / สาย / ขาด / ลา)</h2>
+                  <h2 style={{ margin: '0 0 0.25rem' }}>✅ เช็คชื่อ Quick (มา / ขาด / ลา)</h2>
                   <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
-                    คลิกสถานะหน้าห้องเรียน — เซ็ตทุกคนพร้อมกันได้ — มาเรียน +5 XP, สาย +2 XP, ขาด/ลา ไม่มี XP
+                    คลิกสถานะหน้าห้องเรียน — เซ็ตทุกคนพร้อมกันได้ — มาเรียน +5 XP, ขาด/ลาไม่มี XP
                   </p>
                 </div>
                 <QuickAttendance />
@@ -731,7 +730,7 @@ const AdminDashboardInner: React.FC = () => {
             {/* TAB: PRIMARY TECHNOLOGY TEACHING PLANS */}
             {tab === 'p1-plan' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
-                <PrimaryTechnologyPlans />
+                <P1TechnologyPlan />
               </motion.div>
             )}
 
@@ -805,7 +804,6 @@ const SummaryPill: React.FC<{ label: string; count: number; color: string }> = (
 const statusLabel = (s: AttendanceRecord['status']) => {
   switch (s) {
     case 'present': return 'มาเรียน';
-    case 'late': return 'สาย';
     case 'self-study': return 'เรียนเอง';
     case 'absent': return 'ขาด';
   }
@@ -814,7 +812,6 @@ const statusLabel = (s: AttendanceRecord['status']) => {
 const StatusChip: React.FC<{ status: AttendanceRecord['status'] }> = ({ status }) => {
   const map = {
     present: { c: '#22c55e', bg: '#dcfce7', icon: <CheckCircle2 size={14}/> },
-    late: { c: '#f59e0b', bg: '#fef3c7', icon: <AlertTriangle size={14}/> },
     'self-study': { c: '#3b82f6', bg: '#dbeafe', icon: <BookOpen size={14}/> },
     absent: { c: '#ef4444', bg: '#fee2e2', icon: <XCircle size={14}/> },
   };

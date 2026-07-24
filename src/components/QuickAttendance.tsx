@@ -18,7 +18,7 @@ const downloadCsv = (csv: string, filename: string) => {
   URL.revokeObjectURL(url);
 };
 
-const ALL_STATUS: AttendanceStatus[] = ['present', 'late', 'absent', 'sick'];
+const ALL_STATUS: AttendanceStatus[] = ['present', 'absent', 'sick'];
 
 const QuickAttendance: React.FC = () => {
   const rosters = useMemo(() => loadAllRosters(), []);
@@ -44,7 +44,7 @@ const QuickAttendance: React.FC = () => {
 
   const counts = useMemo(() => {
     const records = att?.records || {};
-    const c = { present: 0, late: 0, absent: 0, sick: 0, unset: 0 };
+    const c = { present: 0, absent: 0, sick: 0, unset: 0 };
     roster.forEach((s) => {
       const st = records[s.studentCode];
       if (st) c[st] += 1;
@@ -137,7 +137,7 @@ const QuickAttendance: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
-        {(['present', 'late', 'absent', 'sick'] as AttendanceStatus[]).map((st) => (
+        {ALL_STATUS.map((st) => (
           <span
             key={st}
             style={{

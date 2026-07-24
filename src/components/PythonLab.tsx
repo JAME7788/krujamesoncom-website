@@ -1,5 +1,15 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Play, RotateCcw, Lightbulb, Blocks, FileCode2, CheckCircle2, Loader2 } from 'lucide-react';
+import {
+  Blocks,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  FileCode2,
+  Lightbulb,
+  Loader2,
+  Play,
+  RotateCcw,
+} from 'lucide-react';
 import { PY_CHALLENGES } from '../data/pythonChallenges';
 import type { PyChallenge } from '../data/pythonChallenges';
 import { useAuth } from '../context/AuthContext';
@@ -12,23 +22,31 @@ const BlocklyPython = React.lazy(() => import('./BlocklyPython'));
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // window.loadPyodide ถูกประกาศ type ไว้แล้วใน CodingSandbox.tsx (ใช้ร่วมกัน)
 
-const SOLVED_KEY = 'krujames_py_solved';
-const loadSolved = (): string[] => {
-  try { return JSON.parse(localStorage.getItem(SOLVED_KEY) || '[]'); } catch { return []; }
+const solvedKey = (ownerId: string) => `krujames_py_solved_${ownerId}`;
+const loadSolved = (ownerId: string): string[] => {
+  try { return JSON.parse(localStorage.getItem(solvedKey(ownerId)) || '[]'); } catch { return []; }
 };
-const markSolved = (id: string) => {
+const markSolved = (ownerId: string, id: string): string[] => {
+  const next = [...new Set([...loadSolved(ownerId), id])];
   try {
-    const s = new Set(loadSolved()); s.add(id);
-    localStorage.setItem(SOLVED_KEY, JSON.stringify([...s]));
+    localStorage.setItem(solvedKey(ownerId), JSON.stringify(next));
   } catch { /* ignore */ }
+  return next;
 };
 
 const normalize = (s: string) =>
   s.replace(/\r/g, '').split('\n').map((l) => l.trimEnd()).join('\n').trim();
 
-const PythonLab: React.FC = () => {
+const CHALLENGE_LEVELS: PyChallenge['level'][] = ['ง่าย', 'ปานกลาง', 'ท้าทาย'];
+
+interface PythonLabProps {
+  onChallengeSolved?: (solvedCount: number) => void;
+}
+
+const PythonLab: React.FC<PythonLabProps> = ({ onChallengeSolved }) => {
   const { user } = useAuth();
   const toast = useToast();
+  const ownerId = user?.id || 'guest';
   const [challenge, setChallenge] = useState<PyChallenge>(PY_CHALLENGES[0]);
   const [code, setCode] = useState<string>(PY_CHALLENGES[0].starter);
   const [blocklyCode, setBlocklyCode] = useState<string>('');
@@ -39,7 +57,7 @@ const PythonLab: React.FC = () => {
   const [showHint, setShowHint] = useState(false);
   const [pyodide, setPyodide] = useState<any>(null);
   const [pyLoading, setPyLoading] = useState(false);
-  const [solved, setSolved] = useState<string[]>(() => loadSolved());
+  const [solved, setSolved] = useState<string[]>(() => loadSolved(ownerId));
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   // โหลด Pyodide ครั้งแรก
@@ -67,7 +85,12 @@ const PythonLab: React.FC = () => {
 
   const pickChallenge = (id: string) => {
     const c = PY_CHALLENGES.find((x) => x.id === id) || PY_CHALLENGES[0];
-    setChallenge(c); setCode(c.starter); setOutput([]); setStatus('idle'); setShowHint(false);
+    setChallenge(c);
+    setCode(c.starter);
+    setOutput([]);
+    setStatus('idle');
+    setShowHint(false);
+    if (c.mode === 'text') setMode('editor');
   };
 
   // แหล่งโค้ดที่จะรัน — โหมดบล็อกใช้โค้ดที่ Blockly สร้าง
@@ -89,8 +112,9 @@ const PythonLab: React.FC = () => {
       if (got === want) {
         setStatus('pass');
         if (!solved.includes(challenge.id)) {
-          markSolved(challenge.id);
-          setSolved(loadSolved());
+          const nextSolved = markSolved(ownerId, challenge.id);
+          setSolved(nextSolved);
+          onChallengeSolved?.(nextSolved.length);
           if (user && user.id !== 'admin_teacher_account') {
             void awardBonus(user.id, { emoji: '🐍', reason: `แก้โจทย์ Python: ${challenge.title}`, xp: challenge.xp });
             toast.show(`เยี่ยม! แก้โจทย์สำเร็จ +${challenge.xp} XP 🎉`, 'success');
@@ -117,29 +141,69 @@ const PythonLab: React.FC = () => {
   const isSolved = solved.includes(challenge.id);
   const levelColor = challenge.level === 'ง่าย' ? '#22c55e' : challenge.level === 'ปานกลาง' ? '#f59e0b' : '#ef4444';
   const solvedCount = useMemo(() => PY_CHALLENGES.filter((c) => solved.includes(c.id)).length, [solved]);
+  const challengeIndex = PY_CHALLENGES.findIndex((item) => item.id === challenge.id);
+  const moveChallenge = (offset: number) => {
+    const nextIndex = (challengeIndex + offset + PY_CHALLENGES.length) % PY_CHALLENGES.length;
+    pickChallenge(PY_CHALLENGES[nextIndex].id);
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Challenge picker */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <strong>🐍 Python Lab</strong>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => moveChallenge(-1)}
+          aria-label="โจทย์ก่อนหน้า"
+          title="โจทย์ก่อนหน้า"
+          style={{ width: 34, height: 34, padding: 0, justifyContent: 'center' }}
+        >
+          <ChevronLeft size={17} />
+        </button>
         <select value={challenge.id} onChange={(e) => pickChallenge(e.target.value)}
-          style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 8, fontFamily: 'inherit' }}>
-          {PY_CHALLENGES.map((c) => (
-            <option key={c.id} value={c.id}>{solved.includes(c.id) ? '✅ ' : ''}[{c.level}] {c.title}</option>
-          ))}
+          aria-label="เลือกโจทย์เขียนโปรแกรม"
+          style={{ flex: '1 1 260px', minWidth: 0, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 8, fontFamily: 'inherit' }}>
+          {CHALLENGE_LEVELS.map((level) => {
+            const levelChallenges = PY_CHALLENGES.filter((item) => item.level === level);
+            return (
+              <optgroup key={level} label={`${level} (${levelChallenges.length} ข้อ)`}>
+                {levelChallenges.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {solved.includes(item.id) ? 'ผ่านแล้ว - ' : ''}{item.title}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
         </select>
-        <span style={{ fontSize: '0.82rem', color: '#6b7280' }}>แก้แล้ว {solvedCount}/{PY_CHALLENGES.length}</span>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => moveChallenge(1)}
+          aria-label="โจทย์ถัดไป"
+          title="โจทย์ถัดไป"
+          style={{ width: 34, height: 34, padding: 0, justifyContent: 'center' }}
+        >
+          <ChevronRight size={17} />
+        </button>
+        <span style={{ fontSize: '0.82rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
+          ข้อ {challengeIndex + 1}/{PY_CHALLENGES.length} · แก้แล้ว {solvedCount}/{PY_CHALLENGES.length}
+        </span>
       </div>
 
       {/* Problem card */}
-      <div style={{ padding: 14, borderRadius: 12, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <span style={{ padding: '2px 10px', borderRadius: 999, background: levelColor, color: 'white', fontSize: '0.75rem', fontWeight: 700 }}>
+      <div className="python-problem-card" style={{ padding: 14, borderRadius: 8, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+        <div className="python-problem-heading" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+          <span className="python-problem-level" style={{ padding: '2px 10px', borderRadius: 999, background: levelColor, color: 'white', fontSize: '0.75rem', fontWeight: 700 }}>
             {challenge.level}
           </span>
-          <strong>{challenge.title}</strong>
-          {isSolved && <span style={{ color: '#16a34a', fontSize: '0.8rem' }}><CheckCircle2 size={14} style={{ verticalAlign: 'middle' }} /> แก้แล้ว</span>}
+          <span className="python-problem-topic" style={{ padding: '2px 8px', borderRadius: 6, background: '#ffffff', color: '#475569', fontSize: '0.75rem', fontWeight: 700 }}>
+            {challenge.topic}
+          </span>
+          <strong className="python-problem-title">{challenge.title}</strong>
+          {isSolved && <span className="python-problem-solved" style={{ color: '#16a34a', fontSize: '0.8rem' }}><CheckCircle2 size={14} style={{ verticalAlign: 'middle' }} /> แก้แล้ว</span>}
         </div>
         <p style={{ margin: '4px 0', fontSize: '0.92rem' }}>📋 {challenge.desc}</p>
         <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
@@ -157,9 +221,18 @@ const PythonLab: React.FC = () => {
         <button onClick={() => setMode('editor')} className={mode === 'editor' ? 'btn-primary' : 'btn-secondary'} style={{ padding: '6px 14px' }}>
           <FileCode2 size={14} /> Text Editor
         </button>
-        <button onClick={() => setMode('blocks')} className={mode === 'blocks' ? 'btn-primary' : 'btn-secondary'} style={{ padding: '6px 14px' }}>
+        <button
+          onClick={() => setMode('blocks')}
+          disabled={challenge.mode === 'text'}
+          title={challenge.mode === 'text' ? 'โจทย์นี้ใช้โหมดพิมพ์โค้ด' : 'เขียนโปรแกรมด้วยบล็อก'}
+          className={mode === 'blocks' ? 'btn-primary' : 'btn-secondary'}
+          style={{ padding: '6px 14px' }}
+        >
           <Blocks size={14} /> โหมดบล็อก
         </button>
+        <span style={{ alignSelf: 'center', color: '#64748b', fontSize: '0.78rem' }}>
+          {challenge.mode === 'both' ? 'ทำได้ทั้งบล็อกและพิมพ์โค้ด' : 'โจทย์นี้ใช้โหมดพิมพ์โค้ด'}
+        </span>
       </div>
 
       {/* โหมดบล็อก — ลากบล็อกจริง (Blockly) → สร้าง Python อัตโนมัติ */}
@@ -212,6 +285,9 @@ const PythonLab: React.FC = () => {
         </button>
         <button onClick={() => setShowHint((s) => !s)} className="btn-secondary" style={{ padding: '8px 14px' }}>
           <Lightbulb size={14} /> {showHint ? 'ซ่อนคำใบ้' : 'คำใบ้'}
+        </button>
+        <button onClick={() => moveChallenge(1)} className="btn-secondary" style={{ padding: '8px 14px' }}>
+          ข้อถัดไป <ChevronRight size={14} />
         </button>
       </div>
 

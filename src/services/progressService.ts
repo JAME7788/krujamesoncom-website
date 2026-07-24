@@ -48,6 +48,14 @@ export interface ActivityLog {
   timestamp: number;
 }
 
+export interface ScoredActivityEvidence {
+  id: string;
+  type: 'slide' | 'video' | 'fun' | 'article' | 'practice';
+  timestamp: number;
+  inClass: boolean;
+  basePoints: number;
+}
+
 export interface UnitProgress {
   slidesViewed: number[];
   totalSlides: number;
@@ -63,6 +71,8 @@ export interface UnitProgress {
   completionPct: number;
   /** วันที่ (YYYY-M-D) ที่นักเรียนทำกิจกรรมในเวลาเรียน — เก็บถาวร ใช้คิด A */
   inClassDays?: string[];
+  /** หลักฐานคิดคะแนน P แบบไม่ซ้ำ พร้อมสถานะว่าเกิดในหรือนอกคาบ */
+  scoreEvidence?: ScoredActivityEvidence[];
   /** หลักฐานภารกิจในห้อง 3D ใช้ id คงที่เพื่อกันการปั๊มคะแนนจากการทำซ้ำ */
   worldEvidence: MissionEvidence[];
   /** คะแนนตรวจความเข้าใจย่อยในห้อง 3D (เต็มอย่างน้อย 2 เพื่อไม่ให้คำถามเดียวได้ K เต็ม) */
@@ -90,6 +100,8 @@ export interface StudentProgressData {
   lastActive: number;
   /** วันที่นักเรียนเข้าใช้งาน (YYYY-M-D) — สำหรับคิด streak */
   daysActive?: string[];
+  /** วันที่เข้าสู่ระบบหรือทำกิจกรรมตรงตามตารางเรียน ใช้เช็คชื่อและคิด A */
+  inClassDays?: string[];
   /** XP โบนัสจากครู (รวม) */
   bonusXp?: number;
   /** ประวัติรางวัล/โบนัส ที่ครูแจก (เก็บ 50 ล่าสุด) */
@@ -213,6 +225,7 @@ const emptyUnit = (): UnitProgress => ({
   quizAttempts: 0,
   completionPct: 0,
   inClassDays: [],
+  scoreEvidence: [],
   worldEvidence: [],
   worldKnowledgeCorrect: 0,
   worldKnowledgeMax: 0,
@@ -253,6 +266,18 @@ const normalizeUnitProgress = (raw: unknown): UnitProgress => {
     articlesClicked: normalizeStringList(data.articlesClicked),
     practiceCompleted: normalizeStringList(data.practiceCompleted),
     inClassDays: normalizeStringList(data.inClassDays),
+    scoreEvidence: Array.isArray(data.scoreEvidence)
+      ? data.scoreEvidence
+        .filter((item): item is ScoredActivityEvidence => Boolean(
+          item
+          && typeof item.id === 'string'
+          && typeof item.type === 'string'
+          && Number.isFinite(item.timestamp)
+          && Number.isFinite(item.basePoints),
+        ))
+        .filter((item, index, all) => all.findIndex((other) => other.id === item.id) === index)
+        .slice(-240)
+      : [],
     worldEvidence: Array.isArray(data.worldEvidence)
       ? data.worldEvidence
         .filter((item): item is MissionEvidence => Boolean(
@@ -284,6 +309,7 @@ const normalizeProgressData = (studentId: string, raw: unknown): StudentProgress
     attempts: Array.isArray(source.attempts) ? source.attempts : [],
     activities: Array.isArray(source.activities) ? source.activities : [],
     daysActive: normalizeStringList(source.daysActive),
+    inClassDays: normalizeStringList(source.inClassDays),
     bonuses: Array.isArray(source.bonuses) ? source.bonuses : [],
   };
 };
@@ -389,6 +415,48 @@ const recordInClassDayIfApplicable = (studentId: string, u: UnitProgress) => {
   if (!u.inClassDays.includes(dayKey)) u.inClassDays.push(dayKey);
 };
 
+const recordGlobalInClassDayIfApplicable = (data: StudentProgressData) => {
+  const classroom = parseClassroomFromStudentId(data.studentId);
+  if (!classroom) return;
+  const now = Date.now();
+  if (!isInClassTime(now, classroom, loadSchedule())) return;
+  const d = new Date(now);
+  const dayKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  if (!data.inClassDays) data.inClassDays = [];
+  if (!data.inClassDays.includes(dayKey)) data.inClassDays.push(dayKey);
+  if (data.inClassDays.length > 400) data.inClassDays = data.inClassDays.slice(-365);
+};
+
+const activityBasePoints: Record<ScoredActivityEvidence['type'], number> = {
+  slide: 1,
+  video: 2,
+  fun: 3,
+  article: 1,
+  practice: 5,
+};
+
+const recordScoreEvidence = (
+  studentId: string,
+  u: UnitProgress,
+  type: ScoredActivityEvidence['type'],
+  id: string,
+) => {
+  const normalizedId = `${type}:${id}`.replace(/\s+/g, ' ').trim().slice(0, 180);
+  if (!normalizedId) return;
+  if (!u.scoreEvidence) u.scoreEvidence = [];
+  if (u.scoreEvidence.some((item) => item.id === normalizedId)) return;
+  const classroom = parseClassroomFromStudentId(studentId);
+  const timestamp = Date.now();
+  u.scoreEvidence.push({
+    id: normalizedId,
+    type,
+    timestamp,
+    inClass: Boolean(classroom && isInClassTime(timestamp, classroom, loadSchedule())),
+    basePoints: activityBasePoints[type],
+  });
+  u.scoreEvidence = u.scoreEvidence.slice(-240);
+};
+
 // ---------- Computation ----------
 
 const recomputeUnit = (u: UnitProgress) => {
@@ -424,6 +492,7 @@ const recomputeTotals = (data: StudentProgressData) => {
 
 /** เขียนลง Firebase + อัปเดต in-memory cache (await ให้ครบ — Firebase เป็น source of truth) */
 const persist = async (data: StudentProgressData): Promise<boolean> => {
+  recordGlobalInClassDayIfApplicable(data);
   recomputeTotals(data);
   setCached(data);
   try {
@@ -501,6 +570,7 @@ export const trackSlideView = async (
   const u = data.units[k] || emptyUnit();
   u.totalSlides = Math.max(u.totalSlides, totalSlides);
   if (!u.slidesViewed.includes(slideIdx)) u.slidesViewed.push(slideIdx);
+  recordScoreEvidence(studentId, u, 'slide', String(slideIdx));
   recordInClassDayIfApplicable(studentId, u);
   recordDailyActivity(data);
   u.updatedAt = Date.now();
@@ -529,6 +599,7 @@ export const trackMediaClick = async (
   // ช่วยกันการกดซ้ำเพื่อปั๊ม XP และลดจำนวน write ในห้องเรียนจริง
   if (list.includes(detail)) return true;
   list.push(detail);
+  recordScoreEvidence(studentId, u, type, detail);
   recordInClassDayIfApplicable(studentId, u);
   recordDailyActivity(data);
   u.updatedAt = Date.now();
@@ -610,6 +681,13 @@ export const trackWorldMissionEvidence = async (
     const key = `[3D Artifact] ${evidence.detail}`;
     if (!u.practiceCompleted.includes(key)) u.practiceCompleted.push(key);
   }
+  if (input.kind === 'slide') {
+    recordScoreEvidence(input.studentId, u, 'slide', `3d:${normalizedEventId}`);
+  } else if (input.kind === 'game') {
+    recordScoreEvidence(input.studentId, u, 'fun', `3d:${normalizedEventId}`);
+  } else if (input.kind === 'artifact') {
+    recordScoreEvidence(input.studentId, u, 'practice', `3d:${normalizedEventId}`);
+  }
 
   recordInClassDayIfApplicable(input.studentId, u);
   recordDailyActivity(data);
@@ -653,6 +731,7 @@ export const trackPracticeCompletion = async (
 
   if (isNewCompletion) {
     u.practiceCompleted.push(normalizedDetail);
+    recordScoreEvidence(studentId, u, 'practice', normalizedDetail);
     data.activities.unshift({
       type: 'practice',
       gradeId,

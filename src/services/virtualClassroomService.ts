@@ -13,10 +13,22 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-export type BlockMaterial = 'grass' | 'brick' | 'wood' | 'glass' | 'gold';
+export type BlockMaterial = 'grass' | 'brick' | 'wood' | 'glass' | 'gold' | 'stone' | 'sand' | 'ice' | 'ruby';
 export type WorldSyncMode = 'connecting' | 'firebase' | 'local';
 export type WorldJoinStatus = 'active' | 'waiting' | 'blocked';
 export type WorldActivityKind = 'slide' | 'question' | 'game' | 'artifact';
+export type WorldMotion = 'idle' | 'walk' | 'jump';
+export type CamouflagePose = 'stand' | 'crouch' | 'freeze';
+
+export interface CamouflageRound {
+  id: string;
+  seekerId: string;
+  participantIds: string[];
+  foundPlayerIds: string[];
+  startedAt: number;
+  hideEndsAt: number;
+  roundEndsAt: number;
+}
 
 export interface WorldBlock {
   id: string;
@@ -38,6 +50,9 @@ export interface WorldPlayer {
   z: number;
   rotation: number;
   color: string;
+  camouflageColor?: string;
+  camouflagePose?: CamouflagePose;
+  motion?: WorldMotion;
   role?: 'teacher' | 'student';
   joinStatus?: WorldJoinStatus;
   updatedAt: number;
@@ -62,6 +77,7 @@ export interface VirtualRoomState {
   summonZ: number;
   approvedPlayerIds: string[];
   blockedPlayerIds: string[];
+  camouflageRound: CamouflageRound | null;
   updatedAt: number;
   updatedBy: string;
 }
@@ -133,6 +149,7 @@ export const defaultVirtualRoomState = (roomId: string, classroom: string): Virt
   summonZ: 10,
   approvedPlayerIds: [],
   blockedPlayerIds: [],
+  camouflageRound: null,
   updatedAt: 0,
   updatedBy: '',
 });
@@ -151,6 +168,24 @@ const normalizeRoomState = (
   const source = value && typeof value === 'object' && !Array.isArray(value)
     ? value as Partial<VirtualRoomState>
     : {};
+  const roundSource = source.camouflageRound
+    && typeof source.camouflageRound === 'object'
+    && !Array.isArray(source.camouflageRound)
+    ? source.camouflageRound
+    : null;
+  const camouflageRound: CamouflageRound | null = roundSource
+    && typeof roundSource.id === 'string'
+    && typeof roundSource.seekerId === 'string'
+    ? {
+      id: roundSource.id,
+      seekerId: roundSource.seekerId,
+      participantIds: normalizeIdList(roundSource.participantIds).slice(0, 10),
+      foundPlayerIds: normalizeIdList(roundSource.foundPlayerIds).slice(0, 10),
+      startedAt: Number(roundSource.startedAt) || 0,
+      hideEndsAt: Number(roundSource.hideEndsAt) || 0,
+      roundEndsAt: Number(roundSource.roundEndsAt) || 0,
+    }
+    : null;
   return {
     ...defaultVirtualRoomState(roomId, classroom),
     ...source,
@@ -159,6 +194,7 @@ const normalizeRoomState = (
     accessCodeHash: typeof source.accessCodeHash === 'string' ? source.accessCodeHash : '',
     approvedPlayerIds: normalizeIdList(source.approvedPlayerIds),
     blockedPlayerIds: normalizeIdList(source.blockedPlayerIds),
+    camouflageRound,
   };
 };
 
@@ -245,6 +281,8 @@ export const getLocalWorldBlocks = (roomId: string): WorldBlock[] => (
   readLocal<WorldBlock[]>(blockKey(roomId), [])
 );
 
+export const MAX_WORLD_BLOCKS = 1_200;
+
 export const subscribeWorldBlocks = (
   roomId: string,
   onChange: (blocks: WorldBlock[]) => void,
@@ -274,7 +312,9 @@ export const subscribeWorldBlocks = (
 export const addWorldBlock = async (roomId: string, block: WorldBlock): Promise<boolean> => {
   const current = getLocalWorldBlocks(roomId);
   if (current.some((item) => item.x === block.x && item.y === block.y && item.z === block.z)) return false;
-  if (current.length >= 400) throw new Error('โลกนี้มีบล็อกครบ 400 ชิ้นแล้ว');
+  if (current.length >= MAX_WORLD_BLOCKS) {
+    throw new Error(`โลกนี้มีบล็อกครบ ${MAX_WORLD_BLOCKS.toLocaleString('th-TH')} ชิ้นแล้ว`);
+  }
   const next = [...current, block];
   writeLocal(blockKey(roomId), next);
   emit(roomId);
@@ -328,6 +368,9 @@ export const updateWorldPlayer = async (player: WorldPlayer): Promise<void> => {
     Math.round(player.z * 4),
     Math.round(player.rotation * 8),
     player.color,
+    player.camouflageColor || '',
+    player.camouflagePose || 'stand',
+    player.motion || 'idle',
     player.joinStatus || 'active',
   ].join('|');
   const previous = remotePresence.get(id);

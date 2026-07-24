@@ -10,7 +10,27 @@ import { db } from './firebase';
 import { doc, setDoc, getDoc, runTransaction } from 'firebase/firestore';
 import { allClassrooms2569 } from '../data/students2569';
 
+const cleanForFirestore = <T,>(value: T): T => (
+  JSON.parse(JSON.stringify(value)) as T
+);
+
 export type Skill = 'พอใช้' | 'ปานกลาง' | 'ดี';
+export type PracticeLevel = 'ดีมาก' | 'ปานกลาง' | 'พอใช้' | 'ไม่ผ่าน';
+export const PRACTICE_MAX_SCORE = 30;
+export const ATTITUDE_MAX_SCORE = 10;
+
+export const getPracticeLevel = (score: number): PracticeLevel => {
+  if (score >= 30) return 'ดีมาก';
+  if (score >= 20) return 'ปานกลาง';
+  if (score >= 15) return 'พอใช้';
+  return 'ไม่ผ่าน';
+};
+
+const skillFromPracticeScore = (score: number): Skill => {
+  if (score >= 30) return 'ดี';
+  if (score >= 20) return 'ปานกลาง';
+  return 'พอใช้';
+};
 export const ACADEMIC_YEAR = '2569';
 export const COURSE_TEACHER_NAME = 'นายอนันตชัย เพ็ชรรี่';
 
@@ -20,8 +40,25 @@ export interface IndicatorScore {
   webK?: number;    // คะแนนอัตโนมัติจากควิซ/กิจกรรมในเว็บ
   manualK?: number; // คะแนนที่คำนวณจากการบ้าน/งานเพิ่มเติม
   teacherK?: number;// คะแนน K ที่ครูใส่ตรง
+  pScore?: number;        // คะแนนปฏิบัติรวมที่ใช้จริง 0-30
+  webPScore?: number;     // คะแนนปฏิบัติอัตโนมัติจากการใช้เว็บ
+  manualPScore?: number;  // คะแนนปฏิบัติจากการบ้าน/งานเพิ่มเติม
+  teacherPScore?: number; // ผลรวมรูบริกที่ครูประเมิน
+  practiceCriteria?: number[]; // รูบริก 10 รายการ รายการละ 0-3
+  practiceLevel?: PracticeLevel;
+  practicePassed?: boolean;
   p: Skill;         // ทักษะ
   a: boolean;       // จิตพิสัย/คุณลักษณะ
+  webAScore?: number;     // A อัตโนมัติจากการเข้าเรียน ความสม่ำเสมอ และความพยายาม
+  aScore?: number;        // คะแนน A ที่ใช้จริง 0-10
+  teacherA?: boolean;     // ครูกำหนดผล A โดยตรง
+  aEvidence?: {
+    inClassDays: number;
+    activeDays: number;
+    practiceCount: number;
+    quizAttempts: number;
+    completedUnits: number;
+  };
   pAssessed?: boolean;
   aAssessed?: boolean;
   note?: string;    // บันทึกเพิ่ม
@@ -330,7 +367,26 @@ export const updateStudentScore = (
   };
   if (patch.k !== undefined) {
     next.teacherK = Math.max(0, Math.min(next.maxK || 15, patch.k));
-    next.k = Math.max(next.teacherK, next.webK || 0, next.manualK || 0);
+    next.k = Math.max(
+      next.teacherK,
+      Math.min(next.maxK || 15, (next.webK || 0) + (next.manualK || 0)),
+    );
+  }
+  if (patch.p !== undefined) {
+    const teacherPScore = patch.p === 'ดี' ? 30 : patch.p === 'ปานกลาง' ? 20 : 15;
+    next.teacherPScore = teacherPScore;
+    next.pScore = Math.max(
+      teacherPScore,
+      Math.min(PRACTICE_MAX_SCORE, (next.webPScore || 0) + (next.manualPScore || 0)),
+    );
+    next.p = skillFromPracticeScore(next.pScore);
+    next.practiceLevel = getPracticeLevel(next.pScore);
+    next.practicePassed = next.pScore >= 15;
+  }
+  if (patch.a !== undefined) {
+    next.teacherA = patch.a;
+    next.a = patch.a;
+    next.aScore = patch.a ? ATTITUDE_MAX_SCORE : 0;
   }
   student.indicators[indicatorId] = next;
   student.updatedAt = Date.now();
@@ -362,7 +418,50 @@ export const updateTeacherKnowledgeScore = (
   };
   if (score === null) delete next.teacherK;
   else next.teacherK = Math.max(0, Math.min(maxK, score));
-  next.k = Math.max(next.teacherK || 0, next.webK || 0, next.manualK || 0);
+  next.k = Math.max(
+    next.teacherK || 0,
+    Math.min(maxK, (next.webK || 0) + (next.manualK || 0)),
+  );
+  student.indicators[indicatorId] = next;
+  student.updatedAt = Date.now();
+  cacheGradesLocally(classroom, grades, subject);
+  void patchStudentGradeInFirebase(classroom, student, subject, {
+    indicatorId,
+    indicatorScore: next,
+  });
+};
+
+export const updatePracticeCriteriaScores = (
+  classroom: string,
+  studentCode: string,
+  indicatorId: string,
+  criteria: number[],
+  subject: Subject = 'main',
+) => {
+  const grades = loadGrades(classroom, subject);
+  const student = grades.find((grade) => grade.studentCode === studentCode);
+  if (!student) return;
+  const indicator = getIndicators(classroom, subject).find((item) => item.id === indicatorId);
+  const current = student.indicators[indicatorId] || emptyIndicatorScore(indicator?.maxScore || 15);
+  const normalized = Array.from({ length: 10 }, (_, index) => (
+    Math.max(0, Math.min(3, Number(criteria[index]) || 0))
+  ));
+  const teacherPScore = normalized.reduce((sum, score) => sum + score, 0);
+  const pScore = Math.max(
+    teacherPScore,
+    Math.min(PRACTICE_MAX_SCORE, (current.webPScore || 0) + (current.manualPScore || 0)),
+  );
+  const next: IndicatorScore = {
+    ...current,
+    practiceCriteria: normalized,
+    teacherPScore,
+    pScore,
+    p: skillFromPracticeScore(pScore),
+    practiceLevel: getPracticeLevel(pScore),
+    practicePassed: pScore >= 15,
+    pAssessed: true,
+    updatedAt: Date.now(),
+  };
   student.indicators[indicatorId] = next;
   student.updatedAt = Date.now();
   cacheGradesLocally(classroom, grades, subject);
@@ -414,6 +513,9 @@ export interface ManualAssessment {
   category: AssessmentCategory;
   maxScore: number;
   source: 'outside-web';
+  groupId?: string;
+  resourceUrl?: string;
+  lessonPlanId?: string;
   createdAt: number;
 }
 
@@ -436,13 +538,13 @@ const gradeDocumentId = (classroom: string, subject: Subject = 'main') => (
 const syncManualAssessmentData = async (classroom: string, subject: Subject = 'main') => {
   try {
     if (!db || !import.meta.env.VITE_FIREBASE_PROJECT_ID) return;
-    await setDoc(doc(db, 'grades', gradeDocumentId(classroom, subject)), {
+    await setDoc(doc(db, 'grades', gradeDocumentId(classroom, subject)), cleanForFirestore({
       classroom,
       subject,
       manualAssessments: loadManualAssessments(classroom, subject),
       manualAssessmentScores: loadManualAssessmentScores(classroom, subject),
       manualUpdatedAt: Date.now(),
-    }, { merge: true });
+    }), { merge: true });
   } catch (error) {
     console.warn('manual assessment Firebase sync failed', error);
   }
@@ -526,7 +628,7 @@ export const updateManualAssessment = (
   classroom: string,
   subject: Subject,
   assessmentId: string,
-  patch: Partial<Pick<ManualAssessment, 'title' | 'maxScore'>>,
+  patch: Partial<Pick<ManualAssessment, 'title' | 'maxScore' | 'resourceUrl' | 'lessonPlanId'>>,
 ): ManualAssessment | null => {
   const assessments = loadManualAssessments(classroom, subject);
   const index = assessments.findIndex((assessment) => assessment.id === assessmentId);
@@ -536,6 +638,8 @@ export const updateManualAssessment = (
     ...current,
     title: patch.title === undefined ? current.title : (patch.title.trim() || current.title),
     maxScore: patch.maxScore === undefined ? current.maxScore : Math.max(1, patch.maxScore || 1),
+    resourceUrl: patch.resourceUrl === undefined ? current.resourceUrl : patch.resourceUrl.trim(),
+    lessonPlanId: patch.lessonPlanId === undefined ? current.lessonPlanId : patch.lessonPlanId,
   };
   assessments[index] = updated;
   saveManualAssessments(classroom, assessments, subject);
@@ -582,12 +686,6 @@ export const updateManualAssessmentScore = (
   saveManualAssessmentScores(classroom, scores, subject);
 };
 
-const skillFromRatio = (ratio: number): Skill => {
-  if (ratio >= 0.8) return 'ดี';
-  if (ratio >= 0.5) return 'ปานกลาง';
-  return 'พอใช้';
-};
-
 export const applyManualAssessmentsToGrades = (
   classroom: string,
   subject: Subject = 'main'
@@ -618,9 +716,13 @@ export const applyManualAssessmentsToGrades = (
       const related = byIndicator.get(indicator.id) || [];
       const current = student.indicators[indicator.id] || emptyIndicatorScore(indicator.maxScore);
       if (related.length === 0) {
-        if (current.manualK !== undefined) {
-          const next = { ...current, manualK: 0, updatedAt: Date.now() };
+        if (current.manualK !== undefined || current.manualPScore !== undefined) {
+          const next = { ...current, manualK: 0, manualPScore: 0, updatedAt: Date.now() };
           next.k = Math.max(next.webK || 0, next.teacherK || 0);
+          next.pScore = Math.max(next.webPScore || 0, next.teacherPScore || 0);
+          next.p = skillFromPracticeScore(next.pScore);
+          next.practiceLevel = getPracticeLevel(next.pScore);
+          next.practicePassed = next.pScore >= 15;
           student.indicators[indicator.id] = next;
           indicatorsUpdated += 1;
           changedForStudent = true;
@@ -652,11 +754,23 @@ export const applyManualAssessmentsToGrades = (
             };
             changedForIndicator = true;
           }
+          if (category === 'p' && next.manualPScore !== undefined) {
+            const pScore = Math.max(next.webPScore || 0, next.teacherPScore || 0);
+            next = {
+              ...next,
+              manualPScore: 0,
+              pScore,
+              p: skillFromPracticeScore(pScore),
+              practiceLevel: getPracticeLevel(pScore),
+              practicePassed: pScore >= 15,
+              pAssessed: true,
+            };
+            changedForIndicator = true;
+          }
           return;
         }
-        const ratio = Math.max(0, Math.min(1, earned / max));
         if (category === 'k') {
-          const newK = Math.round(ratio * indicator.maxScore);
+          const newK = Math.min(indicator.maxScore, Math.round(earned * 10) / 10);
           const legacyTeacherK = next.webK === undefined
             && next.manualK === undefined
             && next.teacherK === undefined
@@ -666,15 +780,34 @@ export const applyManualAssessmentsToGrades = (
             ...next,
             teacherK: legacyTeacherK || next.teacherK,
             manualK: newK,
-            k: Math.max(next.webK || 0, legacyTeacherK, newK),
+            k: Math.max(
+              legacyTeacherK,
+              Math.min(indicator.maxScore, (next.webK || 0) + newK),
+            ),
             maxK: indicator.maxScore,
           };
         } else {
-          // P ก็ใช้ max เหมือน K — homework คะแนนต่ำห้ามลด P ที่ได้จาก quiz หรือเกม
-          const newP = skillFromRatio(ratio);
-          const currentP = next.p || 'พอใช้';
-          const finalP = P_POINTS[newP] > P_POINTS[currentP] ? newP : currentP;
-          next = { ...next, p: finalP, pAssessed: true };
+          const manualPScore = Math.min(PRACTICE_MAX_SCORE, Math.round(earned * 10) / 10);
+          const legacyPScore = next.webPScore === undefined
+            && next.manualPScore === undefined
+            && next.teacherPScore === undefined
+            && next.pAssessed
+            ? (next.p === 'ดี' ? 30 : next.p === 'ปานกลาง' ? 20 : 15)
+            : next.teacherPScore || 0;
+          const pScore = Math.max(
+            legacyPScore,
+            Math.min(PRACTICE_MAX_SCORE, (next.webPScore || 0) + manualPScore),
+          );
+          next = {
+            ...next,
+            teacherPScore: legacyPScore || next.teacherPScore,
+            manualPScore,
+            pScore,
+            p: skillFromPracticeScore(pScore),
+            practiceLevel: getPracticeLevel(pScore),
+            practicePassed: pScore >= 15,
+            pAssessed: true,
+          };
         }
         changedForIndicator = true;
       });
@@ -871,7 +1004,7 @@ export const computeBreakdown = (
     const kRatio = ind.maxScore > 0 ? Math.min(1, s.k / ind.maxScore) : 0;
     const kVal = kRatio * kMaxPer;
     // P/A ยังไม่คิดคะแนนจนกว่าจะมีการประเมินจริงจากครูหรือจากระบบ
-    const pRatio = s.pAssessed ? P_POINTS[s.p] / 3 : 0;
+    const pRatio = s.pAssessed && s.practicePassed !== false ? P_POINTS[s.p] / 3 : 0;
     const pVal = pRatio * pMaxPer;
     const aVal = (s.aAssessed && s.a ? 1 : 0) * aMaxPer;
 
@@ -958,7 +1091,11 @@ const syncClassroomToFirebase = async (
   try {
     const docId = gradeDocumentId(classroom, subject);
     const ref = doc(db, 'grades', docId);
-    await setDoc(ref, { classroom, subject, students: grades, updatedAt: Date.now() }, { merge: true });
+    await setDoc(
+      ref,
+      cleanForFirestore({ classroom, subject, students: grades, updatedAt: Date.now() }),
+      { merge: true },
+    );
   } catch (e) {
     console.debug('grade sync skipped', e);
   }
@@ -1006,16 +1143,43 @@ const mergeIndicatorForStudent = (
 ): IndicatorScore => {
   if (!remote) return incoming;
   const p = skillRank[incoming.p] >= skillRank[remote.p] ? incoming.p : remote.p;
+  const webPScore = Math.max(remote.webPScore || 0, incoming.webPScore || 0);
+  const manualPScore = Math.max(remote.manualPScore || 0, incoming.manualPScore || 0);
+  const teacherPScore = Math.max(remote.teacherPScore || 0, incoming.teacherPScore || 0);
+  const pScore = Math.max(
+    teacherPScore,
+    Math.min(PRACTICE_MAX_SCORE, webPScore + manualPScore),
+  );
+  const webK = Math.max(remote.webK || 0, incoming.webK || 0);
+  const manualK = Math.max(remote.manualK || 0, incoming.manualK || 0);
+  const teacherK = Math.max(remote.teacherK || 0, incoming.teacherK || 0);
+  const maxK = Math.max(remote.maxK || 0, incoming.maxK || 0, 15);
+  const teacherA = incoming.teacherA ?? remote.teacherA;
+  const webAScore = Math.max(remote.webAScore || 0, incoming.webAScore || 0);
+  const aScore = teacherA === undefined
+    ? webAScore
+    : teacherA ? ATTITUDE_MAX_SCORE : 0;
   return {
     ...remote,
     ...incoming,
-    k: Math.max(remote.k || 0, incoming.k || 0),
-    webK: Math.max(remote.webK || 0, incoming.webK || 0),
-    manualK: Math.max(remote.manualK || 0, incoming.manualK || 0),
-    teacherK: Math.max(remote.teacherK || 0, incoming.teacherK || 0),
-    maxK: Math.max(remote.maxK || 0, incoming.maxK || 0),
-    p,
-    a: Boolean(remote.a || incoming.a),
+    k: Math.max(teacherK, Math.min(maxK, webK + manualK)),
+    webK,
+    manualK,
+    teacherK,
+    maxK,
+    webPScore,
+    manualPScore,
+    teacherPScore,
+    pScore,
+    practiceCriteria: incoming.practiceCriteria || remote.practiceCriteria,
+    practiceLevel: getPracticeLevel(pScore),
+    practicePassed: pScore > 0 ? pScore >= 15 : (remote.practicePassed ?? incoming.practicePassed),
+    p: pScore > 0 ? skillFromPracticeScore(pScore) : p,
+    teacherA,
+    webAScore,
+    aScore,
+    aEvidence: incoming.aEvidence || remote.aEvidence,
+    a: teacherA ?? (aScore >= 6),
     pAssessed: Boolean(remote.pAssessed || incoming.pAssessed),
     aAssessed: Boolean(remote.aAssessed || incoming.aAssessed),
     updatedAt: Math.max(remote.updatedAt || 0, incoming.updatedAt || 0),
@@ -1062,7 +1226,11 @@ const patchStudentGradeInFirebase = async (
       } else {
         students[index] = next;
       }
-      transaction.set(ref, { classroom, subject, students, updatedAt: Date.now() }, { merge: true });
+      transaction.set(
+        ref,
+        cleanForFirestore({ classroom, subject, students, updatedAt: Date.now() }),
+        { merge: true },
+      );
     });
   } catch (error) {
     console.warn('teacher grade patch failed', error);
@@ -1109,12 +1277,12 @@ export const upsertStudentGradeToFirebase = async (
     const students = [...current];
     if (index >= 0) students[index] = merged;
     else students.push(merged);
-    transaction.set(ref, {
+    transaction.set(ref, cleanForFirestore({
       classroom,
       subject,
       students,
       updatedAt: Date.now(),
-    }, { merge: true });
+    }), { merge: true });
   });
 };
 
@@ -1400,8 +1568,11 @@ export const syncFromProgress = (
     let totalWorldKnowledgeMax = 0;
 
     // ============ P = ทักษะที่เกี่ยวกับตัวชี้วัด ============
-    // นับการลงมือทำ — เน้น hands-on (เกม) > วิดีโอ > สไลด์
+    // หลักฐานในคาบได้ 100% นอกคาบได้ 40% และแต่ละกิจกรรมนับครั้งเดียว
     let skillPoints = 0;
+    let practiceCount = 0;
+    let quizAttempts = 0;
+    let completedUnits = 0;
 
     let unitsWithData = 0;
 
@@ -1421,13 +1592,34 @@ export const syncFromProgress = (
         totalWorldKnowledgeMax += Math.max(2, u.worldKnowledgeMax || 0);
       }
 
-      // P: งานปฏิบัติ ×5 + เกม ×3 + วิดีโอ ×2 + สไลด์ ×1 + บทความ ×1
-      skillPoints +=
-        (u.practiceCompleted?.length || 0) * 5 +
-        (u.funClicked?.length || 0) * 3 +
-        (u.videosClicked?.length || 0) * 2 +
-        (u.slidesViewed?.length || 0) +
-        (u.articlesClicked?.length || 0);
+      const evidence = u.scoreEvidence || [];
+      skillPoints += evidence.reduce(
+        (sum, item) => sum + item.basePoints * (item.inClass ? 1 : 0.4),
+        0,
+      );
+
+      // ข้อมูลรุ่นเก่าไม่มี scoreEvidence: นับรายการที่ยังไม่มีหลักฐานในอัตรานอกคาบ
+      const evidenceCounts = evidence.reduce<Record<string, number>>((counts, item) => {
+        counts[item.type] = (counts[item.type] || 0) + 1;
+        return counts;
+      }, {});
+      const legacyCounts = {
+        practice: Math.max(0, (u.practiceCompleted?.length || 0) - (evidenceCounts.practice || 0)),
+        fun: Math.max(0, (u.funClicked?.length || 0) - (evidenceCounts.fun || 0)),
+        video: Math.max(0, (u.videosClicked?.length || 0) - (evidenceCounts.video || 0)),
+        slide: Math.max(0, (u.slidesViewed?.length || 0) - (evidenceCounts.slide || 0)),
+        article: Math.max(0, (u.articlesClicked?.length || 0) - (evidenceCounts.article || 0)),
+      };
+      skillPoints += (
+        legacyCounts.practice * 5
+        + legacyCounts.fun * 3
+        + legacyCounts.video * 2
+        + legacyCounts.slide
+        + legacyCounts.article
+      ) * 0.4;
+      practiceCount += u.practiceCompleted?.length || 0;
+      quizAttempts += u.quizAttempts || 0;
+      if ((u.completionPct || 0) >= 60) completedUnits += 1;
     });
 
     if (unitsWithData === 0) return;
@@ -1454,11 +1646,24 @@ export const syncFromProgress = (
       && currentScore.teacherK === undefined
       ? currentScore.k || 0
       : currentScore.teacherK || 0;
-    const k = Math.max(webK, currentScore.manualK || 0, legacyTeacherK);
+    const k = Math.max(
+      legacyTeacherK,
+      Math.min(ind.maxScore, webK + (currentScore.manualK || 0)),
+    );
 
-    // P: ระดับทักษะ — เกณฑ์ตามคะแนน skill points
-    // ≥ 15 → ดี (ลงมือเยอะ), ≥ 5 → ปานกลาง, < 5 → พอใช้
-    const p: Skill = skillPoints >= 15 ? 'ดี' : skillPoints >= 5 ? 'ปานกลาง' : 'พอใช้';
+    // P: คะแนนปฏิบัติจากการใช้เว็บ รวมสูงสุด 30 คะแนน
+    const webPScore = Math.min(PRACTICE_MAX_SCORE, Math.round(skillPoints * 10) / 10);
+    const legacyTeacherPScore = currentScore.webPScore === undefined
+      && currentScore.manualPScore === undefined
+      && currentScore.teacherPScore === undefined
+      && currentScore.pAssessed
+      ? (currentScore.p === 'ดี' ? 30 : currentScore.p === 'ปานกลาง' ? 20 : 15)
+      : currentScore.teacherPScore || 0;
+    const pScore = Math.max(
+      legacyTeacherPScore,
+      Math.min(PRACTICE_MAX_SCORE, webPScore + (currentScore.manualPScore || 0)),
+    );
+    const p = skillFromPracticeScore(pScore);
 
     // ============ A = จิตพิสัย ============
     // เกณฑ์: เข้าเรียนในเวลาเรียน (ตาราง) ≥ 2 วันที่ต่างกัน
@@ -1481,9 +1686,20 @@ export const syncFromProgress = (
       });
     }
 
-    // A = true ถ้าเข้าเรียนในเวลาเรียนของหน่วยนี้ ≥ 2 วันที่ต่างกัน
-    // (แสดงว่ามาเรียนสม่ำเสมอ ไม่ใช่ทำตอนนอกเวลาอย่างเดียว)
-    const a = inClassDays.size >= 2;
+    (prog.inClassDays || []).forEach((day) => inClassDays.add(day));
+    const activeDays = new Set(prog.daysActive || []);
+    const webAScore = Math.min(
+      ATTITUDE_MAX_SCORE,
+      Math.min(4, inClassDays.size * 2)
+      + Math.min(2, activeDays.size)
+      + Math.min(2, practiceCount)
+      + Math.min(1, quizAttempts)
+      + Math.min(1, completedUnits),
+    );
+    const a = currentScore.teacherA ?? (webAScore >= 6);
+    const aScore = currentScore.teacherA === undefined
+      ? webAScore
+      : currentScore.teacherA ? ATTITUDE_MAX_SCORE : 0;
 
     student.indicators[ind.id] = {
       ...currentScore,
@@ -1492,7 +1708,21 @@ export const syncFromProgress = (
       teacherK: legacyTeacherK || currentScore.teacherK,
       maxK: ind.maxScore,
       p,
+      webPScore,
+      teacherPScore: legacyTeacherPScore || currentScore.teacherPScore,
+      pScore,
+      practiceLevel: getPracticeLevel(pScore),
+      practicePassed: pScore >= 15,
       a,
+      webAScore,
+      aScore,
+      aEvidence: {
+        inClassDays: inClassDays.size,
+        activeDays: activeDays.size,
+        practiceCount,
+        quizAttempts,
+        completedUnits,
+      },
       pAssessed: true,
       aAssessed: true,
       updatedAt: Date.now(),

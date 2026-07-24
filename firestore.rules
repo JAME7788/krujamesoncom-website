@@ -70,6 +70,21 @@ service cloud.firestore {
                    && strOk('note', 3000);
     }
 
+    // ====== Post-teaching lesson records ======
+    match /lessonRecords/{recordId} {
+      allow read: if true;
+      allow write: if baseWrite(35)
+                   && strOk('classroom', 20)
+                   && strOk('courseName', 300)
+                   && strOk('teacherName', 300)
+                   && strOk('teachingDate', 20)
+                   && strOk('strengths', 5000)
+                   && strOk('problems', 5000)
+                   && strOk('causes', 5000)
+                   && strOk('improvements', 5000)
+                   && strOk('nextAction', 5000);
+    }
+
     // ====== Announcements ======
     match /announcements/{id} {
       allow read: if true;

@@ -1,18 +1,35 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Award, BookOpen, Calendar, CheckCircle2, Download, ExternalLink,
-  FileText, Printer,
+  Award, BookOpen, Calendar, CheckCircle2, ClipboardCheck, Download, ExternalLink,
+  FileText, Printer, RefreshCw, Save,
 } from 'lucide-react';
 import {
   p1AnnualUnits,
   p1Indicators,
   p1LessonPlans,
+  getP1HourlySessions,
   p1References,
   p1ResearchProtocol,
   p1ScoringPlan,
   p1TechnologyCourse,
 } from '../data/p1TechnologyPlan';
 import type { KpaDomain, P1LessonPlan } from '../data/p1TechnologyPlan';
+import {
+  fetchLessonRecords,
+  loadLessonRecords,
+  makeLessonRecordId,
+  saveLessonRecord,
+} from '../services/lessonRecordService';
+import type { LessonRecord, LessonRecordSnapshot } from '../services/lessonRecordService';
+import {
+  fetchClassroomFromFirebase,
+  getIndicators,
+  loadGrades,
+} from '../services/gradeService';
+import { fetchAllStudents, computeAttendance } from '../services/adminService';
+import { fetchAttendance } from '../services/manualAttendanceService';
+import { loadSchedule } from '../data/schedule';
+import { useToast } from './Toast';
 import './P1TechnologyPlan.css';
 
 type View = 'annual' | 'lesson' | 'assessment';
@@ -77,7 +94,232 @@ const DomainBadge = ({ domain }: { domain: KpaDomain }) => (
   <span className={`p1plan-domain p1plan-domain-${domain.toLowerCase()}`}>{domain}</span>
 );
 
-const PlanDetail = ({ plan }: { plan: P1LessonPlan }) => (
+const emptySnapshot: LessonRecordSnapshot = {
+  present: 0,
+  absent: 0,
+  totalStudents: 0,
+  passed: 0,
+  averageK: 0,
+  averageP: 0,
+  attitudePassed: 0,
+};
+
+const emptyRecordForm = {
+  strengths: '',
+  problems: '',
+  causes: '',
+  improvements: '',
+  nextAction: '',
+  status: 'complete' as LessonRecord['status'],
+};
+
+const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
+  const sessions = useMemo(() => getP1HourlySessions(plan), [plan]);
+  const [hourNo, setHourNo] = useState(1);
+  const [teachingDate, setTeachingDate] = useState(new Date().toISOString().slice(0, 10));
+  const [records, setRecords] = useState<LessonRecord[]>(loadLessonRecords);
+  const [snapshot, setSnapshot] = useState<LessonRecordSnapshot>(emptySnapshot);
+  const [form, setForm] = useState(emptyRecordForm);
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+  const recordId = makeLessonRecordId(plan.no, hourNo, teachingDate);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchLessonRecords()
+      .then((items) => {
+        if (cancelled) return;
+        setRecords(items);
+        const existing = items.find((item) => item.id === recordId);
+        setSnapshot(existing?.snapshot || emptySnapshot);
+        setForm(existing ? {
+          strengths: existing.strengths,
+          problems: existing.problems,
+          causes: existing.causes,
+          improvements: existing.improvements,
+          nextAction: existing.nextAction,
+          status: existing.status,
+        } : emptyRecordForm);
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  // อ่าน Firebase ครั้งเดียวเมื่อเปิดแบบบันทึกของแผนนี้
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const selectRecord = (nextHourNo: number, nextDate: string) => {
+    const existing = records.find((item) => (
+      item.id === makeLessonRecordId(plan.no, nextHourNo, nextDate)
+    ));
+    setSnapshot(existing?.snapshot || emptySnapshot);
+    setForm(existing ? {
+      strengths: existing.strengths,
+      problems: existing.problems,
+      causes: existing.causes,
+      improvements: existing.improvements,
+      nextAction: existing.nextAction,
+      status: existing.status,
+    } : emptyRecordForm);
+  };
+
+  const refreshSnapshot = async () => {
+    setBusy(true);
+    try {
+      const [remoteGrades, students, manualAttendance] = await Promise.all([
+        fetchClassroomFromFirebase('ป.1', 'main'),
+        fetchAllStudents(),
+        fetchAttendance(teachingDate, 'ป.1'),
+      ]);
+      const grades = remoteGrades?.length ? remoteGrades : loadGrades('ป.1', 'main');
+      const [year, month, day] = teachingDate.split('-').map(Number);
+      const automaticAttendance = computeAttendance(
+        students,
+        'ป.1',
+        loadSchedule(),
+        new Date(year, month - 1, day, 12).getTime(),
+      );
+      const presentNumbers = new Set(
+        automaticAttendance
+          .filter((item) => item.status === 'present')
+          .map((item) => Number(item.studentNumber)),
+      );
+      grades.forEach((student) => {
+        if (manualAttendance.records[student.studentCode] === 'present') {
+          presentNumbers.add(student.studentNo);
+        }
+      });
+
+      const indicatorIds = new Set(
+        getIndicators('ป.1', 'main')
+          .filter((indicator) => plan.indicators.includes(indicator.code))
+          .map((indicator) => indicator.id),
+      );
+      const linkedScores = grades.flatMap((student) => (
+        Object.entries(student.indicators)
+          .filter(([indicatorId]) => indicatorIds.has(indicatorId))
+          .map(([, score]) => score)
+      ));
+      const passed = grades.filter((student) => {
+        const scores = Object.entries(student.indicators)
+          .filter(([indicatorId]) => indicatorIds.has(indicatorId))
+          .map(([, score]) => score);
+        return scores.length > 0 && scores.every((score) => (
+          score.k >= 9 && (score.pScore || 0) >= 15 && score.a
+        ));
+      }).length;
+      const nextSnapshot: LessonRecordSnapshot = {
+        present: presentNumbers.size,
+        absent: Math.max(0, grades.length - presentNumbers.size),
+        totalStudents: grades.length,
+        passed,
+        averageK: linkedScores.length
+          ? Math.round((linkedScores.reduce((sum, score) => sum + score.k, 0) / linkedScores.length) * 10) / 10
+          : 0,
+        averageP: linkedScores.length
+          ? Math.round((linkedScores.reduce((sum, score) => sum + (score.pScore || 0), 0) / linkedScores.length) * 10) / 10
+          : 0,
+        attitudePassed: grades.filter((student) => {
+          const scores = Object.entries(student.indicators)
+            .filter(([indicatorId]) => indicatorIds.has(indicatorId))
+            .map(([, score]) => score);
+          return scores.length > 0 && scores.every((score) => score.a);
+        }).length,
+      };
+      setSnapshot(nextSnapshot);
+      toast.show('ดึงเช็คชื่อและ K/P/A ล่าสุดมาใส่บันทึกแล้ว', 'success');
+    } catch (error) {
+      toast.show(`ดึงข้อมูลสรุปไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const saved = await saveLessonRecord({
+        classroom: 'ป.1',
+        subject: 'main',
+        planNo: plan.no,
+        hourNo,
+        teachingDate,
+        indicatorCodes: plan.indicators,
+        snapshot,
+        ...form,
+      });
+      setRecords((items) => [saved, ...items.filter((item) => item.id !== saved.id)]);
+      toast.show(`บันทึกหลังสอนแผน ${plan.no} คาบ ${hourNo} ลง Firebase แล้ว`, 'success');
+    } catch (error) {
+      toast.show(`บันทึกไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="p1plan-post-record">
+      <div className="p1plan-post-record-heading">
+        <div>
+          <span>บันทึกจริงหลังจบคาบ</span>
+          <h4><ClipboardCheck size={20} /> บันทึกหลังสอนลง Firebase</h4>
+          <p>{sessions[hourNo - 1]?.title} • {plan.indicators.join(', ')}</p>
+        </div>
+        <div className="p1plan-post-record-controls">
+          <label>คาบ
+            <select value={hourNo} onChange={(event) => {
+              const nextHourNo = Number(event.target.value);
+              setHourNo(nextHourNo);
+              selectRecord(nextHourNo, teachingDate);
+            }}>
+              {sessions.map((session) => <option key={session.hourNo} value={session.hourNo}>คาบ {session.hourNo}</option>)}
+            </select>
+          </label>
+          <label>วันที่สอน
+            <input type="date" value={teachingDate} onChange={(event) => {
+              const nextDate = event.target.value;
+              setTeachingDate(nextDate);
+              selectRecord(hourNo, nextDate);
+            }} />
+          </label>
+        </div>
+      </div>
+
+      <div className="p1plan-post-kpis">
+        <div><span>มาเรียน</span><strong>{snapshot.present}/{snapshot.totalStudents}</strong></div>
+        <div><span>ผ่านจุดประสงค์</span><strong>{snapshot.passed}</strong></div>
+        <div><span>K เฉลี่ย</span><strong>{snapshot.averageK}/15</strong></div>
+        <div><span>P เฉลี่ย</span><strong>{snapshot.averageP}/30</strong></div>
+        <div><span>A ผ่าน</span><strong>{snapshot.attitudePassed}</strong></div>
+      </div>
+
+      <button type="button" className="p1plan-refresh-record" onClick={() => void refreshSnapshot()} disabled={busy}>
+        <RefreshCw size={16} /> ดึงเช็คชื่อและ K/P/A ล่าสุด
+      </button>
+
+      <div className="p1plan-post-fields">
+        <label>สิ่งที่ผู้เรียนทำได้ดี<textarea rows={3} value={form.strengths} onChange={(event) => setForm({ ...form, strengths: event.target.value })} /></label>
+        <label>ปัญหาที่พบ<textarea rows={3} value={form.problems} onChange={(event) => setForm({ ...form, problems: event.target.value })} /></label>
+        <label>สาเหตุ<textarea rows={3} value={form.causes} onChange={(event) => setForm({ ...form, causes: event.target.value })} /></label>
+        <label>แนวทางปรับปรุง<textarea rows={3} value={form.improvements} onChange={(event) => setForm({ ...form, improvements: event.target.value })} /></label>
+        <label className="wide">สิ่งที่จะทำในคาบถัดไป<textarea rows={2} value={form.nextAction} onChange={(event) => setForm({ ...form, nextAction: event.target.value })} /></label>
+      </div>
+
+      <div className="p1plan-post-footer">
+        <label>สถานะ
+          <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as LessonRecord['status'] })}>
+            <option value="complete">บันทึกสมบูรณ์</option>
+            <option value="draft">ฉบับร่าง</option>
+          </select>
+        </label>
+        <button type="button" onClick={() => void save()} disabled={busy || !teachingDate}>
+          <Save size={17} /> {busy ? 'กำลังบันทึก...' : 'บันทึกหลังสอน'}
+        </button>
+      </div>
+    </section>
+  );
+};
+
+const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRecord?: boolean }) => (
   <article className="p1plan-detail">
     <header className="p1plan-detail-header">
       <div>
@@ -135,6 +377,20 @@ const PlanDetail = ({ plan }: { plan: P1LessonPlan }) => (
       </div>
     </section>
 
+    <section className="p1plan-section">
+      <h4>รายละเอียดรายชั่วโมง ({plan.hours} คาบ คาบละ {p1TechnologyCourse.periodMinutes} นาที)</h4>
+      <div className="p1plan-hour-table">
+        {getP1HourlySessions(plan).map((session) => (
+          <article key={session.hourNo}>
+            <header><strong>คาบ {session.hourNo}</strong><span>{session.minutes} นาที</span></header>
+            <div><b>ครู</b><ul>{session.teacherActivities.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            <div><b>ผู้เรียน</b><ul>{session.studentActivities.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            <p><b>หลักฐาน:</b> {session.evidence.join(' • ')}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
     <section className="p1plan-section p1plan-two-col">
       <div>
         <h4>สื่อและแหล่งเรียนรู้</h4>
@@ -188,6 +444,7 @@ const PlanDetail = ({ plan }: { plan: P1LessonPlan }) => (
       <p><strong>ปัญหา/สาเหตุ:</strong> ..........................................................................................................................................</p>
       <p><strong>การปรับครั้งถัดไป:</strong> .....................................................................................................................................</p>
     </section>
+    {allowRecord && <PostTeachingRecord plan={plan} key={plan.no} />}
   </article>
 );
 
@@ -295,7 +552,7 @@ const P1TechnologyPlan: React.FC = () => {
               </button>
             ))}
           </div>
-          <PlanDetail plan={plan} />
+          <PlanDetail plan={plan} allowRecord />
         </div>
       )}
 

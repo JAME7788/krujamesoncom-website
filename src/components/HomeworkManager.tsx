@@ -8,14 +8,15 @@ import {
 import type { Assignment, Submission } from '../services/homeworkService';
 import { allClassrooms2569 } from '../data/students2569';
 import { getSubjectsForClassroom, getIndicators } from '../services/gradeService';
-import type { Subject, AssessmentCategory } from '../services/gradeService';
+import type { Subject } from '../services/gradeService';
+import { p1LessonPlans } from '../data/p1TechnologyPlan';
 
 const HomeworkManager: React.FC = () => {
   const [list, setList] = useState(loadAssignments());
   const [show, setShow] = useState(false);
   const [draft, setDraft] = useState<Partial<Assignment>>({
     title: '', description: '', classroom: '', dueDate: new Date().toISOString().slice(0, 10),
-    maxScore: 10, category: 'k',
+    maxScore: 10, knowledgeMaxScore: 5, practiceMaxScore: 5, resourceUrl: '', category: 'k',
   });
   const [viewing, setViewing] = useState<Assignment | null>(null);
   const [syncing, setSyncing] = useState(true);
@@ -44,7 +45,16 @@ const HomeworkManager: React.FC = () => {
   }, []);
 
   const submit = async () => {
-    if (!draft.title || !draft.dueDate) { alert('กรอกข้อมูลให้ครบ'); return; }
+    const kMax = Math.max(0, draft.knowledgeMaxScore || 0);
+    const pMax = Math.max(0, draft.practiceMaxScore || 0);
+    if (!draft.title || !draft.dueDate || !draft.classroom || !draft.subject || !draft.indicatorId) {
+      alert('กรอกชื่องาน ห้อง วิชา ตัวชี้วัด และกำหนดส่งให้ครบ');
+      return;
+    }
+    if (kMax + pMax <= 0) {
+      alert('กำหนดคะแนน K หรือ P อย่างน้อย 1 คะแนน');
+      return;
+    }
     setSyncing(true);
     try {
       await createAssignment({
@@ -52,13 +62,27 @@ const HomeworkManager: React.FC = () => {
         description: draft.description || '',
         classroom: draft.classroom || '',
         dueDate: draft.dueDate,
-        maxScore: draft.maxScore || 10,
+        maxScore: kMax + pMax,
+        knowledgeMaxScore: kMax,
+        practiceMaxScore: pMax,
+        resourceUrl: draft.resourceUrl?.trim() || undefined,
         createdBy: 'teacher',
         subject: draft.subject,
         indicatorId: draft.indicatorId,
-        category: draft.indicatorId ? (draft.category || 'k') : undefined,
+        category: 'k',
+        lessonPlanId: draft.lessonPlanId,
       });
-      setDraft({ title: '', description: '', classroom: '', dueDate: new Date().toISOString().slice(0, 10), maxScore: 10, category: 'k' });
+      setDraft({
+        title: '',
+        description: '',
+        classroom: '',
+        dueDate: new Date().toISOString().slice(0, 10),
+        maxScore: 10,
+        knowledgeMaxScore: 5,
+        practiceMaxScore: 5,
+        resourceUrl: '',
+        category: 'k',
+      });
       setShow(false);
       reload();
     } catch (error) {
@@ -96,9 +120,22 @@ const HomeworkManager: React.FC = () => {
               <input type="date" value={draft.dueDate} onChange={(e) => setDraft({ ...draft, dueDate: e.target.value })} />
             </div>
             <div className="filter-group">
-              <label>คะแนนเต็ม</label>
-              <input type="number" value={draft.maxScore} min={1} max={100} onChange={(e) => setDraft({ ...draft, maxScore: parseInt(e.target.value) || 10 })} />
+              <label>K ความรู้</label>
+              <input type="number" value={draft.knowledgeMaxScore || 0} min={0} max={15} onChange={(e) => setDraft({ ...draft, knowledgeMaxScore: parseInt(e.target.value) || 0 })} />
             </div>
+            <div className="filter-group">
+              <label>P ปฏิบัติ</label>
+              <input type="number" value={draft.practiceMaxScore || 0} min={0} max={30} onChange={(e) => setDraft({ ...draft, practiceMaxScore: parseInt(e.target.value) || 0 })} />
+            </div>
+          </div>
+          <div className="filter-group" style={{ width: '100%' }}>
+            <label>ลิงก์ใบงาน/คำสั่งงาน (Canva, Google Docs หรือเว็บไซต์อื่น)</label>
+            <input
+              type="url"
+              value={draft.resourceUrl || ''}
+              onChange={(e) => setDraft({ ...draft, resourceUrl: e.target.value })}
+              placeholder="https://..."
+            />
           </div>
           <div className="filter-group" style={{ width: '100%' }}>
             <label>รายละเอียด</label>
@@ -137,15 +174,19 @@ const HomeworkManager: React.FC = () => {
                       ))}
                     </select>
                   </div>
-                  {draft.indicatorId && (
+                  {draft.indicatorId && draft.classroom === 'ป.1' && (
                     <div className="filter-group">
-                      <label>หมวด</label>
+                      <label>แผนรายคาบ (ไม่บังคับ)</label>
                       <select
-                        value={draft.category || 'k'}
-                        onChange={(e) => setDraft({ ...draft, category: e.target.value as AssessmentCategory })}
+                        value={draft.lessonPlanId || ''}
+                        onChange={(e) => setDraft({ ...draft, lessonPlanId: e.target.value || undefined })}
                       >
-                        <option value="k">K ความรู้</option>
-                        <option value="p">P ทักษะ</option>
+                        <option value="">ไม่ระบุแผน</option>
+                        {p1LessonPlans.map((plan) => (
+                          <option key={plan.no} value={`p1-${plan.no}`}>
+                            แผน {plan.no}: {plan.title}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   )}
@@ -167,7 +208,7 @@ const HomeworkManager: React.FC = () => {
         <div className="att-table-wrap">
           <table className="att-table">
             <thead><tr>
-              <th>หัวข้อ</th><th>ห้อง</th><th>ส่งภายใน</th><th>เต็ม</th><th>ส่งแล้ว</th><th></th>
+              <th>หัวข้อ</th><th>ห้อง</th><th>ส่งภายใน</th><th>K/P</th><th>ส่งแล้ว</th><th></th>
             </tr></thead>
             <tbody>
               {list.map((a) => {
@@ -177,7 +218,11 @@ const HomeworkManager: React.FC = () => {
                     <td><strong>{a.title}</strong></td>
                     <td>{a.classroom || 'ทุกห้อง'}</td>
                     <td>{a.dueDate}</td>
-                    <td>{a.maxScore}</td>
+                    <td>
+                      K {a.knowledgeMaxScore ?? (a.category === 'k' ? a.maxScore : 0)}
+                      {' / '}
+                      P {a.practiceMaxScore ?? (a.category === 'p' ? a.maxScore : 0)}
+                    </td>
                     <td>{subs.length} คน</td>
                     <td>
                       <button className="cb-icon-btn" onClick={() => setViewing(a)}><Eye size={14} /></button>
@@ -221,14 +266,18 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
   }, [assignment.id]);
 
   const score = async (id: string) => {
-    const s = prompt(`คะแนน (เต็ม ${assignment.maxScore}):`);
-    if (s === null) return;
-    const sc = parseFloat(s);
-    if (isNaN(sc)) return;
+    const kMax = assignment.knowledgeMaxScore ?? (assignment.category === 'k' ? assignment.maxScore : 0);
+    const pMax = assignment.practiceMaxScore ?? (assignment.category === 'p' ? assignment.maxScore : 0);
+    const kRaw = kMax > 0 ? prompt(`คะแนน K ความรู้ (เต็ม ${kMax}):`, '0') : '0';
+    if (kRaw === null) return;
+    const pRaw = pMax > 0 ? prompt(`คะแนน P ปฏิบัติ (เต็ม ${pMax}):`, '0') : '0';
+    if (pRaw === null) return;
+    const kScore = Math.max(0, Math.min(kMax, Number(kRaw) || 0));
+    const pScore = Math.max(0, Math.min(pMax, Number(pRaw) || 0));
     const fb = prompt('Feedback (optional):') || '';
     setSyncing(true);
     try {
-      await reviewSubmission(id, Math.max(0, Math.min(assignment.maxScore, sc)), fb);
+      await reviewSubmission(id, { kScore, pScore }, fb);
       reload();
     } catch (error) {
       console.error(error);
@@ -246,7 +295,14 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
     }} onClick={onClose}>
       <div className="card" style={{ background: 'white', width: '100%', maxWidth: 700, maxHeight: '85vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h2 style={{ margin: 0 }}>{assignment.title}</h2>
+          <div>
+            <h2 style={{ margin: 0 }}>{assignment.title}</h2>
+            {assignment.resourceUrl && (
+              <a href={assignment.resourceUrl} target="_blank" rel="noreferrer">
+                <ExternalLink size={13} /> เปิดใบงานต้นฉบับ
+              </a>
+            )}
+          </div>
           <button onClick={onClose} className="btn-ghost"><X size={16} /></button>
         </div>
         {subs.length === 0 ? <p>ยังไม่มีคนส่ง</p> : (
@@ -263,7 +319,12 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     {s.score !== undefined ? (
-                      <strong style={{ color: '#22c55e' }}>{s.score}/{assignment.maxScore}</strong>
+                      <div>
+                        <strong style={{ color: '#22c55e' }}>{s.score}/{assignment.maxScore}</strong>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                          K {s.kScore ?? '-'} / P {s.pScore ?? '-'}
+                        </div>
+                      </div>
                     ) : (
                       <button className="btn-primary" disabled={syncing} onClick={() => void score(s.id)} style={{ padding: '4px 12px', fontSize: '0.85rem' }}>
                         ให้คะแนน

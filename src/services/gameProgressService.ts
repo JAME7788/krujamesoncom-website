@@ -34,7 +34,13 @@ export type GameProgressId =
   | 'step-sort'
   | 'device-match'
   | 'pixel-art'
-  | 'logic-gates';
+  | 'logic-gates'
+  | 'file-organizer'
+  | 'algorithm-runner-3d'
+  | 'coding-studio'
+  | 'circuit-lab'
+  | 'tech-system'
+  | 'search-smart';
 
 type StudentLike = {
   id: string;
@@ -89,6 +95,11 @@ const middleBinaryUnit = (classroom: string): TargetUnit => ({
   unitNo: classroom === 'ม.2' ? 3 : classroom === 'ม.3' ? 2 : 1,
 });
 
+const middleDataUnit = (classroom: string): TargetUnit => ({
+  gradeId: middleGradeId(classroom),
+  unitNo: classroom === 'ม.3' ? 1 : classroom === 'ม.2' ? 3 : 1,
+});
+
 const middleDesignUnit = (classroom: string): TargetUnit => ({
   gradeId: `m${classroom.replace('ม.', '')}-design`,
   unitNo: 1,
@@ -110,11 +121,20 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
     return [isPrimary ? primaryDigitalUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
 
-  if (normalizedGameId === 'algorithm' || normalizedGameId === 'pattern') {
+  if (
+    normalizedGameId === 'algorithm'
+    || normalizedGameId === 'pattern'
+    || normalizedGameId === 'algorithm-runner-3d'
+  ) {
     return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
 
-  if (normalizedGameId === 'coding-maze' || normalizedGameId === 'snake' || normalizedGameId === 'bug-catcher') {
+  if (
+    normalizedGameId === 'coding-maze'
+    || normalizedGameId === 'coding-studio'
+    || normalizedGameId === 'snake'
+    || normalizedGameId === 'bug-catcher'
+  ) {
     return [isPrimary ? primaryCodingUnit(classroom) : middleCodingUnit(classroom)];
   }
 
@@ -140,6 +160,20 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
   // ตรรกะบูลีน AND/OR/NOT — แนวคิดเชิงคำนวณ
   if (normalizedGameId === 'logic-gates') {
     return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  if (normalizedGameId === 'file-organizer') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleDataUnit(classroom)];
+  }
+  if (normalizedGameId === 'circuit-lab') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  // ระบบทางเทคโนโลยี (Input–Process–Output) — การออกแบบและเทคโนโลยี
+  if (normalizedGameId === 'tech-system') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleDesignUnit(classroom)];
+  }
+  // ค้นหา/คัดเลือกข้อมูลอย่างมีประสิทธิภาพ — ตามผลลัพธ์การเรียนรู้ข้อ 5
+  if (normalizedGameId === 'search-smart') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleCodingUnit(classroom)];
   }
 
   if (normalizedGameId === 'quick-answer') {

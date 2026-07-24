@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build --app",
     "lint": "eslint .",
     "preview": "vite preview",
+    "qa:games": "node scripts/qa-game-content.mjs",
     "qa:world": "node scripts/qa-virtual-world.mjs"
   },
   "dependencies": {

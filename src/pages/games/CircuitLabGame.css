@@ -1,0 +1,720 @@
+.circuit-page {
+  max-width: 1320px;
+}
+
+.circuit-topbar {
+  align-items: flex-start;
+}
+
+.circuit-topbar h2 {
+  letter-spacing: 0;
+}
+
+.circuit-topbar p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.circuit-status {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+  border-block: 1px solid #dbe3ea;
+  background: #fff;
+}
+
+.circuit-status > div {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  border-right: 1px solid #e5e7eb;
+  color: #526176;
+  font-size: 0.82rem;
+}
+
+.circuit-status strong {
+  color: #172033;
+}
+
+.circuit-lab {
+  border: 1px solid #d9e1e8;
+  background: #fff;
+}
+
+.circuit-brief {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid #d9e1e8;
+  background: #f8fafc;
+}
+
+.circuit-brief > div:first-child {
+  min-width: 0;
+}
+
+.circuit-brief span {
+  color: #b45309;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.circuit-brief h3 {
+  margin: 0.15rem 0 0.2rem;
+  color: #172033;
+  font-size: 1.2rem;
+}
+
+.circuit-brief p {
+  margin: 0;
+  color: #526176;
+  font-size: 0.83rem;
+}
+
+.circuit-wire-budget {
+  display: grid;
+  min-width: 122px;
+  place-items: center;
+  padding: 0.55rem 0.8rem;
+  border-left: 4px solid #f59e0b;
+  background: #fff7df;
+  color: #7c4a03;
+}
+
+.circuit-wire-budget small {
+  font-size: 0.68rem;
+}
+
+.circuit-wire-budget strong {
+  color: #172033;
+  font-size: 1.35rem;
+}
+
+.circuit-wire-budget span {
+  color: #7c4a03;
+  font-size: 0.66rem;
+}
+
+.circuit-board-wrap {
+  display: grid;
+  grid-template-columns: minmax(340px, 1.45fr) minmax(250px, 0.7fr);
+  min-height: 490px;
+}
+
+.circuit-board {
+  display: grid;
+  align-self: stretch;
+  gap: 5px;
+  padding: clamp(1rem, 3vw, 2.25rem);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    #174a52;
+  background-size: 24px 24px;
+}
+
+.circuit-cell {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(226, 240, 241, 0.19);
+  border-radius: 5px;
+  background: rgba(5, 43, 49, 0.78);
+  color: #e7f7f5;
+  font-family: inherit;
+}
+
+.circuit-cell:not(:disabled) {
+  cursor: pointer;
+}
+
+.circuit-cell:not(:disabled):hover {
+  border-color: #7dd3fc;
+  background: rgba(8, 64, 73, 0.9);
+}
+
+.circuit-cell:disabled {
+  opacity: 1;
+}
+
+.cell-x {
+  background:
+    repeating-linear-gradient(135deg, #5b6670 0 9px, #424c55 9px 18px);
+}
+
+.cell-p,
+.cell-n {
+  background: #143c62;
+}
+
+.cell-l {
+  background: #3f3c22;
+}
+
+.cell-s {
+  background: #183d35;
+}
+
+.wire-placeholder {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px dashed rgba(226, 240, 241, 0.46);
+  border-radius: 50%;
+  color: rgba(226, 240, 241, 0.55);
+  font-size: 1rem;
+  transition: transform 120ms ease;
+}
+
+.circuit-cell:hover .wire-placeholder {
+  color: #fff;
+  transform: scale(1.12);
+}
+
+.wire-shape {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.wire-center,
+.wire-arm {
+  position: absolute;
+  display: block;
+  background: #e2e8f0;
+  box-shadow: 0 0 0 2px #475569;
+}
+
+.wire-center {
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.wire-arm.left,
+.wire-arm.right {
+  top: calc(50% - 4px);
+  width: 50%;
+  height: 8px;
+}
+
+.wire-arm.left {
+  left: 0;
+}
+
+.wire-arm.right {
+  right: 0;
+}
+
+.wire-arm.up,
+.wire-arm.down {
+  left: calc(50% - 4px);
+  width: 8px;
+  height: 50%;
+}
+
+.wire-arm.up {
+  top: 0;
+}
+
+.wire-arm.down {
+  bottom: 0;
+}
+
+.energized .wire-center,
+.energized .wire-arm {
+  background: #fde047;
+  box-shadow: 0 0 6px #fbbf24, 0 0 0 2px #c27708;
+}
+
+.battery-terminal,
+.circuit-bulb,
+.circuit-switch,
+.circuit-insulator {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  gap: 0.1rem;
+  pointer-events: none;
+}
+
+.battery-terminal {
+  width: 65%;
+  min-width: 48px;
+  padding: 0.28rem 0.2rem;
+  border: 2px solid #fff;
+  border-radius: 5px;
+  background: #1d4ed8;
+  box-shadow: 0 3px 0 #0f2f6d;
+}
+
+.battery-terminal.positive {
+  background: #e4573f;
+  box-shadow: 0 3px 0 #7f2418;
+}
+
+.battery-terminal b {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  color: #172033;
+  font-size: 0.9rem;
+}
+
+.battery-terminal small,
+.circuit-bulb small,
+.circuit-switch small,
+.circuit-insulator small {
+  color: inherit;
+  font-size: clamp(0.5rem, 1.1vw, 0.68rem);
+  font-weight: 800;
+}
+
+.circuit-bulb {
+  width: 65%;
+  min-width: 48px;
+  padding: 0.35rem 0.15rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 50% 50% 6px 6px;
+  background: #2f3941;
+  color: #cbd5e1;
+}
+
+.circuit-bulb.on {
+  border-color: #fef08a;
+  background: #facc15;
+  color: #713f12;
+  box-shadow: 0 0 16px #fde047, 0 0 34px rgba(253, 224, 71, 0.72);
+  animation: circuit-glow 800ms ease-in-out infinite alternate;
+}
+
+@keyframes circuit-glow {
+  to {
+    box-shadow: 0 0 22px #fde047, 0 0 48px rgba(253, 224, 71, 0.88);
+  }
+}
+
+.circuit-switch {
+  width: 70%;
+  min-width: 54px;
+  padding: 0.38rem 0.2rem;
+  border: 2px solid #ef4444;
+  border-radius: 6px;
+  background: #4b1d24;
+  color: #fecaca;
+}
+
+.circuit-switch.on {
+  border-color: #4ade80;
+  background: #14532d;
+  color: #dcfce7;
+}
+
+.circuit-insulator {
+  color: #f8fafc;
+}
+
+.circuit-guide {
+  padding: 1.2rem;
+  border-left: 1px solid #d9e1e8;
+  background: #f8fafc;
+}
+
+.circuit-guide h3 {
+  margin: 0 0 0.75rem;
+  color: #172033;
+  font-size: 1rem;
+}
+
+.circuit-guide dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.circuit-guide dl > div {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.circuit-guide dt {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #26364b;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.circuit-guide dd {
+  margin: 0.25rem 0 0 1.75rem;
+  color: #64748b;
+  font-size: 0.73rem;
+  line-height: 1.45;
+}
+
+.circuit-concept {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-left: 4px solid #0ea5e9;
+  background: #eaf7fd;
+  color: #164e63;
+}
+
+.circuit-concept svg {
+  flex: 0 0 auto;
+}
+
+.circuit-concept p {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.circuit-concept strong {
+  display: block;
+  margin-bottom: 0.12rem;
+}
+
+.circuit-feedback {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 1rem;
+  border-top: 1px solid #d9e1e8;
+  border-left: 5px solid #0ea5e9;
+  background: #eff9fe;
+  color: #164e63;
+  font-size: 0.8rem;
+}
+
+.circuit-feedback svg {
+  flex: 0 0 auto;
+}
+
+.circuit-feedback.success {
+  border-left-color: #16a34a;
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.circuit-feedback.error {
+  border-left-color: #dc2626;
+  background: #fff1f2;
+  color: #991b1b;
+}
+
+.circuit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding: 0.8rem 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.circuit-actions button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.circuit-hint,
+.circuit-clear {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+}
+
+.circuit-hint.active {
+  border-color: #f59e0b;
+  background: #fff7df;
+  color: #7c4a03;
+}
+
+.circuit-check {
+  border: 1px solid #0f766e;
+  background: #0f766e;
+  color: #fff;
+}
+
+.circuit-check:hover {
+  background: #115e59;
+}
+
+.circuit-levels {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #d9e1e8;
+  background: #f8fafc;
+}
+
+.circuit-levels > div:first-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.2rem;
+}
+
+.circuit-levels strong {
+  color: #172033;
+}
+
+.circuit-levels small {
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+.circuit-level-buttons {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(92px, 1fr));
+  gap: 0.4rem;
+}
+
+.circuit-level-buttons button {
+  display: grid;
+  min-height: 66px;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.circuit-level-buttons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.circuit-level-buttons button > span {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e2e8f0;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.circuit-level-buttons b {
+  overflow: hidden;
+  font-size: 0.68rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+}
+
+.circuit-level-buttons button small {
+  grid-column: 2;
+  color: #15803d;
+}
+
+.circuit-level-buttons button.active {
+  border-color: #0ea5e9;
+  box-shadow: inset 0 -3px 0 #0ea5e9;
+  color: #075985;
+}
+
+.circuit-level-buttons button.solved {
+  border-color: #86cfa1;
+  background: #effcf3;
+}
+
+.circuit-level-buttons button.solved > span {
+  color: #15803d;
+}
+
+.circuit-complete {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #f2cc60;
+  border-bottom: 4px solid #eab308;
+  background: #fff9db;
+  color: #713f12;
+}
+
+.circuit-complete h3,
+.circuit-complete p {
+  margin: 0;
+}
+
+.circuit-complete p {
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+}
+
+.circuit-complete button {
+  margin-left: auto;
+  padding: 0.6rem 0.8rem;
+  border: 0;
+  border-radius: 6px;
+  background: #854d0e;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .circuit-board-wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .circuit-guide {
+    border-top: 1px solid #d9e1e8;
+    border-left: 0;
+  }
+
+  .circuit-guide dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 1rem;
+  }
+
+  .circuit-levels {
+    grid-template-columns: 1fr;
+  }
+
+  .circuit-level-buttons {
+    grid-template-columns: repeat(6, minmax(105px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .circuit-page {
+    padding-inline: 0.65rem;
+  }
+
+  .circuit-topbar {
+    padding-inline: 0;
+  }
+
+  .circuit-topbar h2 {
+    font-size: 1.18rem;
+  }
+
+  .circuit-status > div {
+    flex: 1 1 50%;
+    min-height: 40px;
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.72rem;
+  }
+
+  .circuit-brief {
+    align-items: flex-start;
+  }
+
+  .circuit-brief h3 {
+    font-size: 1rem;
+  }
+
+  .circuit-brief p {
+    font-size: 0.73rem;
+  }
+
+  .circuit-wire-budget {
+    min-width: 94px;
+  }
+
+  .circuit-board-wrap {
+    min-height: 0;
+  }
+
+  .circuit-board {
+    gap: 3px;
+    padding: 0.65rem;
+  }
+
+  .circuit-cell {
+    border-radius: 3px;
+  }
+
+  .battery-terminal,
+  .circuit-bulb,
+  .circuit-switch {
+    min-width: 40px;
+  }
+
+  .circuit-guide {
+    padding: 0.85rem;
+  }
+
+  .circuit-guide dl {
+    grid-template-columns: 1fr;
+  }
+
+  .circuit-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0.7rem;
+  }
+
+  .circuit-check {
+    grid-column: 1 / -1;
+  }
+
+  .circuit-levels {
+    padding: 0.75rem;
+  }
+
+  .circuit-complete {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .circuit-complete button {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circuit-bulb.on {
+    animation: none;
+  }
+}

@@ -26,12 +26,16 @@ import {
   MoveRight,
   MoveUp,
   Palette,
+  Paintbrush,
+  Pipette,
+  Play,
   Presentation,
   Radio,
   ScanFace,
   Settings2,
   ShieldCheck,
   Star,
+  Timer,
   UserCheck,
   UserX,
   Users,
@@ -57,6 +61,7 @@ import {
   addWorldBlock,
   cleanupVirtualQaRoom,
   defaultVirtualRoomState,
+  MAX_WORLD_BLOCKS,
   recordWorldActivityEvent,
   removeWorldBlock,
   removeWorldPlayer,
@@ -71,6 +76,8 @@ import {
 } from '../services/virtualClassroomService';
 import type {
   BlockMaterial,
+  CamouflagePose,
+  CamouflageRound,
   VirtualRoomState,
   WorldActivityEvent,
   WorldBlock,
@@ -127,6 +134,30 @@ const lessonEmoji = (title: string, topics: string[], index: number) => {
   return ['💡', '🔎', '🧠', '🚀'][index % 4];
 };
 
+const FILE_GAME_STATION: GameStation = {
+  id: 'files',
+  title: 'จัดแฟ้มข้อมูล',
+  skill: 'จำแนกและจัดเก็บข้อมูล',
+  path: '/games/file-organizer',
+  color: '#1d4ed8',
+};
+
+const RUNNER_GAME_STATION: GameStation = {
+  id: 'runner-3d',
+  title: 'นักวิ่งอัลกอริทึม 3D',
+  skill: 'วางแผนและตรวจสอบโปรแกรม',
+  path: '/games/algorithm-runner-3d',
+  color: '#2563eb',
+};
+
+const CIRCUIT_GAME_STATION: GameStation = {
+  id: 'circuit-lab',
+  title: 'ห้องทดลองวงจรไฟฟ้า',
+  skill: 'ออกแบบวงจรและแก้ปัญหา',
+  path: '/games/circuit-lab',
+  color: '#0f766e',
+};
+
 const GAME_STATIONS: GameStation[] = [
   { id: 'device', title: 'จับคู่อุปกรณ์', skill: 'รู้จักอุปกรณ์คอมพิวเตอร์', path: '/games/device-match', color: '#0ea5e9' },
   { id: 'step', title: 'เรียงขั้นตอน', skill: 'คิดเป็นลำดับ', path: '/games/step-sort', color: '#f97316' },
@@ -137,14 +168,17 @@ const GAME_STATIONS: GameStation[] = [
   { id: 'quick', title: 'ตอบไวคอมพิวเตอร์', skill: 'ทบทวนความรู้', path: '/games/quick-answer-computing', color: '#dc2626' },
   { id: 'binary', title: 'เลขฐานสอง', skill: 'คิดแบบคอมพิวเตอร์', path: '/games/binary', color: '#d97706' },
   { id: 'snake', title: 'งูกินผลไม้', skill: 'ฝึกตรรกะและเงื่อนไข', path: '/games/snake', color: '#15803d' },
+  FILE_GAME_STATION,
+  RUNNER_GAME_STATION,
+  CIRCUIT_GAME_STATION,
 ];
 
 const gamesForClassroom = (classroom: string) => {
   if (classroom.startsWith('ป.1') || classroom.startsWith('ป.2') || classroom.startsWith('ป.3')) {
-    return GAME_STATIONS.slice(0, 3);
+    return [FILE_GAME_STATION, ...GAME_STATIONS.slice(0, 2)];
   }
-  if (classroom.startsWith('ป.')) return GAME_STATIONS.slice(3, 6);
-  return GAME_STATIONS.slice(6, 9);
+  if (classroom.startsWith('ป.')) return [CIRCUIT_GAME_STATION, RUNNER_GAME_STATION, FILE_GAME_STATION];
+  return [CIRCUIT_GAME_STATION, RUNNER_GAME_STATION, FILE_GAME_STATION];
 };
 
 const MATERIALS: Array<{ id: BlockMaterial; color: string; label: string }> = [
@@ -153,7 +187,21 @@ const MATERIALS: Array<{ id: BlockMaterial; color: string; label: string }> = [
   { id: 'wood', color: '#a16207', label: 'ไม้' },
   { id: 'glass', color: '#7dd3fc', label: 'กระจก' },
   { id: 'gold', color: '#facc15', label: 'ทอง' },
+  { id: 'stone', color: '#94a3b8', label: 'หิน' },
+  { id: 'sand', color: '#e0c896', label: 'ทราย' },
+  { id: 'ice', color: '#a5d8f0', label: 'น้ำแข็ง' },
+  { id: 'ruby', color: '#e11d48', label: 'อัญมณี' },
 ];
+
+const WORLD_SIZE = 96;
+const BUILD_REACH = 15;
+const BUILD_BOUNDARY = 46;
+const BUILD_MAX_HEIGHT = 24;
+const PLAYER_BOUNDARY = 47;
+const CAMOUFLAGE_COLORS = ['#2f8f46', '#0f766e', '#2563eb', '#d97706', '#dc5f45', '#64748b', '#f8fafc', '#172033'];
+const CAMOUFLAGE_HIDE_SECONDS = 45;
+const CAMOUFLAGE_SEEK_SECONDS = 90;
+const epochNow = () => Date.now();
 
 const playerHash = (id: string) => {
   let hash = 0;
@@ -300,6 +348,8 @@ const VirtualClassroom: React.FC = () => {
   const modeRef = useRef<WorldMode>('build');
   const materialRef = useRef<BlockMaterial>('grass');
   const avatarColorRef = useRef(playerColor(playerId));
+  const camouflageColorRef = useRef(playerColor(playerId));
+  const camouflagePoseRef = useRef<CamouflagePose>('stand');
   const thirdPersonRef = useRef(false);
   const roomStateRef = useRef<VirtualRoomState | null>(null);
   const canParticipateRef = useRef(true);
@@ -311,6 +361,9 @@ const VirtualClassroom: React.FC = () => {
   const placeRef = useRef<() => void>(() => undefined);
   const removeRef = useRef<() => void>(() => undefined);
   const interactRef = useRef<() => void>(() => undefined);
+  const sampleColorRef = useRef<() => void>(() => undefined);
+  const findPlayerRef = useRef<() => void>(() => undefined);
+  const applyCamouflageRef = useRef<(color: string, pose: CamouflagePose) => void>(() => undefined);
   const lockRef = useRef<() => void>(() => undefined);
   const jumpRef = useRef<() => void>(() => undefined);
   const [mode, setMode] = useState<WorldMode>('build');
@@ -331,17 +384,24 @@ const VirtualClassroom: React.FC = () => {
   const [slideIndex, setSlideIndex] = useState(0);
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
   const [worldStars, setWorldStars] = useState(0);
+  const [worldBlockCount, setWorldBlockCount] = useState(0);
+  const [camouflageColor, setCamouflageColor] = useState(() => playerColor(playerId));
+  const [camouflagePose, setCamouflagePose] = useState<CamouflagePose>('stand');
+  const [roundClock, setRoundClock] = useState(() => Date.now());
+  const [partyPanelOpen, setPartyPanelOpen] = useState(false);
   const [customSlides, setCustomSlides] = useState<Record<number, RichSlide[]>>({});
   const [status, setStatus] = useState('');
   const [pointerLocked, setPointerLocked] = useState(false);
 
   const activeClassroom = isTeacher ? teacherRoom : (user?.classroom || 'ป.1');
+  const partyMap = new URLSearchParams(window.location.search).get('map') === 'camouflage';
+  const roomClassroom = partyMap ? 'ทุกชั้น' : activeClassroom;
   const gradeId = getDefaultProgressGradeIdForClassroom(activeClassroom);
   const grade = gradeId ? findGrade(gradeId) : undefined;
-  const roomId = `class-${activeClassroom.replace(/[^0-9ก-๙]/g, '')}${qaMode ? `-qa-${qaId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32)}` : ''}`;
+  const roomId = `${partyMap ? 'school-camouflage' : `class-${activeClassroom.replace(/[^0-9ก-๙]/g, '')}`}${qaMode ? `-qa-${qaId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32)}` : ''}`;
   const gameStations = useMemo(() => gamesForClassroom(activeClassroom), [activeClassroom]);
   const [roomState, setRoomState] = useState<VirtualRoomState>(() => (
-    defaultVirtualRoomState(roomId, activeClassroom)
+    defaultVirtualRoomState(roomId, roomClassroom)
   ));
   const [roomEvents, setRoomEvents] = useState<WorldActivityEvent[]>([]);
   const [joinCodeInput, setJoinCodeInput] = useState('');
@@ -461,11 +521,73 @@ const VirtualClassroom: React.FC = () => {
     games: todayEvents.filter((event) => event.kind === 'game').length,
     artifacts: todayEvents.filter((event) => event.kind === 'artifact').length,
   }), [onlinePlayers, todayEvents]);
+  const camouflageRound = roomState.camouflageRound;
+  const camouflagePhase = !camouflageRound
+    ? 'idle'
+    : roundClock < camouflageRound.hideEndsAt
+      ? 'hide'
+      : roundClock < camouflageRound.roundEndsAt
+        ? 'seek'
+        : 'result';
+  const camouflageRole = !camouflageRound?.participantIds.includes(playerId)
+    ? 'spectator'
+    : camouflageRound.seekerId === playerId
+      ? 'seeker'
+      : 'hider';
+  const camouflageFound = Boolean(camouflageRound?.foundPlayerIds.includes(playerId));
+  const camouflageRemaining = camouflageRound
+    ? Math.max(0, Math.ceil(((
+      camouflagePhase === 'hide' ? camouflageRound.hideEndsAt : camouflageRound.roundEndsAt
+    ) - roundClock) / 1000))
+    : 0;
+  const activePartyPlayers = useMemo(() => (
+    onlinePlayers
+      .filter((player) => player.joinStatus !== 'blocked' && player.joinStatus !== 'waiting')
+      .slice(0, 10)
+  ), [onlinePlayers]);
+
+  useEffect(() => {
+    if (!camouflageRound || camouflagePhase === 'result') return;
+    const timer = window.setInterval(() => setRoundClock(Date.now()), 500);
+    return () => window.clearInterval(timer);
+  }, [camouflagePhase, camouflageRound]);
+
+  const startCamouflageRound = () => {
+    if (!isTeacher) {
+      setStatus('ครูเป็นผู้เริ่มรอบพรางสีซ่อนหา');
+      return;
+    }
+    if (activePartyPlayers.length < 2) {
+      setStatus('ต้องมีผู้เล่นอย่างน้อย 2 คนจึงจะเริ่มได้');
+      return;
+    }
+    const startedAt = epochNow();
+    const seeker = activePartyPlayers[startedAt % activePartyPlayers.length];
+    const nextRound: CamouflageRound = {
+      id: `camouflage_${startedAt}`,
+      seekerId: seeker.id,
+      participantIds: activePartyPlayers.map((player) => player.id),
+      foundPlayerIds: [],
+      startedAt,
+      hideEndsAt: startedAt + CAMOUFLAGE_HIDE_SECONDS * 1000,
+      roundEndsAt: startedAt + (CAMOUFLAGE_HIDE_SECONDS + CAMOUFLAGE_SEEK_SECONDS) * 1000,
+    };
+    setRoundClock(startedAt);
+    updateRoom({ camouflageRound: nextRound });
+    setPartyPanelOpen(true);
+    setStatus(`เริ่มรอบแล้ว ${seeker.name} เป็นฝ่ายหา`);
+  };
+
+  const stopCamouflageRound = () => {
+    if (!isTeacher) return;
+    updateRoom({ camouflageRound: null });
+    setStatus('จบรอบพรางสีซ่อนหาแล้ว');
+  };
 
   useEffect(() => {
     const unsubscribeRoom = subscribeVirtualRoomState(
       roomId,
-      activeClassroom,
+      roomClassroom,
       (next) => {
         setRoomState(next);
         setGrantedCodeHash(sessionStorage.getItem(`kj_world_access_${roomId}_${playerId}`) || '');
@@ -477,7 +599,7 @@ const VirtualClassroom: React.FC = () => {
       unsubscribeRoom();
       unsubscribeEvents();
     };
-  }, [activeClassroom, playerId, roomId]);
+  }, [playerId, roomClassroom, roomId]);
 
   useEffect(() => {
     if (!qaMode) return;
@@ -494,6 +616,12 @@ const VirtualClassroom: React.FC = () => {
     canParticipateRef.current = canParticipate;
     joinStatusRef.current = joinStatus;
   }, [canParticipate, joinStatus]);
+
+  useEffect(() => {
+    camouflageColorRef.current = camouflageColor;
+    camouflagePoseRef.current = camouflagePose;
+    applyCamouflageRef.current(camouflageColor, camouflagePose);
+  }, [camouflageColor, camouflagePose]);
 
   useEffect(() => {
     localStorage.setItem('kj_world_graphics', graphicsQuality);
@@ -548,14 +676,14 @@ const VirtualClassroom: React.FC = () => {
 
   const broadcastPresentation = useCallback((board: LessonBoard, index: number) => {
     if (!isTeacher) return;
-    void updateVirtualRoomState(roomId, activeClassroom, {
+    void updateVirtualRoomState(roomId, roomClassroom, {
       presentationUnitNo: board.unitNo,
       presentationSlideIndex: index,
       presentationVersion: roomStateRef.current?.presentationVersion
         ? roomStateRef.current.presentationVersion + 1
         : Date.now(),
     }, playerId);
-  }, [activeClassroom, isTeacher, playerId, roomId]);
+  }, [isTeacher, playerId, roomClassroom, roomId]);
 
   const openLessonBoard = useCallback((board: LessonBoard, index = 0, broadcast = false) => {
     const safeIndex = Math.max(0, Math.min(board.slides.length - 1, index));
@@ -608,7 +736,7 @@ const VirtualClassroom: React.FC = () => {
 
   const updateRoom = (patch: Partial<VirtualRoomState>) => {
     if (!isTeacher) return;
-    void updateVirtualRoomState(roomId, activeClassroom, patch, playerId);
+    void updateVirtualRoomState(roomId, roomClassroom, patch, playerId);
   };
 
   const submitRoomCode = async () => {
@@ -619,7 +747,7 @@ const VirtualClassroom: React.FC = () => {
     }
     const saved = await setVirtualRoomAccessCode(
       roomId,
-      activeClassroom,
+      roomClassroom,
       teacherCodeInput,
       playerId,
     );
@@ -730,7 +858,7 @@ const VirtualClassroom: React.FC = () => {
     renderer.setPixelRatio(pixelRatio);
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.shadowMap.enabled = graphicsQuality !== 'low';
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.setAttribute('aria-label', 'ห้องเรียนออนไลน์สามมิติ');
     mount.appendChild(renderer.domElement);
@@ -741,10 +869,10 @@ const VirtualClassroom: React.FC = () => {
     sun.castShadow = graphicsQuality !== 'low';
     const shadowSize = graphicsQuality === 'high' ? 2048 : 1024;
     sun.shadow.mapSize.set(shadowSize, shadowSize);
-    sun.shadow.camera.left = -28;
-    sun.shadow.camera.right = 28;
-    sun.shadow.camera.top = 28;
-    sun.shadow.camera.bottom = -28;
+    sun.shadow.camera.left = -48;
+    sun.shadow.camera.right = 48;
+    sun.shadow.camera.top = 48;
+    sun.shadow.camera.bottom = -48;
     scene.add(sun);
 
     // พื้นผิวแบบพิกเซล (Minecraft) — noise เล็กๆ ต่อพิกเซล + ขอบคมด้วย NearestFilter
@@ -797,7 +925,7 @@ const VirtualClassroom: React.FC = () => {
       }
       const texture = new THREE.CanvasTexture(canvas);
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(8, 8);
+      texture.repeat.set(WORLD_SIZE / 8, WORLD_SIZE / 8);
       texture.magFilter = THREE.NearestFilter;
       texture.minFilter = THREE.NearestFilter;
       pixelTextures.push(texture);
@@ -805,12 +933,12 @@ const VirtualClassroom: React.FC = () => {
     };
 
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(64, 64),
+      new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE),
       new THREE.MeshStandardMaterial({ map: makeGroundTexture(), roughness: 0.97 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
-    ground.userData.kind = 'ground';
+    ground.userData = { kind: 'ground', sampleColor: '#6ca83c' };
     scene.add(ground);
 
     const classroomFloor = new THREE.Mesh(
@@ -1020,6 +1148,45 @@ const VirtualClassroom: React.FC = () => {
     };
     [[-15, -9], [15, -9], [-15, 8], [15, 8]].forEach(([x, z]) => makeTree(x, z));
 
+    const camouflageGeometries: THREE.BufferGeometry[] = [];
+    const camouflageMaterials: THREE.MeshStandardMaterial[] = [];
+    const camouflageSurfaces: THREE.Mesh[] = [];
+    const camouflageColliders: THREE.Box3[] = [];
+    if (partyMap) {
+      const coverLayout: Array<[number, number, number, number, number, string]> = [
+        [-18, 2, -15, 8, 4, '#2f8f46'],
+        [-5, 1.5, -17, 6, 3, '#0f766e'],
+        [9, 2.5, -15, 10, 5, '#2563eb'],
+        [19, 1.5, -9, 5, 3, '#d97706'],
+        [-20, 1.5, 2, 5, 3, '#dc5f45'],
+        [-9, 2.25, 1, 8, 4.5, '#64748b'],
+        [8, 1.75, 1, 7, 3.5, '#f8fafc'],
+        [20, 2.5, 5, 8, 5, '#172033'],
+        [-17, 2, 16, 9, 4, '#7c3aed'],
+        [0, 1.5, 17, 8, 3, '#0891b2'],
+        [16, 2, 17, 7, 4, '#65a30d'],
+      ];
+      coverLayout.forEach(([x, y, z, width, height, color], index) => {
+        const depth = index % 3 === 0 ? 2.8 : 1.4;
+        const geometry = new THREE.BoxGeometry(width, height, depth);
+        const material = new THREE.MeshStandardMaterial({
+          color,
+          roughness: 0.82,
+          metalness: 0.02,
+        });
+        const cover = new THREE.Mesh(geometry, material);
+        cover.position.set(x, y, z);
+        cover.castShadow = true;
+        cover.receiveShadow = true;
+        cover.userData = { kind: 'cover', sampleColor: color };
+        scene.add(cover);
+        camouflageGeometries.push(geometry);
+        camouflageMaterials.push(material);
+        camouflageSurfaces.push(cover);
+        camouflageColliders.push(new THREE.Box3().setFromObject(cover).expandByScalar(0.42));
+      });
+    }
+
     const starGeometry = new THREE.OctahedronGeometry(0.3, 0);
     const starMaterial = new THREE.MeshStandardMaterial({
       color: 0xfacc15,
@@ -1047,11 +1214,16 @@ const VirtualClassroom: React.FC = () => {
       wood: new THREE.MeshStandardMaterial({ map: makePixelTexture(0xa16207), roughness: 0.8 }),
       glass: new THREE.MeshStandardMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.55, roughness: 0.25 }),
       gold: new THREE.MeshStandardMaterial({ map: makePixelTexture(0xfacc15, 12), metalness: 0.55, roughness: 0.35 }),
+      stone: new THREE.MeshStandardMaterial({ map: makePixelTexture(0x94a3b8, 26), roughness: 0.95 }),
+      sand: new THREE.MeshStandardMaterial({ map: makePixelTexture(0xe0c896, 20), roughness: 0.98 }),
+      ice: new THREE.MeshStandardMaterial({ color: 0xa5d8f0, transparent: true, opacity: 0.6, roughness: 0.08, metalness: 0.2 }),
+      ruby: new THREE.MeshStandardMaterial({ map: makePixelTexture(0xe11d48, 14), metalness: 0.4, roughness: 0.22 }),
     };
     const blockMeshes = new Map<string, THREE.Mesh>();
     const blockData = new Map<string, WorldBlock>();
 
     const syncBlocks = (blocks: WorldBlock[]) => {
+      setWorldBlockCount(blocks.length);
       const nextIds = new Set(blocks.map((block) => block.id));
       blockMeshes.forEach((mesh, id) => {
         if (nextIds.has(id)) return;
@@ -1076,28 +1248,80 @@ const VirtualClassroom: React.FC = () => {
     const unsubscribeBlocks = subscribeWorldBlocks(roomId, syncBlocks);
 
     const remoteAvatars = new Map<string, THREE.Group>();
+    const setAvatarAppearance = (group: THREE.Group, colorValue: string, pose: CamouflagePose) => {
+      const paintMeshes = (group.userData.paintMeshes || []) as THREE.Mesh[];
+      paintMeshes.forEach((mesh) => {
+        const material = mesh.material as THREE.MeshStandardMaterial;
+        material.color.set(colorValue);
+      });
+      const parts = group.userData.parts as {
+        leftArm: THREE.Mesh;
+        rightArm: THREE.Mesh;
+        leftLeg: THREE.Mesh;
+        rightLeg: THREE.Mesh;
+      };
+      group.userData.pose = pose;
+      group.scale.y = pose === 'crouch' ? 0.72 : 1;
+      parts.leftArm.rotation.set(0, 0, pose === 'freeze' ? 1.25 : 0);
+      parts.rightArm.rotation.set(0, 0, pose === 'freeze' ? -1.25 : 0);
+      parts.leftLeg.rotation.set(0, 0, 0);
+      parts.rightLeg.rotation.set(0, 0, 0);
+    };
+
+    const animateAvatar = (
+      group: THREE.Group,
+      moving: boolean,
+      jumping: boolean,
+      now: number,
+      speedScale = 1,
+    ) => {
+      const parts = group.userData.parts as {
+        leftArm: THREE.Mesh;
+        rightArm: THREE.Mesh;
+        leftLeg: THREE.Mesh;
+        rightLeg: THREE.Mesh;
+      };
+      if (!parts || group.userData.pose === 'freeze') return;
+      const swing = moving ? Math.sin(now * 0.011 * speedScale) * 0.62 : 0;
+      const jumpLift = jumping ? -0.38 : 0;
+      parts.leftArm.rotation.x = swing + jumpLift;
+      parts.rightArm.rotation.x = -swing + jumpLift;
+      parts.leftLeg.rotation.x = -swing * 0.72;
+      parts.rightLeg.rotation.x = swing * 0.72;
+    };
+
     const createAvatar = (player: WorldPlayer) => {
       const group = new THREE.Group();
-      const color = new THREE.Color(player.color);
-      group.userData.profile = `${player.name}_${player.color}_${player.role || 'student'}`;
+      const paintColor = partyMap ? (player.camouflageColor || player.color) : player.color;
+      const color = new THREE.Color(paintColor);
+      const paintMaterial = new THREE.MeshStandardMaterial({ color });
+      group.userData.profile = [
+        player.name,
+        player.classroom,
+        player.color,
+        player.camouflageColor || '',
+        player.camouflagePose || 'stand',
+        player.role || 'student',
+      ].join('_');
       const body = new THREE.Mesh(
         new THREE.BoxGeometry(0.8, 1.15, 0.48),
-        new THREE.MeshStandardMaterial({ color }),
+        paintMaterial,
       );
       body.position.y = 1.15;
       const head = new THREE.Mesh(
         new THREE.BoxGeometry(0.62, 0.62, 0.62),
-        new THREE.MeshStandardMaterial({ color: 0xf4c7a1 }),
+        partyMap ? paintMaterial : new THREE.MeshStandardMaterial({ color: 0xf4c7a1 }),
       );
       head.position.y = 2.05;
-      const legs = new THREE.Mesh(
-        new THREE.BoxGeometry(0.62, 0.82, 0.4),
-        new THREE.MeshStandardMaterial({ color: 0x263449 }),
-      );
-      legs.position.y = 0.42;
+      const legGeometry = new THREE.BoxGeometry(0.27, 0.82, 0.4);
+      const legMaterial = partyMap ? paintMaterial : new THREE.MeshStandardMaterial({ color: 0x263449 });
+      const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+      leftLeg.position.set(-0.18, 0.42, 0);
+      const rightLeg = leftLeg.clone();
+      rightLeg.position.x = 0.18;
       const hair = new THREE.Mesh(
         new THREE.BoxGeometry(0.66, 0.17, 0.66),
-        new THREE.MeshStandardMaterial({ color: 0x382519 }),
+        partyMap ? paintMaterial : new THREE.MeshStandardMaterial({ color: 0x382519 }),
       );
       hair.position.set(0, 2.35, 0);
       const eyeMaterial = new THREE.MeshStandardMaterial({ color: 0x172033 });
@@ -1111,15 +1335,30 @@ const VirtualClassroom: React.FC = () => {
       );
       smile.position.set(0, 1.92, -0.325);
       const armGeometry = new THREE.BoxGeometry(0.22, 1.02, 0.3);
-      const leftArm = new THREE.Mesh(armGeometry, new THREE.MeshStandardMaterial({ color }));
+      const leftArm = new THREE.Mesh(armGeometry, paintMaterial);
       leftArm.position.set(-0.54, 1.15, 0);
       const rightArm = leftArm.clone();
       rightArm.position.x = 0.54;
-      [body, head, legs, hair, leftArm, rightArm].forEach((part) => { part.castShadow = true; });
-      group.add(
-        body, head, legs, hair, leftEye, rightEye, smile, leftArm, rightArm,
-        createNameSprite(player.name, player.role === 'teacher'),
+      const avatarMeshes = [body, head, leftLeg, rightLeg, hair, leftArm, rightArm];
+      avatarMeshes.forEach((part) => {
+        part.castShadow = true;
+        part.userData = { kind: 'avatar', playerId: player.id };
+      });
+      const nameSprite = createNameSprite(
+        partyMap ? `${player.name} · ${player.classroom}` : player.name,
+        player.role === 'teacher',
       );
+      group.add(
+        body, head, leftLeg, rightLeg, hair, leftEye, rightEye, smile, leftArm, rightArm,
+        nameSprite,
+      );
+      group.userData.parts = { leftArm, rightArm, leftLeg, rightLeg };
+      group.userData.paintMeshes = partyMap ? avatarMeshes : [body, leftArm, rightArm];
+      group.userData.nameSprite = nameSprite;
+      group.userData.playerId = player.id;
+      group.userData.motion = player.motion || 'idle';
+      group.userData.targetPosition = new THREE.Vector3(player.x, player.y || 0, player.z);
+      setAvatarAppearance(group, paintColor, player.camouflagePose || 'stand');
       if (player.role === 'teacher') {
         const crownMaterial = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.55 });
         [-0.2, 0, 0.2].forEach((x) => {
@@ -1142,6 +1381,9 @@ const VirtualClassroom: React.FC = () => {
       z: spawn.z,
       rotation: yaw,
       color: avatarColorRef.current,
+      camouflageColor: camouflageColorRef.current,
+      camouflagePose: camouflagePoseRef.current,
+      motion: 'idle',
       role: isTeacher ? 'teacher' : 'student',
       updatedAt: Date.now(),
     });
@@ -1158,7 +1400,14 @@ const VirtualClassroom: React.FC = () => {
       });
       remote.forEach((player) => {
         let avatar = remoteAvatars.get(player.id);
-        const profile = `${player.name}_${player.color}_${player.role || 'student'}`;
+        const profile = [
+          player.name,
+          player.classroom,
+          player.color,
+          player.camouflageColor || '',
+          player.camouflagePose || 'stand',
+          player.role || 'student',
+        ].join('_');
         if (avatar && avatar.userData.profile !== profile) {
           scene.remove(avatar);
           remoteAvatars.delete(player.id);
@@ -1166,7 +1415,12 @@ const VirtualClassroom: React.FC = () => {
         }
         avatar ||= createAvatar(player);
         remoteAvatars.set(player.id, avatar);
-        avatar.position.set(player.x, player.y || 0, player.z);
+        if (!avatar.userData.hasPosition) {
+          avatar.position.set(player.x, player.y || 0, player.z);
+          avatar.userData.hasPosition = true;
+        }
+        (avatar.userData.targetPosition as THREE.Vector3).set(player.x, player.y || 0, player.z);
+        avatar.userData.motion = player.motion || 'idle';
         avatar.rotation.y = player.rotation;
       });
     }, setSyncMode);
@@ -1182,8 +1436,79 @@ const VirtualClassroom: React.FC = () => {
 
     const getHit = () => {
       raycaster.setFromCamera(center, camera);
-      const targets = [ground, ...boardMeshes, ...gameMeshes, ...portalMeshes, ...blockMeshes.values()];
+      const avatarTargets = Array.from(remoteAvatars.values()).flatMap((avatar) => (
+        avatar.children.filter((child) => child.userData.kind === 'avatar')
+      ));
+      const targets = [
+        ground,
+        ...camouflageSurfaces,
+        ...boardMeshes,
+        ...gameMeshes,
+        ...portalMeshes,
+        ...blockMeshes.values(),
+        ...avatarTargets,
+      ];
       return raycaster.intersectObjects(targets, false)[0];
+    };
+
+    applyCamouflageRef.current = (nextColor, nextPose) => {
+      setAvatarAppearance(localAvatar, nextColor, nextPose);
+    };
+
+    sampleColorRef.current = () => {
+      const round = roomStateRef.current?.camouflageRound;
+      const canSample = partyMap
+        && round
+        && round.participantIds.includes(playerId)
+        && round.seekerId !== playerId
+        && Date.now() < round.hideEndsAt;
+      if (!canSample) {
+        setStatus('ฝ่ายซ่อนดูดสีได้เฉพาะช่วงเตรียมตัว');
+        return;
+      }
+      const hit = getHit();
+      if (!hit || hit.distance > 18 || hit.object.userData.kind === 'avatar') {
+        setStatus('เล็งพื้นผิวใกล้ ๆ แล้วลองดูดสีอีกครั้ง');
+        return;
+      }
+      const mesh = hit.object as THREE.Mesh;
+      const material = mesh.material as THREE.MeshStandardMaterial;
+      const sampled = hit.object.userData.sampleColor
+        || (material.color ? `#${material.color.getHexString()}` : '');
+      if (!sampled) return;
+      setCamouflageColor(sampled);
+      setStatus(`ดูดสี ${sampled.toUpperCase()} สำเร็จ`);
+    };
+
+    findPlayerRef.current = () => {
+      const round = roomStateRef.current?.camouflageRound;
+      const now = Date.now();
+      if (!partyMap || !round || round.seekerId !== playerId || now < round.hideEndsAt || now >= round.roundEndsAt) {
+        setStatus('ใช้ปุ่มค้นหาได้เมื่อคุณเป็นฝ่ายหาและเริ่มช่วงค้นหาแล้ว');
+        return;
+      }
+      const hit = getHit();
+      const targetId = hit?.object.userData.playerId as string | undefined;
+      if (!hit || hit.distance > 18 || hit.object.userData.kind !== 'avatar' || !targetId) {
+        setStatus('ยังไม่พบผู้เล่นในเป้าเล็ง');
+        return;
+      }
+      if (!round.participantIds.includes(targetId) || targetId === round.seekerId) return;
+      if (round.foundPlayerIds.includes(targetId)) {
+        setStatus('พบผู้เล่นคนนี้แล้ว');
+        return;
+      }
+      const nextRound: CamouflageRound = {
+        ...round,
+        foundPlayerIds: [...round.foundPlayerIds, targetId],
+      };
+      void updateVirtualRoomState(
+        roomId,
+        roomClassroom,
+        { camouflageRound: nextRound },
+        playerId,
+      );
+      setStatus('พบผู้เล่นแล้ว');
     };
 
     placeRef.current = () => {
@@ -1197,7 +1522,10 @@ const VirtualClassroom: React.FC = () => {
         return;
       }
       const hit = getHit();
-      if (!hit || hit.distance > 9 || !['ground', 'block'].includes(hit.object.userData.kind)) return;
+      if (!hit || hit.distance > BUILD_REACH || !['ground', 'block'].includes(hit.object.userData.kind)) {
+        setStatus(`เข้าใกล้พื้นที่ก่อสร้างอีกนิด วางได้ไกลสูงสุด ${BUILD_REACH} ช่อง`);
+        return;
+      }
       const point = hit.point.clone();
       if (hit.object.userData.kind === 'block' && hit.face) {
         point.add(hit.face.normal.clone().multiplyScalar(0.55));
@@ -1207,7 +1535,14 @@ const VirtualClassroom: React.FC = () => {
       const y = hit.object.userData.kind === 'ground'
         ? 0.5
         : Math.max(0.5, Math.floor(point.y) + 0.5);
-      if (Math.abs(x) > 25 || Math.abs(z) > 25 || y > 12) return;
+      if (Math.abs(x) > BUILD_BOUNDARY || Math.abs(z) > BUILD_BOUNDARY) {
+        setStatus('ถึงขอบพื้นที่ก่อสร้างแล้ว');
+        return;
+      }
+      if (y > BUILD_MAX_HEIGHT - 0.5) {
+        setStatus(`สร้างได้สูงสุด ${BUILD_MAX_HEIGHT} ชั้น`);
+        return;
+      }
       const block: WorldBlock = {
         id: `${playerId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         x, y, z,
@@ -1216,7 +1551,10 @@ const VirtualClassroom: React.FC = () => {
         createdAt: Date.now(),
       };
       void addWorldBlock(roomId, block).then((added) => {
-        if (!added) return;
+        if (!added) {
+          setStatus('ช่องนี้มีบล็อกอยู่แล้ว ลองเล็งช่องข้าง ๆ');
+          return;
+        }
         setStatus(`วางบล็อก${MATERIALS.find((item) => item.id === block.material)?.label || ''}แล้ว`);
         const unitNo = boards[0]?.unitNo || 1;
         void recordActivity(
@@ -1233,7 +1571,7 @@ const VirtualClassroom: React.FC = () => {
       if (!isTeacher && roomStateRef.current?.buildLocked) return;
       if (modeRef.current !== 'build') return;
       const hit = getHit();
-      if (!hit || hit.distance > 9 || hit.object.userData.kind !== 'block') return;
+      if (!hit || hit.distance > BUILD_REACH || hit.object.userData.kind !== 'block') return;
       const block = blockData.get(hit.object.userData.blockId as string);
       if (!block) return;
       void removeWorldBlock(roomId, block);
@@ -1293,6 +1631,8 @@ const VirtualClassroom: React.FC = () => {
       if (event.code === 'KeyE') interactRef.current();
       if (event.code === 'KeyQ') placeRef.current();
       if (event.code === 'KeyR') removeRef.current();
+      if (event.code === 'KeyF' && partyMap) sampleColorRef.current();
+      if (event.code === 'KeyT' && partyMap) findPlayerRef.current();
       if (event.code.startsWith('Digit')) {
         const slot = Number(event.code.slice(5));
         if (slot >= 1 && slot <= MATERIALS.length) {
@@ -1322,7 +1662,8 @@ const VirtualClassroom: React.FC = () => {
       if (event.button === 0) {
         const hit = getHit();
         const kind = hit?.object.userData.kind;
-        if (kind === 'portal') { if (document.pointerLockElement) document.exitPointerLock(); setGamesPanelOpen(true); }
+        if (kind === 'avatar' && partyMap) findPlayerRef.current();
+        else if (kind === 'portal') { if (document.pointerLockElement) document.exitPointerLock(); setGamesPanelOpen(true); }
         else if (kind === 'board' || kind === 'game') interactRef.current();
         else removeRef.current();
       } else if (event.button === 2) {
@@ -1376,8 +1717,19 @@ const VirtualClassroom: React.FC = () => {
       const speed = keys.has('ShiftLeft') ? 8.5 : 5.2;
       const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
       const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+      const previousX = playerPosition.x;
+      const previousZ = playerPosition.z;
       playerPosition.addScaledVector(forward, forwardAmount * speed * delta);
       playerPosition.addScaledVector(right, sideAmount * speed * delta);
+      if (partyMap && camouflageColliders.some((box) => (
+        playerPosition.x >= box.min.x
+        && playerPosition.x <= box.max.x
+        && playerPosition.z >= box.min.z
+        && playerPosition.z <= box.max.z
+      ))) {
+        playerPosition.x = previousX;
+        playerPosition.z = previousZ;
+      }
       verticalVelocity -= 20 * delta;
       playerPosition.y += verticalVelocity * delta;
       // ยืนบนพื้น (0) หรือบนบล็อกที่วางไว้ในช่องนี้ — Minecraft: กระโดดขึ้นไปเหยียบบล็อกได้
@@ -1396,11 +1748,34 @@ const VirtualClassroom: React.FC = () => {
         verticalVelocity = 0;
         grounded = true;
       }
-      playerPosition.x = THREE.MathUtils.clamp(playerPosition.x, -27, 27);
-      playerPosition.z = THREE.MathUtils.clamp(playerPosition.z, -27, 27);
+      playerPosition.x = THREE.MathUtils.clamp(playerPosition.x, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
+      playerPosition.z = THREE.MathUtils.clamp(playerPosition.z, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
+      const isMoving = Math.abs(forwardAmount) + Math.abs(sideAmount) > 0;
       localAvatar.visible = thirdPersonRef.current;
       localAvatar.position.set(playerPosition.x, playerPosition.y - 1.7, playerPosition.z);
       localAvatar.rotation.y = yaw;
+      animateAvatar(localAvatar, isMoving, !grounded, now, keys.has('ShiftLeft') ? 1.35 : 1);
+      remoteAvatars.forEach((avatar, remoteId) => {
+        const target = avatar.userData.targetPosition as THREE.Vector3;
+        const distance = target ? avatar.position.distanceTo(target) : 0;
+        if (target) avatar.position.lerp(target, Math.min(1, delta * 9));
+        const remoteMoving = avatar.userData.motion === 'walk' || distance > 0.035;
+        animateAvatar(avatar, remoteMoving, avatar.userData.motion === 'jump', now, 0.9);
+        const activeRound = roomStateRef.current?.camouflageRound;
+        const nameSprite = avatar.userData.nameSprite as THREE.Sprite;
+        if (nameSprite) {
+          const hiding = Boolean(
+            partyMap
+            && activeRound
+            && Date.now() >= activeRound.hideEndsAt
+            && Date.now() < activeRound.roundEndsAt
+            && activeRound.participantIds.includes(remoteId)
+            && activeRound.seekerId !== remoteId
+            && !activeRound.foundPlayerIds.includes(remoteId)
+          );
+          nameSprite.visible = !hiding;
+        }
+      });
       if (thirdPersonRef.current) {
         camera.position.copy(playerPosition).addScaledVector(forward, -4.8);
         camera.position.y += 2.2;
@@ -1442,7 +1817,7 @@ const VirtualClassroom: React.FC = () => {
       });
 
       const hit = getHit();
-      if (hit?.object.userData.kind === 'block' && hit.distance <= 9) {
+      if (hit?.object.userData.kind === 'block' && hit.distance <= BUILD_REACH) {
         selection.position.copy(hit.object.position);
         selection.visible = true;
       } else selection.visible = false;
@@ -1459,6 +1834,9 @@ const VirtualClassroom: React.FC = () => {
           z: playerPosition.z,
           rotation: yaw,
           color: avatarColorRef.current,
+          camouflageColor: camouflageColorRef.current,
+          camouflagePose: camouflagePoseRef.current,
+          motion: !grounded ? 'jump' : isMoving ? 'walk' : 'idle',
           role: isTeacher ? 'teacher' : 'student',
           joinStatus: joinStatusRef.current,
           updatedAt: Date.now(),
@@ -1477,6 +1855,9 @@ const VirtualClassroom: React.FC = () => {
       unsubscribePlayers();
       void removeWorldPlayer(roomId, playerId);
       summonRef.current = () => undefined;
+      sampleColorRef.current = () => undefined;
+      findPlayerRef.current = () => undefined;
+      applyCamouflageRef.current = () => undefined;
       document.removeEventListener('pointerlockchange', onPointerLock);
       document.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('keydown', onKeyDown);
@@ -1491,11 +1872,13 @@ const VirtualClassroom: React.FC = () => {
       blockGeometry.dispose();
       starGeometry.dispose();
       starMaterial.dispose();
+      camouflageGeometries.forEach((geometry) => geometry.dispose());
+      camouflageMaterials.forEach((material) => material.dispose());
       Object.values(blockMaterials).forEach((item) => item.dispose());
       pixelTextures.forEach((texture) => texture.dispose());
       mount.removeChild(renderer.domElement);
     };
-  }, [activeClassroom, avatarColor, boards, displayName, gameStations, graphicsQuality, isTeacher, openLessonBoard, playerId, recordActivity, roomId]);
+  }, [activeClassroom, avatarColor, boards, displayName, gameStations, graphicsQuality, isTeacher, openLessonBoard, partyMap, playerId, recordActivity, roomClassroom, roomId]);
 
   useEffect(() => {
     if (!status) return;
@@ -1515,7 +1898,9 @@ const VirtualClassroom: React.FC = () => {
       <div ref={mountRef} className="virtual-classroom-canvas" />
 
       <div className="world-room-label">
-        {isTeacher ? (
+        {partyMap ? (
+          <strong><Paintbrush size={17} /> สนามพรางสีรวมทุกชั้น</strong>
+        ) : isTeacher ? (
           <label className="world-room-picker">
             <Crown size={16} />
             <select value={teacherRoom} onChange={(event) => setTeacherRoom(event.target.value)} aria-label="เลือกห้องเรียนที่ครูจะเข้าร่วม">
@@ -1524,6 +1909,14 @@ const VirtualClassroom: React.FC = () => {
           </label>
         ) : <strong>ห้อง {activeClassroom} 3D</strong>}
         <span><Users size={15} /> {Math.max(1, onlinePlayers.length)}</span>
+        <Link
+          className="world-map-switch"
+          to={partyMap ? '/world' : '/world?map=camouflage'}
+          title={partyMap ? 'กลับห้องเรียนประจำชั้น' : 'เข้าสนามพรางสีรวมทุกชั้น'}
+        >
+          {partyMap ? <BookOpen size={15} /> : <Paintbrush size={15} />}
+          {partyMap ? 'ห้องเรียน' : 'พรางสี'}
+        </Link>
       </div>
 
       <button className="world-avatar-badge" onClick={() => setAvatarPanelOpen((open) => !open)} aria-label="ปรับตัวละครและดูผู้เล่นในห้อง">
@@ -1583,6 +1976,125 @@ const VirtualClassroom: React.FC = () => {
             )) : <span><i style={{ background: avatarColor }} />{displayName}</span>}
           </div>
         </aside>
+      )}
+
+      {partyMap && (
+        <>
+          {!partyPanelOpen && (
+            <button className="world-party-toggle" onClick={() => { setAvatarPanelOpen(false); setPartyPanelOpen(true); }}>
+              <Paintbrush size={19} />
+              <span>พรางสีซ่อนหา</span>
+              {camouflagePhase !== 'idle' && <b>{camouflageRemaining}s</b>}
+            </button>
+          )}
+          {partyPanelOpen && (
+            <aside className="world-party-panel">
+              <button className="world-panel-close" onClick={() => setPartyPanelOpen(false)} aria-label="ปิดแผงเกมพรางสี">
+                <X size={18} />
+              </button>
+              <header>
+                <Paintbrush size={21} />
+                <div>
+                  <h2>พรางสีซ่อนหา</h2>
+                  <small>สนามรวมทุกชั้น • 2-10 คน</small>
+                </div>
+              </header>
+
+              <div className={`world-party-phase phase-${camouflagePhase}`}>
+                <Timer size={18} />
+                <span>
+                  {camouflagePhase === 'idle' && 'รอเริ่มรอบ'}
+                  {camouflagePhase === 'hide' && `เตรียมพรางตัว ${camouflageRemaining} วินาที`}
+                  {camouflagePhase === 'seek' && `ฝ่ายหากำลังค้นหา ${camouflageRemaining} วินาที`}
+                  {camouflagePhase === 'result' && 'จบรอบแล้ว'}
+                </span>
+              </div>
+
+              {camouflageRound && (
+                <div className={`world-party-role role-${camouflageRole}`}>
+                  <strong>
+                    {camouflageRole === 'seeker' && 'คุณคือฝ่ายหา'}
+                    {camouflageRole === 'hider' && (camouflageFound ? 'คุณถูกพบแล้ว' : 'คุณคือฝ่ายซ่อน')}
+                    {camouflageRole === 'spectator' && 'คุณกำลังชมรอบนี้'}
+                  </strong>
+                  <small>
+                    พบแล้ว {camouflageRound.foundPlayerIds.length}/{Math.max(0, camouflageRound.participantIds.length - 1)} คน
+                  </small>
+                </div>
+              )}
+
+              {camouflagePhase === 'idle' && (
+                <div className="world-party-start">
+                  <p>ฝ่ายซ่อนดูดสีจากฉาก ทาสีตัวละคร และเลือกท่าให้กลมกลืน ก่อนฝ่ายหาเริ่มค้นหา</p>
+                  {isTeacher ? (
+                    <button onClick={startCamouflageRound} disabled={activePartyPlayers.length < 2}>
+                      <Play size={17} /> เริ่มเกม ({activePartyPlayers.length}/10)
+                    </button>
+                  ) : <small>รอครูเริ่มเกมเมื่อมีผู้เล่นอย่างน้อย 2 คน</small>}
+                </div>
+              )}
+
+              {camouflageRole === 'hider' && camouflagePhase === 'hide' && (
+                <section className="world-camouflage-tools">
+                  <div className="world-tool-heading">
+                    <strong><Paintbrush size={16} /> สีพรางตัว</strong>
+                    <button onClick={() => sampleColorRef.current()} title="ดูดสีจากพื้นผิวที่เล็ง">
+                      <Pipette size={16} /> ดูดสี
+                    </button>
+                  </div>
+                  <div className="world-camouflage-colors" aria-label="เลือกสีพรางตัว">
+                    {CAMOUFLAGE_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        className={camouflageColor === color ? 'active' : ''}
+                        style={{ '--paint': color } as React.CSSProperties}
+                        onClick={() => setCamouflageColor(color)}
+                        aria-label={`ใช้สี ${color}`}
+                      />
+                    ))}
+                  </div>
+                  <strong className="world-pose-label">ท่าพราง</strong>
+                  <div className="world-pose-control" role="group" aria-label="เลือกท่าพราง">
+                    {([
+                      ['stand', 'ยืน'],
+                      ['crouch', 'ย่อตัว'],
+                      ['freeze', 'ตรึงท่า'],
+                    ] as Array<[CamouflagePose, string]>).map(([pose, label]) => (
+                      <button
+                        key={pose}
+                        className={camouflagePose === pose ? 'active' : ''}
+                        onClick={() => setCamouflagePose(pose)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {camouflageRole === 'seeker' && camouflagePhase === 'seek' && (
+                <button className="world-find-player" onClick={() => findPlayerRef.current()}>
+                  <Eye size={18} /> ตรวจผู้เล่นในเป้า
+                </button>
+              )}
+
+              {camouflagePhase === 'result' && camouflageRound && (
+                <div className="world-party-result">
+                  <strong>
+                    {camouflageRound.foundPlayerIds.length >= camouflageRound.participantIds.length - 1
+                      ? 'ฝ่ายหาพบทุกคน'
+                      : `ฝ่ายซ่อนรอด ${camouflageRound.participantIds.length - 1 - camouflageRound.foundPlayerIds.length} คน`}
+                  </strong>
+                  {isTeacher && <button onClick={startCamouflageRound}><Play size={16} /> เล่นรอบใหม่</button>}
+                </div>
+              )}
+
+              {isTeacher && camouflageRound && camouflagePhase !== 'result' && (
+                <button className="world-stop-party" onClick={stopCamouflageRound}>จบรอบทันที</button>
+              )}
+            </aside>
+          )}
+        </>
       )}
 
       {isTeacher && teacherPanelOpen && (
@@ -1695,6 +2207,14 @@ const VirtualClassroom: React.FC = () => {
 
       <div className="world-star-score" title="ดาวจากเกมเก็บดาว"><Star size={18} fill="currentColor" /> {worldStars}</div>
 
+      {mode === 'build' && (
+        <div className="world-build-capacity" aria-label={`ใช้บล็อก ${worldBlockCount} จาก ${MAX_WORLD_BLOCKS} ชิ้น`}>
+          <BrickWall size={17} />
+          <strong>{worldBlockCount.toLocaleString('th-TH')}/{MAX_WORLD_BLOCKS.toLocaleString('th-TH')}</strong>
+          <span>ระยะ {BUILD_REACH} ช่อง • สูง {BUILD_MAX_HEIGHT} ชั้น</span>
+        </div>
+      )}
+
       <div className="world-mode-control" role="group" aria-label="โหมดการใช้งาน">
         <button className={mode === 'explore' ? 'active' : ''} onClick={() => setMode('explore')} title="โหมดสำรวจ" aria-label="โหมดสำรวจ" disabled={!canParticipate}>
           <Eye size={19} /><span>สำรวจ</span>
@@ -1710,7 +2230,7 @@ const VirtualClassroom: React.FC = () => {
         </button>
       </div>
 
-      <div className="world-materials" aria-label="แถบเลือกบล็อก (กดเลข 1-5)">
+      <div className="world-materials" aria-label="แถบเลือกบล็อก (กดเลข 1-9)">
         {MATERIALS.map((item, index) => (
           <button
             key={item.id}
@@ -1741,6 +2261,16 @@ const VirtualClassroom: React.FC = () => {
         <button onClick={() => setGamesPanelOpen(true)} title="เปิดแผงเกมทั้งหมด" aria-label="เปิดแผงเกมทั้งหมด" className={gamesPanelOpen ? 'active' : ''}>
           <Gamepad2 size={20} />
         </button>
+        {partyMap && camouflageRole === 'hider' && camouflagePhase === 'hide' && (
+          <button onClick={() => sampleColorRef.current()} title="ดูดสีจากพื้นผิว (F)" aria-label="ดูดสีจากพื้นผิว">
+            <Pipette size={20} />
+          </button>
+        )}
+        {partyMap && camouflageRole === 'seeker' && camouflagePhase === 'seek' && (
+          <button onClick={() => findPlayerRef.current()} title="ตรวจผู้เล่นในเป้า (T)" aria-label="ตรวจผู้เล่นในเป้า">
+            <Eye size={20} />
+          </button>
+        )}
         {mode === 'build' && (
           <>
             <button onClick={() => placeRef.current()} title="วางบล็อก" aria-label="วางบล็อก">
@@ -1770,7 +2300,7 @@ const VirtualClassroom: React.FC = () => {
         <div className="world-controls-hint">
           <b>🎮 คลิกที่จอเพื่อเริ่มเล่น</b>
           <span>🖱️ คลิกซ้าย = ทุบบล็อก / เปิดสไลด์ • คลิกขวา = วางบล็อก</span>
-          <span>⌨️ WASD หรือ ลูกศร = เดิน • Space = กระโดด • เลข 1-5 = เลือกบล็อก</span>
+          <span>⌨️ WASD หรือ ลูกศร = เดิน • Space = กระโดด • เลข 1-9 = เลือกบล็อก</span>
         </div>
       )}
       {status && <div className="world-status">{status}</div>}

@@ -79,8 +79,8 @@ const puzzles: Puzzle[] = [
     title: 'การแปรงฟัน',
     emoji: '🪥',
     steps: [
+      'ล้างแปรงสีฟันและทำขนแปรงให้เปียก',
       'บีบยาสีฟันใส่แปรงสีฟัน',
-      'บ้วนปากด้วยน้ำสะอาดรอบแรก',
       'แปรงฟันบนและล่างให้ทั่วทุกซี่',
       'แปรงลิ้นเบาๆ เพื่อขจัดสิ่งสกปรก',
       'บ้วนฟองยาสีฟันทั้งหมดทิ้ง',
@@ -135,6 +135,66 @@ const puzzles: Puzzle[] = [
       'หยิบขวดเครื่องดื่มและเงินทอน (ถ้ามี)',
     ],
   },
+  {
+    title: 'สำรองไฟล์งาน',
+    emoji: '☁️',
+    steps: [
+      'ตรวจว่าไฟล์งานฉบับล่าสุดบันทึกแล้ว',
+      'ตั้งชื่อไฟล์ให้บอกหัวข้อและวันที่',
+      'เชื่อมต่อพื้นที่สำรองข้อมูลที่ปลอดภัย',
+      'คัดลอกหรืออัปโหลดไฟล์ไปยังโฟลเดอร์สำรอง',
+      'เปิดโฟลเดอร์สำรองเพื่อตรวจว่าไฟล์อยู่ครบ',
+      'ออกจากระบบเมื่อใช้เครื่องส่วนกลาง',
+    ],
+  },
+  {
+    title: 'ค้นข้อมูลทำรายงาน',
+    emoji: '🔎',
+    steps: [
+      'กำหนดคำถามหรือหัวข้อที่ต้องการค้น',
+      'เลือกคำค้นที่เฉพาะเจาะจง',
+      'เปิดผลการค้นจากแหล่งที่น่าเชื่อถือ',
+      'ตรวจผู้เขียน วันที่ และหลักฐานอ้างอิง',
+      'เปรียบเทียบข้อมูลมากกว่าหนึ่งแหล่ง',
+      'สรุปด้วยภาษาของตนเองและบันทึกที่มา',
+    ],
+  },
+  {
+    title: 'สร้างโปรแกรม Scratch',
+    emoji: '🐱',
+    steps: [
+      'กำหนดว่าตัวละครต้องทำอะไร',
+      'เขียนลำดับขั้นตอนเป็นภาษาง่าย ๆ',
+      'เลือกตัวละครและฉากที่ต้องใช้',
+      'วางบล็อกคำสั่งตามลำดับ',
+      'กดธงเขียวเพื่อทดสอบโปรแกรม',
+      'หาข้อผิดพลาด แก้ไข และทดสอบซ้ำ',
+    ],
+  },
+  {
+    title: 'พิมพ์เอกสาร',
+    emoji: '🖨️',
+    steps: [
+      'เปิดเอกสารที่ต้องการพิมพ์',
+      'ตรวจคำผิดและรูปแบบของเอกสาร',
+      'เปิดหน้าตัวอย่างก่อนพิมพ์',
+      'เลือกเครื่องพิมพ์ ขนาดกระดาษ และจำนวนหน้า',
+      'ตรวจว่ามีกระดาษและเครื่องพิมพ์พร้อม',
+      'กดพิมพ์และตรวจเอกสารที่ออกมา',
+    ],
+  },
+  {
+    title: 'ส่งอีเมลอย่างปลอดภัย',
+    emoji: '🛡️',
+    steps: [
+      'ตรวจที่อยู่อีเมลของผู้รับ',
+      'เขียนหัวข้อให้บอกเรื่องชัดเจน',
+      'พิมพ์ข้อความด้วยถ้อยคำสุภาพ',
+      'แนบเฉพาะไฟล์ที่ต้องการส่ง',
+      'ตรวจผู้รับ ข้อความ และไฟล์แนบอีกครั้ง',
+      'กดส่งและออกจากระบบเมื่อใช้เครื่องส่วนกลาง',
+    ],
+  },
 ];
 
 // Fisher-Yates shuffle
@@ -154,6 +214,7 @@ const AlgorithmSorter: React.FC = () => {
   const [checked, setChecked] = useState(false);
   const [score, setScore] = useState(0);
   const [solvedCount, setSolvedCount] = useState(0);
+  const [done, setDone] = useState(false);
   const recordGame = useGameProgress('algorithm', 'จัดอัลกอริทึม');
 
   const puzzle = puzzles[puzzleIdx];
@@ -185,7 +246,13 @@ const AlgorithmSorter: React.FC = () => {
   };
 
   const next = () => {
-    setPuzzleIdx((i) => (i + 1) % puzzles.length);
+    if (!isCorrect) return;
+    if (puzzleIdx + 1 >= puzzles.length) {
+      setDone(true);
+      void recordGame(score);
+      return;
+    }
+    setPuzzleIdx((i) => i + 1);
   };
 
   const reset = () => {
@@ -194,6 +261,16 @@ const AlgorithmSorter: React.FC = () => {
   };
 
   const isCorrect = checked && items.every((it, i) => it === puzzle.steps[i]);
+
+  const restartGame = () => {
+    setPuzzleIdx(0);
+    setPrevPuzzleIdx(0);
+    setItems(shuffle(puzzles[0].steps));
+    setChecked(false);
+    setScore(0);
+    setSolvedCount(0);
+    setDone(false);
+  };
 
   return (
     <div className="game-page">
@@ -208,6 +285,16 @@ const AlgorithmSorter: React.FC = () => {
         <div className="gstat">📋 ปริศนา <strong>{puzzleIdx + 1} / {puzzles.length}</strong></div>
       </div>
 
+      {done ? (
+        <div className="puzzle-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem' }}>🏆</div>
+          <h2>เรียงครบ {puzzles.length} ปริศนาแล้ว</h2>
+          <p>ได้ {score}/{puzzles.length * 50} คะแนน</p>
+          <button className="btn-game-start" type="button" onClick={restartGame}>
+            <RotateCcw size={16} /> เล่นชุดใหม่
+          </button>
+        </div>
+      ) : (
       <div className="puzzle-card">
         <div className="puzzle-header">
           <span className="puzzle-emoji">{puzzle.emoji}</span>
@@ -259,11 +346,14 @@ const AlgorithmSorter: React.FC = () => {
               ✓ ตรวจคำตอบ
             </button>
           )}
-          <button className="btn-secondary" onClick={next}>
-            ปริศนาถัดไป →
-          </button>
+          {isCorrect && (
+            <button className="btn-secondary" onClick={next}>
+              {puzzleIdx + 1 >= puzzles.length ? 'ดูผลการเล่น' : 'ปริศนาถัดไป →'}
+            </button>
+          )}
         </div>
       </div>
+      )}
 
       <div className="game-tips">
         💡 <strong>คิดเป็นขั้นตอน</strong> = หัวใจของอัลกอริทึม — ก่อนเขียนโปรแกรมต้องวางลำดับให้ถูกก่อน

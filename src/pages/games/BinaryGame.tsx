@@ -5,9 +5,22 @@ import { useGameProgress } from '../../hooks/useGameProgress';
 import './GameStyles.css';
 
 const binToDec = (bin: string) => parseInt(bin, 2);
+const SESSION_ROUNDS = 12;
+
+const makeTargets = () => {
+  const values = Array.from({ length: 256 }, (_, value) => value);
+  for (let i = values.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [values[i], values[j]] = [values[j], values[i]];
+  }
+  return values.slice(0, SESSION_ROUNDS);
+};
 
 const BinaryGame: React.FC = () => {
-  const [target, setTarget] = useState(() => Math.floor(Math.random() * 256));
+  const [targets, setTargets] = useState(makeTargets);
+  const [roundIndex, setRoundIndex] = useState(0);
+  const [done, setDone] = useState(false);
+  const target = targets[roundIndex];
   const [bits, setBits] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0]);
   const [checked, setChecked] = useState<'correct' | 'wrong' | null>(null);
   const [score, setScore] = useState(0);
@@ -17,11 +30,25 @@ const BinaryGame: React.FC = () => {
   const recordGame = useGameProgress('binary', 'แปลงเลขฐานสอง');
 
   const newRound = () => {
-    setTarget(Math.floor(Math.random() * 256));
+    if (roundIndex + 1 >= targets.length) {
+      setDone(true);
+      void recordGame(score);
+      return;
+    }
+    setRoundIndex((value) => value + 1);
     setBits([0, 0, 0, 0, 0, 0, 0, 0]);
     setChecked(null);
   };
 
+  const restart = () => {
+    setTargets(makeTargets());
+    setRoundIndex(0);
+    setBits([0, 0, 0, 0, 0, 0, 0, 0]);
+    setChecked(null);
+    setScore(0);
+    setStreak(0);
+    setDone(false);
+  };
 
   const toggle = (idx: number) => {
     if (checked === 'correct') return;
@@ -63,6 +90,7 @@ const BinaryGame: React.FC = () => {
 
       <div className="game-stats">
         <div className="gstat">🏆 คะแนน: <strong>{score}</strong></div>
+        <div className="gstat">🔢 ข้อ: <strong>{Math.min(roundIndex + 1, targets.length)}/{targets.length}</strong></div>
         <div className="gstat">🔥 ติดต่อกัน: <strong>{streak}</strong></div>
         <div className="gstat">🎯 ดีที่สุด: <strong>{bestStreak}</strong></div>
         <button className="gstat" onClick={() => setShowHelp(!showHelp)}>
@@ -108,9 +136,14 @@ const BinaryGame: React.FC = () => {
         )}
 
         <div className="puzzle-actions">
-          {checked === 'correct' ? (
+          {done ? (
+            <div className="puzzle-result success">
+              <CheckCircle2 size={20} /> จบเกมแล้ว ได้ {score}/{targets.length * 10} คะแนน
+              <button className="btn-game-start" type="button" onClick={restart}><RotateCcw size={16} /> เล่นชุดใหม่</button>
+            </div>
+          ) : checked === 'correct' ? (
             <button className="btn-game-start" onClick={newRound}>
-              <RotateCcw size={16} /> ข้อต่อไป →
+              <RotateCcw size={16} /> {roundIndex + 1 >= targets.length ? 'ดูผลการเล่น' : 'ข้อต่อไป →'}
             </button>
           ) : (
             <>

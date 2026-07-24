@@ -3,7 +3,7 @@ import { Upload, CheckCircle2, Clock, AlertCircle, FileText } from 'lucide-react
 import { useAuth } from '../context/AuthContext';
 import {
   getAssignmentsForStudent, submitWork, getStudentSubmissionForAssignment,
-  fetchAssignmentsFromFirebase, fetchSubmissionsFromFirebase, uploadHomeworkFile,
+  fetchAssignmentsFromFirebase, fetchSubmissionsFromFirebase,
 } from '../services/homeworkService';
 import type { Assignment } from '../services/homeworkService';
 import { trackMediaClick } from '../services/progressService';
@@ -16,7 +16,6 @@ const HomeworkStudent: React.FC = () => {
   const [selected, setSelected] = useState<Assignment | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [contentUrl, setContentUrl] = useState('');
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [comment, setComment] = useState('');
   const [syncing, setSyncing] = useState(true);
   const [, setDataVersion] = useState(0);
@@ -41,34 +40,21 @@ const HomeworkStudent: React.FC = () => {
     </div>;
   }
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      alert('ไฟล์ใหญ่เกิน 2MB — ใส่ลิงก์ Google Drive แทน');
-      return;
-    }
-    setUploadFile(file);
-  };
-
   const handleSubmit = async () => {
     if (!selected) return;
-    if (!contentUrl && !uploadFile) {
-      alert('ใส่ลิงก์หรืออัปโหลดไฟล์ก่อน');
+    if (!/^https?:\/\//i.test(contentUrl.trim())) {
+      alert('กรุณาใส่ลิงก์ผลงานที่ขึ้นต้นด้วย http:// หรือ https://');
       return;
     }
     setSyncing(true);
     try {
-      const uploadedUrl = uploadFile
-        ? await uploadHomeworkFile(uploadFile, user.id, selected.id)
-        : '';
       await submitWork({
         assignmentId: selected.id,
         studentId: user.id,
         studentName: user.name,
         classroom: user.classroom,
         studentNo: parseInt(user.studentNumber),
-        contentUrl: contentUrl || uploadedUrl || undefined,
+        contentUrl: contentUrl.trim(),
         comment,
       });
 
@@ -92,7 +78,6 @@ const HomeworkStudent: React.FC = () => {
       alert(progressSaved ? 'ส่งงานสำเร็จ ✓ +5 XP' : 'ส่งงานสำเร็จ แต่ยังบันทึก XP ไม่สำเร็จ กรุณาแจ้งครู');
       setSelected(null);
       setContentUrl('');
-      setUploadFile(null);
       setComment('');
     } catch (error) {
       console.error(error);
@@ -128,9 +113,15 @@ const HomeworkStudent: React.FC = () => {
                   <div style={{ flex: 1, minWidth: 200 }}>
                     <h3 style={{ margin: '0 0 4px' }}>{a.title}</h3>
                     <p style={{ color: '#6b7280', margin: '0 0 8px', fontSize: '0.88rem' }}>{a.description}</p>
+                    {a.resourceUrl && (
+                      <a href={a.resourceUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', marginBottom: 8 }}>
+                        เปิดใบงาน/คำสั่งงาน
+                      </a>
+                    )}
                     <div style={{ fontSize: '0.85rem', color: '#6b7280', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                       <span><Clock size={14} style={{ verticalAlign: 'middle' }} /> ส่งภายใน {a.dueDate}</span>
-                      <span>คะแนนเต็ม {a.maxScore}</span>
+                      <span>K {a.knowledgeMaxScore ?? (a.category === 'k' ? a.maxScore : 0)}</span>
+                      <span>P {a.practiceMaxScore ?? (a.category === 'p' ? a.maxScore : 0)}</span>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
@@ -141,7 +132,7 @@ const HomeworkStudent: React.FC = () => {
                         </div>
                         {sub.score !== undefined ? (
                           <div style={{ marginTop: 4, padding: '4px 12px', background: '#dcfce7', borderRadius: 999, fontSize: '0.85rem' }}>
-                            ได้ {sub.score}/{a.maxScore}
+                            ได้ {sub.score}/{a.maxScore} (K {sub.kScore ?? '-'} / P {sub.pScore ?? '-'})
                           </div>
                         ) : (
                           <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>รอครูตรวจ</div>
@@ -181,26 +172,13 @@ const HomeworkStudent: React.FC = () => {
             <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>{selected.description}</p>
 
             <div style={{ marginTop: 16 }}>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>📎 ลิงก์งาน (Google Drive, etc.)</label>
+              <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>📎 ลิงก์ผลงาน (Canva, Google Drive หรือเว็บไซต์อื่น)</label>
               <input
                 value={contentUrl}
                 onChange={(e) => setContentUrl(e.target.value)}
-                placeholder="https://drive.google.com/..."
+                placeholder="https://..."
                 style={{ width: '100%', padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, marginTop: 4, fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
-            </div>
-
-            <div style={{ margin: '12px 0', textAlign: 'center', color: '#9ca3af' }}>หรือ</div>
-
-            <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>📤 อัปโหลดไฟล์ (≤ 2MB)</label>
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleUpload}
-                style={{ display: 'block', marginTop: 4 }}
-              />
-              {uploadFile && <div style={{ marginTop: 4, fontSize: '0.78rem', color: '#22c55e' }}>✓ {uploadFile.name}</div>}
             </div>
 
             <div style={{ marginTop: 12 }}>

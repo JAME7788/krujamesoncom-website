@@ -30,6 +30,12 @@ const AlgorithmSorter = React.lazy(() => import('./pages/games/AlgorithmSorter')
 const BinaryGame = React.lazy(() => import('./pages/games/BinaryGame'));
 const PixelArtGame = React.lazy(() => import('./pages/games/PixelArtGame'));
 const LogicGatesGame = React.lazy(() => import('./pages/games/LogicGatesGame'));
+const FileOrganizerGame = React.lazy(() => import('./pages/games/FileOrganizerGame'));
+const AlgorithmRunner3D = React.lazy(() => import('./pages/games/AlgorithmRunner3D'));
+const CodingStudioGame = React.lazy(() => import('./pages/games/CodingStudioGame'));
+const CircuitLabGame = React.lazy(() => import('./pages/games/CircuitLabGame'));
+const TechSystemGame = React.lazy(() => import('./pages/games/TechSystemGame'));
+const SearchSmartGame = React.lazy(() => import('./pages/games/SearchSmartGame'));
 const MemoryMatch = React.lazy(() => import('./pages/games/MemoryMatch'));
 const PatternGame = React.lazy(() => import('./pages/games/PatternGame'));
 const CodingMaze = React.lazy(() => import('./pages/games/CodingMaze'));
@@ -48,7 +54,10 @@ const VirtualClassroom = React.lazy(() => import('./pages/VirtualClassroom'));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const localQaMode = import.meta.env.DEV
+    && new URLSearchParams(window.location.search).has('qa');
   if (loading) return <Loading fullScreen text="กำลังตรวจสอบการเข้าใช้งาน..." />;
+  if (!user && localQaMode) return <>{children}</>;
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
@@ -92,6 +101,12 @@ function App() {
                   <Route path="/games/safety" element={<LoginPromptOverlay><SafetyGame /></LoginPromptOverlay>} />
                   <Route path="/games/pixel-art" element={<LoginPromptOverlay><PixelArtGame /></LoginPromptOverlay>} />
                   <Route path="/games/logic-gates" element={<LoginPromptOverlay><LogicGatesGame /></LoginPromptOverlay>} />
+                  <Route path="/games/file-organizer" element={<LoginPromptOverlay><FileOrganizerGame /></LoginPromptOverlay>} />
+                  <Route path="/games/algorithm-runner-3d" element={<LoginPromptOverlay><AlgorithmRunner3D /></LoginPromptOverlay>} />
+                  <Route path="/games/coding-studio" element={<LoginPromptOverlay><CodingStudioGame /></LoginPromptOverlay>} />
+                  <Route path="/games/circuit-lab" element={<LoginPromptOverlay><CircuitLabGame /></LoginPromptOverlay>} />
+                  <Route path="/games/tech-system" element={<LoginPromptOverlay><TechSystemGame /></LoginPromptOverlay>} />
+                  <Route path="/games/search-smart" element={<LoginPromptOverlay><SearchSmartGame /></LoginPromptOverlay>} />
                   <Route path="/tools" element={<Tools />} />
                   <Route path="/parent/:studentId" element={<ParentPortal />} />
                   <Route path="/live" element={<LiveQuizPlay />} />

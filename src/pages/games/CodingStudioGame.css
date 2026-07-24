@@ -1,0 +1,129 @@
+.coding-studio-page {
+  max-width: 1220px;
+}
+
+.coding-studio-topbar {
+  align-items: flex-start;
+}
+
+.coding-studio-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coding-studio-title h1 {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.25;
+}
+
+.coding-studio-title p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.coding-studio-mark {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #172033;
+  color: #ffffff;
+}
+
+.coding-studio-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 10px 0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.coding-studio-summary span {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.coding-studio-summary span:nth-child(1) svg {
+  color: #2563eb;
+}
+
+.coding-studio-summary span:nth-child(2) svg {
+  color: #16a34a;
+}
+
+.coding-studio-summary span:nth-child(3) svg {
+  color: #ca8a04;
+}
+
+.coding-studio-workspace {
+  padding: 18px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+}
+
+.coding-studio-workspace textarea {
+  box-sizing: border-box;
+}
+
+.python-problem-topic,
+.python-problem-level,
+.python-problem-solved {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .coding-studio-page {
+    padding-inline: 10px;
+  }
+
+  .coding-studio-topbar {
+    gap: 12px;
+  }
+
+  .coding-studio-title {
+    width: 100%;
+  }
+
+  .coding-studio-title h1 {
+    font-size: 1.25rem;
+  }
+
+  .coding-studio-title p {
+    font-size: 0.8rem;
+  }
+
+  .coding-studio-workspace {
+    padding: 12px;
+  }
+
+  .python-problem-title {
+    width: 100%;
+    order: 4;
+    font-size: 1rem;
+  }
+
+  .python-problem-solved {
+    margin-left: auto;
+  }
+}

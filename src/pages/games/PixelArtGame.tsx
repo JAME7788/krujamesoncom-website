@@ -18,12 +18,28 @@ const PICS: Pic[] = [
   { name: 'หน้ายิ้ม', emoji: '🙂', color: '#eab308', rows: ['00111100', '01000010', '10100101', '10000001', '10100101', '10011001', '01000010', '00111100'] },
   { name: 'บ้าน', emoji: '🏠', color: '#f97316', rows: ['00011000', '00111100', '01111110', '11111111', '11011011', '11011011', '11111111', '11111111'] },
   { name: 'ต้นไม้', emoji: '🌳', color: '#22c55e', rows: ['00011000', '00111100', '01111110', '11111111', '00111100', '01111110', '00011000', '00011000'] },
+  { name: 'คอมพิวเตอร์', emoji: '💻', color: '#3b82f6', rows: ['00000000', '01111110', '01000010', '01011010', '01000010', '01111110', '00111100', '01111110'] },
+  { name: 'หุ่นยนต์', emoji: '🤖', color: '#8b5cf6', rows: ['00111100', '01000010', '10100101', '10000001', '10111101', '10000001', '01011010', '00100100'] },
+  { name: 'ปลา', emoji: '🐟', color: '#06b6d4', rows: ['00000000', '00111100', '01111110', '11111111', '01111110', '00111100', '00011000', '00000000'] },
+  { name: 'กุญแจ', emoji: '🔑', color: '#f59e0b', rows: ['00011000', '00111100', '00111100', '00011000', '00011110', '00011000', '00011110', '00000000'] },
+  { name: 'หลอดไฟ', emoji: '💡', color: '#eab308', rows: ['00111100', '01111110', '11000011', '11000011', '01111110', '00111100', '00111100', '00011000'] },
 ];
 
 const emptyGrid = (rows: string[]): number[][] => rows.map((r) => r.split('').map(() => 0));
+const makePicOrder = () => {
+  const order = PICS.map((_, index) => index);
+  for (let i = order.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order;
+};
 
 const PixelArtGame: React.FC = () => {
-  const [picIndex, setPicIndex] = useState(() => Math.floor(Math.random() * PICS.length));
+  const [picOrder, setPicOrder] = useState(makePicOrder);
+  const [picPosition, setPicPosition] = useState(0);
+  const [done, setDone] = useState(false);
+  const picIndex = picOrder[picPosition];
   const pic = PICS[picIndex];
   const [grid, setGrid] = useState<number[][]>(() => emptyGrid(PICS[picIndex].rows));
   const [checked, setChecked] = useState<'correct' | 'wrong' | null>(null);
@@ -42,10 +58,27 @@ const PixelArtGame: React.FC = () => {
   };
 
   const nextPic = () => {
-    const next = Math.floor(Math.random() * PICS.length);
-    setPicIndex(next);
+    if (picPosition + 1 >= picOrder.length) {
+      setDone(true);
+      void recordGame(score);
+      return;
+    }
+    const nextPosition = picPosition + 1;
+    const next = picOrder[nextPosition];
+    setPicPosition(nextPosition);
     setGrid(emptyGrid(PICS[next].rows));
     setChecked(null);
+  };
+
+  const restart = () => {
+    const nextOrder = makePicOrder();
+    setPicOrder(nextOrder);
+    setPicPosition(0);
+    setGrid(emptyGrid(PICS[nextOrder[0]].rows));
+    setChecked(null);
+    setScore(0);
+    setStreak(0);
+    setDone(false);
   };
 
   const check = () => {
@@ -76,6 +109,7 @@ const PixelArtGame: React.FC = () => {
 
       <div className="game-stats">
         <div className="gstat">🏆 คะแนน: <strong>{score}</strong></div>
+        <div className="gstat">🎨 รูป: <strong>{Math.min(picPosition + 1, picOrder.length)}/{picOrder.length}</strong></div>
         <div className="gstat">🔥 ติดต่อกัน: <strong>{streak}</strong></div>
         <div className="gstat">🎯 ดีที่สุด: <strong>{best}</strong></div>
         <button className="gstat" onClick={() => setShowBits((s) => !s)}>
@@ -120,8 +154,15 @@ const PixelArtGame: React.FC = () => {
         )}
 
         <div className="puzzle-actions">
-          {checked === 'correct' ? (
-            <button className="btn-game-start" onClick={nextPic}><RotateCcw size={16} /> รูปต่อไป →</button>
+          {done ? (
+            <div className="puzzle-result success">
+              <CheckCircle2 size={20} /> วาดครบ {picOrder.length} รูป ได้ {score}/{picOrder.length * 10} คะแนน
+              <button className="btn-game-start" type="button" onClick={restart}><RotateCcw size={16} /> เล่นชุดใหม่</button>
+            </div>
+          ) : checked === 'correct' ? (
+            <button className="btn-game-start" onClick={nextPic}>
+              <RotateCcw size={16} /> {picPosition + 1 >= picOrder.length ? 'ดูผลการเล่น' : 'รูปต่อไป →'}
+            </button>
           ) : (
             <>
               <button className="btn-secondary" onClick={() => { setGrid(emptyGrid(pic.rows)); setChecked(null); }}>

@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { PenTool, Code2, Wallet, Calendar, Sparkles, Pin, Users } from 'lucide-react';
+import { PenTool, Wallet, Calendar, Sparkles, Pin, Users } from 'lucide-react';
 import Whiteboard from '../components/Whiteboard';
-import CodingSandbox from '../components/CodingSandbox';
-import PythonLab from '../components/PythonLab';
 import SavingsTracker from '../components/tools/SavingsTracker';
 import ChoreTracker from '../components/tools/ChoreTracker';
 import RosterSpinner from '../components/tools/RosterSpinner';
@@ -13,7 +11,7 @@ import { trackMediaClick } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
 
-type TabType = 'whiteboard' | 'sandbox' | 'python' | 'savings' | 'chores' | 'spinner' | 'groups' | 'board';
+type TabType = 'whiteboard' | 'savings' | 'chores' | 'spinner' | 'groups' | 'board';
 
 const Tools: React.FC = () => {
   const [tab, setTab] = useState<TabType>('whiteboard');
@@ -29,8 +27,6 @@ const Tools: React.FC = () => {
     let detail = '';
     switch (tab) {
       case 'whiteboard': detail = '[Tool] Whiteboard'; break;
-      case 'sandbox': detail = '[Tool] Coding Sandbox'; break;
-      case 'python': detail = '[Tool] Python Lab'; break;
       case 'savings': detail = '[Tool] Student Savings'; break;
       case 'chores': detail = '[Tool] Daily Chore Tracker'; break;
       case 'spinner': detail = '[Tool] Roster Wheel Spinner'; break;
@@ -57,7 +53,7 @@ const Tools: React.FC = () => {
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <span className="badge-yellow">🛠️ เครื่องมือเสริม</span>
         <h1>เครื่องมือสร้างสรรค์และจัดการชั้นเรียน</h1>
-        <p style={{ color: '#6b7280' }}>กระดานวาดรูป เขียนโค้ด บันทึกเงินออม จัดเวรประจำวัน วงล้อสุ่ม และบอร์ดเตือนการบ้าน</p>
+        <p style={{ color: '#6b7280' }}>กระดานวาดรูป บันทึกเงินออม จัดเวรประจำวัน วงล้อสุ่ม และบอร์ดเตือนการบ้าน</p>
       </div>
 
       {/* Tabs */}
@@ -73,18 +69,6 @@ const Tools: React.FC = () => {
           onClick={() => setTab('whiteboard')}
         >
           <PenTool size={16} /> วาดรูป (Whiteboard)
-        </button>
-        <button
-          className={tab === 'sandbox' ? 'btn-primary' : 'btn-secondary'}
-          onClick={() => setTab('sandbox')}
-        >
-          <Code2 size={16} /> เขียนโค้ด (Sandbox)
-        </button>
-        <button
-          className={tab === 'python' ? 'btn-primary' : 'btn-secondary'}
-          onClick={() => setTab('python')}
-        >
-          🐍 Python Lab (โจทย์+บล็อก)
         </button>
         <button
           className={tab === 'savings' ? 'btn-primary' : 'btn-secondary'}
@@ -120,8 +104,6 @@ const Tools: React.FC = () => {
 
       <div className="card">
         {tab === 'whiteboard' && <Whiteboard />}
-        {tab === 'sandbox' && <CodingSandbox />}
-        {tab === 'python' && <PythonLab />}
         {tab === 'savings' && <SavingsTracker />}
         {tab === 'chores' && <ChoreTracker />}
         {tab === 'spinner' && <RosterSpinner />}

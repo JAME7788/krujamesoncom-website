@@ -11,6 +11,19 @@ interface Pattern {
   hint: string;
 }
 
+const SESSION_ROUNDS = 15;
+
+function uniqueOptions(answer: string, candidates: string[]): string[] {
+  const output = [...new Set([answer, ...candidates.filter((item) => item !== answer)])];
+  let offset = 2;
+  while (output.length < 4) {
+    const fallback = /^\d+$/.test(answer) ? String(Number(answer) + offset) : `${answer}${offset}`;
+    if (!output.includes(fallback)) output.push(fallback);
+    offset += 1;
+  }
+  return shuffle(output.slice(0, 4));
+}
+
 const generatePattern = (level: number): Pattern => {
   const types = [
     () => {
@@ -21,7 +34,7 @@ const generatePattern = (level: number): Pattern => {
       const correct = String(start + 4*step);
       return {
         sequence: seq,
-        options: shuffle([correct, String(start + 5*step), String(start + 4*step + 1), String(start + 3*step)]),
+        options: uniqueOptions(correct, [String(start + 5*step), String(start + 4*step + 1), String(start + 3*step)]),
         answer: correct,
         hint: `เพิ่มทีละ ${step}`,
       };
@@ -34,7 +47,7 @@ const generatePattern = (level: number): Pattern => {
       const correct = String(start * Math.pow(mul, 4));
       return {
         sequence: seq,
-        options: shuffle([correct, String(start * Math.pow(mul, 5)), String(start * Math.pow(mul, 4) + 1), String(start * Math.pow(mul, 3))]),
+        options: uniqueOptions(correct, [String(start * Math.pow(mul, 5)), String(start * Math.pow(mul, 4) + 1), String(start * Math.pow(mul, 3))]),
         answer: correct,
         hint: `คูณทีละ ${mul}`,
       };
@@ -73,9 +86,62 @@ const generatePattern = (level: number): Pattern => {
         hint: 'บวก 2 ตัวก่อนหน้า (Fibonacci)',
       };
     },
+    () => {
+      const start = Math.floor(Math.random() * 8) + 18;
+      const step = Math.floor(Math.random() * 4) + 2;
+      const seq = [start, start - step, start - 2 * step, start - 3 * step].map(String);
+      const correct = String(start - 4 * step);
+      return {
+        sequence: seq,
+        options: uniqueOptions(correct, [String(start - 3 * step), String(start - 5 * step), String(Number(correct) + 1)]),
+        answer: correct,
+        hint: `ลดลงทีละ ${step}`,
+      };
+    },
+    () => {
+      const start = Math.floor(Math.random() * 4) + 1;
+      const seq = [start, start + 2, start + 1, start + 3, start + 2].map(String);
+      const correct = String(start + 4);
+      return {
+        sequence: seq,
+        options: uniqueOptions(correct, [String(start + 3), String(start + 5), String(start + 2)]),
+        answer: correct,
+        hint: 'สลับ +2 แล้ว -1',
+      };
+    },
+    () => {
+      const base = Math.floor(Math.random() * 3) + 1;
+      const seq = [base, base + 1, base + 2, base + 3].map((value) => String(value * value));
+      const correct = String((base + 4) * (base + 4));
+      return {
+        sequence: seq,
+        options: uniqueOptions(correct, [String((base + 3) * (base + 4)), String((base + 5) * (base + 5)), String(Number(correct) + 2)]),
+        answer: correct,
+        hint: 'เป็นกำลังสองของจำนวนที่เรียงต่อกัน',
+      };
+    },
+    () => {
+      const symbol = ['⭐', '🔵', '🌱'][Math.floor(Math.random() * 3)];
+      return {
+        sequence: [symbol, symbol.repeat(2), symbol.repeat(3), symbol.repeat(4)],
+        options: shuffle([symbol.repeat(5), symbol.repeat(4), symbol.repeat(6), '🎯']),
+        answer: symbol.repeat(5),
+        hint: 'เพิ่มสัญลักษณ์ครั้งละ 1 รูป',
+      };
+    },
+    () => {
+      const seq = ['2', '3', '5', '8', '12'];
+      return {
+        sequence: seq,
+        options: shuffle(['17', '16', '18', '20']),
+        answer: '17',
+        hint: 'เพิ่มทีละ 1, 2, 3, 4 และ 5',
+      };
+    },
   ];
   // Higher level → harder patterns
-  const fnIdx = Math.min(types.length - 1, Math.floor(Math.random() * (level + 1)));
+  const availableByLevel = [3, 5, 7, 9, types.length];
+  const fnIdx = Math.floor(Math.random() * availableByLevel[Math.min(level, availableByLevel.length - 1)]);
   return types[fnIdx]();
 };
 
@@ -96,16 +162,33 @@ const PatternGame: React.FC = () => {
   const [streak, setStreak] = useState(0);
   const [level, setLevel] = useState(0);
   const [round, setRound] = useState(1);
+  const [done, setDone] = useState(false);
   const [bestStreak, setBestStreak] = useState(() => parseInt(localStorage.getItem('kj_pat_best') || '0'));
   const recordGame = useGameProgress('pattern', 'หาแพทเทิร์น');
 
   const next = () => {
+    if (round >= SESSION_ROUNDS) {
+      setDone(true);
+      void recordGame(score);
+      return;
+    }
     const newLevel = Math.min(4, Math.floor(round / 3));
     setLevel(newLevel);
     setPattern(generatePattern(newLevel));
     setPicked(null);
     setShowResult(false);
     setRound((r) => r + 1);
+  };
+
+  const restart = () => {
+    setPattern(generatePattern(0));
+    setPicked(null);
+    setShowResult(false);
+    setScore(0);
+    setStreak(0);
+    setLevel(0);
+    setRound(1);
+    setDone(false);
   };
 
   const submit = (choice: string) => {
@@ -139,7 +222,7 @@ const PatternGame: React.FC = () => {
       <div className="game-stats">
         <div className="gstat">🏆 คะแนน: <strong>{score}</strong></div>
         <div className="gstat">🔥 ติดต่อกัน: <strong>{streak}</strong></div>
-        <div className="gstat">📊 รอบที่: <strong>{round}</strong></div>
+        <div className="gstat">📊 รอบที่: <strong>{Math.min(round, SESSION_ROUNDS)}/{SESSION_ROUNDS}</strong></div>
         <div className="gstat">⚡ ระดับ: <strong>{['ง่าย', 'กลาง', 'กลาง', 'ยาก', 'โหด'][level]}</strong></div>
         <div className="gstat">🎯 ดีที่สุด: <strong>{bestStreak}</strong></div>
       </div>
@@ -178,9 +261,14 @@ const PatternGame: React.FC = () => {
         )}
 
         <div className="puzzle-actions">
-          {showResult ? (
+          {done ? (
+            <div className="puzzle-result success">
+              <CheckCircle2 size={20} /> จบเกมแล้ว ได้ {score} คะแนน จาก {SESSION_ROUNDS} รอบ
+              <button className="btn-game-start" type="button" onClick={restart}><RotateCcw size={16} /> เล่นชุดใหม่</button>
+            </div>
+          ) : showResult ? (
             <button className="btn-game-start" onClick={next}>
-              <RotateCcw size={16} /> ข้อต่อไป →
+              <RotateCcw size={16} /> {round >= SESSION_ROUNDS ? 'ดูผลการเล่น' : 'ข้อต่อไป →'}
             </button>
           ) : (
             <span style={{ color: '#6b7280' }}>เลือกคำตอบที่คิดว่าถูก</span>

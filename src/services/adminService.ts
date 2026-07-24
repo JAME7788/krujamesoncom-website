@@ -24,7 +24,7 @@ export interface AttendanceRecord {
   outClassEvents: number;    // events นอกเวลาเรียน
   firstSeen?: number;        // timestamp แรกของวัน
   lastSeen?: number;         // timestamp สุดท้ายของวัน
-  status: 'present' | 'late' | 'absent' | 'self-study';
+  status: 'present' | 'absent' | 'self-study';
 }
 
 const firebaseAvailable = (): boolean => {
@@ -117,24 +117,6 @@ export const computeAttendance = (
       let status: AttendanceRecord['status'] = 'absent';
       if (inClass > 0) status = 'present';
       else if (outClass > 0) status = 'self-study';
-      // ถ้ามี first seen แต่หลังเริ่มคาบ 10 นาที → late
-      const slotsToday = schedule.filter((s2) => s2.classroom === classroom);
-      if (firstSeen && status === 'present') {
-        const slot = slotsToday.find((sl) => {
-          const fs = new Date(firstSeen!);
-          return sl.day === fs.getDay();
-        });
-        if (slot) {
-          const slotStartMs =
-            new Date(firstSeen).setHours(
-              parseInt(slot.start.split(':')[0]),
-              parseInt(slot.start.split(':')[1]),
-              0,
-              0
-            );
-          if (firstSeen - slotStartMs > 10 * 60 * 1000) status = 'late';
-        }
-      }
 
       return {
         studentId: s.id,

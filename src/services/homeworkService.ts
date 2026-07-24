@@ -1,7 +1,6 @@
 // ระบบการบ้านกลาง: localStorage เป็น cache และ Firebase เป็นแหล่งข้อมูลจริงร่วมกันทุกเครื่อง
 import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { db } from './firebase';
 import {
   createManualAssessment,
   updateManualAssessmentScore,
@@ -18,6 +17,10 @@ export interface Assignment {
   classroom: string;
   dueDate: string;
   maxScore: number;
+  /** ลิงก์ใบงาน/คำสั่งงาน เช่น Canva, Google Docs หรือเว็บไซต์อื่น */
+  resourceUrl?: string;
+  knowledgeMaxScore?: number;
+  practiceMaxScore?: number;
   attachmentUrl?: string;
   acceptedFormats?: string[];
   createdAt: number;
@@ -26,6 +29,9 @@ export interface Assignment {
   indicatorId?: string;
   category?: AssessmentCategory;
   linkedAssessmentId?: string;
+  linkedKnowledgeAssessmentId?: string;
+  linkedPracticeAssessmentId?: string;
+  lessonPlanId?: string;
 }
 
 export interface Submission {
@@ -41,6 +47,8 @@ export interface Submission {
   comment?: string;
   submittedAt: number;
   score?: number;
+  kScore?: number;
+  pScore?: number;
   feedback?: string;
   reviewedAt?: number;
 }
@@ -133,13 +141,52 @@ export const createAssignment = async (
   const assignment: Assignment = { ...data, id: uid(), createdAt: Date.now() };
 
   if (assignment.classroom && assignment.subject && assignment.indicatorId && assignment.category) {
-    const assessment = createManualAssessment(assignment.classroom, assignment.subject, {
-      title: assignment.title,
-      indicatorId: assignment.indicatorId,
-      category: assignment.category,
-      maxScore: assignment.maxScore,
-    });
-    assignment.linkedAssessmentId = assessment.id;
+    const groupId = assignment.id;
+    const kMax = Math.max(0, assignment.knowledgeMaxScore || 0);
+    const pMax = Math.max(0, assignment.practiceMaxScore || 0);
+    if (kMax > 0) {
+      assignment.linkedKnowledgeAssessmentId = createManualAssessment(
+        assignment.classroom,
+        assignment.subject,
+        {
+          title: assignment.title,
+          indicatorId: assignment.indicatorId,
+          category: 'k',
+          maxScore: kMax,
+          groupId,
+          resourceUrl: assignment.resourceUrl,
+          lessonPlanId: assignment.lessonPlanId,
+        },
+      ).id;
+    }
+    if (pMax > 0) {
+      assignment.linkedPracticeAssessmentId = createManualAssessment(
+        assignment.classroom,
+        assignment.subject,
+        {
+          title: assignment.title,
+          indicatorId: assignment.indicatorId,
+          category: 'p',
+          maxScore: pMax,
+          groupId,
+          resourceUrl: assignment.resourceUrl,
+          lessonPlanId: assignment.lessonPlanId,
+        },
+      ).id;
+    }
+    // รองรับรายการรูปแบบเดิมที่เลือกหมวดเดียว
+    if (kMax === 0 && pMax === 0) {
+      const assessment = createManualAssessment(assignment.classroom, assignment.subject, {
+        title: assignment.title,
+        indicatorId: assignment.indicatorId,
+        category: assignment.category,
+        maxScore: assignment.maxScore,
+        groupId,
+        resourceUrl: assignment.resourceUrl,
+        lessonPlanId: assignment.lessonPlanId,
+      });
+      assignment.linkedAssessmentId = assessment.id;
+    }
   }
 
   const list = [assignment, ...loadAssignments()];
@@ -158,8 +205,15 @@ export const deleteAssignment = async (id: string): Promise<void> => {
   const target = list.find((assignment) => assignment.id === id);
   if (firebaseAvailable()) await deleteDoc(doc(db, ASS_COLLECTION, id));
   cache(ASS_KEY, list.filter((assignment) => assignment.id !== id));
-  if (target?.linkedAssessmentId && target.classroom && target.subject) {
-    deleteManualAssessment(target.classroom, target.subject, target.linkedAssessmentId);
+  if (target?.classroom && target.subject) {
+    [
+      target.linkedAssessmentId,
+      target.linkedKnowledgeAssessmentId,
+      target.linkedPracticeAssessmentId,
+    ].filter((assessmentId): assessmentId is string => Boolean(assessmentId))
+      .forEach((assessmentId) => {
+        deleteManualAssessment(target.classroom, target.subject!, assessmentId);
+      });
   }
 };
 
@@ -177,18 +231,6 @@ export const updateAssignment = async (id: string, patch: Partial<Assignment>): 
 export const getAssignmentsForStudent = (classroom: string): Assignment[] => (
   loadAssignments().filter((assignment) => !assignment.classroom || assignment.classroom === classroom)
 );
-
-export const uploadHomeworkFile = async (
-  file: File,
-  studentId: string,
-  assignmentId: string,
-): Promise<string> => {
-  if (!firebaseAvailable()) throw new Error('Firebase ยังไม่ได้ตั้งค่า');
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const fileRef = ref(storage, `homework/${studentId}/${assignmentId}/${Date.now()}_${safeName}`);
-  const snapshot = await uploadBytes(fileRef, file, { contentType: file.type });
-  return getDownloadURL(snapshot.ref);
-};
 
 export const submitWork = async (
   data: Omit<Submission, 'id' | 'submittedAt'>,
@@ -210,30 +252,78 @@ export const submitWork = async (
   return submission;
 };
 
-export const reviewSubmission = async (id: string, score: number, feedback: string): Promise<void> => {
+export const reviewSubmission = async (
+  id: string,
+  scores: { kScore?: number; pScore?: number },
+  feedback: string,
+): Promise<void> => {
   const list = loadSubmissions();
   const index = list.findIndex((submission) => submission.id === id);
   if (index === -1) throw new Error('ไม่พบงานที่ส่ง');
-  const submission = { ...list[index], score, feedback, reviewedAt: Date.now() };
+  const assignment = loadAssignments().find((item) => item.id === list[index].assignmentId);
+  if (!assignment) throw new Error('ไม่พบใบงานที่เชื่อมกับงานส่ง');
+  const kScore = assignment.knowledgeMaxScore
+    ? Math.max(0, Math.min(assignment.knowledgeMaxScore, scores.kScore || 0))
+    : undefined;
+  const pScore = assignment.practiceMaxScore
+    ? Math.max(0, Math.min(assignment.practiceMaxScore, scores.pScore || 0))
+    : undefined;
+  const legacyScore = !assignment.knowledgeMaxScore && !assignment.practiceMaxScore
+    ? Math.max(
+      0,
+      Math.min(
+        assignment.maxScore,
+        assignment.category === 'p' ? scores.pScore || 0 : scores.kScore || 0,
+      ),
+    )
+    : 0;
+  const score = (kScore || 0) + (pScore || 0) + legacyScore;
+  const submission = {
+    ...list[index],
+    score,
+    kScore,
+    pScore,
+    feedback,
+    reviewedAt: Date.now(),
+  };
   await saveSubmissionRemote(submission);
   list[index] = submission;
   cache(SUB_KEY, list);
 
-  const assignment = loadAssignments().find((item) => item.id === submission.assignmentId);
-  if (!assignment?.linkedAssessmentId || !assignment.classroom || !assignment.subject) return;
+  if (!assignment.classroom || !assignment.subject) return;
 
   const grades = loadGrades(assignment.classroom, assignment.subject);
   const student = grades.find((grade) => (
     grade.name === submission.studentName || grade.studentNo === submission.studentNo
   ));
   if (!student) return;
-  updateManualAssessmentScore(
-    assignment.classroom,
-    assignment.subject,
-    assignment.linkedAssessmentId,
-    student.studentCode,
-    score,
-  );
+  if (assignment.linkedKnowledgeAssessmentId && kScore !== undefined) {
+    updateManualAssessmentScore(
+      assignment.classroom,
+      assignment.subject,
+      assignment.linkedKnowledgeAssessmentId,
+      student.studentCode,
+      kScore,
+    );
+  }
+  if (assignment.linkedPracticeAssessmentId && pScore !== undefined) {
+    updateManualAssessmentScore(
+      assignment.classroom,
+      assignment.subject,
+      assignment.linkedPracticeAssessmentId,
+      student.studentCode,
+      pScore,
+    );
+  }
+  if (assignment.linkedAssessmentId) {
+    updateManualAssessmentScore(
+      assignment.classroom,
+      assignment.subject,
+      assignment.linkedAssessmentId,
+      student.studentCode,
+      score,
+    );
+  }
   applyManualAssessmentsToGrades(assignment.classroom, assignment.subject);
 };
 

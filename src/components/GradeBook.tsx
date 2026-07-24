@@ -8,9 +8,9 @@ import {
   SCORE_WEIGHT, loadManualAssessments, loadManualAssessmentScores,
   createManualAssessment, deleteManualAssessment, updateManualAssessmentScore,
   updateManualAssessment, updateTeacherKnowledgeScore,
+  updatePracticeCriteriaScores, getPracticeLevel, PRACTICE_MAX_SCORE,
   applyManualAssessmentsToGrades, COURSE_TEACHER_NAME,
   getGradingPeriodLabel, getExamPolicyLabel,
-  seedUnit1ScoresForAllClasses,
 } from '../services/gradeService';
 import { findGrade } from '../data/curriculum';
 import { Link as LinkIcon, Info } from 'lucide-react';
@@ -32,6 +32,28 @@ const withTimeout = async <T,>(promise: Promise<T>, milliseconds: number, label:
   }
 };
 
+const PRACTICE_CRITERIA = [
+  'ปฏิบัติงานตามขั้นตอนที่กำหนด',
+  'เลือกและใช้เครื่องมือได้เหมาะสม',
+  'ลงมือทำงานได้ถูกต้องตามภารกิจ',
+  'แก้ปัญหาระหว่างปฏิบัติงานได้',
+  'ตรวจสอบและปรับปรุงผลงาน',
+  'จัดการข้อมูลหรือชิ้นงานเป็นระบบ',
+  'อธิบายวิธีทำและผลการทำงานได้',
+  'ทำงานร่วมกับผู้อื่นได้',
+  'ใช้เทคโนโลยีอย่างปลอดภัย',
+  'รับผิดชอบและทำงานจนสำเร็จ',
+];
+
+const PRACTICE_RATING_OPTIONS = [
+  { score: 0, label: 'ยังไม่ประเมิน', scoreLabel: '0' },
+  { score: 1, label: 'ไม่ผ่าน', scoreLabel: '1' },
+  { score: 2, label: 'พอใช้', scoreLabel: '2' },
+  { score: 3, label: 'ผ่าน', scoreLabel: '3 เต็ม' },
+] as const;
+
+const PRACTICE_PRESET_OPTIONS = PRACTICE_RATING_OPTIONS.filter(({ score }) => score > 0);
+
 const GradeBook: React.FC = () => {
   const [classroom, setClassroom] = useState<string>('ป.1');
   const [subject, setSubject] = useState<Subject>('main');
@@ -47,7 +69,9 @@ const GradeBook: React.FC = () => {
   const [reloadKey, setReloadKey] = useState(0);
   const [loadedGradebookKey, setLoadedGradebookKey] = useState('');
   const [scoreDialog, setScoreDialog] = useState<{ studentCode: string; indicatorId: string } | null>(null);
+  const [practiceDialog, setPracticeDialog] = useState<{ studentCode: string; indicatorId: string } | null>(null);
   const [newKnowledgeItem, setNewKnowledgeItem] = useState({ title: '', maxScore: 10 });
+  const [newPracticeItem, setNewPracticeItem] = useState({ title: '', maxScore: 10 });
   const [students2569, setStudents2569] = useState(loadAllRosters);
   const toast = useToast();
   const gradebookKey = `${classroom}_${subject}`;
@@ -90,24 +114,6 @@ const GradeBook: React.FC = () => {
       setDraftAssessment((prev) => ({ ...prev, indicatorId: indicators[0].id }));
     }
   }
-
-  // Auto-seed P/A defaults for unit 1 (one-time per browser) — รันครั้งเดียวเมื่อเข้าหน้านี้ครั้งแรก
-  useEffect(() => {
-    const FLAG = 'krujames_seeded_unit1_pa_v2';
-    if (localStorage.getItem(FLAG)) return;
-    try {
-      const res = seedUnit1ScoresForAllClasses('ปานกลาง', true);
-      localStorage.setItem(FLAG, JSON.stringify({ at: Date.now(), result: res }));
-      const total = res.reduce((acc, r) => acc + r.students * r.indicators, 0);
-      if (total > 0) {
-        toast.show(`✅ ใส่ค่า P/A เริ่มต้น "บท 1" ให้ ${res.length} ห้อง×วิชา (รวม ${total} ช่อง) แล้ว`, 'success');
-        window.setTimeout(() => setReloadKey((k) => k + 1), 0);
-      }
-    } catch (e) {
-      console.warn('Auto-seed unit 1 P/A failed:', e);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const grades = useMemo(() => {
     void reloadKey;
@@ -184,8 +190,15 @@ const GradeBook: React.FC = () => {
   };
 
   const openKnowledgeDialog = (studentCode: string, indicatorId: string) => {
+    setPracticeDialog(null);
     setNewKnowledgeItem({ title: '', maxScore: 10 });
     setScoreDialog({ studentCode, indicatorId });
+  };
+
+  const openPracticeDialog = (studentCode: string, indicatorId: string) => {
+    setScoreDialog(null);
+    setNewPracticeItem({ title: '', maxScore: 10 });
+    setPracticeDialog({ studentCode, indicatorId });
   };
 
   const handleCreateKnowledgeItem = () => {
@@ -202,6 +215,55 @@ const GradeBook: React.FC = () => {
     setNewKnowledgeItem({ title: '', maxScore: 10 });
     reload();
     toast.show('เพิ่มช่องคะแนนและบันทึกอัตโนมัติแล้ว', 'success');
+  };
+
+  const handleCreatePracticeItem = () => {
+    if (!practiceDialog || !newPracticeItem.title.trim()) {
+      toast.show('กรุณาใส่ชื่อการบ้านหรืองานปฏิบัติ', 'error');
+      return;
+    }
+    createManualAssessment(classroom, subject, {
+      title: newPracticeItem.title,
+      indicatorId: practiceDialog.indicatorId,
+      category: 'p',
+      maxScore: Math.max(1, newPracticeItem.maxScore || 1),
+    });
+    setNewPracticeItem({ title: '', maxScore: 10 });
+    reload();
+    toast.show('เพิ่มช่องคะแนนปฏิบัติและบันทึกอัตโนมัติแล้ว', 'success');
+  };
+
+  const handlePracticeCriterion = (index: number, score: number) => {
+    if (!practiceDialog) return;
+    const student = grades.find((grade) => grade.studentCode === practiceDialog.studentCode);
+    const current = student?.indicators[practiceDialog.indicatorId]?.practiceCriteria
+      || Array.from({ length: 10 }, () => 0);
+    const next = current.map((value, itemIndex) => (itemIndex === index ? score : value));
+    updatePracticeCriteriaScores(
+      classroom,
+      practiceDialog.studentCode,
+      practiceDialog.indicatorId,
+      next,
+      subject,
+    );
+    reload();
+  };
+
+  const handlePracticePreset = (score: number) => {
+    if (!practiceDialog) return;
+    updatePracticeCriteriaScores(
+      classroom,
+      practiceDialog.studentCode,
+      practiceDialog.indicatorId,
+      Array.from({ length: PRACTICE_CRITERIA.length }, () => score),
+      subject,
+    );
+    reload();
+    const selected = PRACTICE_RATING_OPTIONS.find((option) => option.score === score);
+    toast.show(
+      `เลือก "${selected?.label || score}" ให้ครบทุกข้อแล้ว รวม ${score * PRACTICE_CRITERIA.length}/${PRACTICE_MAX_SCORE} คะแนน`,
+      'success',
+    );
   };
 
   const handleKnowledgeItemScore = (assessment: ManualAssessment, studentCode: string, raw: string) => {
@@ -224,11 +286,6 @@ const GradeBook: React.FC = () => {
     if (!confirm('ลบช่องคะแนนนี้และคะแนนของนักเรียนทุกคนในงานนี้?')) return;
     deleteManualAssessment(classroom, subject, assessmentId);
     applyManualAssessmentsToGrades(classroom, subject);
-    reload();
-  };
-
-  const handleP = (studentCode: string, indicatorId: string, p: Skill) => {
-    updateStudentScore(classroom, studentCode, indicatorId, { p }, subject);
     reload();
   };
 
@@ -384,13 +441,16 @@ const GradeBook: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!scoreDialog) return undefined;
+    if (!scoreDialog && !practiceDialog) return undefined;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setScoreDialog(null);
+      if (event.key === 'Escape') {
+        setScoreDialog(null);
+        setPracticeDialog(null);
+      }
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [scoreDialog]);
+  }, [practiceDialog, scoreDialog]);
 
   const dialogStudent = scoreDialog
     ? grades.find((grade) => grade.studentCode === scoreDialog.studentCode)
@@ -412,8 +472,42 @@ const GradeBook: React.FC = () => {
         assessment.indicatorId === scoreDialog.indicatorId && assessment.category === 'k'
       ))
     : [];
+  const practiceDialogStudent = practiceDialog
+    ? grades.find((grade) => grade.studentCode === practiceDialog.studentCode)
+    : undefined;
+  const practiceDialogIndicator = practiceDialog
+    ? indicators.find((indicator) => indicator.id === practiceDialog.indicatorId)
+    : undefined;
+  const practiceDialogScore = practiceDialogStudent && practiceDialog
+    ? practiceDialogStudent.indicators[practiceDialog.indicatorId]
+    : undefined;
+  const practiceHasSourceBreakdown = practiceDialogScore
+    && (practiceDialogScore.webPScore !== undefined
+      || practiceDialogScore.manualPScore !== undefined
+      || practiceDialogScore.teacherPScore !== undefined);
+  const legacyPracticeScore = practiceDialogScore?.p === 'ดี'
+    ? 30
+    : practiceDialogScore?.p === 'ปานกลาง'
+      ? 20
+      : practiceDialogScore?.pAssessed ? 15 : 0;
+  const practiceWebScore = practiceDialogScore?.webPScore
+    ?? (practiceHasSourceBreakdown ? 0 : legacyPracticeScore);
+  const practiceTotalScore = practiceDialogScore?.pScore
+    ?? Math.max(
+      Math.min(PRACTICE_MAX_SCORE, practiceWebScore + (practiceDialogScore?.manualPScore || 0)),
+      practiceDialogScore?.teacherPScore || 0,
+    );
+  const dialogPracticeItems = practiceDialog
+    ? manualAssessments.filter((assessment) => (
+        assessment.indicatorId === practiceDialog.indicatorId && assessment.category === 'p'
+      ))
+    : [];
   const homeworkAssessmentIds = new Set(
-    loadAssignments().map((assignment) => assignment.linkedAssessmentId).filter(Boolean),
+    loadAssignments().flatMap((assignment) => [
+      assignment.linkedAssessmentId,
+      assignment.linkedKnowledgeAssessmentId,
+      assignment.linkedPracticeAssessmentId,
+    ]).filter((id): id is string => Boolean(id)),
   );
 
   return (
@@ -769,22 +863,33 @@ const GradeBook: React.FC = () => {
                               </button>
                             </td>
                             <td className="text-center">
-                              <select
-                                className={`p-select skill-${s.p}`}
-                                value={s.p}
-                                onChange={(e) => handleP(g.studentCode, ind.id, e.target.value as Skill)}
+                              <button
+                                type="button"
+                                className={`p-score-button level-${s.practiceLevel || s.p}`}
+                                onClick={() => openPracticeDialog(g.studentCode, ind.id)}
+                                title="เปิดรายละเอียดคะแนนปฏิบัติ P"
                               >
-                                <option value="พอใช้">พอใช้</option>
-                                <option value="ปานกลาง">ปานกลาง</option>
-                                <option value="ดี">ดี</option>
-                              </select>
+                                {s.practiceLevel || s.p}
+                              </button>
                             </td>
                             <td className="text-center">
-                              <input
-                                type="checkbox"
-                                checked={s.a}
-                                onChange={(e) => handleA(g.studentCode, ind.id, e.target.checked)}
-                              />
+                              <label
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                title={[
+                                  `A ${s.aScore ?? 0}/10`,
+                                  `มาเรียนในคาบ ${s.aEvidence?.inClassDays ?? 0} วัน`,
+                                  `เข้าใช้ ${s.aEvidence?.activeDays ?? 0} วัน`,
+                                  `ลงมือทำ ${s.aEvidence?.practiceCount ?? 0} งาน`,
+                                  `ทำแบบทดสอบ ${s.aEvidence?.quizAttempts ?? 0} ครั้ง`,
+                                ].join(' • ')}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={s.a}
+                                  onChange={(e) => handleA(g.studentCode, ind.id, e.target.checked)}
+                                />
+                                <small>{s.aScore ?? 0}/10</small>
+                              </label>
                             </td>
                           </React.Fragment>
                         );
@@ -905,7 +1010,7 @@ const GradeBook: React.FC = () => {
             <div className="gb-teacher-k-row">
               <div>
                 <strong>ครูใส่คะแนน K โดยตรง</strong>
-                <p>เว้นว่างเพื่อล้างคะแนนที่ครูกรอก ระบบจะใช้คะแนนสูงสุดจากเว็บหรืองานแทน</p>
+                <p>เว้นว่างเพื่อล้างคะแนนที่ครูกรอก ระบบจะรวมคะแนนจากเว็บกับงานแล้วตัดไม่ให้เกินคะแนนเต็ม</p>
               </div>
               <label>
                 <input
@@ -1010,6 +1115,221 @@ const GradeBook: React.FC = () => {
         </div>
       )}
 
+      {practiceDialog && practiceDialogStudent && practiceDialogIndicator && (
+        <div
+          className="gb-score-modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPracticeDialog(null);
+          }}
+        >
+          <section
+            className="gb-score-modal gb-practice-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="gb-practice-modal-title"
+          >
+            <header className="gb-score-modal-header">
+              <div>
+                <span>{practiceDialogIndicator.code} • คะแนนปฏิบัติ P เต็ม {PRACTICE_MAX_SCORE}</span>
+                <h3 id="gb-practice-modal-title">ประเมินการปฏิบัติ: {practiceDialogStudent.name}</h3>
+                <p>{practiceDialogIndicator.title}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPracticeDialog(null)}
+                title="ปิดหน้าต่าง"
+                aria-label="ปิดหน้าต่างคะแนนปฏิบัติ"
+              >
+                <X size={20} />
+              </button>
+            </header>
+
+            <div className="gb-score-source-summary">
+              <div>
+                <span>กิจกรรมและการใช้เว็บอัตโนมัติ</span>
+                <strong>{practiceWebScore}/{PRACTICE_MAX_SCORE}</strong>
+              </div>
+              <div>
+                <span>การบ้านและงานปฏิบัติเพิ่มเติม</span>
+                <strong>{practiceDialogScore?.manualPScore || 0}/{PRACTICE_MAX_SCORE}</strong>
+              </div>
+              <div>
+                <span>เกณฑ์ปฏิบัติที่ครูประเมิน</span>
+                <strong>{practiceDialogScore?.teacherPScore || 0}/{PRACTICE_MAX_SCORE}</strong>
+              </div>
+              <div className="total">
+                <span>คะแนน P ที่ใช้จริง</span>
+                <strong>{practiceTotalScore}/{PRACTICE_MAX_SCORE} • {getPracticeLevel(practiceTotalScore)}</strong>
+              </div>
+            </div>
+
+            <div className="gb-practice-thresholds" aria-label="เกณฑ์แปลผลคะแนนปฏิบัติ">
+              <div className="excellent"><strong>30</strong><span>ดีมาก</span></div>
+              <div className="moderate"><strong>20–29</strong><span>ปานกลาง</span></div>
+              <div className="fair"><strong>15–19</strong><span>พอใช้</span></div>
+              <div className="failed"><strong>0–14</strong><span>ไม่ผ่าน</span></div>
+            </div>
+
+            <div className="gb-score-items-heading gb-practice-heading">
+              <div>
+                <h4>แบบประเมินการปฏิบัติ ข้อละ 1–3 คะแนน</h4>
+                <p>ไม่ผ่าน = 1 • พอใช้ = 2 • ผ่าน = 3 คะแนนเต็ม • เลือก “ยังไม่ประเมิน” เมื่อต้องการล้างคะแนนรายข้อ</p>
+              </div>
+              <span>{practiceDialogScore?.teacherPScore || 0}/{PRACTICE_MAX_SCORE} คะแนน</span>
+            </div>
+
+            <div className="gb-practice-presets">
+              <div>
+                <strong>ลงคะแนนครบทุกข้ออัตโนมัติ</strong>
+                <span>เลือกครั้งเดียว แล้วระบบใส่คะแนนทั้ง 10 ข้อและบันทึกทันที</span>
+              </div>
+              <div className="gb-practice-preset-actions" role="group" aria-label="ลงคะแนนปฏิบัติครบทุกข้อ">
+                {PRACTICE_PRESET_OPTIONS.map((option) => {
+                  const isActive = practiceDialogScore?.practiceCriteria?.length === PRACTICE_CRITERIA.length
+                    && practiceDialogScore.practiceCriteria.every((score) => score === option.score);
+                  return (
+                    <button
+                      type="button"
+                      className={`score-${option.score}${isActive ? ' active' : ''}`}
+                      key={option.score}
+                      onClick={() => handlePracticePreset(option.score)}
+                      aria-pressed={isActive}
+                    >
+                      <span>{option.label}</span>
+                      <small>{option.scoreLabel} ทุกข้อ</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="gb-practice-rubric">
+              {PRACTICE_CRITERIA.map((criterion, index) => {
+                const criterionScore = practiceDialogScore?.practiceCriteria?.[index] || 0;
+                return (
+                  <div className="gb-practice-rubric-row" key={criterion}>
+                    <div>
+                      <span>{index + 1}</span>
+                      <strong>{criterion}</strong>
+                    </div>
+                    <div className="gb-practice-scale" role="group" aria-label={`${criterion} คะแนน`}>
+                      {PRACTICE_RATING_OPTIONS.map((option) => (
+                        <button
+                          type="button"
+                          className={`score-${option.score}${criterionScore === option.score ? ' active' : ''}`}
+                          key={option.score}
+                          onClick={() => handlePracticeCriterion(index, option.score)}
+                          aria-pressed={criterionScore === option.score}
+                          title={`${option.label} ${option.scoreLabel} คะแนน`}
+                        >
+                          <span>{option.label}</span>
+                          <small>{option.scoreLabel}</small>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="gb-score-items-heading">
+              <div>
+                <h4>คะแนนงานปฏิบัติและการบ้าน</h4>
+                <p>งานที่เชื่อมกับตัวชี้วัดนี้จะแสดงอัตโนมัติ และครูเพิ่มงานนอกเว็บได้</p>
+              </div>
+              <span>{dialogPracticeItems.length} รายการ</span>
+            </div>
+
+            <div className="gb-score-item-list">
+              {dialogPracticeItems.length === 0 ? (
+                <div className="gb-score-item-empty">ยังไม่มีงานปฏิบัติหรือการบ้านสำหรับตัวชี้วัดนี้</div>
+              ) : dialogPracticeItems.map((assessment) => {
+                const isHomework = homeworkAssessmentIds.has(assessment.id);
+                return (
+                  <div className="gb-score-item" key={assessment.id}>
+                    <div className="gb-score-item-type">{isHomework ? 'การบ้าน' : 'งานปฏิบัติ'}</div>
+                    {isHomework ? (
+                      <div className="gb-score-item-title">
+                        <strong>{assessment.title}</strong>
+                        <small>แก้รายละเอียดงานที่เมนูการบ้าน</small>
+                      </div>
+                    ) : (
+                      <label className="gb-score-item-title">
+                        <span>ชื่องาน</span>
+                        <input
+                          type="text"
+                          defaultValue={assessment.title}
+                          onBlur={(event) => handleKnowledgeItemUpdate(assessment.id, { title: event.target.value })}
+                        />
+                      </label>
+                    )}
+                    <label>
+                      <span>คะแนนเต็ม</span>
+                      <input
+                        type="number"
+                        min={1}
+                        defaultValue={assessment.maxScore}
+                        disabled={isHomework}
+                        onBlur={(event) => handleKnowledgeItemUpdate(assessment.id, { maxScore: Number(event.target.value) || 1 })}
+                      />
+                    </label>
+                    <label className="gb-score-earned">
+                      <span>คะแนนที่ได้</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={assessment.maxScore}
+                        value={manualScores[assessment.id]?.[practiceDialogStudent.studentCode] ?? ''}
+                        onChange={(event) => handleKnowledgeItemScore(assessment, practiceDialogStudent.studentCode, event.target.value)}
+                      />
+                    </label>
+                    {isHomework ? (
+                      <span className="gb-score-linked" title="ลบการบ้านได้จากเมนูการบ้าน">เชื่อมการบ้าน</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="gb-score-delete"
+                        onClick={() => handleKnowledgeItemDelete(assessment.id)}
+                        title="ลบช่องคะแนน"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="gb-score-add-row">
+              <label>
+                <span>ชื่องานปฏิบัติใหม่</span>
+                <input
+                  type="text"
+                  value={newPracticeItem.title}
+                  onChange={(event) => setNewPracticeItem((current) => ({ ...current, title: event.target.value }))}
+                  placeholder="เช่น ปฏิบัติที่ 1 หรือชิ้นงานเพิ่มเติม"
+                />
+              </label>
+              <label>
+                <span>คะแนนเต็ม</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={newPracticeItem.maxScore}
+                  onChange={(event) => setNewPracticeItem((current) => ({ ...current, maxScore: Number(event.target.value) || 1 }))}
+                />
+              </label>
+              <button type="button" onClick={handleCreatePracticeItem}><Plus size={17} /> เพิ่มงานปฏิบัติ</button>
+            </div>
+
+            <footer className="gb-score-modal-footer">
+              <span>บันทึกในเครื่องทันทีและส่งต่อไปยัง Firebase อัตโนมัติ</span>
+              <button type="button" onClick={() => setPracticeDialog(null)}>เสร็จสิ้น</button>
+            </footer>
+          </section>
+        </div>
+      )}
+
       <div className="gb-help">
         <h4>💡 ระบบคำนวณ K / P / A อัตโนมัติ (กดปุ่ม "นำเข้า K/P/A จากเว็บ")</h4>
         <ul>
@@ -1019,17 +1339,19 @@ const GradeBook: React.FC = () => {
           </li>
           <li>
             <strong>P = ทักษะ</strong> — คำนวณจาก<em>การลงมือทำ</em>: เกม×3 + วิดีโอ×2 + สไลด์/บทความ×1
-            <br/>≥ 15 คะแนน = <span style={{ color: '#16a34a', fontWeight: 700 }}>ดี</span> •
-            ≥ 5 = <span style={{ color: '#d97706', fontWeight: 700 }}>ปานกลาง</span> •
-            น้อยกว่า = <span style={{ color: '#dc2626', fontWeight: 700 }}>พอใช้</span>
+            โดยกิจกรรมในคาบได้เต็มน้ำหนัก กิจกรรมนอกคาบได้ 40% และรายการเดิมไม่ถูกนับซ้ำ
+            <br/>30 คะแนน = <span style={{ color: '#16a34a', fontWeight: 700 }}>ดีมาก</span> •
+            20–29 = <span style={{ color: '#d97706', fontWeight: 700 }}>ปานกลาง</span> •
+            15–19 = <span style={{ color: '#2563eb', fontWeight: 700 }}>พอใช้</span> •
+            0–14 = <span style={{ color: '#dc2626', fontWeight: 700 }}>ไม่ผ่าน</span>
           </li>
           <li>
-            <strong>A = จิตพิสัย</strong> — เก็บจาก<em>การเข้าเรียนตรงเวลา</em>ตามตารางสอน
-            (ต้องเข้าหน่วยที่เกี่ยวกับตัวชี้วัดนี้ ≥ <strong>2 วันที่ต่างกัน</strong> ในเวลาเรียน)
+            <strong>A = จิตพิสัย</strong> — คำนวณเต็ม 10 จากวันมาเรียนตามตาราง ความสม่ำเสมอ
+            การลงมือทำ ความพยายามทำแบบทดสอบ และความสำเร็จของหน่วย ผ่านเมื่อได้อย่างน้อย 6
             <br/>👉 ตั้งตารางสอนได้ที่ Tab "จัดการตารางสอน"
           </li>
-          <li><strong>ครูแก้ค่าเองได้</strong> — คลิกคะแนน K เพื่อเปิดรายละเอียด เพิ่มงานและกรอกคะแนน หรือเลือก P และติ๊ก A ในตารางได้ตลอด</li>
-          <li><strong>งานนอกเว็บ/ใบงาน</strong> — เมื่อกรอกคะแนน ระบบบันทึกและคำนวณเข้า K/P อัตโนมัติตามคะแนนเต็มของงาน</li>
+          <li><strong>ครูแก้ค่าเองได้</strong> — คลิกคะแนน K หรือระดับ P เพื่อเปิดรายละเอียด เพิ่มงานและกรอกคะแนนได้ตลอด</li>
+          <li><strong>งานนอกเว็บ/ใบงาน</strong> — ครูแบ่งคะแนน K/P ได้ คะแนนจากเว็บและงานจะสะสมร่วมกันแต่ไม่เกิน K 15 และ P 30</li>
           <li><strong>AI ป.1-6</strong> — คิดเป็นคะแนนเสริมในตัวชี้วัดที่เกี่ยวข้องเมื่อครูกด “นำเข้า K/P/A จากเว็บ” ไม่แยกเป็นวิชาหลักอีกหนึ่งเกรด</li>
           <li><strong>โครงสร้างสอบ</strong> — {getExamPolicyLabel(classroom)}</li>
           <li><strong>เกรด</strong>: คำนวณอัตโนมัติตามเกณฑ์ไทย (≥80%=4, ≥75%=3.5, ≥70%=3, ≥65%=2.5...)</li>

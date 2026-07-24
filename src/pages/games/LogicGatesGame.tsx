@@ -4,12 +4,16 @@ import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, Lightbulb, Power } from 
 import { useGameProgress } from '../../hooks/useGameProgress';
 import './GameStyles.css';
 
-type Gate = 'AND' | 'OR' | 'NOT' | 'COMBO';
+type Gate = 'AND' | 'OR' | 'NOT' | 'XOR' | 'NAND' | 'NOR' | 'COMBO';
+const SESSION_ROUNDS = 12;
 
 const GATE_INFO: Record<Gate, { th: string; desc: string; inputs: number; formula: string }> = {
   AND: { th: 'AND (และ)', desc: 'ติดเมื่อ อินพุตเป็น 1 ทั้งคู่', inputs: 2, formula: 'A และ B' },
   OR: { th: 'OR (หรือ)', desc: 'ติดเมื่อ มีอินพุตเป็น 1 อย่างน้อยหนึ่ง', inputs: 2, formula: 'A หรือ B' },
   NOT: { th: 'NOT (ไม่)', desc: 'กลับค่า: 0 เป็น 1, 1 เป็น 0', inputs: 1, formula: 'ไม่ A' },
+  XOR: { th: 'XOR (ต่างกัน)', desc: 'ติดเมื่ออินพุต A และ B มีค่าต่างกัน', inputs: 2, formula: 'A XOR B' },
+  NAND: { th: 'NAND', desc: 'ดับเฉพาะเมื่อ A และ B เป็น 1 ทั้งคู่', inputs: 2, formula: 'ไม่ (A และ B)' },
+  NOR: { th: 'NOR', desc: 'ติดเฉพาะเมื่อ A และ B เป็น 0 ทั้งคู่', inputs: 2, formula: 'ไม่ (A หรือ B)' },
   COMBO: { th: 'AND + OR', desc: '(A และ B) หรือ C', inputs: 3, formula: '(A และ B) หรือ C' },
 };
 
@@ -18,12 +22,17 @@ const evaluate = (gate: Gate, s: number[]): number => {
     case 'AND': return s[0] & s[1];
     case 'OR': return s[0] | s[1];
     case 'NOT': return s[0] === 0 ? 1 : 0;
+    case 'XOR': return s[0] === s[1] ? 0 : 1;
+    case 'NAND': return (s[0] & s[1]) === 1 ? 0 : 1;
+    case 'NOR': return (s[0] | s[1]) === 1 ? 0 : 1;
     case 'COMBO': return (s[0] & s[1]) | s[2];
   }
 };
 
 const makeRound = (streak: number) => {
-  const pool: Gate[] = streak >= 3 ? ['AND', 'OR', 'NOT', 'COMBO', 'AND', 'OR'] : ['AND', 'OR', 'NOT'];
+  const pool: Gate[] = streak >= 3
+    ? ['AND', 'OR', 'NOT', 'XOR', 'NAND', 'NOR', 'COMBO']
+    : ['AND', 'OR', 'NOT', 'XOR'];
   const gate = pool[Math.floor(Math.random() * pool.length)];
   const n = GATE_INFO[gate].inputs;
   let switches: number[];
@@ -41,6 +50,8 @@ const LogicGatesGame: React.FC = () => {
   const [showTable, setShowTable] = useState(false);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [roundNumber, setRoundNumber] = useState(1);
+  const [done, setDone] = useState(false);
   const [best, setBest] = useState(() => parseInt(localStorage.getItem('kj_logic_best') || '0', 10));
   const recordGame = useGameProgress('logic-gates', 'ประตูตรรกะ');
 
@@ -54,7 +65,25 @@ const LogicGatesGame: React.FC = () => {
     setRound((r) => ({ ...r, switches: r.switches.map((v, idx) => (idx === i ? (v === 0 ? 1 : 0) : v)) }));
   };
 
-  const next = () => { setRound(makeRound(streak)); setChecked(null); };
+  const next = () => {
+    if (roundNumber >= SESSION_ROUNDS) {
+      setDone(true);
+      void recordGame(score);
+      return;
+    }
+    setRound(makeRound(streak));
+    setRoundNumber((value) => value + 1);
+    setChecked(null);
+  };
+
+  const restart = () => {
+    setRound(makeRound(0));
+    setChecked(null);
+    setScore(0);
+    setStreak(0);
+    setRoundNumber(1);
+    setDone(false);
+  };
 
   const check = () => {
     recordGame(score);
@@ -83,6 +112,7 @@ const LogicGatesGame: React.FC = () => {
 
       <div className="game-stats">
         <div className="gstat">🏆 คะแนน: <strong>{score}</strong></div>
+        <div className="gstat">🔌 ข้อ: <strong>{Math.min(roundNumber, SESSION_ROUNDS)}/{SESSION_ROUNDS}</strong></div>
         <div className="gstat">🔥 ติดต่อกัน: <strong>{streak}</strong></div>
         <div className="gstat">🎯 ดีที่สุด: <strong>{best}</strong></div>
         <button className="gstat" onClick={() => setShowTable((s) => !s)}>
@@ -139,8 +169,15 @@ const LogicGatesGame: React.FC = () => {
         )}
 
         <div className="puzzle-actions">
-          {checked === 'correct' ? (
-            <button className="btn-game-start" onClick={next}><RotateCcw size={16} /> ข้อต่อไป →</button>
+          {done ? (
+            <div className="puzzle-result success">
+              <CheckCircle2 size={20} /> จบเกมแล้ว ได้ {score}/{SESSION_ROUNDS * 10} คะแนน
+              <button className="btn-game-start" type="button" onClick={restart}><RotateCcw size={16} /> เล่นชุดใหม่</button>
+            </div>
+          ) : checked === 'correct' ? (
+            <button className="btn-game-start" onClick={next}>
+              <RotateCcw size={16} /> {roundNumber >= SESSION_ROUNDS ? 'ดูผลการเล่น' : 'ข้อต่อไป →'}
+            </button>
           ) : (
             <button className="btn-game-start" onClick={check}>✓ ตรวจคำตอบ</button>
           )}

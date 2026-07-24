@@ -43,6 +43,15 @@ export interface P1LessonPlan {
   researchEvidence: string[];
 }
 
+export interface P1HourlySession {
+  hourNo: number;
+  title: string;
+  minutes: number;
+  teacherActivities: string[];
+  studentActivities: string[];
+  evidence: string[];
+}
+
 export interface P1AnnualUnit {
   no: number;
   title: string;
@@ -471,6 +480,40 @@ export const p1LessonPlans: P1LessonPlan[] = [
     researchEvidence: ['คะแนนก่อน-หลังสถานการณ์ความปลอดภัย', 'รูบริกบทบาทสมมติ', 'แฟ้มสะสมงานและแบบสะท้อนความมั่นใจของผู้เรียน'],
   },
 ];
+
+/** แบ่งกิจกรรม 200 นาทีของแต่ละแผนออกเป็น 4 คาบ คาบละ 50 นาที */
+export const getP1HourlySessions = (plan: P1LessonPlan): P1HourlySession[] => {
+  const sessions: P1HourlySession[] = Array.from({ length: plan.hours }, (_, index) => ({
+    hourNo: index + 1,
+    title: `คาบที่ ${index + 1}: ${plan.title}`,
+    minutes: 0,
+    teacherActivities: [],
+    studentActivities: [],
+    evidence: [],
+  }));
+  let sessionIndex = 0;
+  let remainingInSession = p1TechnologyCourse.periodMinutes;
+
+  plan.steps.forEach((step) => {
+    let remainingStep = step.minutes;
+    while (remainingStep > 0 && sessionIndex < sessions.length) {
+      const used = Math.min(remainingStep, remainingInSession);
+      const session = sessions[sessionIndex];
+      session.minutes += used;
+      session.teacherActivities.push(`${step.phase} (${used} นาที): ${step.teacher}`);
+      session.studentActivities.push(`${step.phase} (${used} นาที): ${step.students}`);
+      if (!session.evidence.includes(step.evidence)) session.evidence.push(step.evidence);
+      remainingStep -= used;
+      remainingInSession -= used;
+      if (remainingInSession === 0) {
+        sessionIndex += 1;
+        remainingInSession = p1TechnologyCourse.periodMinutes;
+      }
+    }
+  });
+
+  return sessions;
+};
 
 export const p1ScoringPlan = {
   collected: 70,

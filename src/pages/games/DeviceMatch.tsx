@@ -14,6 +14,14 @@ const DEVICES: Device[] = [
   { emoji: '📷', name: 'กล้องเว็บแคม', use: 'ถ่ายภาพและวิดีโอคอล' },
   { emoji: '💾', name: 'แฟลชไดรฟ์', use: 'เก็บและพกพาไฟล์' },
   { emoji: '🔊', name: 'ลำโพง', use: 'เปิดเสียงให้ทุกคนได้ยิน' },
+  { emoji: '🎙️', name: 'ไมโครโฟน', use: 'รับและบันทึกเสียงเข้าสู่คอมพิวเตอร์' },
+  { emoji: '📠', name: 'สแกนเนอร์', use: 'เปลี่ยนภาพหรือเอกสารกระดาษเป็นไฟล์' },
+  { emoji: '🕹️', name: 'จอยเกม', use: 'ควบคุมตัวละครและคำสั่งในเกม' },
+  { emoji: '📽️', name: 'เครื่องฉายภาพ', use: 'แสดงภาพจากคอมพิวเตอร์บนจอขนาดใหญ่' },
+  { emoji: '📡', name: 'เราเตอร์', use: 'เชื่อมต่ออุปกรณ์เข้ากับเครือข่ายและอินเทอร์เน็ต' },
+  { emoji: '💿', name: 'ฮาร์ดดิสก์', use: 'เก็บโปรแกรมและข้อมูลจำนวนมาก' },
+  { emoji: '🖊️', name: 'ปากกาดิจิทัล', use: 'เขียนหรือวาดลงบนหน้าจอ' },
+  { emoji: '🔋', name: 'เครื่องสำรองไฟ', use: 'จ่ายไฟชั่วคราวเมื่อไฟฟ้าดับ' },
 ];
 
 const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
@@ -60,9 +68,9 @@ const DeviceMatch: React.FC = () => {
 
       {done ? (
         <div className="card" style={{ padding: '2rem' }}>
-          <div style={{ fontSize: '3rem' }}>{score >= 6 ? '🏆' : score >= 4 ? '😃' : '💪'}</div>
+          <div style={{ fontSize: '3rem' }}>{score >= Math.ceil(order.length * 0.8) ? '🏆' : score >= Math.ceil(order.length * 0.5) ? '😃' : '💪'}</div>
           <h2>ได้ {score}/{order.length} คะแนน!</h2>
-          <p>{score >= 6 ? 'เก่งมาก! รู้จักอุปกรณ์ครบเลย' : 'ลองอีกครั้งให้ได้คะแนนเต็มนะ'}</p>
+          <p>{score >= Math.ceil(order.length * 0.8) ? 'เก่งมาก! รู้จักอุปกรณ์ได้อย่างแม่นยำ' : 'ลองทบทวนหน้าที่ของอุปกรณ์แล้วเล่นอีกครั้งนะ'}</p>
           <button className="btn-primary" onClick={restart}><RotateCcw size={16} /> เล่นอีกครั้ง</button>
         </div>
       ) : (

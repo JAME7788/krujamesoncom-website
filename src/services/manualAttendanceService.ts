@@ -1,12 +1,12 @@
-// เช็คชื่อแบบ Manual — ครูคลิก "มา/สาย/ขาด/ลา" ต่อคน ต่อวัน
+// เช็คชื่อแบบ Manual — ครูคลิก "มา/ขาด/ลา" ต่อคน ต่อวัน
 // เก็บ Firebase attendance/{date}_{classroom}
-// คนที่ "มา" หรือ "สาย" จะได้ XP โบนัสเล็กน้อย → recordDailyActivity ผ่าน awardBonus
+// คนที่ "มา" จะได้ XP โบนัสเล็กน้อย → recordDailyActivity ผ่าน awardBonus
 
 import { db } from './firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { awardBonus, fetchStudentProgress } from './progressService';
 
-export type AttendanceStatus = 'present' | 'late' | 'absent' | 'sick';
+export type AttendanceStatus = 'present' | 'absent' | 'sick';
 
 export interface ManualAttendance {
   date: string;          // YYYY-MM-DD
@@ -17,7 +17,6 @@ export interface ManualAttendance {
 
 export const ATTENDANCE_LABEL: Record<AttendanceStatus, { th: string; emoji: string; color: string; xp: number }> = {
   present: { th: 'มาเรียน', emoji: '✅', color: '#22c55e', xp: 5 },
-  late:    { th: 'สาย',     emoji: '⏰', color: '#f59e0b', xp: 2 },
   absent:  { th: 'ขาด',     emoji: '❌', color: '#ef4444', xp: 0 },
   sick:    { th: 'ลาป่วย',  emoji: '🤒', color: '#9ca3af', xp: 0 },
 };
@@ -29,6 +28,28 @@ const fbAvailable = (): boolean => {
 const docId = (date: string, classroom: string) => `${date}_${classroom}`;
 const LOCAL_KEY = (date: string, classroom: string) => `krujames_attendance_${docId(date, classroom)}`;
 
+type LegacyAttendanceData = Omit<Partial<ManualAttendance>, 'records'> & {
+  records?: Record<string, string>;
+};
+
+const normalizeAttendance = (
+  data: LegacyAttendanceData,
+  date: string,
+  classroom: string,
+): ManualAttendance => ({
+  date,
+  classroom,
+  records: Object.fromEntries(
+    Object.entries(data.records || {}).map(([studentCode, status]) => [
+      studentCode,
+      status === 'late' || status === 'present'
+        ? 'present'
+        : status === 'sick' ? 'sick' : 'absent',
+    ]),
+  ) as Record<string, AttendanceStatus>,
+  updatedAt: Number(data.updatedAt) || 0,
+});
+
 export const todayDateKey = (): string => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -39,7 +60,7 @@ export const loadAttendance = (date: string, classroom: string): ManualAttendanc
   try {
     const raw = localStorage.getItem(LOCAL_KEY(date, classroom));
     if (!raw) return empty;
-    return { ...empty, ...JSON.parse(raw) };
+    return normalizeAttendance(JSON.parse(raw) as LegacyAttendanceData, date, classroom);
   } catch { return empty; }
 };
 
@@ -50,7 +71,11 @@ export const fetchAttendance = async (date: string, classroom: string): Promise<
     const ref = doc(db, 'attendance', docId(date, classroom));
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      const data = { ...local, ...(snap.data() as ManualAttendance) };
+      const data = normalizeAttendance(
+        { ...local, ...(snap.data() as LegacyAttendanceData) },
+        date,
+        classroom,
+      );
       try { localStorage.setItem(LOCAL_KEY(date, classroom), JSON.stringify(data)); } catch { /* ignore */ }
       return data;
     }
@@ -84,7 +109,7 @@ export const setStatus = async (
   await syncToFirebase(data);
   saveLocal(data);
 
-  // ถ้าเปลี่ยนจาก absent/sick → present/late ให้ XP, แต่ครั้งเดียวต่อวัน
+  // ถ้าเปลี่ยนจาก absent/sick → present ให้ XP แต่ครั้งเดียวต่อวัน
   const info = ATTENDANCE_LABEL[status];
   if (info.xp > 0 && prev !== status) {
     try {

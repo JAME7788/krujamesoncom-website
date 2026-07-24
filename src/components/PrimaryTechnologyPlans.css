@@ -601,6 +601,232 @@
   color: #087f5b;
 }
 
+/* Formal lesson-plan document, based on the structure of the supplied school plans. */
+.ptplan-paper {
+  box-sizing: border-box;
+  width: min(210mm, 100%);
+  margin: 18px auto 0;
+  padding: clamp(24px, 5vw, 58px);
+  border: 1px solid #ccd3db;
+  background: #fff;
+  color: #171717;
+  font-family: "TH Sarabun New", "Sarabun", "Noto Sans Thai", sans-serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.1);
+}
+
+.ptplan-document-heading {
+  padding-bottom: 17px;
+  border-bottom: 5px solid #5b6572;
+  text-align: center;
+}
+.ptplan-document-heading > span {
+  color: #1e3a5f;
+  font-size: 1.3rem;
+  font-weight: 850;
+}
+.ptplan-document-heading h3 {
+  margin: 2px 0 0;
+  color: #111;
+  font-size: 1.2rem;
+  line-height: 1.35;
+}
+.ptplan-document-heading p {
+  margin-top: 2px;
+  color: #374151;
+  font-weight: 700;
+}
+
+.ptplan-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #77808b;
+}
+.ptplan-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ptplan-table-wrap th,
+.ptplan-table-wrap td {
+  padding: 9px 10px;
+  border-right: 1px solid #8b949e;
+  border-bottom: 1px solid #8b949e;
+  vertical-align: top;
+  text-align: left;
+}
+.ptplan-table-wrap tr:last-child > * { border-bottom: 0; }
+.ptplan-table-wrap tr > *:last-child { border-right: 0; }
+.ptplan-table-wrap th {
+  background: #e8edf2;
+  color: #1f2937;
+  font-weight: 850;
+}
+.ptplan-meta-table {
+  margin-top: 15px;
+  border-color: #66707b;
+}
+.ptplan-meta-table table { min-width: 570px; }
+.ptplan-meta-table th {
+  width: 15%;
+  background: #f0f2f4;
+  white-space: nowrap;
+}
+.ptplan-meta-table td { width: 35%; }
+
+.ptplan-child-brief {
+  display: grid;
+  grid-template-columns: 155px 1fr;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 5px solid #c88a16;
+  background: #fff8e7;
+}
+.ptplan-child-brief strong { color: #7a4b00; }
+.ptplan-child-brief p { margin: 0; }
+
+.ptplan-paper > section {
+  padding: 18px 0;
+  border-bottom: 1px solid #b7bec7;
+}
+.ptplan-paper > section:last-child { border-bottom: 0; }
+.ptplan-paper > section > h4,
+.ptplan-prose-grid h4 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 9px;
+  color: #14213a;
+  font-size: 1.03rem;
+}
+.ptplan-paper h4 > span {
+  display: inline-grid;
+  flex: 0 0 28px;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: #263f60;
+  color: #fff;
+  font-size: 0.8rem;
+}
+.ptplan-paper ul,
+.ptplan-paper ol { margin: 5px 0 0; }
+.ptplan-paper li { margin-bottom: 3px; }
+
+.ptplan-paper .ptplan-outcome {
+  grid-template-columns: 68px 1fr;
+  padding: 12px 14px;
+  border: 1px solid #9fb3c6;
+  border-left: 5px solid #1e5b8c;
+  background: #edf4f8;
+}
+.ptplan-paper .ptplan-outcome > strong { color: #17476d; }
+.ptplan-standard {
+  margin: 0 0 10px !important;
+  padding: 9px 11px;
+  background: #f5f6f7;
+}
+.ptplan-formal-table { min-width: 610px; }
+.ptplan-formal-table thead th { text-align: center; }
+.ptplan-formal-table td:first-child { width: 24%; }
+.ptplan-objective-table td:first-child {
+  width: 62px;
+  text-align: center;
+  vertical-align: middle;
+}
+.ptplan-objective-table td:last-child { width: 25%; }
+.ptplan-kpa-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #7d8997;
+  color: #1e3a5f;
+}
+.ptplan-kpa-mark.p { color: #7a4b00; }
+.ptplan-kpa-mark.a { color: #8b2942; }
+
+.ptplan-prose-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 28px;
+}
+.ptplan-prose-grid > div + div {
+  padding-left: 28px;
+  border-left: 1px solid #c7cdd4;
+}
+.ptplan-competency-table td { width: 50% !important; }
+.ptplan-activity-table th:first-child { width: 22%; }
+.ptplan-activity-table th:last-child { width: 23%; }
+.ptplan-activity-table td:first-child strong,
+.ptplan-activity-table td:first-child small { display: block; }
+.ptplan-activity-table td:first-child small { margin-top: 3px; color: #5f6b79; }
+.ptplan-activity-table td p { margin: 0 0 8px; }
+.ptplan-activity-table td p:last-child { margin-bottom: 0; }
+.ptplan-period-number {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 6px;
+  background: #263f60;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.ptplan-resource-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 11px;
+  border: 1px solid #8b949e;
+}
+.ptplan-resource-columns > div {
+  padding: 11px 12px;
+  border-right: 1px solid #8b949e;
+}
+.ptplan-resource-columns > div:last-child { border-right: 0; }
+.ptplan-resource-columns h5 {
+  margin: 0 0 5px;
+  color: #1f2937;
+  font-size: 0.92rem;
+}
+.ptplan-measure-table th:first-child { width: 18%; }
+.ptplan-measure-table th:nth-child(2) { width: 22%; }
+.ptplan-measure-table th:nth-child(3) { width: 28%; }
+
+.ptplan-paper .ptplan-reflection {
+  margin: 0;
+  padding: 18px 0 0 !important;
+  border: 0 !important;
+  background: #fff;
+}
+.ptplan-reflection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.ptplan-paper .ptplan-reflection label {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+  font-weight: 750;
+}
+.ptplan-paper .ptplan-reflection label > span {
+  display: block;
+  min-height: 54px;
+  border-bottom: 1px dotted #5d6670;
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent 26px, #d1d5db 27px);
+}
+.ptplan-signature {
+  width: min(330px, 100%);
+  margin: 28px 0 0 auto;
+  text-align: center;
+}
+.ptplan-signature p { margin: 0; }
+.ptplan-signature strong { display: block; margin-top: 5px; }
+
 @media (max-width: 980px) {
   .ptplan-header,
   .ptplan-section-heading {
@@ -630,6 +856,17 @@
   .ptplan-result button {
     grid-column: 1 / -1;
   }
+
+  .ptplan-resource-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .ptplan-resource-columns > div {
+    border-right: 0;
+    border-bottom: 1px solid #8b949e;
+  }
+
+  .ptplan-resource-columns > div:last-child { border-bottom: 0; }
 }
 
 @media (max-width: 640px) {
@@ -666,6 +903,24 @@
   .ptplan-result button {
     grid-column: auto;
   }
+
+  .ptplan-paper {
+    padding: 20px 15px;
+    font-size: 0.94rem;
+  }
+
+  .ptplan-child-brief,
+  .ptplan-prose-grid,
+  .ptplan-reflection-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ptplan-prose-grid > div + div {
+    padding-top: 16px;
+    padding-left: 0;
+    border-top: 1px solid #c7cdd4;
+    border-left: 0;
+  }
 }
 
 @media print {
@@ -687,6 +942,7 @@
   }
 
   .ptplan-actions,
+  .ptplan-header,
   .ptplan-grade-switch,
   .ptplan-summary,
   .ptplan-tabs,
@@ -694,16 +950,15 @@
     display: none !important;
   }
 
-  .ptplan-header {
-    border: 0;
-    border-bottom: 2px solid #000;
-    padding: 0 0 12px;
-    background: #fff;
-  }
-
   .ptplan-document {
     display: block !important;
-    margin-top: 12px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    font-size: 11pt;
   }
 
   .ptplan-title-block,
@@ -717,5 +972,22 @@
 
   .ptplan-document section {
     break-inside: auto;
+  }
+
+  .ptplan-table-wrap {
+    overflow: visible;
+  }
+
+  .ptplan-table-wrap table,
+  .ptplan-formal-table,
+  .ptplan-meta-table table {
+    min-width: 0;
+  }
+
+  .ptplan-table-wrap tr,
+  .ptplan-resource-columns > div,
+  .ptplan-child-brief,
+  .ptplan-outcome {
+    break-inside: avoid;
   }
 }
