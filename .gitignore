@@ -36,3 +36,10 @@ dist-ssr
 # Course material downloads (do not commit large binaries)
 *.zip
 วิทยาศาสตร์และเทคโนโลยี*/
+
+# เอกสารการสอน/ข้อสอบของครู (.docx) — ห้ามขึ้น GitHub เด็ดขาด
+# โดยเฉพาะข้อสอบ ถ้า repo เป็นสาธารณะ นักเรียนอาจค้นเจอได้
+SSS*/
+sss*/
+แผน*/
+*.docx
