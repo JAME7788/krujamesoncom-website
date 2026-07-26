@@ -44,6 +44,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { findGrade } from '../data/curriculum';
 import { gamesCatalog } from '../data/gamesCatalog';
+import { celebrate } from '../utils/celebrate';
 import { getRichSlides } from '../data/richSlides';
 import type { RichSlide } from '../data/richSlides';
 import { unitExtras } from '../data/unitExtras';
@@ -191,6 +192,19 @@ const MATERIALS: Array<{ id: BlockMaterial; color: string; label: string }> = [
   { id: 'sand', color: '#e0c896', label: 'ทราย' },
   { id: 'ice', color: '#a5d8f0', label: 'น้ำแข็ง' },
   { id: 'ruby', color: '#e11d48', label: 'อัญมณี' },
+];
+
+// ภารกิจสร้าง — เปลี่ยน "การวางบล็อก" ให้เป็น "การเรียนรู้" (มีเป้าหมาย ตรวจได้ ได้ดาว+คะแนน P)
+interface BuildStats { count: number; maxHeight: number; materials: number; ruby: number; }
+interface BuildMission {
+  id: string; icon: string; title: string; concept: string; goal: string; stars: number;
+  check: (s: BuildStats) => boolean; progress: (s: BuildStats) => string;
+}
+const BUILD_MISSIONS: BuildMission[] = [
+  { id: 'wall10', icon: '🧱', title: 'กำแพงเริ่มต้น', concept: 'นับปริมาณและวางแผนใช้ทรัพยากร', goal: 'วางบล็อกรวม 10 ก้อน', stars: 2, check: (s) => s.count >= 10, progress: (s) => `วางแล้ว ${s.count}/10 ก้อน` },
+  { id: 'palette5', icon: '🌈', title: 'จานสีข้อมูล', concept: 'คอมพิวเตอร์เก็บภาพเป็นข้อมูลสี', goal: 'ใช้บล็อกให้ครบ 5 สีต่างกัน', stars: 2, check: (s) => s.materials >= 5, progress: (s) => `ใช้แล้ว ${s.materials}/5 สี` },
+  { id: 'tower8', icon: '🔢', title: 'หอคอย 8 บิต', concept: 'เลขฐานสอง 1 ไบต์ = 8 บิต', goal: 'สร้างหอสูง 8 ชั้น', stars: 3, check: (s) => s.maxHeight >= 8, progress: (s) => `สูง ${s.maxHeight}/8 ชั้น` },
+  { id: 'gems5', icon: '💎', title: 'ล่าอัญมณี', concept: 'เงื่อนไข: เลือกเฉพาะบล็อกอัญมณี', goal: 'วางบล็อกอัญมณี 5 ก้อน', stars: 3, check: (s) => s.ruby >= 5, progress: (s) => `อัญมณี ${s.ruby}/5 ก้อน` },
 ];
 
 const WORLD_SIZE = 96;
@@ -385,6 +399,11 @@ const VirtualClassroom: React.FC = () => {
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
   const [worldStars, setWorldStars] = useState(0);
   const [worldBlockCount, setWorldBlockCount] = useState(0);
+  const [buildStats, setBuildStats] = useState<BuildStats>({ count: 0, maxHeight: 0, materials: 0, ruby: 0 });
+  const [buildMissionIdx, setBuildMissionIdx] = useState(() => {
+    const v = parseInt(localStorage.getItem('kj_world_build_mission') || '0', 10);
+    return Number.isFinite(v) ? Math.min(Math.max(v, 0), BUILD_MISSIONS.length) : 0;
+  });
   const [camouflageColor, setCamouflageColor] = useState(() => playerColor(playerId));
   const [camouflagePose, setCamouflagePose] = useState<CamouflagePose>('stand');
   const [roundClock, setRoundClock] = useState(() => Date.now());
@@ -1110,6 +1129,8 @@ const VirtualClassroom: React.FC = () => {
     portalMeshes.push(portalBase, portalArch, portalScreen);
 
     const tableMaterial = new THREE.MeshStandardMaterial({ color: 0xc58b4c, roughness: 0.75 });
+    // แพลตฟอร์มที่ยืน/กระโดดขึ้นไปเหยียบได้ (เช่น ผิวโต๊ะ) — AABB + ความสูงผิวด้านบน
+    const platforms: { minX: number; maxX: number; minZ: number; maxZ: number; top: number }[] = [];
     [-5.2, 0, 5.2].forEach((x) => {
       [0, 4.3].forEach((z) => {
         const table = new THREE.Group();
@@ -1125,6 +1146,8 @@ const VirtualClassroom: React.FC = () => {
         }));
         table.position.set(x, 0, z);
         scene.add(table);
+        // ผิวโต๊ะ: y = 1.05 + 0.18/2 = 1.14, กว้าง 3.6 (x) ลึก 1.45 (z)
+        platforms.push({ minX: x - 1.8, maxX: x + 1.8, minZ: z - 0.725, maxZ: z + 0.725, top: 1.14 });
       });
     });
 
@@ -1224,6 +1247,20 @@ const VirtualClassroom: React.FC = () => {
 
     const syncBlocks = (blocks: WorldBlock[]) => {
       setWorldBlockCount(blocks.length);
+      // สถิติบล็อกของผู้เล่นคนนี้ — ใช้ตรวจภารกิจสร้าง
+      const mine = blocks.filter((b) => b.ownerId === playerId);
+      const columns = new Map<string, number>();
+      const mats = new Set<string>();
+      let ruby = 0;
+      mine.forEach((b) => {
+        const key = `${b.x},${b.z}`;
+        columns.set(key, Math.max(columns.get(key) || 0, b.y + 0.5));
+        mats.add(b.material);
+        if (b.material === 'ruby') ruby += 1;
+      });
+      let maxHeight = 0;
+      columns.forEach((h) => { if (h > maxHeight) maxHeight = h; });
+      setBuildStats({ count: mine.length, maxHeight: Math.round(maxHeight), materials: mats.size, ruby });
       const nextIds = new Set(blocks.map((block) => block.id));
       blockMeshes.forEach((mesh, id) => {
         if (nextIds.has(id)) return;
@@ -1742,6 +1779,11 @@ const VirtualClassroom: React.FC = () => {
         const top = b.y + 0.5;
         if (top > floorTop && top <= feetY + 0.35) floorTop = top;
       });
+      // ยืน/กระโดดขึ้นเหยียบผิวโต๊ะ (และแพลตฟอร์มอื่น) ได้
+      platforms.forEach((pf) => {
+        if (playerPosition.x < pf.minX || playerPosition.x > pf.maxX || playerPosition.z < pf.minZ || playerPosition.z > pf.maxZ) return;
+        if (pf.top > floorTop && pf.top <= feetY + 0.35) floorTop = pf.top;
+      });
       const floorCamera = floorTop + 1.7;
       if (playerPosition.y <= floorCamera) {
         playerPosition.y = floorCamera;
@@ -1889,6 +1931,24 @@ const VirtualClassroom: React.FC = () => {
   const holdDirection = (code: string, active: boolean) => {
     if (active) keysRef.current.add(code);
     else keysRef.current.delete(code);
+  };
+
+  const currentBuildMission = BUILD_MISSIONS[buildMissionIdx];
+  const checkBuildMission = () => {
+    const m = currentBuildMission;
+    if (!m) return;
+    if (!m.check(buildStats)) {
+      setStatus(`ภารกิจยังไม่ครบ — ${m.progress(buildStats)}`);
+      return;
+    }
+    celebrate();
+    setWorldStars((s) => s + m.stars);
+    setStatus(`สำเร็จภารกิจ "${m.title}" +${m.stars}⭐`);
+    const unitNo = boards[0]?.unitNo || 1;
+    void recordActivity('artifact', `u${unitNo}-build-${m.id}`, unitNo, `ภารกิจสร้าง: ${m.title} — ${m.concept}`);
+    const nextIdx = buildMissionIdx + 1;
+    setBuildMissionIdx(nextIdx);
+    localStorage.setItem('kj_world_build_mission', String(nextIdx));
   };
 
   const selectedSlide = selectedBoard?.slides[slideIndex];
@@ -2213,6 +2273,19 @@ const VirtualClassroom: React.FC = () => {
           <strong>{worldBlockCount.toLocaleString('th-TH')}/{MAX_WORLD_BLOCKS.toLocaleString('th-TH')}</strong>
           <span>ระยะ {BUILD_REACH} ช่อง • สูง {BUILD_MAX_HEIGHT} ชั้น</span>
         </div>
+      )}
+
+      {mode === 'build' && currentBuildMission && (
+        <div style={{ position: 'absolute', zIndex: 6, top: 146, right: 14, width: 204, background: 'rgba(255,255,255,0.94)', border: '1px solid rgba(15,23,42,0.12)', borderRadius: 10, boxShadow: '0 8px 24px rgba(15,23,42,0.14)', backdropFilter: 'blur(8px)', padding: '10px 12px' }}>
+          <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#4f46e5', display: 'flex', alignItems: 'center', gap: 5 }}>{currentBuildMission.icon} ภารกิจสร้าง {buildMissionIdx + 1}/{BUILD_MISSIONS.length}</div>
+          <div style={{ fontWeight: 700, fontSize: '0.88rem', margin: '5px 0 2px', color: '#172033' }}>{currentBuildMission.goal}</div>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', lineHeight: 1.45 }}>💡 {currentBuildMission.concept}</div>
+          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f766e', margin: '7px 0' }}>{currentBuildMission.progress(buildStats)}</div>
+          <button onClick={checkBuildMission} style={{ width: '100%', padding: '8px', borderRadius: 8, border: 0, background: currentBuildMission.check(buildStats) ? '#22c55e' : '#6366f1', color: '#fff', fontWeight: 800, fontSize: '0.8rem', fontFamily: 'inherit', cursor: 'pointer' }}>✓ ตรวจภารกิจ (+{currentBuildMission.stars}⭐)</button>
+        </div>
+      )}
+      {mode === 'build' && !currentBuildMission && (
+        <div style={{ position: 'absolute', zIndex: 6, top: 146, right: 14, width: 204, background: 'rgba(220,252,231,0.95)', border: '1px solid #86efac', borderRadius: 10, padding: '10px 12px', fontSize: '0.82rem', fontWeight: 700, color: '#15803d' }}>🎉 ทำภารกิจสร้างครบทุกข้อแล้ว! เก่งมาก</div>
       )}
 
       <div className="world-mode-control" role="group" aria-label="โหมดการใช้งาน">
