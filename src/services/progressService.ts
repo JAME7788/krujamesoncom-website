@@ -587,7 +587,13 @@ export const trackMediaClick = async (
   gradeId: string,
   unitNo: number,
   type: 'video' | 'fun' | 'article',
-  detail: string
+  detail: string,
+  /**
+   * คีย์กันซ้ำ — ต้อง "คงที่ต่อกิจกรรม" (ห้ามมีคะแนน/เวลา/ค่าที่เปลี่ยนทุกครั้ง)
+   * ไม่ส่งมา = ใช้ detail เหมือนเดิม
+   * มีไว้ให้ detail แสดงรายละเอียดเพิ่มได้ โดยไม่ทำให้การกันปั๊มคะแนนพัง
+   */
+  dedupKey?: string,
 ): Promise<boolean> => {
   if (!studentId) return false;
   let data = cache.get(studentId);
@@ -595,11 +601,12 @@ export const trackMediaClick = async (
   const k = unitKey(gradeId, unitNo);
   const u = data.units[k] || emptyUnit();
   const list = type === 'video' ? u.videosClicked : type === 'fun' ? u.funClicked : u.articlesClicked;
+  const key = dedupKey ?? detail;
   // รายการเดิมยังถือว่าบันทึกสำเร็จ แต่ไม่เขียน Firebase/เพิ่ม activity ซ้ำ
   // ช่วยกันการกดซ้ำเพื่อปั๊ม XP และลดจำนวน write ในห้องเรียนจริง
-  if (list.includes(detail)) return true;
-  list.push(detail);
-  recordScoreEvidence(studentId, u, type, detail);
+  if (list.includes(key)) return true;
+  list.push(key);
+  recordScoreEvidence(studentId, u, type, key);
   recordInClassDayIfApplicable(studentId, u);
   recordDailyActivity(data);
   u.updatedAt = Date.now();

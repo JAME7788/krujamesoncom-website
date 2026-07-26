@@ -265,12 +265,15 @@ export const recordGameProgress = async (
     );
     for (const target of targets) {
       const scoreText = typeof score === 'number' ? ` score=${score}` : '';
+      // กันซ้ำด้วยชื่อเกม (คงที่) ไม่รวมคะแนน — ไม่งั้นเล่นซ้ำแล้วได้คะแนนต่างกัน
+      // จะกลายเป็นคนละรายการ ทำให้ปั๊มคะแนน P ได้เรื่อย ๆ
       const stored = await trackMediaClick(
         student.id,
         target.gradeId,
         target.unitNo,
         'fun',
-        `[Game] ${gameTitle}${scoreText}`
+        `[Game] ${gameTitle}${scoreText}`,
+        `[Game] ${gameTitle}`,
       );
       if (!stored) {
         throw new Error(`บันทึกผลเกมของ ${student.name} ลง Firebase ไม่สำเร็จ`);
