@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "qa:games": "node scripts/qa-game-content.mjs",
-    "qa:world": "node scripts/qa-virtual-world.mjs"
+    "qa:world": "node scripts/qa-virtual-world.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "qa:smoke": "node scripts/qa-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.185.1",
@@ -36,6 +39,7 @@
     "pngjs": "^7.0.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.9"
+    "vite": "^8.0.9",
+    "vitest": "^4.1.10"
   }
 }
