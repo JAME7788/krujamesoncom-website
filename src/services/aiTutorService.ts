@@ -65,8 +65,52 @@ export const clearHistory = (userId: string) => {
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
-export const askAI = async (userId: string, userMessage: string): Promise<ChatMessage> => {
+/**
+ * ปลายทางเริ่มต้น = proxy ฝั่งเซิร์ฟเวอร์ (api/ai-tutor.js) ซึ่งถือ API key ไว้เอง
+ * เบราว์เซอร์จึงไม่ต้องรู้ key เลย — ปลอดภัยกว่าเดิมที่เก็บ key ไว้ใน localStorage
+ * (โหมดใส่ key ตรงยังใช้ได้ ถ้าครูตั้งค่าไว้ แต่ไม่แนะนำเพราะนักเรียนอ่าน key ได้)
+ */
+const DEFAULT_PROXY_URL = '/api/ai-tutor';
+
+interface CallOptions {
+  system?: string;
+  maxTokens?: number;
+}
+
+/** เรียก AI ผ่าน proxy (หรือผ่าน key ตรงถ้าครูตั้งไว้) — คืน null ถ้าเรียกไม่ได้ */
+const callClaude = async (
+  messages: Array<{ role: string; content: string }>,
+  options: CallOptions = {},
+): Promise<string | null> => {
   const settings = loadSettings();
+  const usingDirectKey = Boolean(settings.apiKey);
+  const url = settings.apiUrl || (usingDirectKey ? 'https://api.anthropic.com/v1/messages' : DEFAULT_PROXY_URL);
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (usingDirectKey) {
+    headers['x-api-key'] = settings.apiKey as string;
+    headers['anthropic-version'] = '2023-06-01';
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  }
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model: settings.model,
+      max_tokens: options.maxTokens ?? 1024,
+      system: options.system ?? settings.systemPrompt,
+      messages,
+    }),
+  });
+
+  // 503 = เซิร์ฟเวอร์ยังไม่ได้ตั้ง ANTHROPIC_API_KEY → ให้ผู้เรียกถอยไปใช้คำตอบสำรอง
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.content?.[0]?.text || null;
+};
+
+export const askAI = async (userId: string, userMessage: string): Promise<ChatMessage> => {
   const history = loadHistory(userId);
 
   // Add user message
@@ -78,35 +122,14 @@ export const askAI = async (userId: string, userMessage: string): Promise<ChatMe
 
   let aiResponse = '';
 
-  if (settings.apiKey) {
-    // Call Claude API
-    try {
-      const url = settings.apiUrl || 'https://api.anthropic.com/v1/messages';
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': settings.apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: settings.model,
-          max_tokens: 1024,
-          system: settings.systemPrompt,
-          messages: history.filter((m) => m.role !== 'system').map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-        }),
-      });
-      const data = await res.json();
-      aiResponse = data.content?.[0]?.text || 'ขอโทษนะ ครู AI ตอบไม่ได้ตอนนี้';
-    } catch (e) {
-      aiResponse = `❌ ติดต่อ AI ไม่ได้ — โปรดติดต่อครูเจมส์เพื่อตั้งค่า API\n(${e})`;
-    }
-  } else {
-    // Fallback canned response
+  // ลองเรียก AI จริงก่อน (ผ่าน proxy ฝั่งเซิร์ฟเวอร์) — ถ้ายังไม่ได้ตั้งค่า
+  // หรือเรียกไม่สำเร็จ ค่อยถอยไปใช้คำตอบสำเร็จรูป เพื่อให้เด็กยังใช้งานต่อได้
+  try {
+    const reply = await callClaude(
+      history.filter((m) => m.role !== 'system').map((m) => ({ role: m.role, content: m.content })),
+    );
+    aiResponse = reply || getCannedResponse(userMessage);
+  } catch {
     aiResponse = getCannedResponse(userMessage);
   }
 
@@ -127,27 +150,14 @@ export const completeText = async (
   system?: string,
   maxTokens = 4096,
 ): Promise<string | null> => {
-  const settings = loadSettings();
-  if (!settings.apiKey) return null;
   try {
-    const url = settings.apiUrl || 'https://api.anthropic.com/v1/messages';
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': settings.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: settings.model,
-        max_tokens: maxTokens,
+    return await callClaude(
+      [{ role: 'user', content: prompt }],
+      {
         system: system || 'คุณเป็นผู้ช่วยเขียนเอกสารวิชาการภาษาไทยที่เชี่ยวชาญด้านการศึกษาและวิจัย',
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-    const data = await res.json();
-    return data.content?.[0]?.text || null;
+        maxTokens,
+      },
+    );
   } catch (e) {
     console.warn('completeText failed', e);
     return null;
