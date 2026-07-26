@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, Lightbulb, Eraser } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
 interface Pic {
@@ -82,11 +83,13 @@ const PixelArtGame: React.FC = () => {
   };
 
   const check = () => {
-    recordGame(score);
     const win = grid.every((row, r) => row.every((v, c) => v === target[r][c]));
     if (win) {
       setChecked('correct');
-      setScore((s) => s + 10);
+      const nextScore = score + 10;
+      setScore(nextScore);
+      // บันทึกเมื่อทำถูกเท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
+      recordGame(nextScore);
       setStreak((st) => {
         const ns = st + 1;
         if (ns > best) { setBest(ns); localStorage.setItem('kj_pixel_best', String(ns)); }
@@ -108,6 +111,7 @@ const PixelArtGame: React.FC = () => {
       </div>
 
       <div className="game-stats">
+        <GameLearnCard gameKey="pixel-art" />
         <div className="gstat">🏆 คะแนน: <strong>{score}</strong></div>
         <div className="gstat">🎨 รูป: <strong>{Math.min(picPosition + 1, picOrder.length)}/{picOrder.length}</strong></div>
         <div className="gstat">🔥 ติดต่อกัน: <strong>{streak}</strong></div>

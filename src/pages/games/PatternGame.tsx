@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
 interface Pattern {
@@ -194,9 +195,11 @@ const PatternGame: React.FC = () => {
   const submit = (choice: string) => {
     setPicked(choice);
     setShowResult(true);
-    recordGame(score);
     if (choice === pattern.answer) {
-      setScore((s) => s + 20 + level * 5);
+      const nextScore = score + 20 + level * 5;
+      setScore(nextScore);
+      // บันทึกเมื่อตอบถูกเท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
+      recordGame(nextScore);
       setStreak((st) => {
         const ns = st + 1;
         if (ns > bestStreak) {
@@ -220,6 +223,7 @@ const PatternGame: React.FC = () => {
       </div>
 
       <div className="game-stats">
+        <GameLearnCard gameKey="pattern" />
         <div className="gstat">🏆 คะแนน: <strong>{score}</strong></div>
         <div className="gstat">🔥 ติดต่อกัน: <strong>{streak}</strong></div>
         <div className="gstat">📊 รอบที่: <strong>{Math.min(round, SESSION_ROUNDS)}/{SESSION_ROUNDS}</strong></div>

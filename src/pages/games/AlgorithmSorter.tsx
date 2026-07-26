@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
 interface Puzzle {
@@ -237,11 +238,13 @@ const AlgorithmSorter: React.FC = () => {
 
   const check = () => {
     setChecked(true);
-    recordGame(score);
     const correct = items.every((it, i) => it === puzzle.steps[i]);
     if (correct) {
-      setScore((s) => s + 50);
+      const nextScore = score + 50;
+      setScore(nextScore);
       setSolvedCount((c) => c + 1);
+      // บันทึกเมื่อเรียงถูกเท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
+      recordGame(nextScore);
     }
   };
 
@@ -280,6 +283,7 @@ const AlgorithmSorter: React.FC = () => {
       </div>
 
       <div className="game-stats">
+        <GameLearnCard gameKey="algorithm" />
         <div className="gstat">🏆 คะแนน: <strong>{score}</strong></div>
         <div className="gstat">✅ แก้ได้: <strong>{solvedCount}</strong> ปริศนา</div>
         <div className="gstat">📋 ปริศนา <strong>{puzzleIdx + 1} / {puzzles.length}</strong></div>

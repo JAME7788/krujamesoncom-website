@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, Lightbulb, Power } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
 type Gate = 'AND' | 'OR' | 'NOT' | 'XOR' | 'NAND' | 'NOR' | 'COMBO';
@@ -86,10 +87,12 @@ const LogicGatesGame: React.FC = () => {
   };
 
   const check = () => {
-    recordGame(score);
     if (output === round.target) {
       setChecked('correct');
-      setScore((s) => s + 10);
+      const nextScore = score + 10;
+      setScore(nextScore);
+      // บันทึกเมื่อ "ตอบถูก" เท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
+      recordGame(nextScore);
       setStreak((st) => { const ns = st + 1; if (ns > best) { setBest(ns); localStorage.setItem('kj_logic_best', String(ns)); } return ns; });
     } else {
       setChecked('wrong');
@@ -111,6 +114,7 @@ const LogicGatesGame: React.FC = () => {
       </div>
 
       <div className="game-stats">
+        <GameLearnCard gameKey="logic-gates" />
         <div className="gstat">🏆 คะแนน: <strong>{score}</strong></div>
         <div className="gstat">🔌 ข้อ: <strong>{Math.min(roundNumber, SESSION_ROUNDS)}/{SESSION_ROUNDS}</strong></div>
         <div className="gstat">🔥 ติดต่อกัน: <strong>{streak}</strong></div>

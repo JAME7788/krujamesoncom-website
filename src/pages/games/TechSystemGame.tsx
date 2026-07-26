@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, Lightbulb } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
 type Part = 'input' | 'process' | 'output';
@@ -94,11 +95,13 @@ const TechSystemGame: React.FC = () => {
   };
 
   const check = () => {
-    recordGame(score);
     const win = SLOTS.every((s) => placed[s.key] === s.key);
     if (win) {
       setChecked('correct');
-      setScore((s) => s + 10);
+      const nextScore = score + 10;
+      setScore(nextScore);
+      // บันทึกเมื่อทำถูกเท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
+      recordGame(nextScore);
       setStreak((st) => { const ns = st + 1; if (ns > best) { setBest(ns); localStorage.setItem('kj_techsys_best', String(ns)); } return ns; });
     } else { setChecked('wrong'); setStreak(0); }
   };
@@ -113,6 +116,7 @@ const TechSystemGame: React.FC = () => {
       </div>
 
       <div className="game-stats">
+        <GameLearnCard gameKey="tech-system" />
         <div className="gstat">🏆 คะแนน: <strong>{score}</strong></div>
         <div className="gstat">⚙️ ระบบ: <strong>{Math.min(roundIndex + 1, session.length)}/{session.length}</strong></div>
         <div className="gstat">🔥 ติดต่อกัน: <strong>{streak}</strong></div>
