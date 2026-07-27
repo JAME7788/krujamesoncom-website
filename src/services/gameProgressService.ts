@@ -39,8 +39,10 @@ export type GameProgressId =
   | 'algorithm-runner-3d'
   | 'coding-studio'
   | 'circuit-lab'
+  | 'robot-maker'
   | 'tech-system'
-  | 'search-smart';
+  | 'search-smart'
+  | 'ct-board';
 
 type StudentLike = {
   id: string;
@@ -167,9 +169,16 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
   if (normalizedGameId === 'circuit-lab') {
     return [isPrimary ? primaryDigitalUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
+  if (normalizedGameId === 'robot-maker') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleDesignUnit(classroom)];
+  }
   // ระบบทางเทคโนโลยี (Input–Process–Output) — การออกแบบและเทคโนโลยี
   if (normalizedGameId === 'tech-system') {
     return [isPrimary ? primaryDigitalUnit(classroom) : middleDesignUnit(classroom)];
+  }
+  // บอร์ดเกมแนวคิดเชิงคำนวณ — ครอบทั้ง 4 ทักษะ
+  if (normalizedGameId === 'ct-board') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
   // ค้นหา/คัดเลือกข้อมูลอย่างมีประสิทธิภาพ — ตามผลลัพธ์การเรียนรู้ข้อ 5
   if (normalizedGameId === 'search-smart') {
@@ -198,6 +207,13 @@ const subjectsForClassroom = (
 };
 
 const hydratedGradebooks = new Set<string>();
+
+export const buildGameProgressDedupKey = (gameTitle: string, activityKey?: string): string => {
+  const normalizedActivityKey = activityKey?.trim().replace(/\s+/g, '-').slice(0, 120);
+  return normalizedActivityKey
+    ? `[Game] ${gameTitle}:${normalizedActivityKey}`
+    : `[Game] ${gameTitle}`;
+};
 
 /** อัปเดต K/P/A ในกระดาษเกรดจาก progress ของนักเรียน (ใช้ทุกครั้งหลังบันทึกกิจกรรม) */
 export const syncStudentGradesFromProgress = async (
@@ -244,7 +260,8 @@ export const recordGameProgress = async (
   gameId: GameProgressId,
   gameTitle: string,
   students: Array<StudentLike | null | undefined>,
-  score?: number
+  score?: number,
+  activityKey?: string,
 ) => {
   let saved = 0;
   const seen = new Set<string>();
@@ -265,6 +282,9 @@ export const recordGameProgress = async (
     );
     for (const target of targets) {
       const scoreText = typeof score === 'number' ? ` score=${score}` : '';
+      const normalizedActivityKey = activityKey?.trim().replace(/\s+/g, '-').slice(0, 120);
+      const activityText = normalizedActivityKey ? ` activity=${normalizedActivityKey}` : '';
+      const dedupKey = buildGameProgressDedupKey(gameTitle, activityKey);
       // กันซ้ำด้วยชื่อเกม (คงที่) ไม่รวมคะแนน — ไม่งั้นเล่นซ้ำแล้วได้คะแนนต่างกัน
       // จะกลายเป็นคนละรายการ ทำให้ปั๊มคะแนน P ได้เรื่อย ๆ
       const stored = await trackMediaClick(
@@ -272,8 +292,8 @@ export const recordGameProgress = async (
         target.gradeId,
         target.unitNo,
         'fun',
-        `[Game] ${gameTitle}${scoreText}`,
-        `[Game] ${gameTitle}`,
+        `[Game] ${gameTitle}${activityText}${scoreText}`,
+        dedupKey,
       );
       if (!stored) {
         throw new Error(`บันทึกผลเกมของ ${student.name} ลง Firebase ไม่สำเร็จ`);

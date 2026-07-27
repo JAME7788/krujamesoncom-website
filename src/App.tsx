@@ -34,6 +34,8 @@ const FileOrganizerGame = React.lazy(() => import('./pages/games/FileOrganizerGa
 const AlgorithmRunner3D = React.lazy(() => import('./pages/games/AlgorithmRunner3D'));
 const CodingStudioGame = React.lazy(() => import('./pages/games/CodingStudioGame'));
 const CircuitLabGame = React.lazy(() => import('./pages/games/CircuitLabGame'));
+const CTBoardGame = React.lazy(() => import('./pages/games/CTBoardGame'));
+const RobotMakerGame = React.lazy(() => import('./pages/games/RobotMakerGame'));
 const TechSystemGame = React.lazy(() => import('./pages/games/TechSystemGame'));
 const SearchSmartGame = React.lazy(() => import('./pages/games/SearchSmartGame'));
 const MemoryMatch = React.lazy(() => import('./pages/games/MemoryMatch'));
@@ -105,6 +107,8 @@ function App() {
                   <Route path="/games/algorithm-runner-3d" element={<LoginPromptOverlay><AlgorithmRunner3D /></LoginPromptOverlay>} />
                   <Route path="/games/coding-studio" element={<LoginPromptOverlay><CodingStudioGame /></LoginPromptOverlay>} />
                   <Route path="/games/circuit-lab" element={<LoginPromptOverlay><CircuitLabGame /></LoginPromptOverlay>} />
+                  <Route path="/games/ct-board" element={<LoginPromptOverlay><CTBoardGame /></LoginPromptOverlay>} />
+                  <Route path="/games/robot-maker" element={<LoginPromptOverlay><RobotMakerGame /></LoginPromptOverlay>} />
                   <Route path="/games/tech-system" element={<LoginPromptOverlay><TechSystemGame /></LoginPromptOverlay>} />
                   <Route path="/games/search-smart" element={<LoginPromptOverlay><SearchSmartGame /></LoginPromptOverlay>} />
                   <Route path="/tools" element={<Tools />} />
