@@ -9,6 +9,7 @@ import {
   BOARD, CT_PILLARS, PILLAR_ORDER, PLAYER_TOKENS, QUESTION_BANK,
 } from '../../data/ctBoardGame';
 import type { CTPillar, CTQuestion } from '../../data/ctBoardGame';
+import { celebrateVictory } from '../../utils/victoryEffect';
 import './GameStyles.css';
 
 type Phase = 'setup' | 'roll' | 'card' | 'info' | 'won';
@@ -64,6 +65,12 @@ const CTBoardGame: React.FC = () => {
     setMessage(`ถึงตา ${PLAYER_TOKENS[nt].name} ทอยลูกเต๋า`);
   };
 
+  /** จบเกมด้วยชัยชนะ — เปลี่ยนหน้าจอพร้อมยิงเอฟเฟกต์พลุ */
+  const win = () => {
+    setPhase('won');
+    celebrateVictory();
+  };
+
   const roll = () => {
     if (!me) return;
     const value = rollDice();
@@ -79,7 +86,7 @@ const CTBoardGame: React.FC = () => {
     const current = updated[turn];
 
     if (pos === LAST) {
-      if (hasAll(current)) { setPhase('won'); setMessage(''); void recordGame(current.score); return; }
+      if (hasAll(current)) { win(); setMessage(''); void recordGame(current.score); return; }
       const missing = PILLAR_ORDER.filter((k) => !current.stars.includes(k));
       setCard(drawCard(missing[0]));
       setPhase('card');
@@ -118,7 +125,7 @@ const CTBoardGame: React.FC = () => {
       // ถ้าอยู่เส้นชัยและเก็บดาวครบแล้ว = ชนะทันที
       const after = updated[turn];
       if (after.pos === LAST && hasAll(after)) {
-        setTimeout(() => { setPhase('won'); void recordGame(after.score); }, 900);
+        setTimeout(() => { win(); void recordGame(after.score); }, 900);
       }
     }
   };
@@ -126,7 +133,7 @@ const CTBoardGame: React.FC = () => {
   const continueTurn = () => {
     if (!me) return;
     const after = players[turn];
-    if (after.pos === LAST && hasAll(after)) { setPhase('won'); void recordGame(after.score); return; }
+    if (after.pos === LAST && hasAll(after)) { win(); void recordGame(after.score); return; }
     nextTurn(players);
   };
 

@@ -60,6 +60,7 @@ import type {
   TycoonRoom,
   TycoonRoomSyncMode,
 } from '../../services/tycoonMultiplayerService';
+import { celebrateVictory } from '../../utils/victoryEffect';
 import './GameStyles.css';
 
 type Phase = 'setup' | TycoonGamePhase;
@@ -342,7 +343,7 @@ const TycoonGame: React.FC = () => {
     setPs(list);
     setFinishReason(reason);
     setPhase('over');
-    playTone(880, 0.35);
+    celebrateVictory(); // 🎆 พลุ + ริบบิ้นทอง + แฟนแฟร์ชัยชนะ
     void recordGame(winner ? Math.max(10, learningScore) : 10);
   };
 
