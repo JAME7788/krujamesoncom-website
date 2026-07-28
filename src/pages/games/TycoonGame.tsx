@@ -48,6 +48,7 @@ const TycoonGame: React.FC = () => {
   const [chance, setChance] = useState<ChanceCard | null>(null);
   const [msg, setMsg] = useState('');
   const [buyTile, setBuyTile] = useState<number | null>(null);
+  const [view3d, setView3d] = useState(true);
 
   const me = ps[turn];
   const alive = ps.filter((p) => !p.out);
@@ -274,10 +275,14 @@ const TycoonGame: React.FC = () => {
         <div className="gstat">🎯 ตาของ: <strong>{TYCOON_TOKENS[turn].emoji} {TYCOON_TOKENS[turn].name}</strong></div>
         {dice !== null && <div className="gstat">🎲 <strong>{dice}</strong></div>}
         <div className="gstat">👥 เหลือ <strong>{alive.length}</strong> คน</div>
+        <button className="gstat" onClick={() => setView3d((v) => !v)} title="สลับมุมมองกระดาน">
+          {view3d ? '🧊 มุมมอง 3D' : '⬜ มุมมอง 2D'}
+        </button>
       </div>
 
       <div className="tyc-wrap">
-        {/* กระดานสี่เหลี่ยม */}
+        {/* กระดานสี่เหลี่ยม — มุมมอง 3D เอียงเหมือนวางบนโต๊ะจริง */}
+        <div className={`tyc-stage ${view3d ? 'is3d' : ''}`}>
         <div className="tyc-board">
           {TYCOON_BOARD.map((tile, i) => {
             const [r, c] = tileGridPos(i);
@@ -291,8 +296,10 @@ const TycoonGame: React.FC = () => {
                 style={{
                   gridRow: r, gridColumn: c,
                   borderTopColor: pr ? pr.groupColor : undefined,
-                  borderTopWidth: pr ? 6 : undefined,
-                  background: owner ? `${TYCOON_TOKENS[owner.idx].color}22` : undefined,
+                  borderTopWidth: pr ? 10 : undefined,
+                  background: owner
+                    ? `linear-gradient(180deg, ${TYCOON_TOKENS[owner.idx].color}55, #ffffff)`
+                    : pr ? `linear-gradient(180deg, ${pr.groupColor}2e, #ffffff)` : undefined,
                 }}
               >
                 {pr ? (
@@ -301,6 +308,11 @@ const TycoonGame: React.FC = () => {
                     <span className="tyc-name">{pr.name}</span>
                     <span className="tyc-price">{baht(pr.price)}</span>
                     {owner && <span className="tyc-owner" style={{ background: TYCOON_TOKENS[owner.idx].color }}>{TYCOON_TOKENS[owner.idx].emoji}</span>}
+                    {owner && (
+                      <span className="tyc-house" style={{ '--h': TYCOON_TOKENS[owner.idx].color } as React.CSSProperties} aria-hidden="true">
+                        <i /><i /><i />
+                      </span>
+                    )}
                   </>
                 ) : (
                   <>
@@ -327,6 +339,7 @@ const TycoonGame: React.FC = () => {
             <b>เศรษฐีวิทยาการคำนวณ</b>
             <small>ตอบถูก = ได้สิทธิ์ซื้อที่ดิน</small>
           </div>
+        </div>
         </div>
 
         {/* แผงผู้เล่น */}
@@ -417,15 +430,49 @@ const TycoonStyles: React.FC = () => (
     .tyc-wrap { display: grid; grid-template-columns: 1fr 250px; gap: 14px; align-items: start; }
     @media (max-width: 900px) { .tyc-wrap { grid-template-columns: 1fr; } }
 
+    /* ---------- เวที 3D: เอียงกระดานให้เหมือนวางบนโต๊ะจริง ---------- */
+    .tyc-stage { perspective: 1500px; perspective-origin: 50% 30%; padding: 4px 0 26px; }
+    .tyc-stage.is3d {
+      background: radial-gradient(ellipse at 50% 62%, #6b4a2f 0%, #4a3220 55%, #2b1d13 100%);
+      border-radius: 20px; padding: 30px 10px 46px;
+      box-shadow: inset 0 0 60px rgba(0,0,0,0.45);
+    }
+    .tyc-stage.is3d .tyc-board {
+      transform: rotateX(44deg) scale(1.02);
+      transform-style: preserve-3d;
+      box-shadow: 0 40px 60px rgba(0,0,0,0.5);
+      transition: transform 0.45s ease;
+    }
+    /* ความหนาของช่อง — เงาแนวตั้งอ่านเป็นขอบนูนเมื่อกระดานเอียง */
+    .tyc-stage.is3d .tyc-tile {
+      box-shadow: 0 10px 0 rgba(15,23,42,0.6), 0 14px 14px rgba(0,0,0,0.4);
+      transform: translateZ(10px);
+    }
+    .tyc-stage.is3d .tyc-tokens i {
+      filter: drop-shadow(0 3px 2px rgba(0,0,0,0.5));
+      transform: translateZ(22px) scale(1.5);
+    }
+    .tyc-stage.is3d .tyc-center { transform: translateZ(2px); }
+
+    /* บ้าน 3 มิติบนที่ดินที่ซื้อแล้ว */
+    .tyc-house { position: absolute; top: 1px; left: 2px; display: flex; gap: 1px; }
+    .tyc-house i {
+      width: 5px; height: 5px; border-radius: 1px; background: var(--h, #16a34a);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.35);
+    }
+    .tyc-stage.is3d .tyc-house i { transform: translateZ(6px); }
+
     .tyc-board {
       display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
-      gap: 4px; aspect-ratio: 1; background: #0f172a; padding: 8px; border-radius: 16px;
+      gap: 4px; aspect-ratio: 1; background: linear-gradient(145deg, #1e293b, #0f172a); padding: 9px; border-radius: 16px; border: 3px solid #b45309;
+      transition: transform 0.45s ease;
     }
     .tyc-tile {
       position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 1px; background: #fff; border-radius: 7px; border-top: 3px solid transparent;
       padding: 2px; overflow: hidden; min-height: 0;
     }
+    .tyc-tile.k-property { background: linear-gradient(180deg, #ffffff 55%, rgba(0,0,0,0.06) 100%); }
     .tyc-tile.k-start { background: #dcfce7; }
     .tyc-tile.k-rest { background: #fee2e2; }
     .tyc-tile.k-gotoRest { background: #ffe4e6; }
