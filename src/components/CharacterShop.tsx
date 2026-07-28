@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Coins, Check, Lock, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from './Toast';
-import { SHOP_CHARACTERS, FREE_CHARACTER_ID } from '../data/characterShop';
+import { SHOP_CHARACTERS, isCharacterUnlocked } from '../data/characterShop';
 import type { ShopCharacter } from '../data/characterShop';
 import { getCoins, getOwnedCharacters, buyCharacter } from '../services/coinService';
 
@@ -18,19 +18,16 @@ const CharacterShop: React.FC<Props> = ({ onSelect, selectedId }) => {
   const { user } = useAuth();
   const toast = useToast();
   const [coins, setCoins] = useState(() => getCoins(user?.id));
-  const [owned, setOwned] = useState<string[]>(() => {
-    const list = getOwnedCharacters(user?.id);
-    return list.includes(FREE_CHARACTER_ID) ? list : [FREE_CHARACTER_ID, ...list];
-  });
+  const [owned, setOwned] = useState<string[]>(() => getOwnedCharacters(user?.id));
 
-  const isOwned = (c: ShopCharacter) => c.price === 0 || owned.includes(c.id);
+  const isOwned = (c: ShopCharacter) => isCharacterUnlocked(c.id, owned);
 
   const handleBuy = (c: ShopCharacter) => {
     const result = buyCharacter(c.id, c.price, user?.id);
     setCoins(result.coins);
     if (result.ok) {
       setOwned((list) => [...list, c.id]);
-      toast.show(`ปลดล็อก ${c.emoji} ${c.name} แล้ว! พลัง "${c.abilityName}" พร้อมใช้งาน`, 'success');
+      toast.show(`ปลดล็อก ${c.name} แล้ว! พลัง "${c.abilityName}" พร้อมใช้งาน`, 'success');
       return;
     }
     if (result.reason === 'not_enough') {
@@ -53,14 +50,12 @@ const CharacterShop: React.FC<Props> = ({ onSelect, selectedId }) => {
           const own = isOwned(c);
           const active = selectedId === c.id;
           return (
-            <div key={c.id} className={`cshop-card ${own ? 'own' : 'locked'} ${active ? 'active' : ''}`} style={{ '--c': c.color } as React.CSSProperties}>
+            <div key={c.id} className={`cshop-card ${own ? 'own' : 'locked'} ${active ? 'active' : ''}`} style={{ '--c': c.accent } as React.CSSProperties}>
               <div className="cshop-avatar">
-                {c.image
-                  ? <img src={c.image} alt={c.name} loading="lazy" />
-                  : <span>{c.emoji}</span>}
+                <img src={c.image} alt={c.name} loading="lazy" />
                 {own && <span className="cshop-tick"><Check size={12} /></span>}
               </div>
-              <b className="cshop-name">{c.emoji} {c.name}</b>
+              <b className="cshop-name">{c.name}</b>
               <span className="cshop-role">{c.role}</span>
 
               <div className="cshop-ability">

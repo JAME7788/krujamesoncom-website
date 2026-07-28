@@ -38,7 +38,7 @@ import type { CTQuestion } from '../../data/ctBoardGame';
 import {
   TYCOON_BOARD, CHANCE_CARDS, TYCOON_TOKENS, TYCOON_CHARACTERS,
   getTycoonCharacter, tileGridPos,
-  START_MONEY, SALARY, REST_FINE, countCompletedPropertyGroups,
+  START_MONEY, SALARY, REST_FINE, countCompletedPropertyGroups, ABILITY_VALUES,
   propertyRent, propertyUpgradeCost, propertyUpgradeInvestment,
 } from '../../data/tycoonGame';
 import type { ChanceCard, TileKind } from '../../data/tycoonGame';
@@ -76,6 +76,9 @@ const clock = (seconds: number) => (
 // สุ่มนอกคอมโพเนนต์ (กฎ React purity)
 /** เวลาตอบคำถามต่อข้อ — ให้เด็กได้คิดจริง ไม่ต้องรีบเดา */
 const QUESTION_SECONDS = 20;
+
+/** พลังของตัวละครที่ผู้เล่นคนนี้เลือก */
+const abilityOf = (characterId: string) => getTycoonCharacter(characterId).ability;
 
 const rollDice = () => 1 + Math.floor(Math.random() * 6);
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -378,9 +381,27 @@ const TycoonGame: React.FC = () => {
     p.money < 0 && !p.out ? { ...p, out: true, owned: [], levels: {} } : p
   ));
 
+  /** เงินเดือนของผู้เล่น (พลัง "ขยันเก็บออม" ได้เพิ่ม) */
+  const salaryFor = (player: P) => (
+    abilityOf(player.characterId) === 'salary'
+      ? Math.round(SALARY * (1 + ABILITY_VALUES.salaryBonus))
+      : SALARY
+  );
+
+  /** เวลาคิดคำตอบของผู้เล่น (พลัง "สมาธิเฉียบ" ได้เวลาเพิ่ม) */
+  const questionSecondsFor = (player?: P) => (
+    player && abilityOf(player.characterId) === 'brain'
+      ? QUESTION_SECONDS + ABILITY_VALUES.brainExtraSeconds
+      : QUESTION_SECONDS
+  );
+
   const roll = () => {
     if (!me || isRolling || (isOnlineGame && !canTakeTurn)) return;
-    const d = rollDice();
+    let d = rollDice();
+    // พลัง "ทอยซ้ำได้" — ทอยได้น้อยเกินไป ระบบทอยใหม่ให้อัตโนมัติ 1 ครั้ง
+    if (abilityOf(me.characterId) === 'dice' && d < ABILITY_VALUES.diceRerollUnder) {
+      d = rollDice();
+    }
     setDice(d);
     setIsRolling(true);
     setMsg(`${me.name} กำลังทอยลูกเต๋า...`);
@@ -402,7 +423,7 @@ const TycoonGame: React.FC = () => {
       }
       let settledPlayers = movingPlayers.map((player) => (
         player.idx === me.idx && passed
-          ? { ...player, money: player.money + SALARY }
+          ? { ...player, money: player.money + salaryFor(player) }
           : player
       ));
       if (passed) setMsg(`เดินครบรอบ! รับเงินเดือน ${baht(SALARY)} บาท`);
@@ -424,8 +445,9 @@ const TycoonGame: React.FC = () => {
       if (!owner) { // ยังไม่มีเจ้าของ → ตอบคำถามให้ถูกก่อนจึงมีสิทธิ์ซื้อ
         setQ(pick(bank));
         setPicked(null);
-        setQuestionTime(QUESTION_SECONDS);
-        setQuestionEndsAt(Date.now() + (QUESTION_SECONDS * 1000));
+        const secs = questionSecondsFor(cur);
+        setQuestionTime(secs);
+        setQuestionEndsAt(Date.now() + (secs * 1000));
         setBuyTile(pos);
         setRentTile(null);
         setPhase('question');
@@ -433,6 +455,39 @@ const TycoonGame: React.FC = () => {
         return;
       }
       if (owner.idx === cur.idx) {
+        // พลัง "สนามแม่เหล็ก" — หยุดที่ที่ดินตัวเองแล้วดึงเพื่อนที่อยู่ใกล้
+        // มาติดกับดัก และเก็บค่าเช่าจากพวกเขาทันที
+        if (abilityOf(cur.characterId) === 'magnet') {
+          const range = ABILITY_VALUES.magnetRange;
+          const near = list.filter((p) => {
+            if (p.out || p.idx === cur.idx) return false;
+            const gap = Math.min((p.pos - pos + SIZE) % SIZE, (pos - p.pos + SIZE) % SIZE);
+            return gap > 0 && gap <= range;
+          });
+          if (near.length > 0) {
+            const magnetGroup = tile.property!.group;
+            const groupTiles = TYCOON_BOARD
+              .map((t, i) => ({ t, i }))
+              .filter((x) => x.t.property?.group === magnetGroup);
+            const fullGroup = groupTiles.every((x) => cur.owned.includes(x.i));
+            const toll = propertyRent(pos, cur.levels?.[pos] || 0, fullGroup);
+            const pulledIds = new Set(near.map((p) => p.idx));
+            let collected = 0;
+            const pulled = list.map((p) => {
+              if (!pulledIds.has(p.idx)) return p;
+              const pay = Math.min(toll, Math.max(0, p.money));
+              collected += pay;
+              return { ...p, pos, money: p.money - pay };
+            });
+            setPs(settle(pulled.map((p) => (
+              p.idx === cur.idx ? { ...p, money: p.money + collected } : p
+            ))));
+            setUpgradeTile(pos);
+            setPhase('info');
+            setMsg(`🧲 สนามแม่เหล็ก! ดึงเพื่อน ${near.length} คนมาติดกับดัก เก็บค่าเช่ารวม ${baht(collected)} บาท`);
+            return;
+          }
+        }
         setUpgradeTile(pos);
         setPhase('info');
         setMsg('ที่ดินของทีมคุณ เลือกพัฒนาอาคารได้สูงสุด 3 ระดับ');
@@ -443,15 +498,20 @@ const TycoonGame: React.FC = () => {
       const inGroup = TYCOON_BOARD.map((t, i) => ({ t, i })).filter((x) => x.t.property?.group === group);
       const all = inGroup.every((x) => owner.owned.includes(x.i));
       const level = owner.levels[pos] || 0;
-      const rent = propertyRent(pos, level, all);
+      const baseRent = propertyRent(pos, level, all);
+      // พลัง "เกราะไฟร์วอลล์" ของผู้จ่าย ลดค่าเช่าที่ต้องจ่าย
+      const rent = abilityOf(cur.characterId) === 'shield'
+        ? Math.round(baseRent * (1 - ABILITY_VALUES.shieldRate))
+        : baseRent;
       setRentTile(pos);
       setRentOwner(owner.idx);
       setPendingRent(rent);
       setBuyTile(null);
       setQ(pick(bank));
       setPicked(null);
-      setQuestionTime(QUESTION_SECONDS);
-      setQuestionEndsAt(Date.now() + (QUESTION_SECONDS * 1000));
+      const secs = questionSecondsFor(cur);
+      setQuestionTime(secs);
+      setQuestionEndsAt(Date.now() + (secs * 1000));
       setPhase('question');
       setMsg(`ตอบถูกลดค่าเช่า 50% จาก ${baht(rent)} บาท${all ? ' ที่ดินครบกลุ่ม ×2' : ''}`);
       return;
@@ -460,10 +520,15 @@ const TycoonGame: React.FC = () => {
     if (tile.kind === 'chance') {
       const c = pick(CHANCE_CARDS);
       setChance(c); setPhase('chance');
+      // พลัง "ดวงเฮง" ลดความเสียหายจากบัตรที่ทำให้เสียเงินลงครึ่งหนึ่ง
+      const rawMoney = c.money || 0;
+      const cardMoney = (rawMoney < 0 && abilityOf(cur.characterId) === 'lucky')
+        ? Math.round(rawMoney * (1 - ABILITY_VALUES.luckyRate))
+        : rawMoney;
       let after = list.map((p) => (p.idx === cur.idx
         ? {
           ...p,
-          money: p.money + (c.money || 0),
+          money: p.money + cardMoney,
           pos: c.move ? (p.pos + c.move + SIZE) % SIZE : p.pos,
           out: c.bankrupt ? true : p.out,
           owned: c.bankrupt ? [] : p.owned,
@@ -521,8 +586,9 @@ const TycoonGame: React.FC = () => {
     if (tile.kind === 'question' || tile.kind === 'learn') {
       setQ(pick(bank));
       setPicked(null);
-      setQuestionTime(QUESTION_SECONDS);
-      setQuestionEndsAt(Date.now() + (QUESTION_SECONDS * 1000));
+      const secs = questionSecondsFor(cur);
+      setQuestionTime(secs);
+      setQuestionEndsAt(Date.now() + (secs * 1000));
       setBuyTile(null);
       setRentTile(null);
       setPhase('question');
@@ -590,11 +656,16 @@ const TycoonGame: React.FC = () => {
       setMsg(`ถูกต้อง! ${q.why}`);
       return;
     }
-    const reward = TYCOON_BOARD[me.pos].kind === 'learn' ? 800 : 500;
+    const baseReward = TYCOON_BOARD[me.pos].kind === 'learn' ? 800 : 500;
+    // พลัง "หัวไว" — ตอบถูกได้เงินรางวัลมากขึ้น
+    const isScholar = abilityOf(me.characterId) === 'scholar';
+    const reward = isScholar
+      ? Math.round(baseReward * (1 + ABILITY_VALUES.scholarBonus))
+      : baseReward;
     setPs(withStats.map((player) => (
       player.idx === me.idx ? { ...player, money: player.money + reward } : player
     )));
-    setMsg(`✅ ถูกต้อง! รับ ${baht(reward)} บาท — ${q.why}`);
+    setMsg(`✅ ถูกต้อง! รับ ${baht(reward)} บาท${isScholar ? ' (หัวไว +50%)' : ''} — ${q.why}`);
   };
 
   const buy = (yes: boolean) => {
@@ -602,9 +673,13 @@ const TycoonGame: React.FC = () => {
     if (buyTile === null || !me) { next(ps); return; }
     const info = TYCOON_BOARD[buyTile].property!;
     if (!yes) { next(ps); return; }
-    if (me.money < info.price) { setMsg('เงินไม่พอซื้อที่ดินนี้'); next(ps); return; }
+    // พลัง "ต่อราคาเก่ง" ทำให้ซื้อที่ดินถูกลง
+    const price = abilityOf(me.characterId) === 'discount'
+      ? Math.round(info.price * (1 - ABILITY_VALUES.discountRate))
+      : info.price;
+    if (me.money < price) { setMsg('เงินไม่พอซื้อที่ดินนี้'); next(ps); return; }
     const after = ps.map((p) => (p.idx === me.idx
-      ? { ...p, money: p.money - info.price, owned: [...p.owned, buyTile] } : p));
+      ? { ...p, money: p.money - price, owned: [...p.owned, buyTile] } : p));
     setPs(after);
     setBuyTile(null);
     setUpgradeTile(buyTile);

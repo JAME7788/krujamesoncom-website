@@ -162,12 +162,51 @@ export const TYCOON_TOKENS = [
   { emoji: '🐢', color: '#16a34a', name: 'ทีมเต่า' },
 ];
 
+/**
+ * พลังพิเศษของตัวละคร — ออกแบบให้เป็นการ "ได้เปรียบเชิงวางแผน"
+ * ไม่ใช่ชนะฟรี ผู้เล่นยังต้องตอบคำถามให้ถูกเพื่อซื้อที่ดินเหมือนเดิม
+ */
+export type AbilityId =
+  /** หยุดที่ที่ดินของตัวเอง ดึงเพื่อนที่อยู่ใกล้เข้ามาติดกับดัก */
+  | 'magnet'
+  /** ซื้อที่ดินถูกลง */
+  | 'discount'
+  /** จ่ายค่าเช่าน้อยลง */
+  | 'shield'
+  /** เงินเดือนตอนผ่านช่องเริ่มต้นมากขึ้น */
+  | 'salary'
+  /** เวลาคิดคำตอบนานขึ้น */
+  | 'brain'
+  /** บัตรเสี่ยงดวงที่เสียเงิน เสียน้อยลง */
+  | 'lucky'
+  /** ทอยได้น้อยเกินไป ทอยใหม่ให้ */
+  | 'dice'
+  /** ตอบถูกได้เงินรางวัลมากขึ้น */
+  | 'scholar';
+
+/** ค่าคงที่ของพลัง รวมไว้ที่เดียวเพื่อปรับสมดุลง่าย */
+export const ABILITY_VALUES = {
+  magnetRange: 2,
+  discountRate: 0.15,
+  shieldRate: 0.3,
+  salaryBonus: 0.5,
+  brainExtraSeconds: 10,
+  luckyRate: 0.5,
+  diceRerollUnder: 3,
+  scholarBonus: 0.5,
+} as const;
+
 export interface TycoonCharacter {
   id: string;
   name: string;
   role: string;
   image: string;
   accent: string;
+  /** ราคาเหรียญที่ต้องใช้ปลดล็อก (0 = มีให้ตั้งแต่แรก) */
+  price: number;
+  ability: AbilityId;
+  abilityName: string;
+  abilityDesc: string;
 }
 
 /** Pixel characters adapted from the Apache-2.0 licensed Claw-Empire sprite set. */
@@ -178,6 +217,10 @@ export const TYCOON_CHARACTERS: TycoonCharacter[] = [
     role: 'นักสำรวจข้อมูล',
     image: '/media/games/tycoon-characters/character-01.webp',
     accent: '#0284c7',
+    price: 0,
+    ability: 'salary',
+    abilityName: 'ขยันเก็บออม',
+    abilityDesc: 'ผ่านช่องเริ่มต้นรับเงินเดือนเพิ่ม 50%',
   },
   {
     id: 'mira',
@@ -185,6 +228,10 @@ export const TYCOON_CHARACTERS: TycoonCharacter[] = [
     role: 'นักออกแบบเกม',
     image: '/media/games/tycoon-characters/character-02.webp',
     accent: '#7c3aed',
+    price: 100,
+    ability: 'discount',
+    abilityName: 'ต่อราคาเก่ง',
+    abilityDesc: 'ซื้อที่ดินถูกลง 15% ทุกแปลง',
   },
   {
     id: 'byte',
@@ -192,6 +239,10 @@ export const TYCOON_CHARACTERS: TycoonCharacter[] = [
     role: 'นักสร้างหุ่นยนต์',
     image: '/media/games/tycoon-characters/character-03.webp',
     accent: '#dc2626',
+    price: 150,
+    ability: 'shield',
+    abilityName: 'เกราะไฟร์วอลล์',
+    abilityDesc: 'จ่ายค่าเช่าให้เพื่อนน้อยลง 30%',
   },
   {
     id: 'luna',
@@ -199,6 +250,10 @@ export const TYCOON_CHARACTERS: TycoonCharacter[] = [
     role: 'นักสืบไซเบอร์',
     image: '/media/games/tycoon-characters/character-04.webp',
     accent: '#db2777',
+    price: 90,
+    ability: 'brain',
+    abilityName: 'สมาธิเฉียบ',
+    abilityDesc: 'มีเวลาคิดคำตอบเพิ่มอีก 10 วินาที',
   },
   {
     id: 'jet',
@@ -206,6 +261,10 @@ export const TYCOON_CHARACTERS: TycoonCharacter[] = [
     role: 'นักแก้อัลกอริทึม',
     image: '/media/games/tycoon-characters/character-05.webp',
     accent: '#0f766e',
+    price: 160,
+    ability: 'dice',
+    abilityName: 'ทอยซ้ำได้',
+    abilityDesc: 'ถ้าทอยได้น้อยกว่า 3 ระบบจะทอยใหม่ให้อัตโนมัติ',
   },
   {
     id: 'iris',
@@ -213,6 +272,10 @@ export const TYCOON_CHARACTERS: TycoonCharacter[] = [
     role: 'นักพัฒนาแอป',
     image: '/media/games/tycoon-characters/character-06.webp',
     accent: '#ca8a04',
+    price: 130,
+    ability: 'lucky',
+    abilityName: 'ดวงเฮง',
+    abilityDesc: 'บัตรเสี่ยงดวงที่ทำให้เสียเงิน เสียน้อยลงครึ่งหนึ่ง',
   },
   {
     id: 'pixel',
@@ -220,6 +283,10 @@ export const TYCOON_CHARACTERS: TycoonCharacter[] = [
     role: 'ศิลปินดิจิทัล',
     image: '/media/games/tycoon-characters/character-07.webp',
     accent: '#ea580c',
+    price: 110,
+    ability: 'scholar',
+    abilityName: 'หัวไว',
+    abilityDesc: 'ตอบคำถามถูกได้เงินรางวัลเพิ่ม 50%',
   },
   {
     id: 'max',
@@ -227,6 +294,10 @@ export const TYCOON_CHARACTERS: TycoonCharacter[] = [
     role: 'วิศวกรเครือข่าย',
     image: '/media/games/tycoon-characters/character-08.webp',
     accent: '#16a34a',
+    price: 120,
+    ability: 'magnet',
+    abilityName: 'สนามแม่เหล็ก',
+    abilityDesc: 'หยุดที่ที่ดินของตัวเอง ดึงเพื่อนที่ห่างไม่เกิน 2 ช่อง มาติดกับดักและต้องจ่ายค่าเช่า',
   },
 ];
 
