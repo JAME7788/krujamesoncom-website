@@ -5,6 +5,7 @@ import { Sparkles, ChevronRight, ExternalLink, Globe, Volume2, VolumeX } from 'l
 import { isSfxMuted, setSfxMuted, playWinSound } from '../../utils/celebrate';
 import { allResources, ALL_GRADES } from '../../data/learningResources';
 import { gamesCatalog } from '../../data/gamesCatalog';
+import CharacterShop from '../../components/CharacterShop';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
 import { trackMediaClick } from '../../services/progressService';
@@ -128,6 +129,11 @@ const Games: React.FC = () => {
           {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           {muted ? 'เสียงฉลอง: ปิด' : 'เสียงฉลอง: เปิด'}
         </button>
+      </div>
+
+      {/* ร้านตัวละคร — ใช้เหรียญที่ได้จากการเล่นเกมมาปลดล็อกพลังพิเศษ */}
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <CharacterShop />
       </div>
 
       <div className="games-grid">
