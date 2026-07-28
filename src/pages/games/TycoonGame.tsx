@@ -295,11 +295,8 @@ const TycoonGame: React.FC = () => {
                 className={`tyc-tile k-${tile.kind}`}
                 style={{
                   gridRow: r, gridColumn: c,
-                  borderTopColor: pr ? pr.groupColor : undefined,
-                  borderTopWidth: pr ? 10 : undefined,
-                  background: owner
-                    ? `linear-gradient(180deg, ${TYCOON_TOKENS[owner.idx].color}55, #ffffff)`
-                    : pr ? `linear-gradient(180deg, ${pr.groupColor}2e, #ffffff)` : undefined,
+                  ['--g' as string]: pr ? pr.groupColor : undefined,
+                  boxShadow: owner ? `inset 0 0 0 2.5px ${TYCOON_TOKENS[owner.idx].color}` : undefined,
                 }}
               >
                 {pr ? (
@@ -430,70 +427,105 @@ const TycoonStyles: React.FC = () => (
     .tyc-wrap { display: grid; grid-template-columns: 1fr 250px; gap: 14px; align-items: start; }
     @media (max-width: 900px) { .tyc-wrap { grid-template-columns: 1fr; } }
 
-    /* ---------- เวที 3D: เอียงกระดานให้เหมือนวางบนโต๊ะจริง ---------- */
-    .tyc-stage { perspective: 1500px; perspective-origin: 50% 30%; padding: 4px 0 26px; }
+    /* ---------- เวทีกระดาน: เอียงแบบพอดี ไม่บิดเบี้ยว ---------- */
+    .tyc-stage { padding: 6px 0 14px; }
     .tyc-stage.is3d {
-      background: radial-gradient(ellipse at 50% 62%, #6b4a2f 0%, #4a3220 55%, #2b1d13 100%);
-      border-radius: 20px; padding: 30px 10px 46px;
-      box-shadow: inset 0 0 60px rgba(0,0,0,0.45);
+      perspective: 2800px; perspective-origin: 50% 42%;
+      padding: 26px 18px 34px;
+      border-radius: 22px;
+      background:
+        radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.10), transparent 60%),
+        linear-gradient(160deg, #7c5233 0%, #5b3a23 45%, #3a2416 100%);
+      box-shadow: inset 0 0 90px rgba(0,0,0,0.5);
     }
     .tyc-stage.is3d .tyc-board {
-      transform: rotateX(44deg) scale(1.02);
+      transform: rotateX(17deg);
       transform-style: preserve-3d;
-      box-shadow: 0 40px 60px rgba(0,0,0,0.5);
-      transition: transform 0.45s ease;
+      box-shadow: 0 34px 55px rgba(0,0,0,0.55);
     }
-    /* ความหนาของช่อง — เงาแนวตั้งอ่านเป็นขอบนูนเมื่อกระดานเอียง */
-    .tyc-stage.is3d .tyc-tile {
-      box-shadow: 0 10px 0 rgba(15,23,42,0.6), 0 14px 14px rgba(0,0,0,0.4);
-      transform: translateZ(10px);
-    }
-    .tyc-stage.is3d .tyc-tokens i {
-      filter: drop-shadow(0 3px 2px rgba(0,0,0,0.5));
-      transform: translateZ(22px) scale(1.5);
-    }
-    .tyc-stage.is3d .tyc-center { transform: translateZ(2px); }
+    .tyc-stage.is3d .tyc-tile { box-shadow: 0 5px 0 rgba(2,6,23,0.45), 0 8px 12px rgba(0,0,0,0.3); }
+    .tyc-stage.is3d .tyc-tokens i { transform: translateZ(24px) scale(1.15); }
 
-    /* บ้าน 3 มิติบนที่ดินที่ซื้อแล้ว */
-    .tyc-house { position: absolute; top: 1px; left: 2px; display: flex; gap: 1px; }
-    .tyc-house i {
-      width: 5px; height: 5px; border-radius: 1px; background: var(--h, #16a34a);
-      box-shadow: 0 2px 0 rgba(0,0,0,0.35);
-    }
-    .tyc-stage.is3d .tyc-house i { transform: translateZ(6px); }
-
+    /* ---------- กระดาน ---------- */
     .tyc-board {
       display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
-      gap: 4px; aspect-ratio: 1; background: linear-gradient(145deg, #1e293b, #0f172a); padding: 9px; border-radius: 16px; border: 3px solid #b45309;
-      transition: transform 0.45s ease;
+      gap: 5px; aspect-ratio: 1; padding: 12px; border-radius: 18px;
+      background:
+        radial-gradient(ellipse at 50% 45%, #1b3b34 0%, #122622 70%, #0c1a17 100%);
+      border: 4px solid #d4a24c;
+      box-shadow: 0 18px 34px rgba(0,0,0,0.28);
     }
-    .tyc-tile {
-      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 1px; background: #fff; border-radius: 7px; border-top: 3px solid transparent;
-      padding: 2px; overflow: hidden; min-height: 0;
-    }
-    .tyc-tile.k-property { background: linear-gradient(180deg, #ffffff 55%, rgba(0,0,0,0.06) 100%); }
-    .tyc-tile.k-start { background: #dcfce7; }
-    .tyc-tile.k-rest { background: #fee2e2; }
-    .tyc-tile.k-gotoRest { background: #ffe4e6; }
-    .tyc-tile.k-learn { background: #e0f2fe; }
-    .tyc-tile.k-chance { background: #fef3c7; }
-    .tyc-tile.k-question { background: #ede9fe; }
-    .tyc-face { font-size: clamp(0.9rem, 2vw, 1.4rem); line-height: 1; }
-    .tyc-name { font-size: clamp(0.42rem, 0.85vw, 0.6rem); font-weight: 700; color: #334155; text-align: center; line-height: 1.1; }
-    .tyc-price { font-size: clamp(0.38rem, 0.75vw, 0.55rem); color: #94a3b8; font-weight: 700; }
-    .tyc-owner { position: absolute; top: 1px; right: 1px; width: 14px; height: 14px; border-radius: 50%; display: grid; place-items: center; font-size: 0.55rem; }
-    .tyc-tokens { position: absolute; bottom: 0; display: flex; gap: 1px; }
-    .tyc-tokens i { font-style: normal; font-size: clamp(0.6rem, 1.3vw, 1rem); }
-    .tyc-center {
-      grid-row: 2 / 8; grid-column: 2 / 8; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 4px; color: #fff; text-align: center;
-    }
-    .tyc-logo { font-size: clamp(2rem, 7vw, 4rem); }
-    .tyc-center b { font-size: clamp(0.8rem, 2vw, 1.3rem); }
-    .tyc-center small { font-size: clamp(0.55rem, 1.2vw, 0.85rem); color: #94a3b8; }
 
-    .tyc-side { display: flex; flex-direction: column; gap: 8px; }
+    /* ---------- ช่องบนกระดาน ---------- */
+    .tyc-tile {
+      position: relative; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2px;
+      background: #ffffff; border-radius: 9px;
+      padding: 3px 2px; overflow: hidden; min-height: 0;
+      border: 1px solid rgba(15,23,42,0.10);
+    }
+    /* แถบสีกลุ่มที่ดิน — หนา สด อ่านจากไกลได้ */
+    .tyc-tile.k-property::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 26%; background: var(--g, #94a3b8);
+      box-shadow: inset 0 -2px 3px rgba(0,0,0,0.18);
+    }
+    .tyc-tile.k-start { background: linear-gradient(160deg, #bbf7d0, #86efac); }
+    .tyc-tile.k-rest { background: linear-gradient(160deg, #fecdd3, #fda4af); }
+    .tyc-tile.k-gotoRest { background: linear-gradient(160deg, #fed7aa, #fdba74); }
+    .tyc-tile.k-learn { background: linear-gradient(160deg, #bae6fd, #7dd3fc); }
+    .tyc-tile.k-chance { background: linear-gradient(160deg, #fde68a, #fcd34d); }
+    .tyc-tile.k-question { background: linear-gradient(160deg, #ddd6fe, #c4b5fd); }
+
+    .tyc-face { font-size: clamp(1rem, 2.3vw, 1.7rem); line-height: 1; position: relative; z-index: 1; margin-top: 12%; }
+    .tyc-tile:not(.k-property) .tyc-face { margin-top: 0; }
+    .tyc-name {
+      position: relative; z-index: 1;
+      font-size: clamp(0.44rem, 0.95vw, 0.68rem); font-weight: 800; color: #0f172a;
+      text-align: center; line-height: 1.15; padding: 0 1px;
+    }
+    .tyc-price {
+      position: relative; z-index: 1;
+      font-size: clamp(0.4rem, 0.85vw, 0.6rem); font-weight: 900; color: #b45309;
+      background: #fffbeb; border-radius: 999px; padding: 0 5px;
+    }
+    .tyc-owner {
+      position: absolute; top: 2px; right: 2px; z-index: 2;
+      width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center;
+      font-size: 0.6rem; border: 1.5px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+    }
+    .tyc-tokens { position: absolute; bottom: 1px; z-index: 3; display: flex; gap: 1px; }
+    .tyc-tokens i {
+      font-style: normal; font-size: clamp(0.7rem, 1.5vw, 1.15rem);
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.45));
+    }
+
+    /* บ้านของเจ้าของที่ดิน */
+    .tyc-house { position: absolute; top: 2px; left: 3px; z-index: 2; display: flex; gap: 1.5px; }
+    .tyc-house i {
+      width: 6px; height: 6px; border-radius: 1.5px; background: var(--h, #16a34a);
+      border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    /* ---------- กลางกระดาน ---------- */
+    .tyc-center {
+      grid-row: 2 / 8; grid-column: 2 / 8;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 6px; color: #fff; text-align: center;
+    }
+    .tyc-logo { font-size: clamp(2.2rem, 8vw, 4.6rem); filter: drop-shadow(0 6px 10px rgba(0,0,0,0.5)); }
+    .tyc-center b {
+      font-size: clamp(0.85rem, 2.4vw, 1.6rem); letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #fde68a, #f59e0b);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .tyc-center small {
+      font-size: clamp(0.55rem, 1.3vw, 0.9rem); color: #a7f3d0;
+      background: rgba(0,0,0,0.28); padding: 3px 12px; border-radius: 999px;
+    }
+
+.tyc-side { display: flex; flex-direction: column; gap: 8px; }
     .tyc-p { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border: 2px solid; border-radius: 12px; background: #fff; opacity: 0.6; }
     .tyc-p.active { opacity: 1; box-shadow: 0 4px 14px rgba(15,23,42,0.14); }
     .tyc-p.out { opacity: 0.35; filter: grayscale(1); }
