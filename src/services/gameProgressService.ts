@@ -42,7 +42,8 @@ export type GameProgressId =
   | 'robot-maker'
   | 'tech-system'
   | 'search-smart'
-  | 'ct-board';
+  | 'ct-board'
+  | 'tycoon';
 
 type StudentLike = {
   id: string;
@@ -175,6 +176,10 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
   // ระบบทางเทคโนโลยี (Input–Process–Output) — การออกแบบและเทคโนโลยี
   if (normalizedGameId === 'tech-system') {
     return [isPrimary ? primaryDigitalUnit(classroom) : middleDesignUnit(classroom)];
+  }
+  // เกมเศรษฐีวิทยาการคำนวณ — บอร์ดเกมเศรษฐศาสตร์ + แนวคิดเชิงคำนวณ
+  if (normalizedGameId === 'tycoon') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
   // บอร์ดเกมแนวคิดเชิงคำนวณ — ครอบทั้ง 4 ทักษะ
   if (normalizedGameId === 'ct-board') {
