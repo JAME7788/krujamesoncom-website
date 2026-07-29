@@ -25,6 +25,7 @@ import SlideManager from '../components/SlideManager';
 import VirtualClassroomManager from '../components/VirtualClassroomManager';
 import P1TechnologyPlan from '../components/P1TechnologyPlan';
 import CoursePlan5 from '../components/CoursePlan5';
+import StudentAssessmentHub from '../components/StudentAssessmentHub';
 import { loadErrors, clearErrors } from '../services/errorLogger';
 import { Megaphone, Calendar as CalIcon, Bug } from 'lucide-react';
 import { adminLogout, getAdminSession } from '../services/authAdmin';
@@ -40,7 +41,7 @@ import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'overview' | 'world' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
+type Tab = 'overview' | 'world' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'assessments' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -75,6 +76,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     title: '📋 การวัดผลการเรียน',
     items: [
       { id: 'gradebook', label: 'เก็บคะแนน K/P/A', icon: <Award size={16} /> },
+      { id: 'assessments', label: 'แบบประเมินและหลังสอน', icon: <FileText size={16} /> },
       { id: 'skill', label: 'ทักษะอาชีพ (K/P)', icon: <Award size={16} /> },
       { id: 'bonus', label: 'แจกรางวัล / Bonus', icon: <Award size={16} /> },
       { id: 'daily', label: 'คำถามประจำวัน', icon: <Award size={16} /> },
@@ -532,6 +534,13 @@ const AdminDashboardInner: React.FC = () => {
                   </p>
                 </div>
                 <GradeBook />
+              </motion.div>
+            )}
+
+            {/* TAB: STUDENT ASSESSMENTS */}
+            {tab === 'assessments' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <StudentAssessmentHub />
               </motion.div>
             )}
 

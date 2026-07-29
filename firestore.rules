@@ -85,6 +85,18 @@ service cloud.firestore {
                    && strOk('nextAction', 5000);
     }
 
+    // ====== Student assessments and general post-lesson records ======
+    match /studentAssessments/{recordId} {
+      allow read: if true;
+      allow write: if baseWrite(25)
+                   && strOk('classroom', 20)
+                   && strOk('academicYear', 10)
+                   && strOk('term', 20)
+                   && strOk('kind', 50)
+                   && strOk('contextKey', 120)
+                   && strOk('updatedBy', 300);
+    }
+
     // ====== Announcements ======
     match /announcements/{id} {
       allow read: if true;
