@@ -350,6 +350,21 @@ const createNameSprite = (name: string, isTeacher = false) => {
   return sprite;
 };
 
+/**
+ * ขอล็อกเมาส์แบบไม่ทำให้เกิด unhandled rejection
+ * เบราว์เซอร์ใหม่คืน Promise และจะ reject ถ้าเพิ่งปลดล็อกไปหมาด ๆ
+ * (เจอจริงใน error log: "Pointer lock cannot be acquired immediately after the user has exited the lock")
+ * กรณีนี้ไม่ใช่ความผิดพลาดที่ต้องแจ้งเด็ก แค่ให้กดใหม่อีกครั้ง
+ */
+const requestPointerLockSafely = (element: HTMLElement) => {
+  try {
+    const result = element.requestPointerLock() as unknown as Promise<void> | undefined;
+    if (result && typeof result.catch === 'function') result.catch(() => undefined);
+  } catch {
+    /* เบราว์เซอร์เก่าโยน error แบบ synchronous — ไม่ต้องทำอะไร */
+  }
+};
+
 const VirtualClassroom: React.FC = () => {
   const { user } = useAuth();
   const qaId = new URLSearchParams(window.location.search).get('qa') || '';
@@ -1637,7 +1652,7 @@ const VirtualClassroom: React.FC = () => {
       openLessonBoard(board, 0, isTeacher);
     };
 
-    lockRef.current = () => renderer.domElement.requestPointerLock();
+    lockRef.current = () => requestPointerLockSafely(renderer.domElement);
     jumpRef.current = () => {
       if (!canParticipateRef.current) return;
       if (!isTeacher && roomStateRef.current?.movementLocked) {
@@ -1693,7 +1708,7 @@ const VirtualClassroom: React.FC = () => {
         return;
       }
       if (document.pointerLockElement !== renderer.domElement) {
-        renderer.domElement.requestPointerLock();
+        requestPointerLockSafely(renderer.domElement);
         return;
       }
       if (event.button === 0) {
