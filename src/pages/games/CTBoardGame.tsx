@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, Dices, Trophy, Users } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
@@ -9,6 +9,7 @@ import {
   BOARD, CT_PILLARS, PILLAR_ORDER, PLAYER_TOKENS, QUESTION_BANK,
 } from '../../data/ctBoardGame';
 import type { CTPillar, CTQuestion } from '../../data/ctBoardGame';
+import { pickQuestionWithoutRecent } from '../../data/ctQuestionBank';
 import { celebrateVictory } from '../../utils/victoryEffect';
 import './GameStyles.css';
 
@@ -27,12 +28,12 @@ const hasAll = (p: Player) => PILLAR_ORDER.every((k) => p.stars.includes(k));
 
 // สุ่มไว้นอกคอมโพเนนต์ — เรียกได้เฉพาะตอนผู้เล่นกด ไม่ใช่ตอน render
 const rollDice = () => 1 + Math.floor(Math.random() * 6);
-const pickCard = (pool: CTQuestion[]) => pool[Math.floor(Math.random() * pool.length)];
 
 const CTBoardGame: React.FC = () => {
   const { user } = useAuth();
   const tier = ageTierFromClassroom(user?.classroom);
   const bank = QUESTION_BANK[tier];
+  const recentQuestionKeysRef = useRef<string[]>([]);
   const recordGame = useGameProgress('ct-board', 'บอร์ดเกมเส้นทางนักคิดเชิงคำนวณ');
 
   const [count, setCount] = useState(2);
@@ -47,14 +48,28 @@ const CTBoardGame: React.FC = () => {
   const me = players[turn];
 
   const start = () => {
+    recentQuestionKeysRef.current = [];
     setPlayers(Array.from({ length: count }, (_, i) => newPlayer(i)));
     setTurn(0); setPhase('roll'); setDice(null); setCard(null); setPicked(null);
     setMessage('ผู้เล่นคนแรก ทอยลูกเต๋าได้เลย!');
   };
 
-  const restart = () => { setPhase('setup'); setPlayers([]); setMessage(''); };
+  const restart = () => {
+    recentQuestionKeysRef.current = [];
+    setPhase('setup');
+    setPlayers([]);
+    setMessage('');
+  };
 
-  const drawCard = (pillar: CTPillar) => pickCard(bank.filter((q) => q.pillar === pillar));
+  const drawCard = (pillar: CTPillar) => {
+    const result = pickQuestionWithoutRecent(
+      bank,
+      recentQuestionKeysRef.current,
+      pillar,
+    );
+    recentQuestionKeysRef.current = result.recentKeys;
+    return result.question;
+  };
 
   const nextTurn = (updated: Player[]) => {
     setPlayers(updated);

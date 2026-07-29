@@ -3,6 +3,7 @@
 // เนื้อหาแยกตามช่วงวัยเช่นเดียวกับการ์ดบทเรียน (ป.1-3 / ป.4-6 / ม.1-3)
 
 import type { AgeTier } from './gameLessons';
+import { buildQuestionBank } from './ctQuestionBank';
 
 /** 4 เสาหลักของแนวคิดเชิงคำนวณ (Computational Thinking) */
 export type CTPillar = 'decompose' | 'pattern' | 'abstract' | 'algorithm';
@@ -69,7 +70,7 @@ export interface CTQuestion {
 }
 
 /** คลังการ์ดคำถาม — แยกตามช่วงวัย เพื่อให้เล่นได้ตั้งแต่ ป.1 ถึง ม.3 */
-export const QUESTION_BANK: Record<AgeTier, CTQuestion[]> = {
+const BASE_QUESTION_BANK: Record<AgeTier, CTQuestion[]> = {
   lower: [
     // 🧩 แยกส่วนประกอบ
     { pillar: 'decompose', q: 'จะเก็บกระเป๋าไปโรงเรียน ควรทำอย่างไรให้ง่ายที่สุด?', choices: ['ยัดของทั้งหมดพร้อมกัน', 'แยกเป็นอย่าง ๆ แล้วเก็บทีละอย่าง', 'ให้เพื่อนเก็บให้'], answer: 1, why: 'งานใหญ่จะง่ายขึ้นเมื่อ "แยกเป็นชิ้นเล็ก ๆ" แล้วทำทีละอย่าง' },
@@ -117,6 +118,8 @@ export const QUESTION_BANK: Record<AgeTier, CTQuestion[]> = {
     { pillar: 'algorithm', q: 'โครงสร้างควบคุมพื้นฐานของการเขียนโปรแกรมมีอะไรบ้าง?', choices: ['ลำดับ เงื่อนไข วนซ้ำ', 'ตัวแปร ฟังก์ชัน คลาส', 'อินพุต เอาต์พุต หน่วยความจำ'], answer: 0, why: 'ทุกโปรแกรมประกอบขึ้นจาก ลำดับ เงื่อนไข และการวนซ้ำ' },
   ],
 };
+
+export const QUESTION_BANK: Record<AgeTier, CTQuestion[]> = buildQuestionBank(BASE_QUESTION_BANK);
 
 export const PLAYER_TOKENS = [
   { emoji: '🦁', color: '#f59e0b', name: 'ทีมสิงโต' },

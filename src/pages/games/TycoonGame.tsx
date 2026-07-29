@@ -39,6 +39,7 @@ import CharacterShop from '../../components/CharacterShop';
 import { ageTierFromClassroom } from '../../data/gameLessons';
 import { QUESTION_BANK, CT_PILLARS, PILLAR_ORDER } from '../../data/ctBoardGame';
 import type { CTQuestion } from '../../data/ctBoardGame';
+import { pickQuestionWithoutRecent } from '../../data/ctQuestionBank';
 import {
   TYCOON_BOARD, CHANCE_CARDS, TYCOON_TOKENS, TYCOON_CHARACTERS,
   getTycoonCharacter, tileGridPos,
@@ -241,6 +242,7 @@ const CharacterShopDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => 
 const TycoonGame: React.FC = () => {
   const { user } = useAuth();
   const bank = QUESTION_BANK[ageTierFromClassroom(user?.classroom)];
+  const recentQuestionKeysRef = useRef<string[]>([]);
   const recordGame = useGameProgress('tycoon', 'เกมเศรษฐีวิทยาการคำนวณ');
 
   const [count, setCount] = useState(3);
@@ -286,6 +288,12 @@ const TycoonGame: React.FC = () => {
   const [showCharacterShop, setShowCharacterShop] = useState(false);
   const [gameEndsAt, setGameEndsAt] = useState(0);
   const [questionEndsAt, setQuestionEndsAt] = useState(0);
+
+  const drawQuestion = () => {
+    const result = pickQuestionWithoutRecent(bank, recentQuestionKeysRef.current);
+    recentQuestionKeysRef.current = result.recentKeys;
+    return result.question;
+  };
 
   useEffect(() => {
     if (!showCharacterShop) return undefined;
@@ -356,6 +364,7 @@ const TycoonGame: React.FC = () => {
 
   const start = () => {
     const endsAt = Date.now() + (minutes * 60_000);
+    recentQuestionKeysRef.current = [];
     setPs(Array.from(
       { length: count },
       (_, i) => createPlayerState(
@@ -375,6 +384,7 @@ const TycoonGame: React.FC = () => {
     playTone(620, 0.18);
   };
   const restart = () => {
+    recentQuestionKeysRef.current = [];
     if (onlineRoomCode) {
       void leaveTycoonRoom(onlineRoomCode, multiplayerPlayerId);
       setSessionValue(ACTIVE_ROOM_KEY, '');
@@ -500,7 +510,7 @@ const TycoonGame: React.FC = () => {
     if (tile.kind === 'property') {
       const owner = list.find((p) => !p.out && p.owned.includes(pos));
       if (!owner) { // ยังไม่มีเจ้าของ → ตอบคำถามให้ถูกก่อนจึงมีสิทธิ์ซื้อ
-        setQ(pick(bank));
+        setQ(drawQuestion());
         setPicked(null);
         const secs = questionSecondsFor(cur);
         setQuestionTime(secs);
@@ -564,7 +574,7 @@ const TycoonGame: React.FC = () => {
       setRentOwner(owner.idx);
       setPendingRent(rent);
       setBuyTile(null);
-      setQ(pick(bank));
+      setQ(drawQuestion());
       setPicked(null);
       const secs = questionSecondsFor(cur);
       setQuestionTime(secs);
@@ -641,7 +651,7 @@ const TycoonGame: React.FC = () => {
     }
 
     if (tile.kind === 'question' || tile.kind === 'learn') {
-      setQ(pick(bank));
+      setQ(drawQuestion());
       setPicked(null);
       const secs = questionSecondsFor(cur);
       setQuestionTime(secs);
@@ -906,6 +916,7 @@ const TycoonGame: React.FC = () => {
       version: Date.now(),
       updatedBy: multiplayerPlayerId,
     };
+    recentQuestionKeysRef.current = [];
     setRoomBusy(true);
     const result = await startTycoonMultiplayerRoom(
       onlineRoom.code,
