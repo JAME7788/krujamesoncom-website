@@ -164,6 +164,17 @@ service cloud.firestore {
       allow write: if baseWrite(20);
     }
 
+    // ====== Computing Tycoon multiplayer rooms ======
+    match /tycoonRooms/{code} {
+      allow read: if true;
+      allow create, update: if baseWrite(20)
+                   && strOk('code', 6)
+                   && strOk('name', 100)
+                   && strOk('passwordHash', 100)
+                   && strOk('hostId', 300);
+      allow delete: if true;
+    }
+
     // ====== Virtual 3D Classroom ======
     match /virtualWorlds/{roomId} {
       allow read: if true;

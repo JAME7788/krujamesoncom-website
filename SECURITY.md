@@ -8,12 +8,12 @@
 
 | # | ช่องโหว่ | ความรุนแรง | สถานะ |
 |---|---------|-----------|-------|
-| 1 | Firestore rules `if true` → ใครก็อ่าน/เขียน/ลบฐานข้อมูลทั้งหมดผ่าน SDK ตรงๆ | 🔴 วิกฤต | แก้ rules แล้ว + ต้องเปิด App Check (ครูทำใน Console) |
-| 2 | `.env` ถูก commit เข้า git | 🟠 กลาง | หยุด track แล้ว (Firebase config ไม่ใช่ความลับจริง แต่ hygiene) |
-| 3 | รหัส Admin ฝังใน source (`jameskmd`/`12345678kmd`) | 🟠 กลาง | ย้ายไป .env แล้ว — แต่ยังอยู่ใน bundle (ดูหมายเหตุ) |
+| 1 | Firestore อนุญาต read/write โดยไม่ใช้ Firebase Auth และตรวจเพียงรูปร่างข้อมูล | 🔴 วิกฤต | ยังไม่ปิด ต้องใช้ Auth + rules แยกบทบาท; App Check ช่วยลด abuse แต่แทน Auth ไม่ได้ |
+| 2 | `.env` ถูก commit เข้า git | 🟡 ต้องระวัง | ยัง track อยู่โดยตั้งใจเพื่อ Vercel build; ต้องเก็บเฉพาะ Firebase web config ห้ามใส่ secret |
+| 3 | รหัส Admin มี fallback อยู่ใน source และถูกอ่านได้จาก browser bundle | 🔴 สูง | ยังไม่ปิด หน้า login เป็นเพียง client-side gate |
 | 4 | รหัสเข้าระบบนักเรียน `ajj` อยู่ใน client | 🟡 ต่ำ | โดยดีไซน์ — แค่กันคนทั่วไป |
 | 5 | XSS ผ่านสไลด์ (`dangerouslySetInnerHTML`) | 🟢 ปลอดภัย | escape HTML ก่อน markdown แล้ว — ไม่ช่องโหว่ |
-| 6 | ข้อมูลนักเรียน (ชื่อจริง) อ่านได้จาก Firestore | 🟠 PDPA | leaderboard สาธารณะ anonymize แล้ว / ข้อมูลดิบต้องพึ่ง App Check |
+| 6 | ข้อมูลนักเรียนและคะแนนจริงอ่านได้จาก Firestore โดยไม่ยืนยันตัวตน | 🔴 PDPA | ยังไม่ปิด ต้องใช้ Firebase Auth และ rules จำกัดครู/นักเรียนรายคน |
 
 ---
 
@@ -21,8 +21,9 @@
 
 ### ★ ข้อ 1 — เปิด App Check (สำคัญสุด กันคนยิง Firestore ตรงๆ)
 
-App Check ทำให้ Firestore รับเฉพาะ request ที่มาจากเว็บจริงของเรา
-(คนเปิด DevTools หรือเขียนสคริปต์ยิงตรงจะถูกปฏิเสธ)
+App Check ช่วยลด request ปลอมและสคริปต์อัตโนมัติที่ไม่ได้มาจากแอป แต่ไม่ใช่ระบบ
+ยืนยันตัวตนและไม่สามารถแยกสิทธิ์ครูกับนักเรียนได้ จึงต้องใช้ร่วมกับ Firebase Auth
+และ Firestore Rules แบบแบ่งบทบาท
 
 1. [Firebase Console](https://console.firebase.google.com) → โปรเจกต์ → **App Check**
 2. เมนู **Apps** → เลือกเว็บแอป → **Register** → เลือก **reCAPTCHA v3**
@@ -46,12 +47,13 @@ App Check ทำให้ Firestore รับเฉพาะ request ที่�
   ลบของเก่า → วางเนื้อหาไฟล์ `firestore.rules` → **Publish**
 - **หรือ CLI**: `firebase deploy --only firestore:rules`
 
-### ข้อ 3 — เปลี่ยนรหัส Admin + รหัสนักเรียน
+### ข้อ 3 — เปลี่ยนระบบ Admin เป็น Firebase Auth
 
-รหัสเก่าอยู่ในประวัติ git และใน bundle → ควรเปลี่ยน:
+การย้ายรหัสไป `VITE_ADMIN_USER` / `VITE_ADMIN_PASS` ไม่ทำให้เป็นความลับ เพราะตัวแปร
+`VITE_*` ถูกฝังใน JavaScript bundle ทางแก้สำหรับใช้งานจริงคือ Firebase Auth
+(บัญชีครู) + custom role/claim + rules ที่อนุญาตแก้คะแนนเฉพาะครู
 
-- **รหัส Admin**: แก้ `.env` → `VITE_ADMIN_USER` / `VITE_ADMIN_PASS` → deploy ใหม่
-- **รหัสนักเรียน (ajj)**: Admin → ข้อมูลเว็บ → 🔑 รหัสเข้าระบบ → เปลี่ยน
+รหัสนักเรียนในหน้าล็อกอินใช้เป็นเพียงรหัสเข้าห้อง ไม่ใช่สิทธิ์เข้าถึงฐานข้อมูล
 
 ### ข้อ 4 — จำกัดโดเมนของ API key (กันเอาไปใช้ที่อื่น)
 
@@ -63,25 +65,28 @@ App Check ทำให้ Firestore รับเฉพาะ request ที่�
 
 ## หมายเหตุความจริงเรื่องความปลอดภัยฝั่ง client
 
-เว็บนี้เป็น **static site ไม่มี server หลังบ้าน** → การตรวจรหัสทุกอย่าง
-เกิดในเบราว์เซอร์ ค่าที่ตรวจ (รหัส admin, รหัสนักเรียน) จึงอยู่ใน bundle เสมอ
+หน้าเว็บและการเขียน Firebase ส่วนใหญ่ทำงานจาก browser โดยตรง ส่วน AI tutor มี
+Vercel serverless proxy ที่ `/api/ai-tutor` การตรวจรหัส Admin ปัจจุบันยังเกิดใน
+browser จึงไม่ใช่กำแพงความปลอดภัย
 ใครเปิด DevTools ก็หาเจอ
 
-**นี่ไม่ใช่จุดอ่อนที่ปิดได้ด้วยโค้ด** — ทางแก้จริงมี 2 ทาง:
-1. **App Check + Firestore Rules** (ทำได้เลย ตามข้อ 1–2) → ปกป้อง *ข้อมูล*
-   ต่อให้คนผ่านหน้า login ปลอมได้ ก็เขียน Firestore ไม่ได้
-2. ทำ backend/Cloud Functions + Firebase Auth (งานใหญ่ ไว้อนาคต)
+ทางแก้จริงต้องมีทั้ง:
+1. **App Check** เพื่อลด abuse จาก client ปลอม
+2. **Firebase Auth + role-based Firestore Rules** เพื่อแยกครู นักเรียน และข้อมูลรายคน
+3. ย้ายคำสั่งสำคัญ เช่น แก้คะแนนทั้งห้อง ไป backend/Cloud Functions เมื่อพร้อม
 
-สำหรับโรงเรียน ~20 คน + เน็ตในโรงเรียน → **ข้อ 1 (App Check) เพียงพอ**
-สำหรับกันคนภายนอกยิงข้อมูลเสียหาย
+ก่อนทำครบสามส่วนนี้ ไม่ควรถือว่าระบบคะแนนและข้อมูลส่วนบุคคลปลอดภัยสำหรับการเปิด
+ต่ออินเทอร์เน็ตสาธารณะ แม้หน้าเว็บจะใช้งานได้ตามปกติ
 
 ---
 
 ## ✅ สิ่งที่แก้แล้วในโค้ด (commit นี้)
 
 - Firestore rules: เพิ่มตรวจ shape + จำกัดจำนวน field/ความยาว string ต่อ doc
-  (กัน payload ระเบิด + กันลบข้ามพาธ)
-- App Check scaffolding ใน `firebase.ts` — เปิดเมื่อใส่ `VITE_RECAPTCHA_SITE_KEY`
-- `.env` เลิก track ใน git + `.gitignore` กัน `.env*` (ยกเว้น `.env.example`)
-- รหัส Admin อ่านจาก `.env` แทน hardcode
+  (ช่วยกัน payload ผิดรูปแบบ แต่ยังไม่ใช่ authorization)
+- App Check scaffolding ใน `src/services/firebase.ts` — เปิดเมื่อใส่
+  `VITE_RECAPTCHA_SITE_KEY`
+- `.env.secret` และ `.env.*.local` ถูก ignore; `.env` ที่ track ต้องมีเฉพาะ
+  Firebase web config
+- AI provider key ย้ายไป Vercel serverless proxy ไม่อยู่ใน browser bundle
 - ยืนยัน: สไลด์ escape HTML ก่อน render → ไม่มี XSS

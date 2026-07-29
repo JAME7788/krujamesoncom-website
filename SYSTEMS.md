@@ -14,7 +14,7 @@
 - **เกม + กิจกรรม** ฝึกทักษะในเว็บ
 - **ระบบ Admin** จัดการทุกอย่างได้
 
-**Tech stack:** React 18 + TypeScript + Vite + Framer Motion + Firebase (optional)
+**Tech stack:** React 19 + TypeScript + Vite + Framer Motion + Firebase + Vercel Functions
 
 ---
 
@@ -30,9 +30,9 @@
 | `/dashboard` | Dashboard | Student | สถิติส่วนตัว + ปฏิทิน + กราฟ |
 | `/report-card` | ReportCard | Student | สมุดรายงานผลการเรียน (พิมพ์ได้) |
 | `/resources` | Resources | Public | คลังเครื่องมือ 107+ รายการ |
-| `/games` | Games Hub | Public | รวมเกมฝึก 9 เกม |
+| `/games` | Games Hub | Public | รวมเกมฝึกจาก `gamesCatalog` |
 | `/games/{mouse-practice,keyboard-practice,...}` | Games | Public | เกมแต่ละเกม |
-| `/admin` | AdminDashboard | Admin login | แผงควบคุมครู 12 tabs |
+| `/admin` | AdminDashboard | Admin client gate | แผงควบคุมครูแบบแบ่งหมวด |
 | `*` | NotFound | Public | 404 page |
 
 ---
@@ -41,7 +41,7 @@
 
 ### ผู้ใช้งาน 2 ประเภท
 1. **Student (นักเรียน)** — login ด้วยห้อง + ชื่อจาก roster 2569
-2. **Admin (ครู)** — login ด้วย username/password (`jameskmd` / `12345678kmd`)
+2. **Admin (ครู)** — client-side username/password gate; ยังต้องย้ายเป็น Firebase Auth ก่อนถือว่าปลอดภัย
 
 ### ไฟล์หลัก
 - `src/context/AuthContext.tsx` — student session + partner (โหมดนั่งคู่)
@@ -154,12 +154,12 @@ Admin → ทุกคอร์ส (16+)
 - **เวลาที่เข้า** (สำหรับคำนวณ attendance)
 
 ### ไฟล์หลัก
-- `src/services/progressService.ts` — localStorage-first + Firebase sync
+- `src/services/progressService.ts` — Firebase source of truth + in-memory cache ต่อ session
 - Auto-sync ทุก click → ครูเห็นเรียลไทม์
 
 ### Storage Strategy
-- **Primary**: localStorage (offline-first)
-- **Sync**: Firebase Firestore (ถ้ามี VITE_FIREBASE_PROJECT_ID)
+- **Primary**: Firebase Firestore
+- **Session cache**: in-memory เท่านั้น จึงไม่ค้างข้ามนักเรียนเมื่อ logout
 - **Limit**: 50 quiz attempts + 100 activity logs ล่าสุด
 
 ---
@@ -282,7 +282,7 @@ Admin → ทุกคอร์ส (16+)
 
 ## 🎮 12. Mini Games (เกมฝึก)
 
-### 9 เกมในเว็บ
+### 21 เกมใน catalog
 | เกม | ฝึก | ระดับ |
 |-----|------|------|
 | 🖱️ Mouse Practice | ใช้เมาส์ | ป.1-3 |
@@ -467,8 +467,8 @@ A = (student.a ? 1 : 0) × weight × 0.15
 ```
 src/
 ├── pages/           # หน้าหลักของเว็บ
-│   ├── games/       # 9 mini games
-│   └── AdminDashboard.tsx (12 tabs)
+│   ├── games/       # เกมจาก gamesCatalog
+│   └── AdminDashboard.tsx (เมนูครูแบบแบ่งหมวด)
 ├── components/      # UI components ที่ใช้ซ้ำ
 ├── services/        # Business logic + data CRUD
 ├── data/            # Static data + content
@@ -479,7 +479,6 @@ src/
 ### Storage Strategy
 **localStorage Keys:**
 - `current_student`, `current_partner` — auth
-- `krujames_progress_{studentId}` — student progress
 - `krujames_grades_v1_{classroom}[_subj]` — K/P/A
 - `krujames_roster_overrides_v1` — custom roster
 - `krujames_achievements_{studentId}` — badges
@@ -523,20 +522,16 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
 ```
 
-ถ้าไม่ตั้ง env → เว็บทำงานได้แบบ localStorage-only
+ถ้าไม่ตั้ง env → ส่วนที่ใช้ Firebase จะไม่บันทึกขึ้น cloud และไม่เหมาะกับการใช้งานจริง
 
 ---
 
-## 📞 22. Admin Credentials (สำคัญ!)
+## 🔐 22. Admin Access
 
-```
-Username: jameskmd
-Password: 12345678kmd
-URL: /admin
-Session: 8 ชั่วโมง
-```
-
-**สำหรับครู** — เก็บเป็นความลับ ไม่ให้นักเรียนรู้
+- URL: `/admin`
+- Session ฝั่ง browser: 8 ชั่วโมง
+- ห้ามบันทึกรหัสผ่านจริงในเอกสารหรือ repository
+- ระบบปัจจุบันเป็น client-side gate จึงอ่านค่าใน bundle ได้ ดูแผนแก้ไขใน `SECURITY.md`
 
 ---
 
@@ -574,13 +569,13 @@ Session: 8 ชั่วโมง
 | Rich Slides | **85 สไลด์** ใน 17 หน่วย |
 | แบบทดสอบ | **200+ ข้อ** |
 | Resources (เครื่องมือ) | **107+** รายการ |
-| เกมในเว็บ | **9 เกม** |
+| เกมในเว็บ | **21 เกมใน catalog** |
 | Achievements | **18 badges** |
 | รายชื่อนักเรียน 2569 | **115 คน** 9 ห้อง |
 | Pages | **17 pages** |
 | Components | **20 components** |
 | Services | **18 services** |
-| Admin tabs | **12 tabs** |
+| Admin | **เมนูแบบแบ่งหมวด ดูรายการจริงจาก `AdminDashboard.tsx`** |
 
 ---
 

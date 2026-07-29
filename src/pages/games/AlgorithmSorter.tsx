@@ -210,7 +210,6 @@ const shuffle = <T,>(arr: T[]): T[] => {
 
 const AlgorithmSorter: React.FC = () => {
   const [puzzleIdx, setPuzzleIdx] = useState(0);
-  const [prevPuzzleIdx, setPrevPuzzleIdx] = useState(0);
   const [items, setItems] = useState<string[]>(() => shuffle(puzzles[0].steps));
   const [checked, setChecked] = useState(false);
   const [score, setScore] = useState(0);
@@ -219,15 +218,10 @@ const AlgorithmSorter: React.FC = () => {
   const recordGame = useGameProgress('algorithm', 'จัดอัลกอริทึม');
 
   const puzzle = puzzles[puzzleIdx];
-
-  if (puzzleIdx !== prevPuzzleIdx) {
-    setPrevPuzzleIdx(puzzleIdx);
-    setItems(shuffle(puzzle.steps));
-    setChecked(false);
-  }
-
+  const isCorrect = checked && items.every((it, i) => it === puzzle.steps[i]);
 
   const move = (idx: number, dir: -1 | 1) => {
+    if (isCorrect) return;
     const newIdx = idx + dir;
     if (newIdx < 0 || newIdx >= items.length) return;
     const next = [...items];
@@ -237,6 +231,7 @@ const AlgorithmSorter: React.FC = () => {
   };
 
   const check = () => {
+    if (isCorrect) return;
     setChecked(true);
     const correct = items.every((it, i) => it === puzzle.steps[i]);
     if (correct) {
@@ -255,19 +250,20 @@ const AlgorithmSorter: React.FC = () => {
       void recordGame(score);
       return;
     }
-    setPuzzleIdx((i) => i + 1);
+    const nextIndex = puzzleIdx + 1;
+    setPuzzleIdx(nextIndex);
+    setItems(shuffle(puzzles[nextIndex].steps));
+    setChecked(false);
   };
 
   const reset = () => {
+    if (isCorrect) return;
     setItems(shuffle(puzzle.steps));
     setChecked(false);
   };
 
-  const isCorrect = checked && items.every((it, i) => it === puzzle.steps[i]);
-
   const restartGame = () => {
     setPuzzleIdx(0);
-    setPrevPuzzleIdx(0);
     setItems(shuffle(puzzles[0].steps));
     setChecked(false);
     setScore(0);
@@ -342,9 +338,11 @@ const AlgorithmSorter: React.FC = () => {
         )}
 
         <div className="puzzle-actions">
-          <button className="btn-secondary" onClick={reset}>
-            <RotateCcw size={16} /> สุ่มใหม่
-          </button>
+          {!isCorrect && (
+            <button className="btn-secondary" onClick={reset}>
+              <RotateCcw size={16} /> สุ่มใหม่
+            </button>
+          )}
           {!isCorrect && (
             <button className="btn-game-start" onClick={check}>
               ✓ ตรวจคำตอบ

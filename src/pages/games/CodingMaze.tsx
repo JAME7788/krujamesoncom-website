@@ -190,7 +190,6 @@ const levels: Level[] = [
 
 const CodingMaze: React.FC = () => {
   const [levelIdx, setLevelIdx] = useState(0);
-  const [prevLevelIdx, setPrevLevelIdx] = useState(0);
   const [program, setProgram] = useState<{ cmd: Cmd; loop?: number }[]>([]);
   const [running, setRunning] = useState(false);
   const [pos, setPos] = useState<[number, number]>(() => levels[0].start);
@@ -203,16 +202,17 @@ const CodingMaze: React.FC = () => {
 
   const level = levels[levelIdx];
 
-  if (levelIdx !== prevLevelIdx) {
-    setPrevLevelIdx(levelIdx);
+  const selectLevel = (nextLevelIdx: number) => {
+    const nextLevel = levels[nextLevelIdx];
+    setLevelIdx(nextLevelIdx);
     setProgram([]);
-    setPos(level.start);
-    setGrid(level.grid.map(row => [...row]));
+    setPos(nextLevel.start);
+    setGrid(nextLevel.grid.map(row => [...row]));
     setRunning(false);
     setMessage('');
     setStepIdx(-1);
     setCollected(0);
-  }
+  };
 
   const resetLevel = () => {
     setProgram([]);
@@ -253,7 +253,6 @@ const CodingMaze: React.FC = () => {
       setMessage('🤔 ต้องวางบล็อกก่อนนะ!');
       return;
     }
-    recordGame(solved.filter(Boolean).length);
     setRunning(true);
     setMessage('');
     setPos(level.start);
@@ -460,7 +459,7 @@ const CodingMaze: React.FC = () => {
             <button
               key={i}
               className={`level-pill ${i === levelIdx ? 'active' : ''} ${solved[i] ? 'solved' : ''}`}
-              onClick={() => setLevelIdx(i)}
+              onClick={() => selectLevel(i)}
             >
               {solved[i] && '✓ '}ด่าน {i + 1}: {l.name}
             </button>

@@ -60,7 +60,7 @@ const buildPlanText = () => {
     lines.push(`หลักฐาน: ${unit.evidence}`, '');
   });
 
-  lines.push('แผนรายหน่วยและรายคาบ');
+  lines.push('แผนการจัดการเรียนรู้รายชั่วโมง 40 แผน');
   p1LessonPlans.forEach((plan) => {
     lines.push('', `แผนที่ ${plan.no} ${plan.title}`);
     lines.push(`หน่วยที่ ${plan.unitNo} | สัปดาห์ ${plan.weeks} | ${plan.hours} คาบ | ${plan.indicators.join(', ')}`);
@@ -115,7 +115,7 @@ const emptyRecordForm = {
 
 const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
   const sessions = useMemo(() => getP1HourlySessions(plan), [plan]);
-  const [hourNo, setHourNo] = useState(1);
+  const hourNo = 1;
   const [teachingDate, setTeachingDate] = useState(new Date().toISOString().slice(0, 10));
   const [records, setRecords] = useState<LessonRecord[]>(loadLessonRecords);
   const [snapshot, setSnapshot] = useState<LessonRecordSnapshot>(emptySnapshot);
@@ -248,7 +248,7 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
         ...form,
       });
       setRecords((items) => [saved, ...items.filter((item) => item.id !== saved.id)]);
-      toast.show(`บันทึกหลังสอนแผน ${plan.no} คาบ ${hourNo} ลง Firebase แล้ว`, 'success');
+      toast.show(`บันทึกหลังสอนแผนที่ ${plan.no} ลง Firebase แล้ว`, 'success');
     } catch (error) {
       toast.show(`บันทึกไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`, 'error');
     } finally {
@@ -265,15 +265,10 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
           <p>{sessions[hourNo - 1]?.title} • {plan.indicators.join(', ')}</p>
         </div>
         <div className="p1plan-post-record-controls">
-          <label>คาบ
-            <select value={hourNo} onChange={(event) => {
-              const nextHourNo = Number(event.target.value);
-              setHourNo(nextHourNo);
-              selectRecord(nextHourNo, teachingDate);
-            }}>
-              {sessions.map((session) => <option key={session.hourNo} value={session.hourNo}>คาบ {session.hourNo}</option>)}
-            </select>
-          </label>
+          <div className="p1plan-post-record-plan">
+            <span>แผนรายชั่วโมง</span>
+            <strong>แผนที่ {plan.no} · {sessions[0]?.minutes || p1TechnologyCourse.periodMinutes} นาที</strong>
+          </div>
           <label>วันที่สอน
             <input type="date" value={teachingDate} onChange={(event) => {
               const nextDate = event.target.value;
@@ -373,20 +368,6 @@ const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRe
               <p className="p1plan-evidence"><strong>หลักฐาน:</strong> {step.evidence}</p>
             </div>
           </div>
-        ))}
-      </div>
-    </section>
-
-    <section className="p1plan-section">
-      <h4>รายละเอียดรายชั่วโมง ({plan.hours} คาบ คาบละ {p1TechnologyCourse.periodMinutes} นาที)</h4>
-      <div className="p1plan-hour-table">
-        {getP1HourlySessions(plan).map((session) => (
-          <article key={session.hourNo}>
-            <header><strong>คาบ {session.hourNo}</strong><span>{session.minutes} นาที</span></header>
-            <div><b>ครู</b><ul>{session.teacherActivities.map((item) => <li key={item}>{item}</li>)}</ul></div>
-            <div><b>ผู้เรียน</b><ul>{session.studentActivities.map((item) => <li key={item}>{item}</li>)}</ul></div>
-            <p><b>หลักฐาน:</b> {session.evidence.join(' • ')}</p>
-          </article>
         ))}
       </div>
     </section>
@@ -522,7 +503,7 @@ const P1TechnologyPlan: React.FC = () => {
           </section>
 
           <section className="p1plan-section">
-            <h3>โครงสร้าง 4 หน่วย 10 แผน 40 คาบ</h3>
+            <h3>โครงสร้าง 4 หน่วย 40 แผนรายชั่วโมง</h3>
             <div className="p1plan-table-wrap">
               <table>
                 <thead><tr><th>หน่วย</th><th>ชื่อหน่วยและคำถามสำคัญ</th><th>ตัวชี้วัด</th><th>หลักฐานสำคัญ</th><th>เวลา</th></tr></thead>
@@ -552,7 +533,7 @@ const P1TechnologyPlan: React.FC = () => {
               </button>
             ))}
           </div>
-          <PlanDetail plan={plan} allowRecord />
+          <PlanDetail plan={plan} allowRecord key={plan.no} />
         </div>
       )}
 

@@ -1,3 +1,5 @@
+import { p1HourlyLessonOutlines } from './p1HourlyLessonOutlines';
+
 export type KpaDomain = 'K' | 'P' | 'A';
 
 export interface P1PlanObjective {
@@ -97,7 +99,7 @@ export const p1AnnualUnits: P1AnnualUnit[] = [
     no: 1,
     title: 'คอมพิวเตอร์เพื่อนเรียนรู้',
     hours: 12,
-    plans: '1-3',
+    plans: '1-12',
     indicators: ['ว 4.2 ป.1/4', 'ว 4.2 ป.1/5'],
     essentialQuestion: 'เราจะใช้คอมพิวเตอร์สร้างงานและดูแลอุปกรณ์ให้ปลอดภัยได้อย่างไร',
     evidence: 'แผนผังอุปกรณ์ ภารกิจเมาส์-แป้นพิมพ์ และไฟล์ภาพที่บันทึกแล้วเปิดกลับมาได้',
@@ -106,7 +108,7 @@ export const p1AnnualUnits: P1AnnualUnit[] = [
     no: 2,
     title: 'นักแก้ปัญหาตัวน้อย',
     hours: 12,
-    plans: '4-6',
+    plans: '13-24',
     indicators: ['ว 4.2 ป.1/1', 'ว 4.2 ป.1/2'],
     essentialQuestion: 'ถ้าวิธีแรกยังไม่สำเร็จ เราจะคิด ทดลอง และอธิบายวิธีใหม่อย่างไร',
     evidence: 'ใบงานเปรียบเทียบ การ์ดลำดับกิจวัตร และแผนที่คำสั่งที่เพื่อนทำตามได้',
@@ -115,7 +117,7 @@ export const p1AnnualUnits: P1AnnualUnit[] = [
     no: 3,
     title: 'โปรแกรมเมอร์ตัวน้อย',
     hours: 12,
-    plans: '7-9',
+    plans: '25-36',
     indicators: ['ว 4.2 ป.1/3', 'ว 4.2 ป.1/4'],
     essentialQuestion: 'เราจะเรียงคำสั่งให้ตัวละครทำงานตามที่ต้องการและแก้คำสั่งที่ผิดได้อย่างไร',
     evidence: 'โปรแกรมบัตรคำสั่ง โปรแกรมบล็อก และชิ้นงานเรื่องสั้นที่ผ่านการทดสอบและบันทึกแล้ว',
@@ -124,7 +126,7 @@ export const p1AnnualUnits: P1AnnualUnit[] = [
     no: 4,
     title: 'พลเมืองดิจิทัลที่รับผิดชอบ',
     hours: 4,
-    plans: '10',
+    plans: '37-40',
     indicators: ['ว 4.2 ป.1/5'],
     essentialQuestion: 'เมื่อพบสิ่งไม่ปลอดภัยบนหน้าจอ เราควรหยุด ปิด และบอกใคร',
     evidence: 'บัตรตัดสินใจปลอดภัย/ไม่ปลอดภัย การแสดงบทบาทสมมติ และข้อตกลงประจำห้อง',
@@ -159,7 +161,7 @@ const assessment = (
   },
 ];
 
-export const p1LessonPlans: P1LessonPlan[] = [
+const p1LessonBlocks: P1LessonPlan[] = [
   {
     no: 1,
     unitNo: 1,
@@ -481,39 +483,116 @@ export const p1LessonPlans: P1LessonPlan[] = [
   },
 ];
 
-/** แบ่งกิจกรรม 200 นาทีของแต่ละแผนออกเป็น 4 คาบ คาบละ 50 นาที */
-export const getP1HourlySessions = (plan: P1LessonPlan): P1HourlySession[] => {
-  const sessions: P1HourlySession[] = Array.from({ length: plan.hours }, (_, index) => ({
-    hourNo: index + 1,
-    title: `คาบที่ ${index + 1}: ${plan.title}`,
-    minutes: 0,
-    teacherActivities: [],
-    studentActivities: [],
-    evidence: [],
-  }));
-  let sessionIndex = 0;
-  let remainingInSession = p1TechnologyCourse.periodMinutes;
+const hourlyAssessment = (
+  focus: string,
+  practicalTask: string,
+  attitude: string,
+): P1PlanAssessment[] => [
+  {
+    domain: 'K',
+    method: `ตอบคำถามตรวจสอบความเข้าใจเรื่อง${focus}`,
+    instrument: 'คำถามท้ายคาบ 3 ข้อและการอธิบายด้วยภาพหรือคำพูด',
+    criteria: 'ตอบถูกหรืออธิบายได้อย่างน้อย 2 จาก 3 ข้อ',
+    webRecord: 'บันทึกคะแนนความรู้ในช่อง K ของตัวชี้วัดประจำแผน',
+  },
+  {
+    domain: 'P',
+    method: `ประเมินการปฏิบัติภารกิจ: ${practicalTask}`,
+    instrument: 'รูบริกการปฏิบัติและชิ้นงาน 3 ระดับ พร้อมหลักฐานรายบุคคล',
+    criteria: 'ผ่านเมื่อทำภารกิจหลักสำเร็จอย่างน้อยระดับพอใช้ และอธิบายขั้นตอนที่ทำได้',
+    webRecord: 'เลือกระดับ P ไม่ผ่าน / พอใช้ / ผ่าน แล้วระบบแปลงเป็นคะแนนตามเกณฑ์',
+  },
+  {
+    domain: 'A',
+    method: `สังเกตพฤติกรรมระหว่างเรียน: ${attitude}`,
+    instrument: 'แบบสังเกตพฤติกรรมรายคาบ 3 รายการ',
+    criteria: 'ผ่านเมื่อแสดงพฤติกรรมตามจุดประสงค์อย่างน้อย 2 ใน 3 รายการ',
+    webRecord: 'บันทึก A จากหลักฐานของคาบ ไม่ใช้ความรู้สึกหรือเหตุการณ์เพียงครั้งเดียว',
+  },
+];
 
-  plan.steps.forEach((step) => {
-    let remainingStep = step.minutes;
-    while (remainingStep > 0 && sessionIndex < sessions.length) {
-      const used = Math.min(remainingStep, remainingInSession);
-      const session = sessions[sessionIndex];
-      session.minutes += used;
-      session.teacherActivities.push(`${step.phase} (${used} นาที): ${step.teacher}`);
-      session.studentActivities.push(`${step.phase} (${used} นาที): ${step.students}`);
-      if (!session.evidence.includes(step.evidence)) session.evidence.push(step.evidence);
-      remainingStep -= used;
-      remainingInSession -= used;
-      if (remainingInSession === 0) {
-        sessionIndex += 1;
-        remainingInSession = p1TechnologyCourse.periodMinutes;
-      }
-    }
-  });
+/** แผนพร้อมสอน 40 แผน โดยหนึ่งแผนเท่ากับหนึ่งคาบ 50 นาที */
+export const p1LessonPlans: P1LessonPlan[] = p1HourlyLessonOutlines.map((outline, index) => {
+  const block = p1LessonBlocks.find((item) => item.no === outline.blockNo);
+  if (!block) throw new Error(`Missing P.1 lesson block ${outline.blockNo}`);
 
-  return sessions;
-};
+  const planNo = index + 1;
+  return {
+    no: planNo,
+    unitNo: block.unitNo,
+    title: outline.title,
+    weeks: String(planNo),
+    hours: 1,
+    indicators: block.indicators,
+    essentialQuestion: outline.essentialQuestion,
+    concept: `${outline.focus}: ${outline.content.join(' ')}`,
+    vocabulary: block.vocabulary,
+    objectives: [
+      { domain: 'K', text: outline.k },
+      { domain: 'P', text: outline.p },
+      { domain: 'A', text: outline.a },
+    ],
+    content: outline.content,
+    steps: [
+      {
+        phase: '1. ขั้นนำเข้าสู่บทเรียน',
+        minutes: 5,
+        teacher: `${outline.hook} เชื่อมคำตอบเข้าสู่คำถามสำคัญของคาบโดยยังไม่เฉลยแทนผู้เรียน`,
+        students: 'สังเกต คาดเดา เชื่อมโยงกับประสบการณ์ใกล้ตัว และตอบคำถามสั้น ๆ ตามความเข้าใจ',
+        evidence: 'คำตอบนำเข้าสู่บทเรียนและความรู้เดิมของผู้เรียน',
+      },
+      {
+        phase: '2. ขั้นสำรวจและสาธิต',
+        minutes: 10,
+        teacher: `${outline.demonstration} ตรวจความเข้าใจระหว่างสาธิตด้วยคำถามทีละขั้น`,
+        students: 'สังเกตการสาธิต ชี้หรือพูดตามขั้น และถามทันทีเมื่อพบส่วนที่ยังไม่เข้าใจ',
+        evidence: 'การตอบคำถามระหว่างสาธิตและรายการตรวจความเข้าใจ',
+      },
+      {
+        phase: '3. ขั้นฝึกปฏิบัติแบบมีผู้ชี้แนะ',
+        minutes: 10,
+        teacher: `${outline.guidedPractice} ให้คำแนะนำเฉพาะจุดและลดความช่วยเหลือลงเมื่อผู้เรียนทำได้`,
+        students: 'ฝึกตามขั้นเป็นรายบุคคลหรือคู่ ตรวจงานกับเกณฑ์ภาพ และแก้ไขก่อนเริ่มภารกิจหลัก',
+        evidence: `ผลงานระหว่างฝึกและ${outline.worksheet}`,
+      },
+      {
+        phase: '4. ขั้นลงมือทำภารกิจ',
+        minutes: 20,
+        teacher: `มอบหมายภารกิจ "${outline.mission}" สังเกตด้วยรูบริก P และบันทึกการช่วยเหลือที่ผู้เรียนได้รับ`,
+        students: 'วางแผน ลงมือทำ ทดสอบ และปรับผลงานให้ตรงโจทย์ พร้อมอธิบายสิ่งที่ทำแก่ครูหรือเพื่อน',
+        evidence: outline.evidence,
+      },
+      {
+        phase: '5. ขั้นสรุปและประเมิน',
+        minutes: 5,
+        teacher: `${outline.reflection} ใช้คำถามตรวจสอบ 3 ข้อและแจ้งสิ่งที่ต้องฝึกต่อในคาบถัดไป`,
+        students: 'นำเสนอหรือส่งหลักฐาน ตอบคำถามท้ายคาบ และประเมินตนเองตามจริง',
+        evidence: 'คำตอบท้ายคาบ ชิ้นงาน และบัตรสะท้อนการเรียนรู้',
+      },
+    ],
+    media: block.media,
+    worksheet: outline.worksheet,
+    product: outline.product,
+    checkQuestions: outline.checkQuestions,
+    assessments: hourlyAssessment(outline.focus, outline.mission, outline.a),
+    support: block.support,
+    researchEvidence: [
+      outline.evidence,
+      'คำตอบตรวจสอบก่อนจบคาบและคะแนน K/P/A ที่ผูกกับตัวชี้วัด',
+      `บันทึกหลังสอนแผนที่ ${planNo} พร้อมข้อมูลมาเรียน ปัญหา และแนวทางปรับคาบถัดไป`,
+    ],
+  };
+});
+
+/** ส่งรายละเอียดของแผนหนึ่งคาบให้หน้าบันทึกหลังสอน */
+export const getP1HourlySessions = (plan: P1LessonPlan): P1HourlySession[] => [{
+  hourNo: 1,
+  title: `แผนที่ ${plan.no}: ${plan.title}`,
+  minutes: plan.steps.reduce((sum, step) => sum + step.minutes, 0),
+  teacherActivities: plan.steps.map((step) => `${step.phase} (${step.minutes} นาที): ${step.teacher}`),
+  studentActivities: plan.steps.map((step) => `${step.phase} (${step.minutes} นาที): ${step.students}`),
+  evidence: [...new Set(plan.steps.map((step) => step.evidence))],
+}];
 
 export const p1ScoringPlan = {
   collected: 70,

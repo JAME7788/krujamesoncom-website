@@ -612,6 +612,26 @@
   gap: 10px;
 }
 
+.p1plan-post-record-plan {
+  display: grid;
+  align-content: center;
+  min-width: 170px;
+  padding: 7px 10px;
+  border: 1px solid #99f6e4;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.p1plan-post-record-plan span {
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+.p1plan-post-record-plan strong {
+  color: #0f766e;
+  font-size: 0.82rem;
+}
+
 .p1plan-post-record label {
   display: grid;
   gap: 5px;

@@ -114,8 +114,20 @@ export const computeAttendance = (
         lastSeen = lastSeen ? Math.max(lastSeen, a.timestamp) : a.timestamp;
       });
 
+      // activities ที่ sync ขึ้น Firebase เก็บเฉพาะรายการล่าสุด จึงอาจตัด login
+      // ในคาบออกไปแล้ว ใช้ inClassDays เป็นหลักฐานถาวรสำรองสำหรับวันนั้น
+      const year = dayStart.getFullYear();
+      const month = dayStart.getMonth();
+      const day = dayStart.getDate();
+      const persistedInClassDays = new Set(s.progress?.inClassDays || []);
+      const hasPersistedInClassDay = [
+        `${year}-${month}-${day}`, // รูปแบบเดิม (เดือนเริ่มที่ 0)
+        `${year}-${month + 1}-${day}`,
+        `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+      ].some((key) => persistedInClassDays.has(key));
+
       let status: AttendanceRecord['status'] = 'absent';
-      if (inClass > 0) status = 'present';
+      if (inClass > 0 || hasPersistedInClassDay) status = 'present';
       else if (outClass > 0) status = 'self-study';
 
       return {

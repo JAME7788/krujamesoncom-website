@@ -1,0 +1,1671 @@
+.robot-maker-page {
+  max-width: 1500px;
+  color: #172033;
+}
+
+.robot-maker-topbar {
+  align-items: flex-start;
+}
+
+.robot-maker-topbar > div:nth-child(2) {
+  flex: 1;
+  min-width: 240px;
+}
+
+.robot-maker-topbar h2 {
+  margin-top: 0.2rem;
+  letter-spacing: 0;
+}
+
+.robot-maker-topbar p {
+  margin: 0.2rem 0 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.robot-maker-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #0f766e;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.robot-mode-switch {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f1f5f9;
+}
+
+.robot-mode-switch button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+}
+
+.robot-mode-switch button.active {
+  background: #172033;
+  color: #fff;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.2);
+}
+
+.robot-maker-stats {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  border-block: 1px solid #d9e2ea;
+  background: #fff;
+}
+
+.robot-maker-stats span {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.45rem 0.9rem;
+  border-right: 1px solid #e2e8f0;
+  color: #5b6878;
+  font-size: 0.78rem;
+}
+
+.robot-maker-stats strong {
+  color: #172033;
+}
+
+.robot-level-strip {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(70px, 1fr));
+  gap: 5px;
+  margin-bottom: 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.robot-level-strip button {
+  display: grid;
+  min-width: 74px;
+  min-height: 48px;
+  place-items: center;
+  gap: 1px;
+  padding: 0.35rem 0.3rem;
+  border: 1px solid #d9e2ea;
+  border-radius: 6px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.robot-level-strip button b {
+  font-size: 0.84rem;
+}
+
+.robot-level-strip button span {
+  width: 100%;
+  overflow: hidden;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.robot-level-strip button.active {
+  border-color: #0f766e;
+  background: #e6fffb;
+  color: #0f5f59;
+  box-shadow: inset 0 -3px #0f766e;
+}
+
+.robot-level-strip button.complete:not(.active) {
+  border-color: #f2bd36;
+  background: #fffbeb;
+  color: #a16207;
+}
+
+.robot-maker-shell {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.68fr) minmax(520px, 1.7fr) minmax(260px, 0.82fr);
+  min-height: 670px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
+}
+
+.robot-toolbox,
+.robot-mission-panel {
+  min-width: 0;
+  padding: 0.85rem;
+  background: #f8fafc;
+}
+
+.robot-toolbox {
+  border-right: 1px solid #cbd5e1;
+}
+
+.robot-mission-panel {
+  border-left: 1px solid #cbd5e1;
+}
+
+.robot-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid #dbe3ea;
+}
+
+.robot-panel-heading > span {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 7px;
+  background: #0f766e;
+  color: #fff;
+}
+
+.robot-panel-heading h3,
+.robot-panel-heading p {
+  margin: 0;
+}
+
+.robot-panel-heading h3 {
+  font-size: 0.98rem;
+}
+
+.robot-panel-heading p {
+  margin-top: 0.1rem;
+  color: #64748b;
+  font-size: 0.67rem;
+}
+
+.robot-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.robot-tool-button {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 92px;
+  grid-template-rows: 58px auto;
+  place-items: center;
+  gap: 0.1rem;
+  padding: 0.25rem 0.2rem 0.4rem;
+  overflow: hidden;
+  border: 1px solid #d8e0e8;
+  border-radius: 6px;
+  background: #fff;
+  color: #334155;
+  cursor: grab;
+  font-family: inherit;
+  touch-action: manipulation;
+}
+
+.robot-tool-button::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--tool-accent, #64748b);
+  content: '';
+}
+
+.robot-tool-button.group-structure {
+  --tool-accent: #b7791f;
+}
+
+.robot-tool-button.group-motion {
+  --tool-accent: #0284c7;
+}
+
+.robot-tool-button.group-signal {
+  --tool-accent: #0f766e;
+}
+
+.robot-tool-button.group-decor {
+  --tool-accent: #e11d48;
+}
+
+.robot-tool-button:hover,
+.robot-tool-button:focus-visible {
+  z-index: 1;
+  border-color: #0f766e;
+  outline: 2px solid rgba(15, 118, 110, 0.14);
+}
+
+.robot-tool-button:active {
+  cursor: grabbing;
+}
+
+.robot-tool-button.needed {
+  border-color: #e3a41c;
+  background: #fffdf4;
+}
+
+.robot-tool-button.ready {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.robot-tool-button small {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  min-width: 23px;
+  height: 19px;
+  place-items: center;
+  border-radius: 9px;
+  background: #172033;
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 800;
+}
+
+.robot-tool-preview {
+  position: relative;
+  display: grid;
+  width: 76px;
+  height: 56px;
+  place-items: center;
+  transform: scale(0.72);
+}
+
+.robot-tool-label {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.robot-workbench {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: auto minmax(500px, 1fr) auto;
+  background: #eaf4f5;
+}
+
+.robot-selection-toolbar {
+  display: flex;
+  min-height: 49px;
+  align-items: center;
+  gap: 5px;
+  padding: 0.38rem 0.55rem;
+  overflow-x: auto;
+  border-bottom: 1px solid #cbd5e1;
+  background: #fff;
+  color: #64748b;
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.robot-selection-toolbar strong,
+.robot-selection-toolbar > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.robot-selection-toolbar strong {
+  margin-right: auto;
+  color: #172033;
+}
+
+.robot-selection-toolbar button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #dbe3ea;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #334155;
+  cursor: pointer;
+}
+
+.robot-selection-toolbar button:hover {
+  border-color: #0f766e;
+  color: #0f766e;
+}
+
+.robot-selection-toolbar button.danger:hover {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.robot-toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: #dbe3ea;
+}
+
+.robot-board-theme-switch {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 0.4rem;
+  border-left: 1px solid #dbe3ea;
+}
+
+.robot-board-theme-switch > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-inline: 0.25rem;
+  color: #64748b;
+  font-size: 0.67rem;
+  font-weight: 800;
+}
+
+.robot-board-theme-switch button.active {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.14);
+}
+
+.robot-canvas {
+  --board-base: #fffdf7;
+  --board-grid: rgba(92, 63, 32, 0.1);
+  --board-ink: #475569;
+  --board-frame: #9a6b3c;
+  --board-mat: rgba(255, 255, 255, 0.58);
+  position: relative;
+  min-height: 500px;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--board-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--board-grid) 1px, transparent 1px),
+    var(--board-base);
+  background-size: 24px 24px;
+  box-shadow:
+    inset 0 0 0 5px rgba(120, 76, 35, 0.15),
+    inset 0 0 0 7px rgba(255, 255, 255, 0.46);
+  isolation: isolate;
+  transition: background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.robot-canvas.theme-blueprint {
+  --board-base: #075985;
+  --board-grid: rgba(224, 242, 254, 0.15);
+  --board-ink: #e0f2fe;
+  --board-frame: #7dd3fc;
+  --board-mat: rgba(7, 89, 133, 0.36);
+  box-shadow:
+    inset 0 0 0 5px rgba(186, 230, 253, 0.25),
+    inset 0 0 0 7px rgba(3, 105, 161, 0.8);
+}
+
+.robot-canvas.theme-space {
+  --board-base: #172033;
+  --board-grid: rgba(103, 232, 249, 0.1);
+  --board-ink: #cffafe;
+  --board-frame: #22d3ee;
+  --board-mat: rgba(15, 23, 42, 0.54);
+  background:
+    linear-gradient(var(--board-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--board-grid) 1px, transparent 1px),
+    linear-gradient(135deg, transparent 0 48%, rgba(250, 204, 21, 0.04) 48% 52%, transparent 52%),
+    var(--board-base);
+  background-size: 24px 24px, 24px 24px, 120px 120px, auto;
+  box-shadow:
+    inset 0 0 0 5px rgba(34, 211, 238, 0.16),
+    inset 0 0 0 7px rgba(8, 47, 73, 0.86);
+}
+
+.robot-canvas::before {
+  position: absolute;
+  right: 5%;
+  bottom: 6%;
+  left: 5%;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.08);
+  content: '';
+  filter: blur(4px);
+}
+
+.robot-board-decor {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  color: var(--board-ink);
+  pointer-events: none;
+}
+
+.robot-board-bolt {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(71, 85, 105, 0.42);
+  border-radius: 50%;
+  background:
+    linear-gradient(45deg, transparent 43%, rgba(51, 65, 85, 0.55) 43% 57%, transparent 57%),
+    #cbd5e1;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
+}
+
+.bolt-top-left {
+  top: 13px;
+  left: 13px;
+}
+
+.bolt-top-right {
+  top: 13px;
+  right: 13px;
+}
+
+.bolt-bottom-left {
+  bottom: 13px;
+  left: 13px;
+}
+
+.bolt-bottom-right {
+  right: 13px;
+  bottom: 13px;
+}
+
+.robot-board-plate {
+  position: absolute;
+  top: 13px;
+  right: 46px;
+  display: grid;
+  min-width: 118px;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0 0.35rem;
+  padding: 0.32rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--board-frame) 72%, #fff);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--board-base) 78%, #fff);
+  color: var(--board-ink);
+  box-shadow: 0 2px 0 rgba(15, 23, 42, 0.12);
+}
+
+.robot-board-plate svg {
+  grid-row: 1 / 3;
+}
+
+.robot-board-plate b {
+  font-size: 0.57rem;
+  line-height: 1;
+}
+
+.robot-board-plate small {
+  font-size: 0.46rem;
+  font-weight: 800;
+  line-height: 1.2;
+  opacity: 0.72;
+}
+
+.robot-board-lights {
+  position: absolute;
+  top: 58px;
+  right: 18px;
+  display: flex;
+  gap: 5px;
+  padding: 4px 6px;
+  border: 1px solid color-mix(in srgb, var(--board-frame) 50%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--board-base) 72%, #0f172a);
+}
+
+.robot-board-lights i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.14);
+}
+
+.robot-board-lights i:nth-child(2) {
+  background: #facc15;
+}
+
+.robot-board-lights i:nth-child(3) {
+  background: #22c55e;
+  animation: maker-status-pulse 1.8s ease-in-out infinite;
+}
+
+.robot-board-ruler {
+  position: absolute;
+  border: 1px solid color-mix(in srgb, var(--board-frame) 48%, transparent);
+  background-color: color-mix(in srgb, var(--board-base) 76%, #facc15);
+  opacity: 0.72;
+}
+
+.ruler-horizontal {
+  right: 46px;
+  bottom: 14px;
+  left: 46px;
+  height: 15px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 9px,
+    var(--board-ink) 9px 10px,
+    transparent 10px 19px,
+    color-mix(in srgb, var(--board-ink) 60%, transparent) 19px 20px
+  );
+}
+
+.ruler-vertical {
+  top: 88px;
+  bottom: 46px;
+  left: 14px;
+  width: 15px;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0 9px,
+    var(--board-ink) 9px 10px,
+    transparent 10px 19px,
+    color-mix(in srgb, var(--board-ink) 60%, transparent) 19px 20px
+  );
+}
+
+.robot-material-rack {
+  position: absolute;
+  right: 19px;
+  bottom: 41px;
+  display: flex;
+  align-items: end;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--board-frame) 45%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--board-base) 82%, transparent);
+}
+
+.robot-material-rack i {
+  display: block;
+  width: 16px;
+  height: 30px;
+  border: 1px solid rgba(15, 23, 42, 0.24);
+}
+
+.robot-material-rack .material-cardboard {
+  background: repeating-linear-gradient(90deg, #b7793d 0 4px, #d29a5e 4px 7px);
+}
+
+.robot-material-rack .material-metal {
+  height: 24px;
+  background: repeating-linear-gradient(90deg, #94a3b8 0 2px, #e2e8f0 2px 5px);
+}
+
+.robot-material-rack .material-plastic {
+  height: 19px;
+  background: #0ea5e9;
+}
+
+.robot-material-rack .material-wire {
+  width: 23px;
+  height: 23px;
+  border: 4px solid #e11d48;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.robot-work-mat {
+  position: absolute;
+  top: 16%;
+  right: 16%;
+  bottom: 10%;
+  left: 16%;
+  border: 1px dashed color-mix(in srgb, var(--board-frame) 62%, transparent);
+  border-radius: 8px;
+  background: var(--board-mat);
+  box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--board-frame) 8%, transparent);
+}
+
+.robot-work-mat::before,
+.robot-work-mat::after {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-color: var(--board-frame);
+  border-style: solid;
+  content: '';
+  opacity: 0.5;
+}
+
+.robot-work-mat::before {
+  top: 8px;
+  left: 8px;
+  border-width: 2px 0 0 2px;
+}
+
+.robot-work-mat::after {
+  right: 8px;
+  bottom: 8px;
+  border-width: 0 2px 2px 0;
+}
+
+.robot-canvas.is-complete .robot-board-lights i {
+  background: #22c55e;
+  animation: maker-complete-flash 720ms ease-in-out 3;
+}
+
+.robot-canvas-label {
+  position: absolute;
+  z-index: 3;
+  top: 9px;
+  left: 11px;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #94a3b8;
+  font-size: 0.58rem;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+
+.robot-canvas.theme-blueprint .robot-canvas-label,
+.robot-canvas.theme-space .robot-canvas-label {
+  color: #bae6fd;
+}
+
+.robot-canvas.theme-blueprint .robot-canvas-label b,
+.robot-canvas.theme-space .robot-canvas-label b {
+  border-color: rgba(186, 230, 253, 0.45);
+  color: #e0f2fe;
+}
+
+.robot-canvas-label b {
+  padding: 2px 5px;
+  border: 1px solid #cbd5e1;
+  border-radius: 3px;
+  color: #64748b;
+}
+
+.robot-empty-state {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  gap: 0.45rem;
+  padding: 2rem;
+  color: #78909c;
+  text-align: center;
+  pointer-events: none;
+}
+
+.robot-canvas.theme-blueprint .robot-empty-state,
+.robot-canvas.theme-space .robot-empty-state {
+  color: #bae6fd;
+}
+
+.robot-canvas.theme-blueprint .robot-empty-state strong,
+.robot-canvas.theme-space .robot-empty-state strong {
+  color: #f0f9ff;
+}
+
+.robot-empty-state strong {
+  color: #48616d;
+}
+
+.robot-empty-state span {
+  max-width: 320px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.placed-robot-part {
+  position: absolute;
+  z-index: 4;
+  display: grid;
+  width: 92px;
+  height: 72px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  outline: none;
+  touch-action: none;
+  user-select: none;
+}
+
+.placed-robot-part:active {
+  cursor: grabbing;
+}
+
+.placed-robot-part.selected::after {
+  position: absolute;
+  inset: -5px;
+  border: 2px dashed #0284c7;
+  border-radius: 5px;
+  content: '';
+  pointer-events: none;
+}
+
+.placed-robot-part.selected::before {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #0284c7;
+  content: '';
+  box-shadow: 0 0 0 1px #0284c7;
+}
+
+.robot-workbench-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.55rem;
+  border-top: 1px solid #cbd5e1;
+  background: #fff;
+}
+
+.robot-workbench-actions button {
+  display: inline-flex;
+  min-height: 37px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #334155;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.robot-workbench-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.robot-workbench-actions button.save {
+  margin-left: auto;
+  border-color: #15803d;
+  background: #16a34a;
+  color: #fff;
+}
+
+.robot-mission-title {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #dbe3ea;
+}
+
+.robot-mission-title > span {
+  display: inline-flex;
+  padding: 0.18rem 0.5rem;
+  border-radius: 4px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 900;
+}
+
+.robot-mission-title h3 {
+  margin: 0.4rem 0 0.18rem;
+  font-size: 1.08rem;
+}
+
+.robot-mission-title p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.robot-blueprint,
+.robot-requirements {
+  margin-top: 0.75rem;
+}
+
+.robot-subheading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+  color: #334155;
+  font-size: 0.72rem;
+}
+
+.robot-subheading span {
+  color: #64748b;
+  font-size: 0.63rem;
+}
+
+.robot-blueprint-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid #8cc3d7;
+  border-radius: 4px;
+  background:
+    linear-gradient(rgba(14, 116, 144, 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 116, 144, 0.11) 1px, transparent 1px),
+    #effbff;
+  background-size: 16px 16px;
+}
+
+.robot-blueprint-canvas::after {
+  position: absolute;
+  inset: 7px;
+  border: 1px dashed rgba(14, 116, 144, 0.32);
+  content: '';
+  pointer-events: none;
+}
+
+.robot-blueprint-canvas::before {
+  position: absolute;
+  z-index: 2;
+  right: 7px;
+  bottom: 7px;
+  padding: 3px 5px;
+  border: 1px solid rgba(14, 116, 144, 0.34);
+  background: rgba(239, 251, 255, 0.88);
+  color: #0e7490;
+  content: 'KJ / ROBOT BLUEPRINT';
+  font-size: 0.43rem;
+  font-weight: 900;
+  pointer-events: none;
+}
+
+.blueprint-robot-part {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  width: 68px;
+  height: 52px;
+  place-items: center;
+  pointer-events: none;
+}
+
+.robot-requirements ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.robot-requirements li {
+  display: grid;
+  min-width: 0;
+  min-height: 38px;
+  grid-template-columns: 31px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid #dbe3ea;
+  border-radius: 4px;
+  background: #fff;
+  color: #475569;
+}
+
+.robot-requirements li.ready {
+  border-color: #86c998;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.robot-requirements li.over {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.robot-requirements li > span:nth-child(2) {
+  overflow: hidden;
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.robot-requirements li strong {
+  font-size: 0.64rem;
+}
+
+.requirement-preview {
+  position: relative;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  transform: scale(0.35);
+}
+
+.robot-feedback {
+  margin-top: 0.75rem;
+  padding: 0.62rem 0.7rem;
+  border-left: 3px solid #3b82f6;
+  background: #eff6ff;
+  color: #334155;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.robot-feedback.success {
+  border-left-color: #16a34a;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.robot-feedback.error {
+  border-left-color: #dc2626;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.robot-check-button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+  border: 0;
+  border-radius: 6px;
+  background: #0f766e;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 900;
+  box-shadow: 0 4px 0 #0a504c;
+}
+
+.robot-check-button:hover {
+  background: #0b645e;
+}
+
+.robot-check-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #0a504c;
+}
+
+.robot-check-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.robot-win-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #efc450;
+  border-radius: 5px;
+  background: #fffbeb;
+  overflow: hidden;
+}
+
+.robot-win-actions::before {
+  width: 8px;
+  align-self: stretch;
+  margin: -0.55rem 0 -0.55rem -0.65rem;
+  background: repeating-linear-gradient(0deg, #eab308 0 6px, #fef3c7 6px 12px);
+  content: '';
+}
+
+.robot-win-actions > div {
+  display: grid;
+  margin-right: auto;
+}
+
+.robot-win-actions b {
+  color: #e19b05;
+  letter-spacing: 0;
+}
+
+.robot-win-actions span {
+  color: #785207;
+  font-size: 0.63rem;
+}
+
+.robot-win-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  border: 0;
+  border-radius: 5px;
+  background: #172033;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.robot-learning-focus {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #dbe3ea;
+}
+
+.robot-learning-focus strong {
+  color: #0f766e;
+  font-size: 0.67rem;
+}
+
+.robot-learning-focus p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.robot-free-panel {
+  display: grid;
+  place-items: start;
+}
+
+.robot-free-panel > svg {
+  margin-bottom: 0.5rem;
+  color: #d97706;
+}
+
+.robot-free-panel h3,
+.robot-free-panel p {
+  margin: 0;
+}
+
+.robot-free-panel p {
+  margin-top: 0.35rem;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.robot-free-panel dl {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.robot-free-panel dl > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #dbe3ea;
+}
+
+.robot-free-panel dt {
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.robot-free-panel dd {
+  margin: 0;
+  color: #172033;
+  font-weight: 900;
+}
+
+.robot-free-panel > button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+}
+
+.robot-maker-tip {
+  border-left-color: #0f766e;
+  background: #ecfdf5;
+  color: #14532d;
+}
+
+/* Original code-rendered parts. No external game artwork is copied. */
+.robot-visual {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.cardboard-body,
+.cardboard-head {
+  border: 3px solid #8b5a2b;
+  border-radius: 7px;
+  background:
+    repeating-linear-gradient(92deg, rgba(91, 54, 24, 0.08) 0 2px, transparent 2px 7px),
+    #c98b45;
+  box-shadow: inset 0 0 0 2px rgba(255, 225, 172, 0.35), 0 4px 0 rgba(96, 58, 26, 0.22);
+}
+
+.cardboard-body {
+  width: 88px;
+  height: 64px;
+}
+
+.cardboard-head {
+  width: 70px;
+  height: 58px;
+}
+
+.cardboard-tape {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 48%;
+  width: 8px;
+  background: rgba(246, 208, 146, 0.38);
+}
+
+.cardboard-rivet {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #6b4427;
+}
+
+.cardboard-rivet.one {
+  top: 7px;
+  left: 7px;
+}
+
+.cardboard-rivet.two {
+  right: 7px;
+  bottom: 7px;
+}
+
+.corrugated-arm,
+.corrugated-leg {
+  border: 2px solid #875424;
+  background: repeating-linear-gradient(90deg, #9c632d 0 6px, #d39a55 6px 10px, #7e4a20 10px 13px);
+  box-shadow: 0 3px 0 rgba(69, 42, 20, 0.18);
+}
+
+.corrugated-arm {
+  width: 76px;
+  height: 23px;
+  clip-path: polygon(0 50%, 8% 0, 18% 50%, 28% 0, 38% 50%, 48% 0, 58% 50%, 68% 0, 78% 50%, 88% 0, 100% 50%, 88% 100%, 78% 50%, 68% 100%, 58% 50%, 48% 100%, 38% 50%, 28% 100%, 18% 50%, 8% 100%);
+}
+
+.corrugated-leg {
+  width: 25px;
+  height: 58px;
+  background: repeating-linear-gradient(0deg, #9c632d 0 6px, #d39a55 6px 10px, #7e4a20 10px 13px);
+  clip-path: polygon(50% 0, 100% 8%, 50% 18%, 100% 28%, 50% 38%, 100% 48%, 50% 58%, 100% 68%, 50% 78%, 100% 88%, 50% 100%, 0 88%, 50% 78%, 0 68%, 50% 58%, 0 48%, 50% 38%, 0 28%, 50% 18%, 0 8%);
+}
+
+.sensor-eye {
+  width: 34px;
+  height: 34px;
+  border: 3px solid #334155;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 -3px #dbeafe, 0 2px 0 rgba(15, 23, 42, 0.18);
+}
+
+.sensor-eye i {
+  position: absolute;
+  top: 8px;
+  left: 11px;
+  width: 11px;
+  height: 14px;
+  border-radius: 50%;
+  background: #172033;
+}
+
+.sensor-eye i::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff;
+  content: '';
+}
+
+.bottle-cap {
+  width: 33px;
+  height: 33px;
+  border: 3px solid rgba(15, 23, 42, 0.45);
+  border-radius: 50%;
+  box-shadow: inset 0 -5px rgba(15, 23, 42, 0.16), 0 3px 0 rgba(15, 23, 42, 0.18);
+}
+
+.bottle-cap i {
+  position: absolute;
+  inset: 4px;
+  border: 2px dashed rgba(255, 255, 255, 0.42);
+  border-radius: 50%;
+}
+
+.bottle-cap.cap-red {
+  background: #ef4444;
+}
+
+.bottle-cap.cap-blue {
+  background: #2563eb;
+}
+
+.bottle-cap.cap-green {
+  background: #22c55e;
+}
+
+.robot-meter {
+  width: 61px;
+  height: 39px;
+  overflow: hidden;
+  border: 3px solid #475569;
+  border-radius: 35px 35px 5px 5px;
+  background:
+    repeating-conic-gradient(from 270deg at 50% 100%, #475569 0 1deg, transparent 1deg 12deg),
+    #f8fafc;
+  box-shadow: 0 3px 0 rgba(15, 23, 42, 0.18);
+}
+
+.robot-meter::after {
+  position: absolute;
+  right: 7px;
+  bottom: -12px;
+  left: 7px;
+  height: 21px;
+  background: #f8fafc;
+  content: '';
+}
+
+.meter-needle {
+  position: absolute;
+  z-index: 2;
+  bottom: 6px;
+  left: 29px;
+  width: 3px;
+  height: 24px;
+  border-radius: 2px;
+  background: #dc2626;
+  transform: rotate(27deg);
+  transform-origin: 50% 100%;
+}
+
+.robot-meter b {
+  position: absolute;
+  z-index: 3;
+  bottom: 2px;
+  font-size: 7px;
+}
+
+.robot-meter b:first-of-type {
+  left: 7px;
+}
+
+.robot-meter b:last-of-type {
+  right: 7px;
+}
+
+.heart-button {
+  display: grid;
+  width: 45px;
+  height: 45px;
+  place-items: center;
+  border: 3px solid #9f1239;
+  border-radius: 50%;
+  background: #fff1f2;
+  color: #f43f5e;
+  box-shadow: 0 3px 0 rgba(136, 19, 55, 0.22);
+}
+
+.robot-antenna {
+  width: 35px;
+  height: 67px;
+}
+
+.robot-antenna i {
+  position: absolute;
+  right: 16px;
+  bottom: 0;
+  width: 4px;
+  height: 43px;
+  border-radius: 3px;
+  background: #475569;
+  box-shadow: 6px 6px 0 -1px #94a3b8;
+}
+
+.robot-antenna b {
+  position: absolute;
+  top: 0;
+  left: 7px;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #991b1b;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: inset -4px -5px rgba(127, 29, 29, 0.25), 0 2px 0 rgba(15, 23, 42, 0.2);
+}
+
+.robot-bulb {
+  width: 44px;
+  height: 61px;
+}
+
+.robot-bulb i {
+  position: absolute;
+  top: 0;
+  left: 4px;
+  width: 36px;
+  height: 40px;
+  border: 3px solid #d97706;
+  border-radius: 50% 50% 44% 44%;
+  background: #fde047;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.55), inset -5px -5px rgba(217, 119, 6, 0.14);
+}
+
+.robot-bulb i::before {
+  position: absolute;
+  top: 12px;
+  left: 10px;
+  width: 10px;
+  height: 15px;
+  border: 2px solid #b45309;
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0;
+  content: '';
+}
+
+.robot-bulb b {
+  position: absolute;
+  right: 11px;
+  bottom: 0;
+  left: 11px;
+  height: 21px;
+  border: 2px solid #475569;
+  border-radius: 2px 2px 6px 6px;
+  background: repeating-linear-gradient(0deg, #94a3b8 0 3px, #475569 3px 5px);
+}
+
+.robot-claw {
+  width: 54px;
+  height: 54px;
+  border: 12px solid #16a34a;
+  border-right-color: transparent;
+  border-radius: 50%;
+  filter: drop-shadow(0 3px 0 rgba(20, 83, 45, 0.2));
+}
+
+.robot-claw i {
+  position: absolute;
+  top: 8px;
+  right: -14px;
+  width: 21px;
+  height: 14px;
+  border-radius: 2px;
+  background: #16a34a;
+}
+
+.robot-wheel {
+  width: 58px;
+  height: 42px;
+  border: 7px solid #1e293b;
+  border-radius: 45%;
+  background: #38bdf8;
+  box-shadow: inset 0 0 0 5px #2563eb, 0 4px 0 rgba(15, 23, 42, 0.18);
+}
+
+.robot-wheel i {
+  position: absolute;
+  top: 7px;
+  left: 15px;
+  width: 14px;
+  height: 14px;
+  border: 3px solid #1e3a8a;
+  border-radius: 50%;
+  background: #e0f2fe;
+}
+
+@keyframes maker-status-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.14);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.9);
+  }
+}
+
+@keyframes maker-complete-flash {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.14);
+  }
+  50% {
+    transform: scale(1.35);
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.95);
+  }
+}
+
+@keyframes robot-eye-blink {
+  0%,
+  44%,
+  52%,
+  100% {
+    transform: scaleY(1);
+  }
+  48% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes robot-bulb-glow {
+  0%,
+  100% {
+    filter: brightness(0.96);
+    box-shadow: 0 0 9px rgba(250, 204, 21, 0.45), inset -5px -5px rgba(217, 119, 6, 0.14);
+  }
+  50% {
+    filter: brightness(1.08);
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.78), inset -5px -5px rgba(217, 119, 6, 0.1);
+  }
+}
+
+.placed-robot-part .sensor-eye i {
+  animation: robot-eye-blink 4.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.placed-robot-part .robot-bulb i {
+  animation: robot-bulb-glow 1.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robot-board-lights i,
+  .robot-canvas.is-complete .robot-board-lights i,
+  .placed-robot-part .sensor-eye i,
+  .placed-robot-part .robot-bulb i {
+    animation: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .robot-maker-shell {
+    grid-template-columns: 225px minmax(480px, 1fr);
+  }
+
+  .robot-mission-panel {
+    grid-column: 1 / -1;
+    border-top: 1px solid #cbd5e1;
+    border-left: 0;
+  }
+
+  .robot-mission-panel:not(:has(.robot-free-panel)) {
+    display: grid;
+    grid-template-columns: minmax(190px, 0.75fr) minmax(250px, 1fr) minmax(260px, 1fr);
+    gap: 0.8rem;
+    align-items: start;
+  }
+
+  .robot-mission-panel .robot-mission-title {
+    border-bottom: 0;
+  }
+
+  .robot-mission-panel .robot-blueprint,
+  .robot-mission-panel .robot-requirements {
+    margin-top: 0;
+  }
+
+  .robot-mission-panel .robot-feedback,
+  .robot-mission-panel .robot-check-button,
+  .robot-mission-panel .robot-win-actions,
+  .robot-mission-panel .robot-learning-focus {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .robot-maker-page {
+    padding-inline: 0.55rem;
+  }
+
+  .robot-maker-topbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .robot-mode-switch {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .robot-maker-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .robot-maker-stats span {
+    min-width: 0;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.68rem;
+  }
+
+  .robot-maker-shell {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .robot-toolbox {
+    border-right: 0;
+    border-bottom: 1px solid #cbd5e1;
+  }
+
+  .robot-tool-grid {
+    display: flex;
+    padding-bottom: 0.35rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .robot-tool-button {
+    min-width: 92px;
+    scroll-snap-align: start;
+  }
+
+  .robot-workbench {
+    grid-template-rows: auto 480px auto;
+  }
+
+  .robot-selection-toolbar {
+    min-height: 52px;
+  }
+
+  .robot-workbench-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .robot-workbench-actions button {
+    width: 100%;
+  }
+
+  .robot-workbench-actions button.save {
+    margin-left: 0;
+  }
+
+  .robot-mission-panel:not(:has(.robot-free-panel)) {
+    display: block;
+  }
+
+  .robot-mission-panel .robot-blueprint,
+  .robot-mission-panel .robot-requirements {
+    margin-top: 0.75rem;
+  }
+
+  .robot-blueprint-canvas {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 430px) {
+  .robot-maker-topbar h2 {
+    font-size: 1.15rem;
+  }
+
+  .robot-maker-topbar p {
+    font-size: 0.72rem;
+  }
+
+  .robot-selection-toolbar strong {
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .robot-workbench {
+    grid-template-rows: auto 430px auto;
+  }
+
+  .robot-requirements ul {
+    grid-template-columns: 1fr;
+  }
+}

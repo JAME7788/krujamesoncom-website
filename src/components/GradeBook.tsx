@@ -325,6 +325,11 @@ const GradeBook: React.FC = () => {
         msg += `⚠️ ดึง Firebase ไม่สำเร็จ: ${r.firebaseProgressError}\n`;
       }
       msg += `✅ อัปเดตได้: ${r.studentsUpdated} คน (${r.indicatorsUpdated} รายการตัวชี้วัด)\n`;
+      if (r.firebaseGradeSaved === true) {
+        msg += `☁️ บันทึกสมุดคะแนนขึ้น Firebase สำเร็จ\n`;
+      } else if (r.firebaseGradeSaved === false) {
+        msg += `❌ บันทึกสมุดคะแนนขึ้น Firebase ไม่สำเร็จ: ${r.firebaseGradeError || 'ไม่ทราบสาเหตุ'}\n`;
+      }
       msg += `   • Match จากชื่อตรง: ${r.matchedByExact} คน\n`;
       msg += `   • Match จากเลขที่: ${r.matchedByNumber} คน\n`;
       msg += `   • Match จากชื่อบางส่วน: ${r.matchedByName} คน\n\n`;
@@ -335,7 +340,10 @@ const GradeBook: React.FC = () => {
           r.notFound.forEach((n) => (msg += `   • เลข ${n.no}: ${n.name}\n`));
         }
       }
-      toast.show(msg, r.studentsUpdated > 0 ? 'success' : 'info');
+      toast.show(
+        msg,
+        r.firebaseGradeSaved === false ? 'error' : r.studentsUpdated > 0 ? 'success' : 'info',
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       toast.show(`นำเข้า K/P/A ไม่สำเร็จ: ${msg}`, 'error');

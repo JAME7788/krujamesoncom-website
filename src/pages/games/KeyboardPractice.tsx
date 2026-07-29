@@ -29,7 +29,6 @@ const KeyboardPractice: React.FC = () => {
   const recordGame = useGameProgress('keyboard', 'นักสำรวจคีย์บอร์ด');
 
   const start = () => {
-    recordGame();
     setScore(0);
     setTime(60);
     setLetters([]);
@@ -59,13 +58,14 @@ const KeyboardPractice: React.FC = () => {
             }
             return currentBest;
           });
+          if (currentScore > 0) void recordGame(currentScore);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [running]);
+  }, [recordGame, running]);
 
   // Spawn falling letters
   useEffect(() => {

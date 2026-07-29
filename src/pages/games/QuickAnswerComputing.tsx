@@ -222,16 +222,17 @@ const QuickAnswerComputing: React.FC = () => {
         if (current <= 1) {
           window.clearInterval(timer);
           const finalResult = buildResult(score, totalSeconds);
-          setResult(finalResult);
-          saveResult(finalResult);
-          setPhase('finished');
-          return 0;
+           setResult(finalResult);
+           saveResult(finalResult);
+           setPhase('finished');
+           if (score > 0) void recordGame(score);
+           return 0;
         }
         return current - 1;
       });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [buildResult, paused, phase, score, totalSeconds]);
+  }, [buildResult, paused, phase, recordGame, score, totalSeconds]);
 
   const startGame = () => {
     const duration = Math.max(1, minutes * 60 + Math.min(59, seconds));
@@ -251,7 +252,6 @@ const QuickAnswerComputing: React.FC = () => {
     setFact('');
     setResult(null);
     setPhase('playing');
-    void recordGame(0);
   };
 
   const finishWithScore = (finalScore: number) => {
@@ -260,6 +260,7 @@ const QuickAnswerComputing: React.FC = () => {
     saveResult(finalResult);
     setPhase('finished');
     setPaused(false);
+    if (finalScore > 0) void recordGame(finalScore);
   };
 
   const answer = (choice: string) => {

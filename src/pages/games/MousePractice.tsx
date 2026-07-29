@@ -47,13 +47,14 @@ const MousePractice: React.FC = () => {
             }
             return currentBest;
           });
+          if (currentScore > 0) void recordGame(currentScore);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [running]);
+  }, [recordGame, running]);
 
   // Spawn targets
   useEffect(() => {
@@ -79,7 +80,6 @@ const MousePractice: React.FC = () => {
   }, [running]);
 
   const start = () => {
-    recordGame();
     setScore(0);
     setMisses(0);
     setTime(60);

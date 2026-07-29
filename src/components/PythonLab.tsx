@@ -40,7 +40,7 @@ const normalize = (s: string) =>
 const CHALLENGE_LEVELS: PyChallenge['level'][] = ['ง่าย', 'ปานกลาง', 'ท้าทาย'];
 
 interface PythonLabProps {
-  onChallengeSolved?: (solvedCount: number) => void;
+  onChallengeSolved?: (solvedCount: number, challengeId: string) => void;
 }
 
 const PythonLab: React.FC<PythonLabProps> = ({ onChallengeSolved }) => {
@@ -114,7 +114,7 @@ const PythonLab: React.FC<PythonLabProps> = ({ onChallengeSolved }) => {
         if (!solved.includes(challenge.id)) {
           const nextSolved = markSolved(ownerId, challenge.id);
           setSolved(nextSolved);
-          onChallengeSolved?.(nextSolved.length);
+          onChallengeSolved?.(nextSolved.length, challenge.id);
           if (user && user.id !== 'admin_teacher_account') {
             void awardBonus(user.id, { emoji: '🐍', reason: `แก้โจทย์ Python: ${challenge.title}`, xp: challenge.xp });
             toast.show(`เยี่ยม! แก้โจทย์สำเร็จ +${challenge.xp} XP 🎉`, 'success');

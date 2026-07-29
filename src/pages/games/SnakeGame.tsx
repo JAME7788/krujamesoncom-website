@@ -35,7 +35,6 @@ const SnakeGame: React.FC = () => {
   }, []);
 
   const reset = () => {
-    recordGame(score > 0 ? score : undefined);
     const initSnake = [{ x: 9, y: 9 }, { x: 8, y: 9 }, { x: 7, y: 9 }];
     setSnake(initSnake);
     setFood(randomFood(initSnake));
@@ -90,6 +89,10 @@ const SnakeGame: React.FC = () => {
     }, SPEEDS[speed]);
     return () => clearInterval(tick);
   }, [running, gameOver, food, speed, randomFood, bestScore]);
+
+  useEffect(() => {
+    if (gameOver && score > 0) void recordGame(score);
+  }, [gameOver, recordGame, score]);
 
   // Keyboard
   useEffect(() => {

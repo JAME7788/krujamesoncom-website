@@ -770,7 +770,8 @@ export const applyManualAssessmentsToGrades = (
           return;
         }
         if (category === 'k') {
-          const newK = Math.min(indicator.maxScore, Math.round(earned * 10) / 10);
+          const earnedRatio = Math.min(1, earned / max);
+          const newK = Math.round(earnedRatio * indicator.maxScore * 10) / 10;
           const legacyTeacherK = next.webK === undefined
             && next.manualK === undefined
             && next.teacherK === undefined
@@ -787,7 +788,8 @@ export const applyManualAssessmentsToGrades = (
             maxK: indicator.maxScore,
           };
         } else {
-          const manualPScore = Math.min(PRACTICE_MAX_SCORE, Math.round(earned * 10) / 10);
+          const earnedRatio = Math.min(1, earned / max);
+          const manualPScore = Math.round(earnedRatio * PRACTICE_MAX_SCORE * 10) / 10;
           const legacyPScore = next.webPScore === undefined
             && next.manualPScore === undefined
             && next.teacherPScore === undefined
@@ -832,9 +834,8 @@ export const applyManualAssessmentsToGrades = (
 
   if (studentsUpdated > 0) {
     cacheGradesLocally(classroom, grades, subject);
-    void Promise.all(grades.map((student) => (
-      upsertStudentGradeToFirebase(classroom, student, subject)
-    ))).catch((error) => console.warn('manual grade upsert failed', error));
+    void mergeClassroomGradesToFirebase(classroom, grades, subject, 'manual')
+      .catch((error) => console.warn('manual grade upsert failed', error));
   }
   return { studentsUpdated, indicatorsUpdated, assessmentsUsed: assessments.length };
 };
@@ -889,9 +890,8 @@ export const seedUnit1ScoresForAllClasses = (
         g.updatedAt = Date.now();
       });
       cacheGradesLocally(classroom, grades, subj.id);
-      void Promise.all(grades.map((student) => (
-        upsertStudentGradeToFirebase(classroom, student, subj.id)
-      ))).catch((error) => console.warn('seed grade upsert failed', error));
+      void mergeClassroomGradesToFirebase(classroom, grades, subj.id)
+        .catch((error) => console.warn('seed grade upsert failed', error));
       result.push({
         classroom,
         subject: subj.id,
@@ -1184,6 +1184,98 @@ const mergeIndicatorForStudent = (
     aAssessed: Boolean(remote.aAssessed || incoming.aAssessed),
     updatedAt: Math.max(remote.updatedAt || 0, incoming.updatedAt || 0),
   };
+};
+
+const mergeManualIndicatorForStudent = (
+  remote: IndicatorScore | undefined,
+  incoming: IndicatorScore,
+): IndicatorScore => {
+  if (!remote) return incoming;
+  const maxK = Math.max(remote.maxK || 0, incoming.maxK || 0, 15);
+  const webK = Math.max(remote.webK || 0, incoming.webK || 0);
+  const manualK = incoming.manualK ?? remote.manualK ?? 0;
+  const teacherK = remote.teacherK ?? incoming.teacherK ?? 0;
+  const webPScore = Math.max(remote.webPScore || 0, incoming.webPScore || 0);
+  const manualPScore = incoming.manualPScore ?? remote.manualPScore ?? 0;
+  const teacherPScore = remote.teacherPScore ?? incoming.teacherPScore ?? 0;
+  const pScore = Math.max(
+    teacherPScore,
+    Math.min(PRACTICE_MAX_SCORE, webPScore + manualPScore),
+  );
+  return {
+    ...incoming,
+    ...remote,
+    k: Math.max(teacherK, Math.min(maxK, webK + manualK)),
+    webK,
+    manualK,
+    teacherK,
+    maxK,
+    webPScore,
+    manualPScore,
+    teacherPScore,
+    pScore,
+    p: skillFromPracticeScore(pScore),
+    practiceLevel: getPracticeLevel(pScore),
+    practicePassed: pScore >= 15,
+    pAssessed: Boolean(remote.pAssessed || incoming.pAssessed),
+    updatedAt: Date.now(),
+  };
+};
+
+type ClassroomMergeSource = 'progress' | 'manual';
+
+const mergeClassroomGradesToFirebase = async (
+  classroom: string,
+  incomingGrades: StudentGrade[],
+  subject: Subject = 'main',
+  source: ClassroomMergeSource = 'progress',
+): Promise<void> => {
+  if (!firebaseAvailable()) throw new Error('Firebase is not configured');
+  const ref = doc(db, 'grades', gradeDocumentId(classroom, subject));
+
+  await runTransaction(db, async (transaction) => {
+    const snap = await transaction.get(ref);
+    const remoteGrades = snap.exists()
+      ? [...((snap.data().students as StudentGrade[] | undefined) || [])]
+      : [];
+
+    incomingGrades.forEach((incoming) => {
+      let index = remoteGrades.findIndex((student) => (
+        student.studentCode === incoming.studentCode
+        || student.studentNo === incoming.studentNo
+        || student.name === incoming.name
+      ));
+      const remote = index >= 0 ? remoteGrades[index] : undefined;
+      const indicators: Record<string, IndicatorScore> = { ...(remote?.indicators || {}) };
+      Object.entries(incoming.indicators || {}).forEach(([indicatorId, score]) => {
+        indicators[indicatorId] = source === 'manual'
+          ? mergeManualIndicatorForStudent(indicators[indicatorId], score)
+          : mergeIndicatorForStudent(indicators[indicatorId], score);
+      });
+      const merged: StudentGrade = {
+        ...remote,
+        ...incoming,
+        midtermExam: remote?.midtermExam ?? incoming.midtermExam,
+        finalExam: remote?.finalExam ?? incoming.finalExam,
+        comment: remote?.comment ?? incoming.comment,
+        indicators,
+        updatedAt: Date.now(),
+      };
+      if (index < 0) {
+        index = remoteGrades.length;
+        remoteGrades.push(merged);
+      } else {
+        remoteGrades[index] = merged;
+      }
+    });
+
+    transaction.set(ref, cleanForFirestore({
+      classroom,
+      subject,
+      students: remoteGrades,
+      updatedAt: Date.now(),
+    }), { merge: true });
+  });
 };
 
 type TeacherGradePatch = {
@@ -1593,12 +1685,17 @@ export const syncFromProgress = (
       }
 
       const evidence = u.scoreEvidence || [];
-      skillPoints += evidence.reduce(
-        (sum, item) => sum + item.basePoints * (item.inClass ? 1 : 0.4),
-        0,
-      );
+      // item.inClass ถูกคำนวณไว้ตอนบันทึก ถ้าตารางสอนตอนนั้นผิดวัน ค่าที่ค้างไว้ก็ผิดตาม
+      // จึงคิดใหม่จาก timestamp เทียบตารางปัจจุบันเสมอ — แก้ตารางแล้วคะแนนกลับมาเองโดยไม่ต้องแก้ข้อมูลเด็ก
+      skillPoints += evidence.reduce((sum, item) => {
+        const inClass = item.timestamp
+          ? isInClassTime(item.timestamp, classroom, schedule)
+          : item.inClass;
+        return sum + item.basePoints * (inClass ? 1 : 0.4);
+      }, 0);
 
-      // ข้อมูลรุ่นเก่าไม่มี scoreEvidence: นับรายการที่ยังไม่มีหลักฐานในอัตรานอกคาบ
+      // ข้อมูลรุ่นเก่าไม่มี scoreEvidence: เทียบ log กิจกรรมของหน่วยนี้กับตารางสอน
+      // เดิมเหมา ×0.4 ให้ทุกรายการ ทำให้งานที่ทำ "ในคาบ" ถูกหักคะแนน 60% ทั้งที่มาเรียนจริง
       const evidenceCounts = evidence.reduce<Record<string, number>>((counts, item) => {
         counts[item.type] = (counts[item.type] || 0) + 1;
         return counts;
@@ -1610,13 +1707,25 @@ export const syncFromProgress = (
         slide: Math.max(0, (u.slidesViewed?.length || 0) - (evidenceCounts.slide || 0)),
         article: Math.max(0, (u.articlesClicked?.length || 0) - (evidenceCounts.article || 0)),
       };
+      // ไม่รู้ว่ารายการเก่ารายการไหนทำตอนไหน จึงใช้ "สัดส่วนงานในคาบของหน่วยนี้" ถัวเฉลี่ย
+      // ทำทั้งหมดในคาบ → ×1.0, ทำนอกคาบล้วน → ×0.4 (เท่าเดิม), ปนกัน → ตามสัดส่วนจริง
+      const unitActivities = allActivities.filter(
+        (act) => `${act.gradeId}_${act.unitNo}` === key,
+      );
+      const inClassActivities = unitActivities.filter(
+        (act) => isInClassTime(act.timestamp, classroom, schedule),
+      ).length;
+      const inClassRatio = unitActivities.length > 0
+        ? inClassActivities / unitActivities.length
+        : 0;
+      const legacyMultiplier = inClassRatio + (1 - inClassRatio) * 0.4;
       skillPoints += (
         legacyCounts.practice * 5
         + legacyCounts.fun * 3
         + legacyCounts.video * 2
         + legacyCounts.slide
         + legacyCounts.article
-      ) * 0.4;
+      ) * legacyMultiplier;
       practiceCount += u.practiceCompleted?.length || 0;
       quizAttempts += u.quizAttempts || 0;
       if ((u.completionPct || 0) >= 60) completedUnits += 1;
@@ -1700,29 +1809,51 @@ export const syncFromProgress = (
     const aScore = currentScore.teacherA === undefined
       ? webAScore
       : currentScore.teacherA ? ATTITUDE_MAX_SCORE : 0;
+    const teacherK = legacyTeacherK || currentScore.teacherK;
+    const teacherPScore = legacyTeacherPScore || currentScore.teacherPScore;
+    const aEvidence = {
+      inClassDays: inClassDays.size,
+      activeDays: activeDays.size,
+      practiceCount,
+      quizAttempts,
+      completedUnits,
+    };
+    const scoreChanged = (
+      currentScore.k !== k
+      || currentScore.webK !== webK
+      || currentScore.teacherK !== teacherK
+      || currentScore.maxK !== ind.maxScore
+      || currentScore.p !== p
+      || currentScore.webPScore !== webPScore
+      || currentScore.teacherPScore !== teacherPScore
+      || currentScore.pScore !== pScore
+      || currentScore.practiceLevel !== getPracticeLevel(pScore)
+      || currentScore.practicePassed !== (pScore >= 15)
+      || currentScore.a !== a
+      || currentScore.webAScore !== webAScore
+      || currentScore.aScore !== aScore
+      || currentScore.pAssessed !== true
+      || currentScore.aAssessed !== true
+      || JSON.stringify(currentScore.aEvidence || {}) !== JSON.stringify(aEvidence)
+    );
+    if (!scoreChanged) return;
 
     student.indicators[ind.id] = {
       ...currentScore,
       k,
       webK,
-      teacherK: legacyTeacherK || currentScore.teacherK,
+      teacherK,
       maxK: ind.maxScore,
       p,
       webPScore,
-      teacherPScore: legacyTeacherPScore || currentScore.teacherPScore,
+      teacherPScore,
       pScore,
       practiceLevel: getPracticeLevel(pScore),
       practicePassed: pScore >= 15,
       a,
       webAScore,
       aScore,
-      aEvidence: {
-        inClassDays: inClassDays.size,
-        activeDays: activeDays.size,
-        practiceCount,
-        quizAttempts,
-        completedUnits,
-      },
+      aEvidence,
       pAssessed: true,
       aAssessed: true,
       updatedAt: Date.now(),
@@ -1735,9 +1866,8 @@ export const syncFromProgress = (
     if (persistScope === 'local') cacheGradesLocally(classroom, grades, subject);
     else {
       cacheGradesLocally(classroom, grades, subject);
-      void Promise.all(grades.map((student) => (
-        upsertStudentGradeToFirebase(classroom, student, subject)
-      ))).catch((error) => console.warn('progress grade upsert failed', error));
+      void upsertStudentGradeToFirebase(classroom, student, subject)
+        .catch((error) => console.warn('progress grade upsert failed', error));
     }
   }
   return { changed, matchType };
@@ -1761,7 +1891,7 @@ export const syncAllFromProgress = (classroom: string, subject: Subject = 'main'
   const notFound: { no: number; name: string }[] = [];
 
   grades.forEach((g) => {
-    const r = syncFromProgress(classroom, g.studentCode, undefined, subject);
+    const r = syncFromProgress(classroom, g.studentCode, undefined, subject, 'local');
     if (r.changed > 0) {
       studentsUpdated += 1;
       indicatorsUpdated += r.changed;
@@ -1788,14 +1918,34 @@ export const syncAllFromProgressAsync = async (
   firebaseProgressAvailable: boolean;
   firebaseProgressDownloaded: number;
   firebaseProgressError?: string;
+  firebaseGradeSaved?: boolean;
+  firebaseGradeError?: string;
 }> => {
   const remote = await hydrateProgressFromFirebase(classroom);
   const result = syncAllFromProgress(classroom, subject);
+  let firebaseGradeSaved: boolean | undefined;
+  let firebaseGradeError: string | undefined;
+  if (remote.available && result.studentsUpdated > 0) {
+    try {
+      await mergeClassroomGradesToFirebase(
+        classroom,
+        loadGrades(classroom, subject),
+        subject,
+        'progress',
+      );
+      firebaseGradeSaved = true;
+    } catch (error) {
+      firebaseGradeSaved = false;
+      firebaseGradeError = error instanceof Error ? error.message : String(error);
+    }
+  }
   return {
     ...result,
     firebaseProgressAvailable: remote.available,
     firebaseProgressDownloaded: remote.downloaded,
     firebaseProgressError: remote.error,
+    firebaseGradeSaved,
+    firebaseGradeError,
   };
 };
 

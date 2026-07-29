@@ -38,7 +38,6 @@ const MemoryMatch: React.FC = () => {
   };
 
   const start = (selected: keyof typeof themes = theme) => {
-    recordGame();
     const symbols = themes[selected];
     const pairs = [...symbols, ...symbols];
     const shuffled = shuffle(pairs).map((s, i) => ({ id: i, symbol: s, flipped: false, matched: false }));
@@ -110,6 +109,10 @@ const MemoryMatch: React.FC = () => {
   };
 
   const won = matches === themes[theme].length && cards.length > 0;
+
+  useEffect(() => {
+    if (won) void recordGame(moves);
+  }, [moves, recordGame, won]);
 
   return (
     <div className="game-page">

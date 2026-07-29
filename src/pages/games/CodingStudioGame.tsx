@@ -15,8 +15,8 @@ const CodingStudioGame: React.FC = () => {
     { recordOnce: false },
   );
 
-  const handleChallengeSolved = useCallback((solvedCount: number) => {
-    void recordGame(solvedCount);
+  const handleChallengeSolved = useCallback((solvedCount: number, challengeId: string) => {
+    void recordGame(solvedCount, challengeId);
   }, [recordGame]);
 
   return (

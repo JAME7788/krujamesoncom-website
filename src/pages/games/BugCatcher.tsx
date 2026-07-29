@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Play, Trophy, Heart, Clock } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
@@ -25,13 +25,16 @@ const BugCatcher: React.FC = () => {
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; emoji: string; ts: number }[]>([]);
   const arenaRef = useRef<HTMLDivElement>(null);
   const runningRef = useRef(running);
+  const scoreRef = useRef(score);
   const recordGame = useGameProgress('bug-catcher', 'จับบั๊ก');
   useEffect(() => {
     runningRef.current = running;
   }, [running]);
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
 
   const start = () => {
-    recordGame();
     setScore(0);
     setLives(3);
     setTime(0);
@@ -42,19 +45,18 @@ const BugCatcher: React.FC = () => {
     setParticles([]);
   };
 
-  const endGame = () => {
+  const endGame = useCallback(() => {
     setRunning(false);
-    setScore((s) => {
-      setBestScore((currentBest) => {
-        if (s > currentBest) {
-          localStorage.setItem('kj_bug_best', String(s));
-          return s;
-        }
-        return currentBest;
-      });
-      return s;
+    const finalScore = scoreRef.current;
+    setBestScore((currentBest) => {
+      if (finalScore > currentBest) {
+        localStorage.setItem('kj_bug_best', String(finalScore));
+        return finalScore;
+      }
+      return currentBest;
     });
-  };
+    if (finalScore > 0) void recordGame(finalScore);
+  }, [recordGame]);
 
   // Time + game over check
   useEffect(() => {
@@ -108,7 +110,7 @@ const BugCatcher: React.FC = () => {
       }, lifetime);
     }, spawnInterval);
     return () => clearInterval(spawn);
-  }, [running, time]);
+  }, [endGame, running, time]);
 
   // Cleanup particles
   useEffect(() => {

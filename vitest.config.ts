@@ -8,7 +8,8 @@ export default defineConfig({
     // เว็บอ่านค่าจาก import.meta.env — ใส่ค่าหลอกไว้ให้ import ผ่าน
     env: {
       VITE_FIREBASE_API_KEY: 'test-key',
-      VITE_FIREBASE_PROJECT_ID: 'test-project',
+      // ปิด Firebase จริงระหว่างเทสต์ ทุกเคสต้องใช้ cache/mock เท่านั้น
+      VITE_FIREBASE_PROJECT_ID: '',
     },
   },
 });
