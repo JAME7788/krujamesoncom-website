@@ -286,15 +286,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <div className="contact-info-icon"><Mail size={18} /></div>
                   <div className="contact-info-text">
                     <span className="contact-label">อีเมลติดต่อ</span>
-                    <a href="mailto:krujames.soncom@gmail.com">krujames.soncom@gmail.com</a>
+                    <a href="mailto:oouu7788james77@gmail.com">oouu7788james77@gmail.com</a>
                   </div>
                 </div>
 
                 <div className="contact-info-item">
                   <div className="contact-info-icon"><Phone size={18} /></div>
                   <div className="contact-info-text">
-                    <span className="contact-label">เบอร์โทรศัพท์โรงเรียน</span>
-                    <a href="tel:055701000">055-701-XXX (ต่อกลุ่มสาระฯ)</a>
+                    <span className="contact-label">เบอร์โทรศัพท์ติดต่อ</span>
+                    <a href="tel:0638233966">063-823-3966</a>
                   </div>
                 </div>
 
@@ -302,7 +302,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <div className="contact-info-icon"><Globe size={18} /></div>
                   <div className="contact-info-text">
                     <span className="contact-label">หน้าเพจ/โซเชียลมีเดีย</span>
-                    <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">ครูเจมส์ สอนคอม (Facebook Page)</a>
+                    <a href="https://www.facebook.com/search/top?q=%E0%B8%AD%E0%B8%99%E0%B8%B1%E0%B8%99%E0%B8%95%E0%B8%8A%E0%B8%B1%E0%B8%A2%20%E0%B9%80%E0%B8%9E%E0%B9%87%E0%B8%8A%E0%B8%A3%E0%B8%A3%E0%B8%B5%E0%B9%88" target="_blank" rel="noopener noreferrer">อนันตชัย เพ็ชรรี่ (Facebook)</a>
                   </div>
                 </div>
 
@@ -316,7 +316,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
 
               <div className="contact-notice">
-                💡 <strong>หมายเหตุ:</strong> นักเรียนที่ติดปัญหาระบบเช็คชื่อ คะแนน หรือการล็อกอินเข้าเรียน สามารถทักสอบถามคุณครูผ่านช่องทาง Line ID: <strong>@krujames</strong> หรือแจ้งในชั่วโมงเรียนคอมพิวเตอร์ได้โดยตรงครับ
+                💡 <strong>หมายเหตุ:</strong> นักเรียนที่ติดปัญหาระบบเช็คชื่อ คะแนน หรือการล็อกอินเข้าเรียน สามารถติดต่อผ่านเบอร์โทร อีเมล หรือ Facebook ด้านบน หรือแจ้งในชั่วโมงเรียนคอมพิวเตอร์ได้โดยตรงครับ
               </div>
             </div>
           </div>
