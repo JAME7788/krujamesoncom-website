@@ -1,0 +1,246 @@
+.question-bank {
+  color: #172033;
+  display: grid;
+  gap: 14px;
+}
+
+.question-bank > header,
+.question-bank-filters,
+.question-editor,
+.question-list,
+.question-preview {
+  background: #fff;
+  border: 1px solid #dce3ee;
+  border-radius: 8px;
+}
+
+.question-bank > header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 18px;
+}
+
+.question-bank > header span {
+  color: #315fe8;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.question-bank h2 {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  margin: 2px 0;
+}
+
+.question-bank p {
+  color: #667286;
+  margin: 0;
+}
+
+.question-bank button,
+.question-bank input,
+.question-bank select,
+.question-bank textarea {
+  font: inherit;
+}
+
+.question-bank > header button {
+  background: #f4f7fb;
+  border: 1px solid #d5deea;
+  border-radius: 6px;
+  height: 38px;
+  width: 38px;
+}
+
+.question-bank-filters {
+  align-items: end;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 120px 180px minmax(260px, 1fr) auto;
+  padding: 12px;
+}
+
+.question-bank label {
+  color: #596579;
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 750;
+  gap: 4px;
+}
+
+.question-bank input,
+.question-bank select,
+.question-bank textarea {
+  border: 1px solid #cdd7e4;
+  border-radius: 5px;
+  padding: 8px;
+}
+
+.draw-questions,
+.save-question {
+  align-items: center;
+  background: #315fe8;
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  display: inline-flex;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 13px;
+}
+
+.question-bank-layout {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(320px, 0.8fr) minmax(420px, 1.2fr);
+}
+
+.question-editor,
+.question-list,
+.question-preview {
+  padding: 15px;
+}
+
+.question-editor h3,
+.question-list h3 {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.question-editor {
+  display: grid;
+  gap: 9px;
+}
+
+.question-warning {
+  background: #fff4cf;
+  color: #825500 !important;
+  font-size: 0.78rem;
+  padding: 8px;
+}
+
+.question-option {
+  align-items: center;
+  display: grid !important;
+  grid-template-columns: 20px 24px 1fr;
+}
+
+.question-option input[type="radio"] {
+  height: 16px;
+  padding: 0;
+  width: 16px;
+}
+
+.question-editor-actions {
+  display: flex;
+  gap: 7px;
+  justify-content: flex-end;
+}
+
+.question-editor-actions button {
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  min-height: 38px;
+  padding: 7px 11px;
+}
+
+.question-list-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.question-list {
+  align-content: start;
+  display: grid;
+  gap: 7px;
+  max-height: 680px;
+  overflow: auto;
+}
+
+.question-list article {
+  border: 1px solid #e0e6ef;
+  border-radius: 6px;
+  cursor: pointer;
+  display: grid;
+  gap: 5px;
+  padding: 10px 38px 10px 10px;
+  position: relative;
+}
+
+.question-list article:hover {
+  border-color: #9fb5f7;
+}
+
+.question-list article > div {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+}
+
+.question-list article > strong {
+  font-size: 0.84rem;
+}
+
+.question-list article small {
+  color: #6b7280;
+}
+
+.question-list article button {
+  background: #fff0f0;
+  border: 0;
+  border-radius: 5px;
+  color: #ba2f2f;
+  height: 30px;
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  width: 30px;
+}
+
+.difficulty {
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 5px;
+}
+
+.difficulty.easy { background: #dcf8ea; color: #08734a; }
+.difficulty.medium { background: #fff0c9; color: #865700; }
+.difficulty.hard { background: #ffe0e0; color: #a52727; }
+
+.question-empty {
+  padding: 30px;
+  text-align: center;
+}
+
+.question-preview ol {
+  columns: 2;
+}
+
+.question-preview li {
+  break-inside: avoid;
+  font-size: 0.82rem;
+  margin-bottom: 8px;
+}
+
+.question-preview span {
+  color: #315fe8;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 980px) {
+  .question-bank-filters,
+  .question-bank-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .question-preview ol {
+    columns: 1;
+  }
+}

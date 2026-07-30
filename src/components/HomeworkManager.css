@@ -1,0 +1,238 @@
+.homework-review-modal {
+  background: #fff;
+  max-height: 90vh;
+  max-width: 880px;
+  overflow-y: auto;
+  position: relative;
+  width: 100%;
+}
+
+.homework-review-summary {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 12px;
+}
+
+.homework-review-summary > div {
+  background: #f5f7fb;
+  border-left: 3px solid #315fe8;
+  padding: 10px;
+}
+
+.homework-review-summary span,
+.homework-review-summary strong {
+  display: block;
+}
+
+.homework-review-summary span {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.homework-review-summary strong {
+  font-size: 1.05rem;
+  margin-top: 3px;
+}
+
+.homework-submission-list {
+  display: grid;
+  gap: 8px;
+}
+
+.homework-submission-row {
+  background: #f8fafc;
+  border: 1px solid #e1e7ef;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.homework-submission-row.missing {
+  background: #fff8ec;
+  border-color: #f0cf93;
+}
+
+.submission-status-line {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.submission-status-line span,
+.missing-label {
+  align-items: center;
+  border-radius: 4px;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  gap: 4px;
+  padding: 3px 6px;
+}
+
+.submission-status-line .submitted {
+  background: #dcf8ea;
+  color: #08734a;
+}
+
+.submission-status-line .late,
+.missing-label {
+  background: #fff0c9;
+  color: #8a5800;
+}
+
+.submission-status-line small {
+  color: #6b7280;
+}
+
+.homework-edit-score {
+  background: none;
+  border: 0;
+  color: #315fe8;
+  cursor: pointer;
+  display: block;
+  font-size: 0.73rem;
+  margin-top: 3px;
+  padding: 0;
+}
+
+.no-score {
+  color: #9ca3af;
+}
+
+.homework-score-overlay {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.58);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 18px;
+  position: fixed;
+  z-index: 1100;
+}
+
+.homework-score-dialog {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  max-height: 90vh;
+  max-width: 650px;
+  overflow: auto;
+  padding: 18px;
+  width: 100%;
+}
+
+.homework-score-heading,
+.score-section-title {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.homework-score-heading {
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+}
+
+.homework-score-heading span {
+  color: #315fe8;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.homework-score-heading h3 {
+  margin: 2px 0 0;
+}
+
+.homework-score-dialog section {
+  border: 1px solid #dce3ed;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.score-section-title {
+  margin-bottom: 8px;
+}
+
+.score-section-title span {
+  color: #315fe8;
+  font-weight: 850;
+}
+
+.homework-score-dialog input,
+.homework-score-dialog select,
+.homework-score-dialog textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font: inherit;
+  padding: 8px 10px;
+}
+
+.homework-score-dialog input {
+  width: 100%;
+}
+
+.score-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.score-presets button {
+  background: #f3f6fb;
+  border: 1px solid #cad5e3;
+  border-radius: 5px;
+  color: #334155;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 7px 9px;
+}
+
+.practice-criterion {
+  align-items: center;
+  display: grid;
+  font-size: 0.8rem;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  margin-top: 7px;
+}
+
+.feedback-field {
+  display: grid;
+  font-size: 0.8rem;
+  font-weight: 800;
+  gap: 5px;
+}
+
+.feedback-field textarea {
+  resize: vertical;
+}
+
+.save-homework-score {
+  align-items: center;
+  background: #09885a;
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  display: flex;
+  font-weight: 800;
+  gap: 7px;
+  justify-content: center;
+  margin-left: auto;
+  margin-top: 12px;
+  min-height: 42px;
+  padding: 9px 16px;
+}
+
+@media (max-width: 640px) {
+  .homework-review-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .practice-criterion {
+    grid-template-columns: 1fr;
+  }
+}

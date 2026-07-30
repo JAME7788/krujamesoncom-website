@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, KeyRound, LogIn, AlertCircle } from 'lucide-react';
-import { adminLogin, isAdminAuthed } from '../services/authAdmin';
+import { adminLoginSecure, isAdminAuthed } from '../services/authAdmin';
 
 interface Props {
   children: React.ReactNode;
@@ -14,19 +14,21 @@ const AdminGate: React.FC<Props> = ({ children }) => {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
-    setTimeout(() => {
-      const ok = adminLogin(user, pass);
-      if (ok) {
+    try {
+      const session = await adminLoginSecure(user, pass);
+      if (session) {
         setAuthed(true);
         window.location.reload();
+      } else {
+        setError('ชื่อผู้ใช้ อีเมล หรือรหัสผ่านไม่ถูกต้อง');
       }
-      else setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+    } finally {
       setSubmitting(false);
-    }, 300);
+    }
   };
 
   if (authed) return <>{children}</>;
@@ -79,7 +81,7 @@ const AdminGate: React.FC<Props> = ({ children }) => {
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
             <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#4b5563' }}>
-              ชื่อผู้ใช้ (Username)
+              ชื่อผู้ใช้หรืออีเมลครู
             </label>
             <input
               type="text"
@@ -87,7 +89,7 @@ const AdminGate: React.FC<Props> = ({ children }) => {
               onChange={(e) => setUser(e.target.value)}
               autoFocus
               required
-              placeholder="กรอกชื่อผู้ใช้"
+              placeholder="ชื่อผู้ใช้เดิม หรืออีเมล Firebase"
               style={{
                 width: '100%',
                 padding: '0.75rem 1rem',

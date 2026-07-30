@@ -1,6 +1,7 @@
 // ระบบจัดการเนื้อหา — localStorage เป็น cache และ Firestore เป็นข้อมูลกลาง
 import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { writeAuditLog } from './auditLogService';
 
 export interface CustomLink {
   id: string;
@@ -37,8 +38,20 @@ export interface CustomCourse {
   description: string;
   level?: string;           // 'ป.1-3', 'ม.1-3' ฯลฯ
   units: CustomUnit[];
+  status?: 'draft' | 'published';
+  version?: number;
+  publishedAt?: number;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface CourseVersion {
+  id: string;
+  courseId: string;
+  version: number;
+  snapshot: CustomCourse;
+  createdAt: number;
+  createdBy: string;
 }
 
 const KEY = 'krujames_custom_courses_v1';
@@ -108,6 +121,8 @@ export const createCourse = (data: Partial<CustomCourse>): CustomCourse => {
     description: data.description || '',
     level: data.level || '',
     units: data.units || [],
+    status: data.status || 'draft',
+    version: data.version || 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -120,7 +135,13 @@ export const updateCourse = (id: string, patch: Partial<CustomCourse>): CustomCo
   const courses = loadCourses();
   const idx = courses.findIndex((c) => c.id === id);
   if (idx === -1) return null;
-  courses[idx] = { ...courses[idx], ...patch, updatedAt: Date.now() };
+  const changesContent = Object.keys(patch).some((key) => !['status', 'version', 'publishedAt'].includes(key));
+  courses[idx] = {
+    ...courses[idx],
+    ...patch,
+    status: changesContent ? 'draft' : (patch.status || courses[idx].status || 'draft'),
+    updatedAt: Date.now(),
+  };
   saveCourses(courses);
   return courses[idx];
 };
@@ -151,6 +172,7 @@ export const addUnit = (courseId: string, unitData?: Partial<CustomUnit>): Custo
     quiz: unitData?.quiz || [],
   };
   course.units.push(unit);
+  course.status = 'draft';
   course.updatedAt = Date.now();
   saveCourses(courses);
   return unit;
@@ -163,6 +185,7 @@ export const updateUnit = (courseId: string, unitId: string, patch: Partial<Cust
   const idx = course.units.findIndex((u) => u.id === unitId);
   if (idx === -1) return null;
   course.units[idx] = { ...course.units[idx], ...patch };
+  course.status = 'draft';
   course.updatedAt = Date.now();
   saveCourses(courses);
   return course.units[idx];
@@ -173,6 +196,7 @@ export const deleteUnit = (courseId: string, unitId: string) => {
   const course = courses.find((c) => c.id === courseId);
   if (!course) return;
   course.units = course.units.filter((u) => u.id !== unitId);
+  course.status = 'draft';
   course.updatedAt = Date.now();
   saveCourses(courses);
 };
@@ -185,6 +209,7 @@ export const addSlide = (courseId: string, unitId: string, text: string) => {
   const unit = course?.units.find((u) => u.id === unitId);
   if (!unit) return;
   unit.slides.push(text);
+  course!.status = 'draft';
   course!.updatedAt = Date.now();
   saveCourses(courses);
 };
@@ -195,6 +220,7 @@ export const updateSlide = (courseId: string, unitId: string, idx: number, text:
   const unit = course?.units.find((u) => u.id === unitId);
   if (!unit || idx < 0 || idx >= unit.slides.length) return;
   unit.slides[idx] = text;
+  course!.status = 'draft';
   course!.updatedAt = Date.now();
   saveCourses(courses);
 };
@@ -205,6 +231,7 @@ export const removeSlide = (courseId: string, unitId: string, idx: number) => {
   const unit = course?.units.find((u) => u.id === unitId);
   if (!unit) return;
   unit.slides.splice(idx, 1);
+  course!.status = 'draft';
   course!.updatedAt = Date.now();
   saveCourses(courses);
 };
@@ -215,6 +242,7 @@ export const addLink = (courseId: string, unitId: string, link: Omit<CustomLink,
   const unit = course?.units.find((u) => u.id === unitId);
   if (!unit) return;
   unit.links.push({ ...link, id: uid() });
+  course!.status = 'draft';
   course!.updatedAt = Date.now();
   saveCourses(courses);
 };
@@ -225,6 +253,7 @@ export const removeLink = (courseId: string, unitId: string, linkId: string) => 
   const unit = course?.units.find((u) => u.id === unitId);
   if (!unit) return;
   unit.links = unit.links.filter((l) => l.id !== linkId);
+  course!.status = 'draft';
   course!.updatedAt = Date.now();
   saveCourses(courses);
 };
@@ -235,6 +264,7 @@ export const addQuiz = (courseId: string, unitId: string, q: Omit<CustomQuiz, 'i
   const unit = course?.units.find((u) => u.id === unitId);
   if (!unit) return;
   unit.quiz.push({ ...q, id: uid() });
+  course!.status = 'draft';
   course!.updatedAt = Date.now();
   saveCourses(courses);
 };
@@ -245,8 +275,100 @@ export const removeQuiz = (courseId: string, unitId: string, quizId: string) => 
   const unit = course?.units.find((u) => u.id === unitId);
   if (!unit) return;
   unit.quiz = unit.quiz.filter((q) => q.id !== quizId);
+  course!.status = 'draft';
   course!.updatedAt = Date.now();
   saveCourses(courses);
+};
+
+// ---------- Publish / Version history ----------
+
+const VERSION_COLLECTION = 'courseVersions';
+
+export const fetchCourseVersions = async (courseId: string): Promise<CourseVersion[]> => {
+  if (!firebaseAvailable()) return [];
+  try {
+    const snapshot = await getDocs(collection(db, VERSION_COLLECTION));
+    return snapshot.docs
+      .map((item) => item.data() as CourseVersion)
+      .filter((item) => item.courseId === courseId)
+      .sort((a, b) => b.version - a.version);
+  } catch (error) {
+    console.warn('fetch course versions failed', error);
+    return [];
+  }
+};
+
+export const publishCourse = async (
+  courseId: string,
+  actor = 'teacher',
+): Promise<CustomCourse | null> => {
+  const courses = loadCourses();
+  const index = courses.findIndex((course) => course.id === courseId);
+  if (index === -1) return null;
+  const before = courses[index];
+  const now = Date.now();
+  const published: CustomCourse = {
+    ...before,
+    status: 'published',
+    version: (before.version || 0) + 1,
+    publishedAt: now,
+    updatedAt: now,
+  };
+  const version: CourseVersion = {
+    id: `${courseId}_v${published.version}`,
+    courseId,
+    version: published.version || 1,
+    snapshot: cleanCourse(published),
+    createdAt: now,
+    createdBy: actor,
+  };
+  courses[index] = published;
+  saveCourses(courses);
+  if (firebaseAvailable()) {
+    await Promise.all([
+      persistCourse(published),
+      setDoc(doc(db, VERSION_COLLECTION, version.id), version),
+    ]);
+  }
+  await writeAuditLog({
+    action: 'publish',
+    entityType: 'course',
+    entityId: courseId,
+    summary: `เผยแพร่ ${published.title} รุ่น ${published.version}`,
+    before,
+    after: published,
+  });
+  return published;
+};
+
+const cleanCourse = (course: CustomCourse): CustomCourse => (
+  JSON.parse(JSON.stringify(course)) as CustomCourse
+);
+
+export const restoreCourseVersion = async (
+  version: CourseVersion,
+): Promise<CustomCourse> => {
+  const courses = loadCourses();
+  const index = courses.findIndex((course) => course.id === version.courseId);
+  const before = index >= 0 ? courses[index] : undefined;
+  const restored: CustomCourse = {
+    ...cleanCourse(version.snapshot),
+    status: 'draft',
+    updatedAt: Date.now(),
+  };
+  if (index >= 0) courses[index] = restored;
+  else courses.push(restored);
+  saveCourses(courses);
+  if (firebaseAvailable()) await persistCourse(restored);
+  await writeAuditLog({
+    action: 'restore',
+    entityType: 'course',
+    entityId: restored.id,
+    summary: `กู้คืน ${restored.title} จากรุ่น ${version.version}`,
+    before,
+    after: restored,
+  });
+  return restored;
 };
 
 // ---------- Export / Import ----------

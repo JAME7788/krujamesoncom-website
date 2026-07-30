@@ -3,6 +3,7 @@ import {
   Plus, Trash2, Edit3, ChevronDown, ChevronRight, Save, X,
   Video, Gamepad2, BookOpen, Link as LinkIcon, FileText, Award,
   Download, Upload,
+  History, RotateCcw, Send,
 } from 'lucide-react';
 import {
   loadCourses, fetchCoursesFromFirebase, createCourse, updateCourse, deleteCourse,
@@ -11,8 +12,10 @@ import {
   addLink, removeLink,
   addQuiz, removeQuiz,
   exportJSON, importJSON,
+  fetchCourseVersions, publishCourse, restoreCourseVersion,
 } from '../services/contentService';
-import type { CustomCourse, CustomUnit, CustomLink } from '../services/contentService';
+import type { CourseVersion, CustomCourse, CustomUnit, CustomLink } from '../services/contentService';
+import { getAdminSession } from '../services/authAdmin';
 
 const CourseBuilder: React.FC = () => {
   const [courses, setCourses] = useState<CustomCourse[]>(loadCourses());
@@ -21,6 +24,8 @@ const CourseBuilder: React.FC = () => {
   const [editingCourse, setEditingCourse] = useState<string | null>(null);
   const [editingUnit, setEditingUnit] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(true);
+  const [versions, setVersions] = useState<Record<string, CourseVersion[]>>({});
+  const [openVersions, setOpenVersions] = useState<string | null>(null);
 
   const refresh = () => setCourses(loadCourses());
 
@@ -50,6 +55,40 @@ const CourseBuilder: React.FC = () => {
     updateCourse(id, patch);
     refresh();
     setEditingCourse(null);
+  };
+
+  const handlePublish = async (course: CustomCourse) => {
+    const incomplete = course.units.some((unit) => (
+      unit.slides.length < 5 || unit.quiz.length < 10 || unit.links.length === 0
+    ));
+    if (incomplete && !confirm('บางหน่วยยังมีสไลด์น้อยกว่า 5 หน้า แบบทดสอบน้อยกว่า 10 ข้อ หรือยังไม่มีสื่อประกอบ ต้องการเผยแพร่ต่อหรือไม่?')) {
+      return;
+    }
+    setSyncing(true);
+    try {
+      await publishCourse(course.id, getAdminSession()?.user || 'teacher');
+      refresh();
+      const nextVersions = await fetchCourseVersions(course.id);
+      setVersions((current) => ({
+        ...current,
+        [course.id]: nextVersions,
+      }));
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleVersions = async (courseId: string) => {
+    if (openVersions === courseId) {
+      setOpenVersions(null);
+      return;
+    }
+    setOpenVersions(courseId);
+    const nextVersions = await fetchCourseVersions(courseId);
+    setVersions((current) => ({
+      ...current,
+      [courseId]: nextVersions,
+    }));
   };
 
   // ----- Unit actions -----
@@ -153,13 +192,35 @@ const CourseBuilder: React.FC = () => {
                       <p>{course.description || 'ยังไม่มีคำอธิบาย'}</p>
                       <small>
                         {course.level && <span className="cb-tag">{course.level}</span>}{' '}
-                        {course.units.length} หน่วย
+                        {course.units.length} หน่วย{' '}
+                        <span className="cb-tag">
+                          พร้อมสอน {course.units.filter((unit) => (
+                            unit.slides.length >= 5
+                            && unit.quiz.length >= 10
+                            && unit.links.length > 0
+                          )).length}/{course.units.length}
+                        </span>{' '}
+                        <span
+                          className="cb-tag"
+                          style={{
+                            background: course.status === 'published' ? '#dcfce7' : '#fef3c7',
+                            color: course.status === 'published' ? '#166534' : '#92400e',
+                          }}
+                        >
+                          {course.status === 'published' ? `เผยแพร่ v${course.version || 1}` : 'ฉบับร่าง'}
+                        </span>
                       </small>
                     </div>
                   )}
                 </div>
                 {editingCourse !== course.id && (
                   <div className="cb-course-actions" onClick={(e) => e.stopPropagation()}>
+                    <button className="cb-icon-btn" onClick={() => void handlePublish(course)} title="เผยแพร่รุ่นใหม่" disabled={syncing}>
+                      <Send size={16} />
+                    </button>
+                    <button className="cb-icon-btn" onClick={() => void handleVersions(course.id)} title="ประวัติรุ่น">
+                      <History size={16} />
+                    </button>
                     <button className="cb-icon-btn" onClick={() => setEditingCourse(course.id)} title="แก้ไข">
                       <Edit3 size={16} />
                     </button>
@@ -173,6 +234,40 @@ const CourseBuilder: React.FC = () => {
               {/* Course Body */}
               {openCourse === course.id && (
                 <div className="cb-course-body">
+                  {openVersions === course.id && (
+                    <div style={{
+                      background: '#f8fafc',
+                      border: '1px solid #dbe3ee',
+                      borderRadius: 8,
+                      marginBottom: 12,
+                      padding: 12,
+                    }}>
+                      <strong>ประวัติการเผยแพร่</strong>
+                      {(versions[course.id] || []).length === 0 ? (
+                        <p style={{ color: '#64748b', fontSize: '0.82rem' }}>ยังไม่มีรุ่นที่เผยแพร่</p>
+                      ) : (
+                        <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                          {(versions[course.id] || []).map((version) => (
+                            <div key={version.id} style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '0.82rem' }}>
+                                รุ่น {version.version} · {new Date(version.createdAt).toLocaleString('th-TH')} · {version.createdBy}
+                              </span>
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => {
+                                  if (!confirm(`กู้คืนเนื้อหาจากรุ่น ${version.version} เป็นฉบับร่าง?`)) return;
+                                  void restoreCourseVersion(version).then(() => refresh());
+                                }}
+                              >
+                                <RotateCcw size={14} /> กู้คืน
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <button className="btn-secondary" onClick={() => handleAddUnit(course.id)}>
                     <Plus size={14} /> เพิ่มหน่วยการเรียน
                   </button>

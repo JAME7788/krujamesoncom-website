@@ -36,6 +36,40 @@ service cloud.firestore {
     function baseWrite(maxFields) {
       return isMap() && fieldsUnder(maxFields);
     }
+    function isTeacher() {
+      return request.auth != null
+        && (
+          request.auth.token.role == 'admin'
+          || request.auth.token.role == 'teacher'
+          || (
+            exists(/databases/$(database)/documents/teacherProfiles/$(request.auth.uid))
+            && get(/databases/$(database)/documents/teacherProfiles/$(request.auth.uid)).data.active == true
+            && (
+              get(/databases/$(database)/documents/teacherProfiles/$(request.auth.uid)).data.role == 'admin'
+              || get(/databases/$(database)/documents/teacherProfiles/$(request.auth.uid)).data.role == 'teacher'
+            )
+          )
+        );
+    }
+
+    // ====== Teacher identity and audit ======
+    match /teacherProfiles/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isTeacher());
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    match /teacherAuditLogs/{id} {
+      // Legacy admin login has no Firebase Auth token yet. App Check remains the
+      // primary gate, so allow append-only audit entries during the migration.
+      allow read: if true;
+      allow create: if baseWrite(20)
+                    && strOk('actor', 300)
+                    && strOk('action', 300)
+                    && strOk('entityType', 100)
+                    && strOk('entityId', 300)
+                    && strOk('detail', 5000);
+      allow update, delete: if false;
+    }
 
     // ====== Students (รายชื่อ) ======
     match /students/{studentId} {
@@ -85,6 +119,28 @@ service cloud.firestore {
                    && strOk('nextAction', 5000);
     }
 
+    // ====== Teaching sessions and unified learning evidence ======
+    match /teachingSessions/{sessionId} {
+      allow read: if true;
+      allow write: if baseWrite(30)
+                   && strOk('classroom', 20)
+                   && strOk('lessonTitle', 500)
+                   && strOk('plannedDate', 20)
+                   && strOk('teachingDate', 20)
+                   && strOk('note', 3000)
+                   && strOk('updatedBy', 300);
+    }
+
+    match /learningEvidence/{evidenceId} {
+      allow read: if true;
+      allow create, update: if baseWrite(30)
+                   && strOk('studentName', 300)
+                   && strOk('classroom', 20)
+                   && strOk('title', 500)
+                   && strOk('detail', 3000);
+      allow delete: if isTeacher() || resource.data.classroom is string;
+    }
+
     // ====== Student assessments and general post-lesson records ======
     match /studentAssessments/{recordId} {
       allow read: if true;
@@ -113,6 +169,21 @@ service cloud.firestore {
     match /courses/{id} {
       allow read: if true;
       allow write: if baseWrite(50);
+    }
+
+    match /courseVersions/{id} {
+      allow read: if true;
+      allow write: if baseWrite(15);
+    }
+
+    match /questionBank/{id} {
+      allow read: if true;
+      allow create, update: if baseWrite(30)
+                   && strOk('classroom', 20)
+                   && strOk('indicatorCode', 100)
+                   && strOk('question', 3000)
+                   && strOk('explanation', 5000);
+      allow delete: if isTeacher() || resource.data.classroom is string;
     }
 
     // ====== Homework (งานที่ครูสั่ง + งานที่นักเรียนส่ง) ======

@@ -18,7 +18,6 @@ const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Quiz = React.lazy(() => import('./pages/Quiz'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Lesson = React.lazy(() => import('./pages/Lesson'));
-const TeacherDashboard = React.lazy(() => import('./pages/TeacherDashboard'));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 const Resources = React.lazy(() => import('./pages/Resources'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
@@ -82,7 +81,7 @@ function App() {
                   <Route path="/curriculum/:gradeId/:idx" element={<ProtectedRoute><IndicatorDetail /></ProtectedRoute>} />
                   <Route path="/curriculum/:gradeId/unit/:unitNo" element={<ProtectedRoute><UnitDetail /></ProtectedRoute>} />
                   <Route path="/admin" element={<AdminDashboard />} />
-                  <Route path="/admin/scores" element={<TeacherDashboard />} />
+                  <Route path="/admin/scores" element={<Navigate to="/admin?tab=gradebook" replace />} />
                   <Route path="/resources" element={<LoginPromptOverlay><Resources /></LoginPromptOverlay>} />
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/report-card" element={<ProtectedRoute><ReportCard /></ProtectedRoute>} />

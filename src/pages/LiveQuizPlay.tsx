@@ -6,6 +6,10 @@ import type { LiveQuizRoom } from '../services/liveQuizService';
 import { saveQuizAttempt } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
+import { recordLearningEvidence } from '../services/learningEvidenceService';
+import { getLinkedUnitsForSubject } from '../services/gradeService';
+import { isInClassTime, loadSchedule } from '../data/schedule';
+import { loadRoster } from '../services/rosterService';
 
 const LiveQuizPlay: React.FC = () => {
   const { user } = useAuth();
@@ -34,17 +38,44 @@ const LiveQuizPlay: React.FC = () => {
     const targetUnitNo = room.targetUnitNo || 1;
     if (!targetGradeId) return;
     savedRef.current = true;
-    void saveQuizAttempt(user.id, targetGradeId, targetUnitNo, correct, total, {}).then((attempt) => {
+    void saveQuizAttempt(user.id, targetGradeId, targetUnitNo, correct, total, {}).then(async (attempt) => {
       if (!attempt.saved) {
         savedRef.current = false;
         return;
       }
       savedRef.current = true;
-      return syncStudentGradesFromProgress({
+      await syncStudentGradesFromProgress({
         id: user.id,
         name: user.name,
         classroom: user.classroom,
         studentNumber: user.studentNumber,
+      });
+      const subject = targetGradeId.includes('design')
+        ? 'dt'
+        : targetGradeId.startsWith('m') ? 'cs' : 'main';
+      const indicator = getLinkedUnitsForSubject(user.classroom, subject)
+        .find((entry) => entry.units.some((unit) => (
+          unit.gradeId === targetGradeId && unit.unitNo === targetUnitNo
+        )))?.indicator;
+      await recordLearningEvidence({
+        studentId: user.id,
+        studentCode: loadRoster(user.classroom).find((student) => (
+          student.no === Number(user.studentNumber) || student.name === user.name
+        ))?.studentCode,
+        studentName: user.name,
+        classroom: user.classroom,
+        subject,
+        indicatorId: indicator?.id,
+        indicatorCode: indicator?.code,
+        source: 'live-quiz',
+        domain: 'K',
+        title: room.title,
+        detail: `ตอบถูก ${correct} จาก ${total} ข้อ`,
+        score: correct,
+        maxScore: total,
+        inClass: isInClassTime(Date.now(), user.classroom, loadSchedule()),
+        occurredAt: Date.now(),
+        dedupKey: room.code,
       });
     });
   }, [room, user]);

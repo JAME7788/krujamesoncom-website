@@ -9,6 +9,7 @@ export interface LiveQuizQuestion {
   options: string[];
   answer: number;
   timeLimit?: number; // วินาที
+  bankId?: string;
 }
 
 export interface LiveQuizRoom {

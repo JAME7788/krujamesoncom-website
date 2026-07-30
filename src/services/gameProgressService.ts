@@ -6,9 +6,12 @@ import {
   loadGrades,
   syncFromProgress,
   upsertStudentGradeToFirebase,
+  getLinkedUnitsForSubject,
 } from './gradeService';
 import type { Subject } from './gradeService';
 import { loadRoster } from './rosterService';
+import { recordLearningEvidence } from './learningEvidenceService';
+import { isInClassTime, loadSchedule } from '../data/schedule';
 import {
   fetchCourseAccessSettings,
   filterTargetUnitsForCourseAccess,
@@ -302,6 +305,44 @@ export const recordGameProgress = async (
       );
       if (!stored) {
         throw new Error(`บันทึกผลเกมของ ${student.name} ลง Firebase ไม่สำเร็จ`);
+      }
+      const inClass = isInClassTime(Date.now(), student.classroom, loadSchedule());
+      const activeSubjects = subjectsForClassroom(student.classroom, courseAccessSettings);
+      for (const subject of activeSubjects) {
+        const linkedIndicator = getLinkedUnitsForSubject(student.classroom, subject)
+          .find((entry) => entry.units.some((unit) => (
+            unit.gradeId === target.gradeId && unit.unitNo === target.unitNo
+          )))?.indicator;
+        const evidenceBase = {
+          studentId: student.id,
+          studentCode: loadRoster(student.classroom).find((entry) => (
+            entry.no === Number(student.studentNumber) || entry.name === student.name
+          ))?.studentCode,
+          studentName: student.name,
+          classroom: student.classroom,
+          subject,
+          indicatorId: linkedIndicator?.id,
+          indicatorCode: linkedIndicator?.code,
+          source: 'game' as const,
+          title: gameTitle,
+          detail: `เกม ${gameTitle} หน่วย ${target.unitNo}${typeof score === 'number' ? ` คะแนน ${score}` : ''}`,
+          score,
+          maxScore: typeof score === 'number' ? 100 : undefined,
+          inClass,
+          occurredAt: Date.now(),
+        };
+        await Promise.all([
+          recordLearningEvidence({
+            ...evidenceBase,
+            domain: 'K',
+            dedupKey: `${gameId}-${activityKey || 'complete'}-k`,
+          }),
+          recordLearningEvidence({
+            ...evidenceBase,
+            domain: 'P',
+            dedupKey: `${gameId}-${activityKey || 'complete'}-p`,
+          }),
+        ]);
       }
       saved += 1;
     }

@@ -1,10 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Users, Play, Award, X, Trophy } from 'lucide-react';
 import {
   createRoom, generateRoomCode, startQuiz, revealAnswer, nextQuestion, closeRoom, subscribeRoom,
 } from '../services/liveQuizService';
 import type { LiveQuizRoom, LiveQuizQuestion } from '../services/liveQuizService';
 import { grades as curriculumGrades } from '../data/curriculum';
+import {
+  drawQuestionSet,
+  fetchQuestionBank,
+  recordQuestionAnalysis,
+  type QuestionBankItem,
+} from '../services/questionBankService';
 
 const LiveQuizHost: React.FC = () => {
   const [room, setRoom] = useState<LiveQuizRoom | null>(null);
@@ -15,6 +21,8 @@ const LiveQuizHost: React.FC = () => {
   const [questions, setQuestions] = useState<LiveQuizQuestion[]>([
     { q: 'อัลกอริทึมคืออะไร?', options: ['สูตรอาหาร', 'ขั้นตอนการแก้ปัญหา', 'ภาษาโปรแกรม', 'ฮาร์ดแวร์'], answer: 1 },
   ]);
+  const [bankQuestions, setBankQuestions] = useState<QuestionBankItem[]>([]);
+  const recordedRoomRef = useRef('');
 
   const targetUnits = useMemo(() => {
     if (!targetGradeId) return [];
@@ -26,6 +34,21 @@ const LiveQuizHost: React.FC = () => {
     if (!code) return;
     return subscribeRoom(code, (r) => setRoom(r));
   }, [code]);
+
+  useEffect(() => {
+    void fetchQuestionBank().then(setBankQuestions);
+  }, []);
+
+  useEffect(() => {
+    if (!room || room.state !== 'finished' || recordedRoomRef.current === room.code) return;
+    recordedRoomRef.current = room.code;
+    const players = Object.values(room.players);
+    void Promise.all(room.questions.map((question, index) => {
+      if (!question.bankId) return Promise.resolve();
+      const correct = players.filter((player) => player.answers[index]?.correct).length;
+      return recordQuestionAnalysis(question.bankId, players.length, correct);
+    }));
+  }, [room]);
 
   const handleCreate = async () => {
     if (questions.length === 0) { alert('ต้องมีอย่างน้อย 1 คำถาม'); return; }
@@ -45,6 +68,29 @@ const LiveQuizHost: React.FC = () => {
   const removeQuestion = (i: number) => setQuestions(questions.filter((_, idx) => idx !== i));
   const updateQ = (i: number, patch: Partial<LiveQuizQuestion>) => {
     const next = [...questions]; next[i] = { ...next[i], ...patch }; setQuestions(next);
+  };
+
+  const importFromBank = () => {
+    const classroom = targetGradeId.startsWith('p')
+      ? `ป.${targetGradeId.slice(1)}`
+      : targetGradeId.startsWith('m') ? `ม.${targetGradeId.slice(1, 2)}` : '';
+    const subject = targetGradeId.includes('design') ? 'dt' : targetGradeId.startsWith('m') ? 'cs' : 'main';
+    const filtered = bankQuestions.filter((item) => (
+      (!classroom || item.classroom === classroom)
+      && item.subject === subject
+    ));
+    const drawn = drawQuestionSet(filtered, 10);
+    if (drawn.length === 0) {
+      alert('ยังไม่มีคำถามที่เผยแพร่ในคลังสำหรับชั้นและวิชานี้');
+      return;
+    }
+    setQuestions(drawn.map((item) => ({
+      q: item.question,
+      options: item.options,
+      answer: item.answer,
+      bankId: item.id,
+    })));
+    setTitle(`Live Quiz ${classroom || 'รวมชั้น'}`);
   };
 
   if (!room) {
@@ -92,7 +138,12 @@ const LiveQuizHost: React.FC = () => {
             </div>
           </div>
 
-          <h3>คำถาม</h3>
+          <div style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+            <h3>คำถาม</h3>
+            <button type="button" onClick={importFromBank} className="btn-secondary">
+              ดึง 10 ข้อจากคลัง
+            </button>
+          </div>
           {questions.map((q, i) => (
             <div key={i} style={{ padding: 12, background: '#f9fafb', borderRadius: 10, marginBottom: 10 }}>
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>

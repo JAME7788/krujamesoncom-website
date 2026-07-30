@@ -259,6 +259,26 @@
   line-height: 1.48;
 }
 
+.techschedule-hour-table input[type="date"],
+.techschedule-hour-table select {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  box-sizing: border-box;
+  display: block;
+  font: inherit;
+  font-size: 0.74rem;
+  margin-top: 5px;
+  max-width: 150px;
+  min-height: 32px;
+  padding: 5px 6px;
+  width: 100%;
+}
+
+.techschedule-hour-table td small svg {
+  vertical-align: middle;
+}
+
 .techschedule-unit-table th,
 .techschedule-hour-table th {
   position: sticky;

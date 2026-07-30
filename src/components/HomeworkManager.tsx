@@ -1,5 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2, Eye, X, ExternalLink } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock3,
+  ExternalLink,
+  Eye,
+  Plus,
+  Save,
+  Trash2,
+  X,
+} from 'lucide-react';
 import {
   loadAssignments, createAssignment, deleteAssignment,
   getSubmissionsByAssignment, reviewSubmission,
@@ -9,7 +19,10 @@ import type { Assignment, Submission } from '../services/homeworkService';
 import { allClassrooms2569 } from '../data/students2569';
 import { getSubjectsForClassroom, getIndicators } from '../services/gradeService';
 import type { Subject } from '../services/gradeService';
-import { p1LessonPlans } from '../data/p1TechnologyPlan';
+import { getTechnologyLessonPlans } from '../data/technologyLessonPlans';
+import type { PrimaryTechnologyGradeId } from '../data/technologyTeachingSchedule';
+import { loadRoster } from '../services/rosterService';
+import './HomeworkManager.css';
 
 const HomeworkManager: React.FC = () => {
   const [list, setList] = useState(loadAssignments());
@@ -29,6 +42,11 @@ const HomeworkManager: React.FC = () => {
     () => (draft.classroom && draft.subject ? getIndicators(draft.classroom, draft.subject) : []),
     [draft.classroom, draft.subject]
   );
+  const draftLessonPlans = useMemo(() => {
+    const match = draft.classroom?.match(/^ป\.([1-6])$/);
+    if (!match) return [];
+    return getTechnologyLessonPlans(`p${match[1]}` as PrimaryTechnologyGradeId);
+  }, [draft.classroom]);
 
   const reload = () => setList(loadAssignments());
 
@@ -174,7 +192,7 @@ const HomeworkManager: React.FC = () => {
                       ))}
                     </select>
                   </div>
-                  {draft.indicatorId && draft.classroom === 'ป.1' && (
+                  {draft.indicatorId && draftLessonPlans.length > 0 && (
                     <div className="filter-group">
                       <label>แผนรายคาบ (ไม่บังคับ)</label>
                       <select
@@ -182,8 +200,8 @@ const HomeworkManager: React.FC = () => {
                         onChange={(e) => setDraft({ ...draft, lessonPlanId: e.target.value || undefined })}
                       >
                         <option value="">ไม่ระบุแผน</option>
-                        {p1LessonPlans.map((plan) => (
-                          <option key={plan.no} value={`p1-${plan.no}`}>
+                        {draftLessonPlans.map((plan) => (
+                          <option key={plan.no} value={`p${draft.classroom?.slice(2)}-${plan.no}`}>
                             แผน {plan.no}: {plan.title}
                           </option>
                         ))}
@@ -255,7 +273,18 @@ const HomeworkManager: React.FC = () => {
 const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void }> = ({ assignment, onClose }) => {
   const [subs, setSubs] = useState<Submission[]>(getSubmissionsByAssignment(assignment.id));
   const [syncing, setSyncing] = useState(true);
+  const [grading, setGrading] = useState<Submission | null>(null);
+  const [kScore, setKScore] = useState(0);
+  const [pCriteria, setPCriteria] = useState([0, 0, 0, 0]);
+  const [pOverride, setPOverride] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState('');
   const reload = () => setSubs(getSubmissionsByAssignment(assignment.id));
+  const roster = loadRoster(assignment.classroom);
+  const kMax = assignment.knowledgeMaxScore ?? (assignment.category === 'k' ? assignment.maxScore : 0);
+  const pMax = assignment.practiceMaxScore ?? (assignment.category === 'p' ? assignment.maxScore : 0);
+  const pRaw = pCriteria.reduce((sum, value) => sum + value, 0);
+  const calculatedPScore = pMax > 0 ? Math.round((pRaw / 12) * pMax) : 0;
+  const pScore = pOverride ?? calculatedPScore;
 
   useEffect(() => {
     let cancelled = false;
@@ -265,20 +294,30 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
     return () => { cancelled = true; };
   }, [assignment.id]);
 
-  const score = async (id: string) => {
-    const kMax = assignment.knowledgeMaxScore ?? (assignment.category === 'k' ? assignment.maxScore : 0);
-    const pMax = assignment.practiceMaxScore ?? (assignment.category === 'p' ? assignment.maxScore : 0);
-    const kRaw = kMax > 0 ? prompt(`คะแนน K ความรู้ (เต็ม ${kMax}):`, '0') : '0';
-    if (kRaw === null) return;
-    const pRaw = pMax > 0 ? prompt(`คะแนน P ปฏิบัติ (เต็ม ${pMax}):`, '0') : '0';
-    if (pRaw === null) return;
-    const kScore = Math.max(0, Math.min(kMax, Number(kRaw) || 0));
-    const pScore = Math.max(0, Math.min(pMax, Number(pRaw) || 0));
-    const fb = prompt('Feedback (optional):') || '';
+  const openScore = (submission: Submission) => {
+    setGrading(submission);
+    setKScore(submission.kScore || 0);
+    const existingRatio = pMax > 0 ? (submission.pScore || 0) / pMax : 0;
+    const criterion = Math.max(0, Math.min(3, Math.round(existingRatio * 3)));
+    setPCriteria([criterion, criterion, criterion, criterion]);
+    setPOverride(submission.pScore === undefined ? null : submission.pScore);
+    setFeedback(submission.feedback || '');
+  };
+
+  const saveScore = async () => {
+    if (!grading) return;
     setSyncing(true);
     try {
-      await reviewSubmission(id, { kScore, pScore }, fb);
+      await reviewSubmission(
+        grading.id,
+        {
+          kScore: Math.max(0, Math.min(kMax, kScore)),
+          pScore: Math.max(0, Math.min(pMax, pScore)),
+        },
+        feedback,
+      );
       reload();
+      setGrading(null);
     } catch (error) {
       console.error(error);
       alert('บันทึกคะแนนไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
@@ -287,13 +326,38 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
     }
   };
 
+  const setPracticePreset = (ratio: number) => {
+    if (ratio <= 0) {
+      setPCriteria([0, 0, 0, 0]);
+      setPOverride(Math.min(1, pMax));
+      return;
+    }
+    setPOverride(null);
+    const level = ratio >= 1 ? 3 : ratio >= 0.8 ? 2.4 : ratio >= 0.5 ? 1.5 : 0.1;
+    const base = Math.floor(level);
+    const total = Math.round(level * 4);
+    setPCriteria(Array.from({ length: 4 }, (_, index) => (
+      index < total - base * 4 ? Math.min(3, base + 1) : base
+    )));
+  };
+
+  const dueTime = new Date(`${assignment.dueDate}T23:59:59`).getTime();
+  const rosterRows = roster.map((student) => ({
+    student,
+    submission: subs.find((item) => (
+      item.studentId === student.studentCode
+      || item.studentNo === student.no
+      || item.studentName === student.name
+    )),
+  }));
+
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
       zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 16,
     }} onClick={onClose}>
-      <div className="card" style={{ background: 'white', width: '100%', maxWidth: 700, maxHeight: '85vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+      <div className="card homework-review-modal" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div>
             <h2 style={{ margin: 0 }}>{assignment.title}</h2>
@@ -305,34 +369,48 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
           </div>
           <button onClick={onClose} className="btn-ghost"><X size={16} /></button>
         </div>
-        {subs.length === 0 ? <p>ยังไม่มีคนส่ง</p> : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {subs.map((s) => (
-              <div key={s.id} style={{ padding: 12, background: '#f9fafb', borderRadius: 10 }}>
+        <div className="homework-review-summary">
+          <div><span>ส่งแล้ว</span><strong>{subs.length}/{roster.length}</strong></div>
+          <div><span>ตรวจแล้ว</span><strong>{subs.filter((item) => item.reviewedAt).length}</strong></div>
+          <div><span>ส่งช้า</span><strong>{subs.filter((item) => item.submittedAt > dueTime).length}</strong></div>
+          <div><span>ขาดส่ง</span><strong>{Math.max(0, roster.length - subs.length)}</strong></div>
+        </div>
+        {rosterRows.length === 0 ? <p>ยังไม่มีรายชื่อนักเรียนในห้องนี้</p> : (
+          <div className="homework-submission-list">
+            {rosterRows.map(({ student, submission: s }) => (
+              <div key={student.studentCode} className={`homework-submission-row ${s ? '' : 'missing'}`}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <strong>{s.studentNo}. {s.studentName}</strong>
-                    <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>
-                      {new Date(s.submittedAt).toLocaleString('th-TH')}
-                    </div>
-                    {s.comment && <div style={{ fontSize: '0.85rem', marginTop: 6 }}>💬 {s.comment}</div>}
+                    <strong>{student.no}. {student.name}</strong>
+                    {s ? (
+                      <div className="submission-status-line">
+                        {s.submittedAt > dueTime
+                          ? <span className="late"><Clock3 size={13} /> ส่งช้า</span>
+                          : <span className="submitted"><CheckCircle2 size={13} /> ส่งแล้ว</span>}
+                        <small>{new Date(s.submittedAt).toLocaleString('th-TH')}</small>
+                      </div>
+                    ) : (
+                      <span className="missing-label"><AlertTriangle size={13} /> ยังไม่ส่ง</span>
+                    )}
+                    {s?.comment && <div style={{ fontSize: '0.85rem', marginTop: 6 }}>{s.comment}</div>}
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    {s.score !== undefined ? (
+                    {s?.score !== undefined ? (
                       <div>
                         <strong style={{ color: '#22c55e' }}>{s.score}/{assignment.maxScore}</strong>
                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                           K {s.kScore ?? '-'} / P {s.pScore ?? '-'}
                         </div>
+                        <button type="button" className="homework-edit-score" onClick={() => openScore(s)}>แก้คะแนน</button>
                       </div>
-                    ) : (
-                      <button className="btn-primary" disabled={syncing} onClick={() => void score(s.id)} style={{ padding: '4px 12px', fontSize: '0.85rem' }}>
+                    ) : s ? (
+                      <button className="btn-primary" disabled={syncing} onClick={() => openScore(s)} style={{ padding: '4px 12px', fontSize: '0.85rem' }}>
                         ให้คะแนน
                       </button>
-                    )}
+                    ) : <span className="no-score">-</span>}
                   </div>
                 </div>
-                {(s.contentUrl || s.contentData) && (
+                {s && (s.contentUrl || s.contentData) && (
                   <div style={{ marginTop: 8 }}>
                     {s.contentUrl && <a href={s.contentUrl} target="_blank" rel="noreferrer"><ExternalLink size={12} /> เปิดลิงก์</a>}
                     {s.contentData?.startsWith('data:image') && (
@@ -345,6 +423,94 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {grading && (
+          <div className="homework-score-overlay">
+            <div className="homework-score-dialog">
+              <div className="homework-score-heading">
+                <div>
+                  <span>ตรวจงานและบันทึกเข้า K/P/A</span>
+                  <h3>{grading.studentName}</h3>
+                </div>
+                <button type="button" className="btn-ghost" onClick={() => setGrading(null)}><X size={17} /></button>
+              </div>
+
+              {kMax > 0 && (
+                <section>
+                  <div className="score-section-title">
+                    <strong>K ความรู้</strong>
+                    <span>{kScore}/{kMax}</span>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={kMax}
+                    value={kScore}
+                    onChange={(event) => setKScore(Number(event.target.value) || 0)}
+                  />
+                  <div className="score-presets">
+                    <button type="button" onClick={() => setKScore(kMax)}>เต็ม</button>
+                    <button type="button" onClick={() => setKScore(Math.round(kMax * 0.8))}>ปานกลาง 80%</button>
+                    <button type="button" onClick={() => setKScore(Math.round(kMax * 0.5))}>พอใช้ 50%</button>
+                    <button type="button" onClick={() => setKScore(Math.min(1, kMax))}>ไม่ผ่าน</button>
+                  </div>
+                </section>
+              )}
+
+              {pMax > 0 && (
+                <section>
+                  <div className="score-section-title">
+                    <strong>P การปฏิบัติ</strong>
+                    <span>{pScore}/{pMax}</span>
+                  </div>
+                  {[
+                    'ปฏิบัติตามขั้นตอน',
+                    'ใช้เครื่องมือถูกต้องและปลอดภัย',
+                    'ตรวจสอบและแก้ไขผลงาน',
+                    'อธิบายผลงานหรือทำงานร่วมกับผู้อื่น',
+                  ].map((label, index) => (
+                    <label className="practice-criterion" key={label}>
+                      <span>{label}</span>
+                      <select
+                        value={pCriteria[index]}
+                        onChange={(event) => {
+                          setPOverride(null);
+                          setPCriteria((items) => (
+                            items.map((value, itemIndex) => itemIndex === index ? Number(event.target.value) : value)
+                          ));
+                        }}
+                      >
+                        <option value={0}>0 ไม่ผ่าน</option>
+                        <option value={1}>1 พอใช้</option>
+                        <option value={2}>2 ปานกลาง</option>
+                        <option value={3}>3 ดีมาก</option>
+                      </select>
+                    </label>
+                  ))}
+                  <div className="score-presets">
+                    <button type="button" onClick={() => setPracticePreset(1)}>เต็ม</button>
+                    <button type="button" onClick={() => setPracticePreset(0.8)}>ปานกลาง 80%</button>
+                    <button type="button" onClick={() => setPracticePreset(0.5)}>พอใช้ 50%</button>
+                    <button type="button" onClick={() => setPracticePreset(0)}>ไม่ผ่าน 1 คะแนน</button>
+                  </div>
+                </section>
+              )}
+
+              <label className="feedback-field">
+                ข้อเสนอแนะ
+                <textarea
+                  rows={3}
+                  value={feedback}
+                  onChange={(event) => setFeedback(event.target.value)}
+                  placeholder="สิ่งที่ทำได้ดีและสิ่งที่ควรปรับปรุง"
+                />
+              </label>
+              <button type="button" className="save-homework-score" onClick={() => void saveScore()} disabled={syncing}>
+                <Save size={17} /> {syncing ? 'กำลังบันทึก...' : 'บันทึกคะแนน'}
+              </button>
+            </div>
           </div>
         )}
       </div>

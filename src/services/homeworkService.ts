@@ -9,6 +9,8 @@ import {
   deleteManualAssessment,
 } from './gradeService';
 import type { Subject, AssessmentCategory } from './gradeService';
+import { recordLearningEvidence } from './learningEvidenceService';
+import { writeAuditLog } from './auditLogService';
 
 export interface Assignment {
   id: string;
@@ -193,6 +195,15 @@ export const createAssignment = async (
   cache(ASS_KEY, list);
   try {
     await saveAssignmentRemote(assignment);
+    await writeAuditLog({
+      action: 'create',
+      entityType: 'assignment',
+      entityId: assignment.id,
+      classroom: assignment.classroom,
+      subject: assignment.subject,
+      summary: `สร้างงาน ${assignment.title}`,
+      after: assignment,
+    });
     return assignment;
   } catch (error) {
     cache(ASS_KEY, list.filter((item) => item.id !== assignment.id));
@@ -214,6 +225,15 @@ export const deleteAssignment = async (id: string): Promise<void> => {
       .forEach((assessmentId) => {
         deleteManualAssessment(target.classroom, target.subject!, assessmentId);
       });
+    await writeAuditLog({
+      action: 'delete',
+      entityType: 'assignment',
+      entityId: target.id,
+      classroom: target.classroom,
+      subject: target.subject,
+      summary: `ลบงาน ${target.title}`,
+      before: target,
+    });
   }
 };
 
@@ -221,10 +241,21 @@ export const updateAssignment = async (id: string, patch: Partial<Assignment>): 
   const list = loadAssignments();
   const index = list.findIndex((assignment) => assignment.id === id);
   if (index === -1) return null;
-  const updated = { ...list[index], ...patch };
+  const before = { ...list[index] };
+  const updated = { ...before, ...patch };
   await saveAssignmentRemote(updated);
   list[index] = updated;
   cache(ASS_KEY, list);
+  await writeAuditLog({
+    action: 'update',
+    entityType: 'assignment',
+    entityId: updated.id,
+    classroom: updated.classroom,
+    subject: updated.subject,
+    summary: `แก้ไขงาน ${updated.title}`,
+    before,
+    after: updated,
+  });
   return updated;
 };
 
@@ -325,6 +356,50 @@ export const reviewSubmission = async (
     );
   }
   applyManualAssessmentsToGrades(assignment.classroom, assignment.subject);
+
+  const evidenceBase = {
+    studentId: submission.studentId,
+    studentCode: student.studentCode,
+    studentName: submission.studentName,
+    classroom: assignment.classroom,
+    subject: assignment.subject,
+    indicatorId: assignment.indicatorId,
+    lessonPlanId: assignment.lessonPlanId,
+    source: 'homework' as const,
+    title: assignment.title,
+    detail: feedback,
+    inClass: false,
+    occurredAt: submission.reviewedAt || Date.now(),
+  };
+  const evidenceTasks: Promise<unknown>[] = [];
+  if (kScore !== undefined) {
+    evidenceTasks.push(recordLearningEvidence({
+      ...evidenceBase,
+      domain: 'K',
+      score: kScore,
+      maxScore: assignment.knowledgeMaxScore,
+      dedupKey: `${assignment.id}-k`,
+    }));
+  }
+  if (pScore !== undefined) {
+    evidenceTasks.push(recordLearningEvidence({
+      ...evidenceBase,
+      domain: 'P',
+      score: pScore,
+      maxScore: assignment.practiceMaxScore,
+      dedupKey: `${assignment.id}-p`,
+    }));
+  }
+  await Promise.all(evidenceTasks);
+  await writeAuditLog({
+    action: 'score',
+    entityType: 'submission',
+    entityId: submission.id,
+    classroom: assignment.classroom,
+    subject: assignment.subject,
+    summary: `ตรวจงาน ${assignment.title} ของ ${submission.studentName}`,
+    after: submission,
+  });
 };
 
 export const getSubmissionsByAssignment = (assignmentId: string): Submission[] => (

@@ -11,10 +11,16 @@ const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || '12345678kmd';
 const SESSION_KEY = 'krujames_admin_session_v1';
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 ชั่วโมง
 
+export type TeacherRole = 'admin' | 'teacher' | 'viewer';
+
 export interface AdminSession {
   user: string;
   loginAt: number;
   expiresAt: number;
+  uid?: string;
+  email?: string;
+  role?: TeacherRole;
+  authSource?: 'firebase' | 'legacy';
 }
 
 export const adminLogin = (user: string, pass: string): boolean => {
@@ -23,6 +29,8 @@ export const adminLogin = (user: string, pass: string): boolean => {
       user,
       loginAt: Date.now(),
       expiresAt: Date.now() + SESSION_TTL_MS,
+      role: 'admin',
+      authSource: 'legacy',
     };
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
@@ -40,6 +48,80 @@ export const adminLogout = () => {
   } catch (e) {
     console.error('Failed to remove admin session', e);
   }
+  void import('firebase/auth')
+    .then(async ({ getAuth, signOut }) => {
+      const { default: app } = await import('./firebase');
+      const auth = getAuth(app);
+      if (auth.currentUser) await signOut(auth);
+    })
+    .catch(() => undefined);
+};
+
+const storeSession = (session: AdminSession) => {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+};
+
+export const firebaseTeacherLogin = async (
+  identifier: string,
+  password: string,
+): Promise<AdminSession | null> => {
+  const configuredEmail = import.meta.env.VITE_TEACHER_AUTH_EMAIL;
+  const email = identifier.includes('@') ? identifier.trim() : configuredEmail;
+  if (!email || !import.meta.env.VITE_FIREBASE_API_KEY) return null;
+
+  try {
+    const [
+      { getAuth, signInWithEmailAndPassword },
+      { doc, getDoc },
+      { default: app, db },
+    ] = await Promise.all([
+      import('firebase/auth'),
+      import('firebase/firestore'),
+      import('./firebase'),
+    ]);
+    const credential = await signInWithEmailAndPassword(getAuth(app), email, password);
+    const profileSnapshot = await getDoc(doc(db, 'teacherProfiles', credential.user.uid));
+    const profile = profileSnapshot.exists()
+      ? profileSnapshot.data() as { displayName?: string; role?: TeacherRole; active?: boolean }
+      : {};
+    const token = await credential.user.getIdTokenResult();
+    const claimedRole = (
+      token.claims.role === 'admin'
+      || token.claims.role === 'teacher'
+      || token.claims.role === 'viewer'
+    ) ? token.claims.role as TeacherRole : undefined;
+    if (!profileSnapshot.exists() && !claimedRole) {
+      await import('firebase/auth').then(({ signOut }) => signOut(getAuth(app)));
+      throw new Error('บัญชีนี้ยังไม่ได้รับสิทธิ์ครู');
+    }
+    if (profile.active === false) {
+      await import('firebase/auth').then(({ signOut }) => signOut(getAuth(app)));
+      throw new Error('บัญชีครูถูกระงับการใช้งาน');
+    }
+    const session: AdminSession = {
+      user: profile.displayName || credential.user.displayName || credential.user.email || 'teacher',
+      uid: credential.user.uid,
+      email: credential.user.email || email,
+      role: profile.role || claimedRole || 'viewer',
+      authSource: 'firebase',
+      loginAt: Date.now(),
+      expiresAt: Date.now() + SESSION_TTL_MS,
+    };
+    storeSession(session);
+    return session;
+  } catch (error) {
+    console.warn('Firebase teacher login failed', error);
+    return null;
+  }
+};
+
+export const adminLoginSecure = async (
+  identifier: string,
+  password: string,
+): Promise<AdminSession | null> => {
+  const firebaseSession = await firebaseTeacherLogin(identifier, password);
+  if (firebaseSession) return firebaseSession;
+  return adminLogin(identifier, password) ? getAdminSession() : null;
 };
 
 export const getAdminSession = (): AdminSession | null => {

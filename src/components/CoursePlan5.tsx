@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   BookOpen,
   CalendarDays,
@@ -6,6 +6,7 @@ import {
   Download,
   FileText,
   Printer,
+  Save,
 } from 'lucide-react';
 import {
   buildTechnologyTeachingSchedule,
@@ -14,6 +15,13 @@ import {
   type TechnologyTeachingSchedule,
 } from '../data/technologyTeachingSchedule';
 import { ACADEMIC_YEAR, COURSE_TEACHER_NAME } from '../services/gradeService';
+import {
+  fetchTeachingSessions,
+  saveTeachingSession,
+  type TeachingSession,
+  type TeachingSessionStatus,
+} from '../services/teachingSessionService';
+import { getAdminSession } from '../services/authAdmin';
 import './CoursePlan5.css';
 
 type SemesterFilter = 'all' | 1 | 2;
@@ -28,6 +36,7 @@ const escapeHtml = (value: string | number) =>
 
 const buildTeachingScheduleDocumentHtml = (
   schedule: TechnologyTeachingSchedule,
+  sessions: TeachingSession[] = [],
 ) => {
   const unitRows = schedule.units.map((unit) => `
     <tr>
@@ -38,17 +47,20 @@ const buildTeachingScheduleDocumentHtml = (
       <td class="center">${unit.hours}</td>
     </tr>`).join('');
 
-  const lessonRows = schedule.rows.map((row) => `
+  const lessonRows = schedule.rows.map((row) => {
+    const session = sessions.find((item) => item.period === row.period);
+    return `
     <tr>
       <td class="center">${row.period}</td>
       <td class="center">${row.semester}</td>
-      <td class="center">สัปดาห์ที่ ${row.week}<br>วันที่ ...............</td>
+      <td class="center">สัปดาห์ที่ ${row.week}<br>ตามแผน ${escapeHtml(session?.plannedDate || '')}<br>สอนจริง ${escapeHtml(session?.teachingDate || '...............')}</td>
       <td>หน่วยที่ ${row.unitNo}<br>${escapeHtml(row.unitTitle)}</td>
       <td><strong>${escapeHtml(row.lessonTitle)}</strong><br><small>${escapeHtml(row.learningActivity)}</small></td>
       <td>${escapeHtml(row.indicators.join(', '))}</td>
       <td>${escapeHtml(row.evidence)}<br><small>${escapeHtml(row.assessment)}</small></td>
-      <td class="center">1</td>
-    </tr>`).join('');
+      <td class="center">1<br><small>${escapeHtml(session?.status || 'planned')}</small></td>
+    </tr>`;
+  }).join('');
 
   return `<!doctype html>
 <html lang="th">
@@ -122,6 +134,8 @@ const downloadFile = (content: string, type: string, filename: string) => {
 const CoursePlan5: React.FC = () => {
   const [gradeId, setGradeId] = useState<PrimaryTechnologyGradeId>('p1');
   const [semester, setSemester] = useState<SemesterFilter>('all');
+  const [sessions, setSessions] = useState<TeachingSession[]>([]);
+  const [savingPeriod, setSavingPeriod] = useState<number | null>(null);
   const schedule = useMemo(
     () => buildTechnologyTeachingSchedule(gradeId),
     [gradeId],
@@ -133,9 +147,32 @@ const CoursePlan5: React.FC = () => {
     [schedule, semester],
   );
 
+  useEffect(() => {
+    void fetchTeachingSessions(gradeId).then(setSessions);
+  }, [gradeId]);
+
+  const updateSession = async (
+    period: number,
+    patch: Partial<TeachingSession>,
+  ) => {
+    const current = sessions.find((item) => item.period === period);
+    if (!current) return;
+    setSavingPeriod(period);
+    try {
+      const updated = await saveTeachingSession(
+        current,
+        patch,
+        getAdminSession()?.user || 'teacher',
+      );
+      setSessions((items) => items.map((item) => item.id === updated.id ? updated : item));
+    } finally {
+      setSavingPeriod(null);
+    }
+  };
+
   const downloadWord = () => {
     downloadFile(
-      buildTeachingScheduleDocumentHtml(schedule),
+      buildTeachingScheduleDocumentHtml(schedule, sessions),
       'application/msword;charset=utf-8',
       `กำหนดการสอน_เทคโนโลยี_${schedule.gradeLabel}_ปี${ACADEMIC_YEAR}.doc`,
     );
@@ -146,6 +183,9 @@ const CoursePlan5: React.FC = () => {
       'คาบ',
       'ภาคเรียน',
       'สัปดาห์',
+      'วันที่ตามแผน',
+      'วันที่สอนจริง',
+      'สถานะ',
       'หน่วย',
       'เรื่อง',
       'ตัวชี้วัด',
@@ -154,10 +194,15 @@ const CoursePlan5: React.FC = () => {
       'การประเมิน K/P/A',
       'ชั่วโมง',
     ];
-    const rows = schedule.rows.map((row) => [
+    const rows = schedule.rows.map((row) => {
+      const session = sessions.find((item) => item.period === row.period);
+      return [
       row.period,
       row.semester,
       row.week,
+      session?.plannedDate || '',
+      session?.teachingDate || '',
+      session?.status || 'planned',
       `หน่วยที่ ${row.unitNo} ${row.unitTitle}`,
       row.lessonTitle,
       row.indicators.join(', '),
@@ -165,7 +210,8 @@ const CoursePlan5: React.FC = () => {
       row.evidence,
       row.assessment,
       1,
-    ]);
+      ];
+    });
     const csv = [header, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))
       .join('\r\n');
@@ -283,7 +329,7 @@ const CoursePlan5: React.FC = () => {
         <div className="techschedule-section-title">
           <div>
             <h3>กำหนดการสอนรายชั่วโมง</h3>
-            <p>แสดง {visibleRows.length} คาบ · วันที่สอนจริงเว้นไว้ให้ครูบันทึกตามปฏิทินโรงเรียน</p>
+            <p>แสดง {visibleRows.length} คาบ · วันที่ สถานะ เลื่อน และสอนชดเชยบันทึกลง Firebase</p>
           </div>
           <span>{semester === 'all' ? 'ทั้งปี' : `ภาคเรียนที่ ${semester}`}</span>
         </div>
@@ -297,6 +343,7 @@ const CoursePlan5: React.FC = () => {
                 <th>เรื่องและกิจกรรม</th>
                 <th>ตัวชี้วัด</th>
                 <th>หลักฐานและการประเมิน K/P/A</th>
+                <th>สถานะจริง</th>
                 <th>ชม.</th>
               </tr>
             </thead>
@@ -304,11 +351,37 @@ const CoursePlan5: React.FC = () => {
               {visibleRows.map((row) => (
                 <tr key={row.period} className={row.period === 20 || row.period === 40 ? 'exam-row' : ''}>
                   <td><strong>{row.period}</strong><small>ภาค {row.semester}</small></td>
-                  <td>สัปดาห์ที่ {row.week}<small>วันที่ ...............</small></td>
+                  <td>
+                    สัปดาห์ที่ {row.week}
+                    <small>ตามแผน {sessions.find((item) => item.period === row.period)?.plannedDate || '-'}</small>
+                    <input
+                      type="date"
+                      value={sessions.find((item) => item.period === row.period)?.teachingDate || ''}
+                      onChange={(event) => void updateSession(row.period, { teachingDate: event.target.value })}
+                      aria-label={`วันที่สอนจริงคาบ ${row.period}`}
+                    />
+                  </td>
                   <td><strong>หน่วยที่ {row.unitNo}</strong><small>{row.unitTitle}</small></td>
                   <td><strong>{row.lessonTitle}</strong><small>{row.learningActivity}</small></td>
                   <td>{row.indicators.join(', ')}</td>
                   <td>{row.evidence}<small>{row.assessment}</small></td>
+                  <td>
+                    <select
+                      value={sessions.find((item) => item.period === row.period)?.status || 'planned'}
+                      onChange={(event) => void updateSession(row.period, {
+                        status: event.target.value as TeachingSessionStatus,
+                        completedAt: event.target.value === 'completed' ? Date.now() : undefined,
+                      })}
+                      aria-label={`สถานะคาบ ${row.period}`}
+                    >
+                      <option value="planned">ยังไม่สอน</option>
+                      <option value="in_progress">กำลังสอน</option>
+                      <option value="completed">สอนแล้ว</option>
+                      <option value="postponed">เลื่อน</option>
+                      <option value="makeup">สอนชดเชย</option>
+                    </select>
+                    {savingPeriod === row.period && <small><Save size={12} /> กำลังบันทึก</small>}
+                  </td>
                   <td>1</td>
                 </tr>
               ))}

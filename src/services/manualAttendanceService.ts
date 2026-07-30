@@ -5,6 +5,8 @@
 import { db } from './firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { awardBonus, fetchStudentProgress } from './progressService';
+import { recordLearningEvidence } from './learningEvidenceService';
+import { loadRoster } from './rosterService';
 
 export type AttendanceStatus = 'present' | 'absent' | 'sick';
 
@@ -124,6 +126,26 @@ export const setStatus = async (
       console.warn('attendance bonus failed', e);
     }
   }
+
+  const rosterStudent = loadRoster(classroom).find((student) => (
+    student.studentCode === studentCode
+  ));
+  await recordLearningEvidence({
+    studentId,
+    studentCode,
+    studentName: rosterStudent?.name || studentCode,
+    classroom,
+    subject: 'main',
+    source: 'attendance',
+    domain: 'A',
+    title: `เช็กชื่อ ${date}`,
+    detail: info.th,
+    score: status === 'present' ? 1 : 0,
+    maxScore: 1,
+    inClass: true,
+    occurredAt: Date.now(),
+    dedupKey: `${date}-${status}`,
+  });
 };
 
 /** เซ็ตทุกคนเป็น "มาเรียน" — ปุ่ม "ทุกคนมา" ในห้อง */

@@ -27,6 +27,9 @@ import P1TechnologyPlan from '../components/P1TechnologyPlan';
 import PrimaryTechnologyPlans from '../components/PrimaryTechnologyPlans';
 import CoursePlan5 from '../components/CoursePlan5';
 import StudentAssessmentHub from '../components/StudentAssessmentHub';
+import TeacherClassroomHub from '../components/TeacherClassroomHub';
+import QuestionBankManager from '../components/QuestionBankManager';
+import AuditLogViewer from '../components/AuditLogViewer';
 import { loadErrors, clearErrors } from '../services/errorLogger';
 import { Megaphone, Calendar as CalIcon, Bug } from 'lucide-react';
 import { adminLogout, getAdminSession } from '../services/authAdmin';
@@ -42,7 +45,7 @@ import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'overview' | 'world' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'assessments' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
+type Tab = 'today' | 'overview' | 'world' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -56,6 +59,12 @@ interface NavGroup {
 }
 
 const NAVIGATION_GROUPS: NavGroup[] = [
+  {
+    title: 'การสอนวันนี้',
+    items: [
+      { id: 'today', label: 'คาบเรียนวันนี้', icon: <PlayCircle size={16} /> },
+    ],
+  },
   {
     title: '📊 หน้าหลักและสถิติ',
     items: [
@@ -78,6 +87,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     items: [
       { id: 'gradebook', label: 'เก็บคะแนน K/P/A', icon: <Award size={16} /> },
       { id: 'assessments', label: 'แบบประเมินและหลังสอน', icon: <FileText size={16} /> },
+      { id: 'question-bank', label: 'คลังข้อสอบ', icon: <FileText size={16} /> },
       { id: 'skill', label: 'ทักษะอาชีพ (K/P)', icon: <Award size={16} /> },
       { id: 'bonus', label: 'แจกรางวัล / Bonus', icon: <Award size={16} /> },
       { id: 'daily', label: 'คำถามประจำวัน', icon: <Award size={16} /> },
@@ -108,6 +118,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     title: '⚙️ ตั้งค่าระบบ',
     items: [
       { id: 'theme', label: 'ธีม & สำรองข้อมูล', icon: <Activity size={16} /> },
+      { id: 'audit', label: 'ประวัติการแก้ไข', icon: <Clock size={16} /> },
       { id: 'site', label: 'ข้อมูลเว็บ', icon: <Activity size={16} /> },
       { id: 'errors', label: 'Error Log', icon: <Bug size={16} /> },
     ]
@@ -125,9 +136,27 @@ const fmtTime = (ts?: number) =>
 const fmtDateTime = (ts?: number) =>
   ts ? new Date(ts).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '—';
 
+const getInitialAdminTab = (): Tab => {
+  const requested = new URLSearchParams(window.location.search).get('tab') as Tab | null;
+  const exists = requested && NAVIGATION_GROUPS.some((group) => (
+    group.items.some((item) => item.id === requested)
+  ));
+  return exists ? requested : 'today';
+};
+
 const AdminDashboardInner: React.FC = () => {
-  const [tab, setTab] = useState<Tab>('overview');
+  const [tab, setTab] = useState<Tab>(getInitialAdminTab);
   const session = getAdminSession();
+  const visibleNavigationGroups = useMemo(() => {
+    if (session?.role !== 'viewer') return NAVIGATION_GROUPS;
+    const viewerTabs: Tab[] = ['overview', 'scores', 'development'];
+    return NAVIGATION_GROUPS
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => viewerTabs.includes(item.id)),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [session?.role]);
   const handleLogout = () => {
     if (confirm('ออกจากระบบ Admin?')) {
       adminLogout();
@@ -159,6 +188,14 @@ const AdminDashboardInner: React.FC = () => {
     }, 0);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (session?.role === 'viewer' && !['overview', 'scores', 'development'].includes(tab)) {
+      const timer = window.setTimeout(() => setTab('overview'), 0);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
+  }, [session?.role, tab]);
 
   const stats = useMemo(() => getSiteStats(students), [students]);
 
@@ -217,6 +254,7 @@ const AdminDashboardInner: React.FC = () => {
             {session && (
               <span style={{ fontSize: '0.85rem', color: '#6b7280', marginRight: '0.5rem' }}>
                 👤 <strong>{session.user}</strong>
+                {session.role && <small style={{ marginLeft: 5 }}>({session.role})</small>}
               </span>
             )}
             <button className="admin2-refresh" onClick={refresh} disabled={loading}>
@@ -233,7 +271,7 @@ const AdminDashboardInner: React.FC = () => {
         <div className="admin2-layout">
           {/* Sidebar Navigation */}
           <aside className="admin2-sidebar">
-            {NAVIGATION_GROUPS.map((g) => (
+            {visibleNavigationGroups.map((g) => (
               <div key={g.title} className="sidebar-group">
                 <h4 className="sidebar-group-title">{g.title}</h4>
                 <div className="sidebar-group-items">
@@ -261,7 +299,7 @@ const AdminDashboardInner: React.FC = () => {
               onChange={(e) => setTab(e.target.value as Tab)}
               className="admin2-mobile-select"
             >
-              {NAVIGATION_GROUPS.map((g) => (
+              {visibleNavigationGroups.map((g) => (
                 <optgroup key={g.title} label={g.title}>
                   {g.items.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -275,6 +313,13 @@ const AdminDashboardInner: React.FC = () => {
 
           {/* Content Area */}
           <div className="admin2-content">
+            {/* TAB: TODAY'S CLASS */}
+            {tab === 'today' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <TeacherClassroomHub onNavigate={(nextTab) => setTab(nextTab)} />
+              </motion.div>
+            )}
+
             {/* TAB: OVERVIEW */}
             {tab === 'overview' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
@@ -546,6 +591,13 @@ const AdminDashboardInner: React.FC = () => {
               </motion.div>
             )}
 
+            {/* TAB: QUESTION BANK */}
+            {tab === 'question-bank' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <QuestionBankManager />
+              </motion.div>
+            )}
+
             {/* TAB: SKILL (ทักษะอาชีพ) */}
             {tab === 'skill' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
@@ -660,6 +712,13 @@ const AdminDashboardInner: React.FC = () => {
                   </p>
                 </div>
                 <ThemeCustomizer />
+              </motion.div>
+            )}
+
+            {/* TAB: AUDIT */}
+            {tab === 'audit' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <AuditLogViewer />
               </motion.div>
             )}
 

@@ -9,6 +9,7 @@
 import { db } from './firebase';
 import { doc, setDoc, getDoc, runTransaction } from 'firebase/firestore';
 import { allClassrooms2569 } from '../data/students2569';
+import { writeAuditLog } from './auditLogService';
 
 const cleanForFirestore = <T,>(value: T): T => (
   JSON.parse(JSON.stringify(value)) as T
@@ -395,6 +396,16 @@ export const updateStudentScore = (
     indicatorId,
     indicatorScore: student.indicators[indicatorId],
   });
+  void writeAuditLog({
+    action: 'score',
+    entityType: 'indicatorScore',
+    entityId: `${classroom}_${subject}_${studentCode}_${indicatorId}`,
+    classroom,
+    subject,
+    summary: `แก้คะแนน ${student.name} ตัวชี้วัด ${indicatorId}`,
+    before: cur,
+    after: next,
+  });
 };
 
 /** ตั้งหรือล้างคะแนน K ที่ครูกรอกเอง โดยยังรักษาคะแนนจากเว็บและภาระงานไว้ */
@@ -428,6 +439,16 @@ export const updateTeacherKnowledgeScore = (
   void patchStudentGradeInFirebase(classroom, student, subject, {
     indicatorId,
     indicatorScore: next,
+  });
+  void writeAuditLog({
+    action: 'score',
+    entityType: 'knowledgeScore',
+    entityId: `${classroom}_${subject}_${studentCode}_${indicatorId}`,
+    classroom,
+    subject,
+    summary: `แก้ K ของ ${student.name} ตัวชี้วัด ${indicatorId}`,
+    before: current,
+    after: next,
   });
 };
 
@@ -469,6 +490,16 @@ export const updatePracticeCriteriaScores = (
     indicatorId,
     indicatorScore: next,
   });
+  void writeAuditLog({
+    action: 'score',
+    entityType: 'practiceScore',
+    entityId: `${classroom}_${subject}_${studentCode}_${indicatorId}`,
+    classroom,
+    subject,
+    summary: `แก้ P ของ ${student.name} ตัวชี้วัด ${indicatorId}`,
+    before: current,
+    after: next,
+  });
 };
 
 export const updateFinalExam = (
@@ -480,10 +511,21 @@ export const updateFinalExam = (
   const grades = loadGrades(classroom, subject);
   const student = grades.find((g) => g.studentCode === studentCode);
   if (!student) return;
+  const previousScore = student.finalExam;
   student.finalExam = score;
   student.updatedAt = Date.now();
   cacheGradesLocally(classroom, grades, subject);
   void patchStudentGradeInFirebase(classroom, student, subject, { finalExam: score });
+  void writeAuditLog({
+    action: 'score',
+    entityType: 'finalExam',
+    entityId: `${classroom}_${subject}_${studentCode}`,
+    classroom,
+    subject,
+    summary: `แก้คะแนนปลายภาคของ ${student.name}`,
+    before: previousScore,
+    after: score,
+  });
 };
 
 /** อัปเดตคะแนนสอบกลางภาค */
@@ -496,10 +538,21 @@ export const updateMidtermExam = (
   const grades = loadGrades(classroom, subject);
   const student = grades.find((g) => g.studentCode === studentCode);
   if (!student) return;
+  const previousScore = student.midtermExam;
   student.midtermExam = score;
   student.updatedAt = Date.now();
   cacheGradesLocally(classroom, grades, subject);
   void patchStudentGradeInFirebase(classroom, student, subject, { midtermExam: score });
+  void writeAuditLog({
+    action: 'score',
+    entityType: 'midtermExam',
+    entityId: `${classroom}_${subject}_${studentCode}`,
+    classroom,
+    subject,
+    summary: `แก้คะแนนกลางภาคของ ${student.name}`,
+    before: previousScore,
+    after: score,
+  });
 };
 
 // ---------- Manual/outside-web assessments ----------
