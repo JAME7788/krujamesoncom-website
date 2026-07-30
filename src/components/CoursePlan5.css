@@ -1,0 +1,430 @@
+.techschedule-shell {
+  color: #172033;
+}
+
+.techschedule-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #dce3ec;
+}
+
+.techschedule-header > div:first-child > span {
+  color: #0f766e;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.techschedule-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 5px 0 4px;
+  font-size: 1.45rem;
+}
+
+.techschedule-header p,
+.techschedule-section-title p {
+  margin: 0;
+  color: #667085;
+  font-size: 0.86rem;
+}
+
+.techschedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.techschedule-actions button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  background: #fff;
+  color: #25324a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+
+.techschedule-actions button:first-child {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: #fff;
+}
+
+.techschedule-actions button:hover,
+.techschedule-actions button:focus-visible {
+  border-color: #2563eb;
+  outline: 2px solid rgba(37, 99, 235, 0.16);
+}
+
+.techschedule-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 0;
+}
+
+.techschedule-grade-tabs,
+.techschedule-semester-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.techschedule-grade-tabs button,
+.techschedule-semester-tabs button {
+  min-height: 36px;
+  padding: 6px 13px;
+  border: 1px solid #d7dee8;
+  border-radius: 5px;
+  background: #fff;
+  color: #475467;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.techschedule-grade-tabs button.active {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.techschedule-semester-tabs button.active {
+  border-color: #0f766e;
+  background: #ccfbf1;
+  color: #115e59;
+}
+
+.techschedule-formal-heading {
+  padding: 20px 16px;
+  border-block: 3px double #334155;
+  text-align: center;
+}
+
+.techschedule-formal-heading h3 {
+  margin: 5px 0;
+  font-size: 1.35rem;
+}
+
+.techschedule-formal-heading p {
+  margin: 3px 0;
+  color: #344054;
+  font-size: 0.9rem;
+}
+
+.techschedule-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: 18px 0;
+  overflow: hidden;
+  border: 1px solid #dfe5ec;
+  border-radius: 6px;
+  background: #dfe5ec;
+}
+
+.techschedule-metrics > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2px 10px;
+  min-height: 78px;
+  padding: 13px;
+  background: #f8fafc;
+}
+
+.techschedule-metrics svg {
+  grid-row: 1 / 3;
+  color: #2563eb;
+}
+
+.techschedule-metrics strong {
+  font-size: 1.05rem;
+}
+
+.techschedule-metrics span {
+  color: #667085;
+  font-size: 0.75rem;
+}
+
+.techschedule-section {
+  padding: 18px 0;
+  border-top: 1px solid #e3e8ef;
+}
+
+.techschedule-section > h3,
+.techschedule-section-title h3 {
+  margin: 0 0 10px;
+  font-size: 1.08rem;
+}
+
+.techschedule-description {
+  max-width: 1100px;
+  margin: 0;
+  color: #344054;
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+.techschedule-focus {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 16px;
+  margin-top: 12px;
+}
+
+.techschedule-focus span {
+  position: relative;
+  padding-left: 18px;
+  color: #475467;
+  font-size: 0.82rem;
+}
+
+.techschedule-focus span::before {
+  position: absolute;
+  top: 0.45em;
+  left: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: #14b8a6;
+  content: "";
+}
+
+.techschedule-section-title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.techschedule-section-title h3 {
+  margin-bottom: 3px;
+}
+
+.techschedule-section-title > span {
+  padding: 5px 9px;
+  border: 1px solid #99f6e4;
+  border-radius: 4px;
+  background: #f0fdfa;
+  color: #115e59;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.techschedule-table-wrap {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+}
+
+.techschedule-unit-table,
+.techschedule-hour-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.techschedule-unit-table {
+  min-width: 840px;
+}
+
+.techschedule-hour-table {
+  min-width: 1260px;
+  font-size: 0.78rem;
+}
+
+.techschedule-unit-table th,
+.techschedule-unit-table td,
+.techschedule-hour-table th,
+.techschedule-hour-table td {
+  padding: 9px 10px;
+  border-right: 1px solid #e3e8ef;
+  border-bottom: 1px solid #e3e8ef;
+  vertical-align: top;
+  line-height: 1.48;
+}
+
+.techschedule-unit-table th,
+.techschedule-hour-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #eaf2ff;
+  color: #25324a;
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.techschedule-unit-table th:first-child,
+.techschedule-unit-table th:last-child,
+.techschedule-unit-table td:first-child,
+.techschedule-unit-table td:last-child,
+.techschedule-hour-table th:first-child,
+.techschedule-hour-table th:last-child,
+.techschedule-hour-table td:first-child,
+.techschedule-hour-table td:last-child {
+  text-align: center;
+}
+
+.techschedule-unit-table tfoot td {
+  background: #f0fdfa;
+  color: #115e59;
+  font-weight: 850;
+}
+
+.techschedule-hour-table th:nth-child(1) {
+  width: 55px;
+}
+
+.techschedule-hour-table th:nth-child(2) {
+  width: 120px;
+}
+
+.techschedule-hour-table th:nth-child(3) {
+  width: 160px;
+}
+
+.techschedule-hour-table th:nth-child(4) {
+  width: 310px;
+}
+
+.techschedule-hour-table th:nth-child(5) {
+  width: 155px;
+}
+
+.techschedule-hour-table th:nth-child(6) {
+  width: 330px;
+}
+
+.techschedule-hour-table th:nth-child(7) {
+  width: 52px;
+}
+
+.techschedule-hour-table td small {
+  display: block;
+  margin-top: 3px;
+  color: #667085;
+  font-size: 0.69rem;
+  line-height: 1.45;
+}
+
+.techschedule-hour-table tr:hover td {
+  background: #f8fbff;
+}
+
+.techschedule-hour-table .exam-row td {
+  background: #fff8db;
+}
+
+.techschedule-score-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0 4px;
+  border-top: 3px double #334155;
+}
+
+.techschedule-score-note strong {
+  width: 100%;
+}
+
+.techschedule-score-note span {
+  padding: 5px 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: #344054;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.techschedule-score-note p {
+  width: 100%;
+  margin: 4px 0 0;
+  color: #667085;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .techschedule-header,
+  .techschedule-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .techschedule-metrics,
+  .techschedule-focus {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .techschedule-metrics,
+  .techschedule-focus {
+    grid-template-columns: 1fr;
+  }
+
+  .techschedule-actions button {
+    flex: 1 1 100px;
+    justify-content: center;
+  }
+
+  .techschedule-section-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media print {
+  .techschedule-actions,
+  .techschedule-controls {
+    display: none !important;
+  }
+
+  .techschedule-shell {
+    color: #000;
+  }
+
+  .techschedule-table-wrap {
+    overflow: visible;
+    border: 0;
+  }
+
+  .techschedule-hour-table {
+    min-width: 0;
+    font-size: 8pt;
+  }
+
+  .techschedule-unit-table {
+    min-width: 0;
+    font-size: 9pt;
+  }
+
+  .techschedule-unit-table th,
+  .techschedule-unit-table td,
+  .techschedule-hour-table th,
+  .techschedule-hour-table td {
+    padding: 4px;
+    border: 1px solid #333;
+  }
+
+  .techschedule-hour-table th {
+    position: static;
+  }
+}

@@ -25,6 +25,7 @@ import SlideManager from '../components/SlideManager';
 import VirtualClassroomManager from '../components/VirtualClassroomManager';
 import P1TechnologyPlan from '../components/P1TechnologyPlan';
 import PrimaryTechnologyPlans from '../components/PrimaryTechnologyPlans';
+import CoursePlan5 from '../components/CoursePlan5';
 import StudentAssessmentHub from '../components/StudentAssessmentHub';
 import { loadErrors, clearErrors } from '../services/errorLogger';
 import { Megaphone, Calendar as CalIcon, Bug } from 'lucide-react';
@@ -41,7 +42,7 @@ import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'overview' | 'world' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'assessments' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
+type Tab = 'overview' | 'world' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'assessments' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -88,6 +89,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     items: [
       { id: 'courses', label: 'จัดการรายวิชา', icon: <Pencil size={16} /> },
       { id: 'p1-plan', label: 'แผนเทคโนโลยี ป.1 + หลังสอน', icon: <FileText size={16} /> },
+      { id: 'teaching-schedule', label: 'กำหนดการสอน ป.1-6', icon: <Calendar size={16} /> },
       { id: 'course-plan5', label: 'แผนเทคโนโลยีข้อ 5 ป.1-6', icon: <FileText size={16} /> },
       { id: 'locks', label: 'ปลดล็อกบทเรียน', icon: <Lock size={16} /> },
       { id: 'slides', label: 'จัดการสไลด์', icon: <BookOpen size={16} /> },
@@ -740,6 +742,13 @@ const AdminDashboardInner: React.FC = () => {
             {tab === 'p1-plan' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
                 <P1TechnologyPlan />
+              </motion.div>
+            )}
+
+            {/* TAB: PRIMARY TECHNOLOGY TEACHING SCHEDULES */}
+            {tab === 'teaching-schedule' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <CoursePlan5 />
               </motion.div>
             )}
 
