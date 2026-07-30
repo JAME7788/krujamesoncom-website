@@ -19,6 +19,7 @@ import { allClassrooms2569 } from '../data/students2569';
 import { fetchRostersFromFirebase, loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
 import { loadAssignments } from '../services/homeworkService';
+import { calculatePresetScore, type ScorePresetRatio } from '../utils/scorePresets';
 
 const withTimeout = async <T,>(promise: Promise<T>, milliseconds: number, label: string): Promise<T> => {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -53,6 +54,16 @@ const PRACTICE_RATING_OPTIONS = [
 ] as const;
 
 const PRACTICE_PRESET_OPTIONS = PRACTICE_RATING_OPTIONS.filter(({ score }) => score > 0);
+
+const SCORE_PRESET_OPTIONS: Array<{
+  ratio: ScorePresetRatio;
+  label: string;
+  className: string;
+}> = [
+  { ratio: 1, label: 'เต็ม', className: 'full' },
+  { ratio: 0.5, label: 'พอใช้', className: 'fair' },
+  { ratio: 0.2, label: 'ปานกลาง', className: 'moderate' },
+];
 
 const GradeBook: React.FC = () => {
   const [classroom, setClassroom] = useState<string>('ป.1');
@@ -1020,17 +1031,40 @@ const GradeBook: React.FC = () => {
                 <strong>ครูใส่คะแนน K โดยตรง</strong>
                 <p>เว้นว่างเพื่อล้างคะแนนที่ครูกรอก ระบบจะรวมคะแนนจากเว็บกับงานแล้วตัดไม่ให้เกินคะแนนเต็ม</p>
               </div>
-              <label>
-                <input
-                  type="number"
-                  min={0}
-                  max={dialogIndicator.maxScore}
-                  value={dialogIndicatorScore?.teacherK ?? ''}
-                  onChange={(event) => handleTeacherK(dialogStudent.studentCode, dialogIndicator.id, event.target.value)}
-                  aria-label="คะแนน K ที่ครูกรอกเอง"
-                />
-                <span>/ {dialogIndicator.maxScore}</span>
-              </label>
+              <div className="gb-teacher-k-controls">
+                <label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={dialogIndicator.maxScore}
+                    value={dialogIndicatorScore?.teacherK ?? ''}
+                    onChange={(event) => handleTeacherK(dialogStudent.studentCode, dialogIndicator.id, event.target.value)}
+                    aria-label="คะแนน K ที่ครูกรอกเอง"
+                  />
+                  <span>/ {dialogIndicator.maxScore}</span>
+                </label>
+                <div className="gb-score-preset-buttons" aria-label="เลือกคะแนน K สำเร็จรูป">
+                  {SCORE_PRESET_OPTIONS.map((preset) => {
+                    const presetScore = calculatePresetScore(dialogIndicator.maxScore, preset.ratio);
+                    return (
+                      <button
+                        type="button"
+                        className={preset.className}
+                        key={preset.ratio}
+                        onClick={() => handleTeacherK(
+                          dialogStudent.studentCode,
+                          dialogIndicator.id,
+                          String(presetScore),
+                        )}
+                        title={`ใส่ ${preset.label} ${Math.round(preset.ratio * 100)}% = ${presetScore} คะแนน`}
+                      >
+                        <b>{preset.label}</b>
+                        <span>{Math.round(preset.ratio * 100)}% = {presetScore}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <div className="gb-score-items-heading">
@@ -1071,7 +1105,7 @@ const GradeBook: React.FC = () => {
                         onBlur={(event) => handleKnowledgeItemUpdate(assessment.id, { maxScore: Number(event.target.value) || 1 })}
                       />
                     </label>
-                    <label className="gb-score-earned">
+                    <div className="gb-score-earned">
                       <span>คะแนนที่ได้</span>
                       <input
                         type="number"
@@ -1079,8 +1113,30 @@ const GradeBook: React.FC = () => {
                         max={assessment.maxScore}
                         value={manualScores[assessment.id]?.[dialogStudent.studentCode] ?? ''}
                         onChange={(event) => handleKnowledgeItemScore(assessment, dialogStudent.studentCode, event.target.value)}
+                        aria-label={`คะแนนที่ได้จาก ${assessment.title}`}
                       />
-                    </label>
+                      <div className="gb-score-preset-buttons" aria-label={`เลือกคะแนนสำเร็จรูปสำหรับ ${assessment.title}`}>
+                        {SCORE_PRESET_OPTIONS.map((preset) => {
+                          const presetScore = calculatePresetScore(assessment.maxScore, preset.ratio);
+                          return (
+                            <button
+                              type="button"
+                              className={preset.className}
+                              key={preset.ratio}
+                              onClick={() => handleKnowledgeItemScore(
+                                assessment,
+                                dialogStudent.studentCode,
+                                String(presetScore),
+                              )}
+                              title={`ใส่ ${preset.label} ${Math.round(preset.ratio * 100)}% = ${presetScore} คะแนน`}
+                            >
+                              <b>{preset.label}</b>
+                              <span>{presetScore}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                     {isHomework ? (
                       <span className="gb-score-linked" title="ลบการบ้านได้จากเมนูการบ้าน">เชื่อมการบ้าน</span>
                     ) : (
