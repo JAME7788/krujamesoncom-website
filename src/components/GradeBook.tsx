@@ -58,11 +58,12 @@ const PRACTICE_PRESET_OPTIONS = PRACTICE_RATING_OPTIONS.filter(({ score }) => sc
 const SCORE_PRESET_OPTIONS: Array<{
   ratio: ScorePresetRatio;
   label: string;
+  scoreLabel: string;
   className: string;
 }> = [
-  { ratio: 1, label: 'เต็ม', className: 'full' },
-  { ratio: 0.5, label: 'พอใช้', className: 'fair' },
-  { ratio: 0.2, label: 'ปานกลาง', className: 'moderate' },
+  { ratio: 1, label: 'เต็ม', scoreLabel: '100%', className: 'full' },
+  { ratio: 0.8, label: 'ปานกลาง', scoreLabel: 'หัก 20%', className: 'moderate' },
+  { ratio: 0.5, label: 'พอใช้', scoreLabel: '50%', className: 'fair' },
 ];
 
 const GradeBook: React.FC = () => {
@@ -1056,10 +1057,10 @@ const GradeBook: React.FC = () => {
                           dialogIndicator.id,
                           String(presetScore),
                         )}
-                        title={`ใส่ ${preset.label} ${Math.round(preset.ratio * 100)}% = ${presetScore} คะแนน`}
+                        title={`ใส่ ${preset.label} ${preset.scoreLabel} = ${presetScore} คะแนน`}
                       >
                         <b>{preset.label}</b>
-                        <span>{Math.round(preset.ratio * 100)}% = {presetScore}</span>
+                        <span>{preset.scoreLabel} = {presetScore}</span>
                       </button>
                     );
                   })}
@@ -1128,10 +1129,10 @@ const GradeBook: React.FC = () => {
                                 dialogStudent.studentCode,
                                 String(presetScore),
                               )}
-                              title={`ใส่ ${preset.label} ${Math.round(preset.ratio * 100)}% = ${presetScore} คะแนน`}
+                              title={`ใส่ ${preset.label} ${preset.scoreLabel} = ${presetScore} คะแนน`}
                             >
                               <b>{preset.label}</b>
-                              <span>{presetScore}</span>
+                              <span>{preset.scoreLabel} = {presetScore}</span>
                             </button>
                           );
                         })}

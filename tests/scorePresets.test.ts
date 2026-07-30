@@ -12,9 +12,9 @@ describe('ปุ่มคะแนนสำเร็จรูป', () => {
     expect(calculatePresetScore(10, 0.5)).toBe(5);
   });
 
-  it('คำนวณร้อยละ 20 และปัดเป็นจำนวนเต็ม', () => {
-    expect(calculatePresetScore(15, 0.2)).toBe(3);
-    expect(calculatePresetScore(10, 0.2)).toBe(2);
+  it('หักร้อยละ 20 สำหรับระดับปานกลางและปัดเป็นจำนวนเต็ม', () => {
+    expect(calculatePresetScore(15, 0.8)).toBe(12);
+    expect(calculatePresetScore(10, 0.8)).toBe(8);
   });
 
   it('ไม่สร้างคะแนนติดลบหรือเกินคะแนนเต็ม', () => {
@@ -22,4 +22,3 @@ describe('ปุ่มคะแนนสำเร็จรูป', () => {
     expect(calculatePresetScore(Number.NaN, 1)).toBe(0);
   });
 });
-
