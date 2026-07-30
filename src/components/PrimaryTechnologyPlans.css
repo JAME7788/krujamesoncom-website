@@ -178,6 +178,29 @@
   margin-top: 16px;
 }
 
+.ptplan-paper > .official-plan-header {
+  margin-bottom: 13px;
+}
+
+.ptplan-course-description {
+  padding: 14px 0 16px !important;
+}
+
+.ptplan-course-description h4 {
+  margin-bottom: 6px !important;
+}
+
+.ptplan-course-description p {
+  text-align: justify;
+}
+
+.ptplan-course-description small {
+  display: block;
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
 .ptplan-document section,
 .ptplan-view {
   padding: 20px 0;
@@ -987,7 +1010,8 @@
   .ptplan-table-wrap tr,
   .ptplan-resource-columns > div,
   .ptplan-child-brief,
-  .ptplan-outcome {
+  .ptplan-outcome,
+  .ptplan-course-description {
     break-inside: avoid;
   }
 }

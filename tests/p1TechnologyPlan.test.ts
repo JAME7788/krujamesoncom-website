@@ -5,6 +5,7 @@ import {
   p1LessonPlans,
   p1TechnologyCourse,
 } from '../src/data/p1TechnologyPlan';
+import { buildP1TechnologyPlanDocumentHtml } from '../src/utils/p1TechnologyPlanDocument';
 
 describe('P.1 hourly technology lesson plans', () => {
   it('contains 40 unique plans for 40 teaching periods', () => {
@@ -41,5 +42,19 @@ describe('P.1 hourly technology lesson plans', () => {
       '37-40',
     ]);
     expect(p1AnnualUnits.reduce((sum, unit) => sum + unit.hours, 0)).toBe(40);
+  });
+
+  it('exports all 40 plans with the supplied official header', () => {
+    const html = buildP1TechnologyPlanDocumentHtml();
+
+    expect(html.match(/แผนการจัดการเรียนรู้ที่ \d+/g)).toHaveLength(40);
+    expect(html).toContain('แผนการจัดการเรียนรู้ที่ 1');
+    expect(html).toContain('แผนการจัดการเรียนรู้ที่ 40');
+    expect(html).toContain('รายวิชาเทคโนโลยี (วิทยาการคำนวณ) รหัสวิชา ว11101');
+    expect(html).toContain('ชั้นประถมศึกษาปีที่ 1');
+    expect(html).toContain('ภาคเรียนที่ 1 ปีการศึกษา 2569');
+    expect(html).toContain('ภาคเรียนที่ 2 ปีการศึกษา 2569');
+    expect(html).toContain('เวลา 1 ชั่วโมง');
+    expect(html).toContain('วันที่สอน ......./........./...........');
   });
 });

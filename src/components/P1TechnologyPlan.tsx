@@ -29,7 +29,9 @@ import {
 import { fetchAllStudents, computeAttendance } from '../services/adminService';
 import { fetchAttendance } from '../services/manualAttendanceService';
 import { loadSchedule } from '../data/schedule';
+import { buildP1TechnologyPlanDocumentHtml } from '../utils/p1TechnologyPlanDocument';
 import { useToast } from './Toast';
+import OfficialLessonPlanHeader from './OfficialLessonPlanHeader';
 import './P1TechnologyPlan.css';
 
 type View = 'annual' | 'lesson' | 'assessment';
@@ -38,56 +40,6 @@ const domainLabels: Record<KpaDomain, string> = {
   K: 'ความรู้ (K)',
   P: 'ทักษะกระบวนการ (P)',
   A: 'คุณลักษณะ (A)',
-};
-
-const buildPlanText = () => {
-  const lines: string[] = [
-    'แผนการจัดการเรียนรู้รายวิชาเทคโนโลยี (วิทยาการคำนวณ)',
-    `${p1TechnologyCourse.grade} ปีการศึกษา ${p1TechnologyCourse.academicYear}`,
-    `${p1TechnologyCourse.school} | ครูผู้สอน ${p1TechnologyCourse.teacher}`,
-    `${p1TechnologyCourse.schedule} | ${p1TechnologyCourse.totalPeriods} คาบ คาบละ ${p1TechnologyCourse.periodMinutes} นาที`,
-    '',
-    'คำอธิบายรายวิชา',
-    p1TechnologyCourse.description,
-    '',
-    'โครงสร้างรายปี',
-  ];
-
-  p1AnnualUnits.forEach((unit) => {
-    lines.push(`หน่วยที่ ${unit.no} ${unit.title} (${unit.hours} คาบ) แผน ${unit.plans}`);
-    lines.push(`ตัวชี้วัด: ${unit.indicators.join(', ')}`);
-    lines.push(`คำถามสำคัญ: ${unit.essentialQuestion}`);
-    lines.push(`หลักฐาน: ${unit.evidence}`, '');
-  });
-
-  lines.push('แผนการจัดการเรียนรู้รายชั่วโมง 40 แผน');
-  p1LessonPlans.forEach((plan) => {
-    lines.push('', `แผนที่ ${plan.no} ${plan.title}`);
-    lines.push(`หน่วยที่ ${plan.unitNo} | สัปดาห์ ${plan.weeks} | ${plan.hours} คาบ | ${plan.indicators.join(', ')}`);
-    lines.push(`คำถามสำคัญ: ${plan.essentialQuestion}`);
-    lines.push(`สาระสำคัญ: ${plan.concept}`);
-    lines.push('จุดประสงค์การเรียนรู้');
-    plan.objectives.forEach((item) => lines.push(`- ${item.domain}: ${item.text}`));
-    lines.push('สาระการเรียนรู้');
-    plan.content.forEach((item) => lines.push(`- ${item}`));
-    lines.push('ขั้นจัดกิจกรรมการเรียนรู้');
-    plan.steps.forEach((step) => {
-      lines.push(`${step.phase} (${step.minutes} นาที)`);
-      lines.push(`ครู: ${step.teacher}`);
-      lines.push(`นักเรียน: ${step.students}`);
-      lines.push(`หลักฐาน: ${step.evidence}`);
-    });
-    lines.push(`ใบงาน: ${plan.worksheet}`);
-    lines.push(`ชิ้นงาน: ${plan.product}`);
-    lines.push('การวัดและประเมินผล');
-    plan.assessments.forEach((item) => lines.push(`- ${item.domain}: ${item.method} | ${item.instrument} | ${item.criteria} | ${item.webRecord}`));
-    lines.push('การช่วยเหลือและท้าทายผู้เรียน');
-    plan.support.forEach((item) => lines.push(`- ${item}`));
-  });
-
-  lines.push('', 'โครงสร้างคะแนน', p1ScoringPlan.note, '', 'กระบวนการเก็บข้อมูลเชิงวิจัย');
-  p1ResearchProtocol.forEach((item, index) => lines.push(`${index + 1}. ${item}`));
-  return lines.join('\n');
 };
 
 const DomainBadge = ({ domain }: { domain: KpaDomain }) => (
@@ -316,22 +268,37 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
 
 const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRecord?: boolean }) => (
   <article className="p1plan-detail">
-    <header className="p1plan-detail-header">
-      <div>
-        <span className="p1plan-eyebrow">แผนที่ {plan.no} · หน่วยที่ {plan.unitNo} · สัปดาห์ {plan.weeks}</span>
-        <h3>{plan.title}</h3>
-        <p>{plan.concept}</p>
-      </div>
-      <div className="p1plan-hours"><strong>{plan.hours}</strong><span>คาบ</span></div>
-    </header>
-
-    <div className="p1plan-indicator-row">
-      {plan.indicators.map((code) => <span key={code}>{code}</span>)}
-      <p><strong>คำถามสำคัญ:</strong> {plan.essentialQuestion}</p>
-    </div>
+    <OfficialLessonPlanHeader
+      planNo={plan.no}
+      courseName={p1TechnologyCourse.courseName}
+      courseCode="ว11101"
+      className={`ชั้น${p1TechnologyCourse.grade}`}
+      semester={plan.no <= 20 ? 1 : 2}
+      academicYear={p1TechnologyCourse.academicYear}
+      unitNo={plan.unitNo}
+      unitName={p1AnnualUnits.find((unit) => unit.no === plan.unitNo)?.title || plan.title}
+      unitHours={p1AnnualUnits.find((unit) => unit.no === plan.unitNo)?.hours || plan.hours}
+      lessonTitle={plan.title}
+      lessonHours={plan.hours}
+      teacherName={p1TechnologyCourse.teacher}
+    />
 
     <section className="p1plan-section">
-      <h4>จุดประสงค์การเรียนรู้</h4>
+      <h4>1. มาตรฐานการเรียนรู้/ตัวชี้วัด</h4>
+      <p className="p1plan-standard"><strong>มาตรฐาน ว 4.2</strong> เข้าใจและใช้แนวคิดเชิงคำนวณในการแก้ปัญหาที่พบในชีวิตจริงอย่างเป็นขั้นตอน ใช้เทคโนโลยีสารสนเทศและการสื่อสารในการเรียนรู้ การทำงาน และการแก้ปัญหาได้อย่างมีประสิทธิภาพ รู้เท่าทัน และมีจริยธรรม</p>
+      <div className="p1plan-indicator-row">
+        {plan.indicators.map((code) => <span key={code}>{code}</span>)}
+        <p><strong>คำถามสำคัญ:</strong> {plan.essentialQuestion}</p>
+      </div>
+    </section>
+
+    <section className="p1plan-section">
+      <h4>2. สาระสำคัญ</h4>
+      <p>{plan.concept}</p>
+    </section>
+
+    <section className="p1plan-section">
+      <h4>3. จุดประสงค์การเรียนรู้</h4>
       <div className="p1plan-objectives">
         {plan.objectives.map((item) => (
           <div key={item.domain}>
@@ -344,7 +311,7 @@ const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRe
 
     <section className="p1plan-section p1plan-two-col">
       <div>
-        <h4>สาระการเรียนรู้</h4>
+        <h4>4. สาระการเรียนรู้</h4>
         <ul>{plan.content.map((item) => <li key={item}>{item}</li>)}</ul>
       </div>
       <div>
@@ -355,8 +322,21 @@ const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRe
       </div>
     </section>
 
+    <section className="p1plan-section p1plan-two-col">
+      <div>
+        <h4>5. รูปแบบการสอน/วิธีการสอน</h4>
+        <p>จัดการเรียนรู้เชิงรุกผ่านบทเรียนบนเว็บ (WBI) ร่วมกับการสาธิต การฝึกแบบมีผู้ชี้แนะ เกมหรือภารกิจ และการสะท้อนผลท้ายคาบ โดยใช้กระบวนการเรียนรู้ 5 ขั้น</p>
+      </div>
+      <div>
+        <h4>6. สมรรถนะสำคัญของผู้เรียน</h4>
+        <ul>{p1TechnologyCourse.competencies.map((item) => <li key={item}>{item}</li>)}</ul>
+        <h4 className="p1plan-subheading">7. คุณลักษณะอันพึงประสงค์</h4>
+        <ul>{p1TechnologyCourse.characteristics.map((item) => <li key={item}>{item}</li>)}</ul>
+      </div>
+    </section>
+
     <section className="p1plan-section">
-      <h4>กระบวนการเรียนรู้ 5 ขั้น รวม {plan.steps.reduce((sum, step) => sum + step.minutes, 0)} นาที</h4>
+      <h4>8. การจัดกระบวนการเรียนรู้ 5 ขั้น รวม {plan.steps.reduce((sum, step) => sum + step.minutes, 0)} นาที</h4>
       <div className="p1plan-timeline">
         {plan.steps.map((step) => (
           <div className="p1plan-step" key={step.phase}>
@@ -374,7 +354,7 @@ const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRe
 
     <section className="p1plan-section p1plan-two-col">
       <div>
-        <h4>สื่อและแหล่งเรียนรู้</h4>
+        <h4>9. สื่อและแหล่งเรียนรู้</h4>
         <div className="p1plan-links">
           {plan.media.map((item) => item.href ? (
             <a href={item.href} target={item.href.startsWith('http') ? '_blank' : undefined} rel="noreferrer" key={item.label}>
@@ -391,7 +371,7 @@ const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRe
     </section>
 
     <section className="p1plan-section">
-      <h4>การวัดและประเมินผล K/P/A</h4>
+      <h4>10. การวัดและประเมินผล K/P/A</h4>
       <div className="p1plan-assessments">
         {plan.assessments.map((item) => (
           <div key={item.domain}>
@@ -409,7 +389,7 @@ const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRe
 
     <section className="p1plan-section p1plan-two-col">
       <div>
-        <h4>การช่วยเหลือและเพิ่มความท้าทาย</h4>
+        <h4>11. การช่วยเหลือและเพิ่มความท้าทาย</h4>
         <ul>{plan.support.map((item) => <li key={item}>{item}</li>)}</ul>
       </div>
       <div>
@@ -419,7 +399,7 @@ const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRe
     </section>
 
     <section className="p1plan-reflection">
-      <h4>บันทึกหลังสอน</h4>
+      <h4>12. บันทึกหลังสอน</h4>
       <div><span>นักเรียนผ่านจุดประสงค์</span><span>_____ คน</span><span>คิดเป็นร้อยละ _____</span></div>
       <p><strong>สิ่งที่ทำได้ดี:</strong> ........................................................................................................................................</p>
       <p><strong>ปัญหา/สาเหตุ:</strong> ..........................................................................................................................................</p>
@@ -437,12 +417,15 @@ const P1TechnologyPlan: React.FC = () => {
     [selectedPlan],
   );
 
-  const downloadText = () => {
-    const blob = new Blob(['\ufeff' + buildPlanText()], { type: 'text/plain;charset=utf-8' });
+  const downloadWord = () => {
+    const blob = new Blob(
+      ['\ufeff' + buildP1TechnologyPlanDocumentHtml()],
+      { type: 'application/msword;charset=utf-8' },
+    );
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'แผนเทคโนโลยี_ป1_ปี2569.txt';
+    link.download = 'แผนเทคโนโลยี_ป1_40แผน_ปี2569.doc';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -459,8 +442,8 @@ const P1TechnologyPlan: React.FC = () => {
           <button type="button" onClick={() => window.print()} title="พิมพ์แผนฉบับเต็ม">
             <Printer size={17} /> พิมพ์ฉบับเต็ม
           </button>
-          <button type="button" onClick={downloadText} title="ดาวน์โหลดแผนเป็นข้อความ">
-            <Download size={17} /> ดาวน์โหลด
+          <button type="button" onClick={downloadWord} title="ดาวน์โหลดแผน 40 ชั่วโมงเป็นไฟล์ Word">
+            <Download size={17} /> ดาวน์โหลด Word
           </button>
         </div>
       </header>

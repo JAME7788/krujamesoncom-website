@@ -199,7 +199,9 @@ const Curriculum: React.FC = () => {
                     <div className="technology-profile">
                       <div className="technology-profile-summary">
                         <span className="tech-hours">เวลาเรียน {selectedCourse.technologyProfile.hours} ชั่วโมง</span>
-                        <p>{selectedCourse.technologyProfile.courseSummary}</p>
+                        <p><strong>{selectedCourse.technologyProfile.courseSummary}</strong></p>
+                        <h4>คำอธิบายรายวิชาเทคโนโลยี</h4>
+                        <p>{selectedCourse.technologyProfile.courseDescription}</p>
                         <small>อ้างอิงเอกสาร: {selectedCourse.technologyProfile.source}</small>
                       </div>
 

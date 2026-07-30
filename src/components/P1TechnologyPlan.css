@@ -312,6 +312,17 @@
   background: #fff;
 }
 
+.p1plan-detail > .official-plan-header {
+  margin-bottom: 4px;
+}
+
+.p1plan-standard {
+  margin-bottom: 10px !important;
+  padding: 10px 12px;
+  border-left: 4px solid #1d4ed8;
+  background: #eff6ff;
+}
+
 .p1plan-detail-header {
   display: flex;
   align-items: flex-start;
@@ -910,6 +921,7 @@
   .p1plan-print-document .p1plan-step,
   .p1plan-print-document .p1plan-objectives > div,
   .p1plan-print-document .p1plan-assessments > div,
+  .p1plan-print-document .official-plan-header,
   .p1plan-print-document .p1plan-reflection {
     break-inside: avoid;
   }
