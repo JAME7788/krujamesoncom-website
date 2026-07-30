@@ -3019,12 +3019,12 @@ const TycoonStyles: React.FC = () => (
     .tyc-pixel-game {
       max-width: 1180px;
       overflow: hidden;
-      border-right: 5px solid #321264;
-      border-left: 5px solid #321264;
+      border-right: 5px solid #37250f;
+      border-left: 5px solid #37250f;
       background:
-        linear-gradient(rgba(9,42,117,0.2), rgba(16,9,62,0.45)),
-        url('/media/games/tycoon-theme/pixel-tech-kingdom.webp') center top / cover fixed;
-      box-shadow: 0 0 0 4px #12cfee, 0 0 38px rgba(30,64,175,0.28);
+        linear-gradient(rgba(4, 28, 21, 0.22), rgba(3, 18, 14, 0.52)),
+        url('/media/games/pixel-world/pixel-learning-world.webp') center top / cover fixed;
+      box-shadow: 0 0 0 4px #f2c64d, 0 0 38px rgba(5, 35, 26, 0.38);
     }
     .tyc-pixel-playing {
       width: 100%;
@@ -3051,16 +3051,16 @@ const TycoonStyles: React.FC = () => (
     .tyc-pixel-game .game-topbar {
       gap: 12px;
       padding: 10px 13px;
-      border: 4px solid #fff;
+      border: 4px solid #f7d667;
       border-radius: 6px;
-      background: linear-gradient(180deg, #30206e, #17103f);
-      box-shadow: 0 5px 0 #5b21b6, 0 9px 0 #140a35, 0 14px 24px rgba(0,0,0,0.28);
+      background: #09291f;
+      box-shadow: 0 5px 0 #805217, 0 9px 0 #061712, 0 14px 24px rgba(0,0,0,0.28);
     }
     .tyc-pixel-game .game-topbar h2 {
-      color: #ffe866;
+      color: #fff1a2;
       font-size: clamp(1rem, 3vw, 1.5rem);
       font-weight: 1000;
-      text-shadow: 0 3px 0 #b44b00, 2px 0 0 #321264, -2px 0 0 #321264;
+      text-shadow: 0 3px 0 #8c5913, 2px 0 0 #143d2f, -2px 0 0 #143d2f;
     }
     .tyc-shop-trigger {
       margin-left: auto;
@@ -3095,7 +3095,7 @@ const TycoonStyles: React.FC = () => (
       display: grid;
       place-items: center;
       padding: 20px;
-      background: rgba(11, 7, 45, 0.78);
+      background: rgba(3, 20, 15, 0.84);
       backdrop-filter: blur(5px);
       animation: tyc-shop-fade 150ms ease-out;
     }
@@ -3105,10 +3105,10 @@ const TycoonStyles: React.FC = () => (
       max-height: min(760px, calc(100dvh - 40px));
       overflow: auto;
       padding: 24px;
-      border: 4px solid #fff;
+      border: 4px solid #f7d667;
       border-radius: 8px;
       background: #f8fafc;
-      box-shadow: 0 0 0 5px #7c3aed, 0 12px 0 #321264, 0 28px 70px rgba(0,0,0,0.5);
+      box-shadow: 0 0 0 5px #1f6147, 0 12px 0 #09251c, 0 28px 70px rgba(0,0,0,0.5);
       animation: tyc-shop-pop 180ms ease-out;
     }
     .tyc-shop-dialog .cshop-head {
@@ -3136,37 +3136,37 @@ const TycoonStyles: React.FC = () => (
       background: #fff1f2;
     }
     .tyc-pixel-game .game-back {
-      border: 3px solid #fff;
+      border: 3px solid #f8d96f;
       border-radius: 4px;
-      background: #168dea;
-      color: #fff;
-      box-shadow: 0 4px 0 #07529f;
+      background: #fff6c9;
+      color: #183c2e;
+      box-shadow: 0 4px 0 #966018;
       font-weight: 1000;
     }
     .tyc-pixel-game .game-back:hover {
-      border-color: #fff7a8;
-      color: #fff;
+      border-color: #fff1a2;
+      color: #0b6749;
       transform: translateY(-1px);
-      box-shadow: 0 5px 0 #07529f;
+      box-shadow: 0 5px 0 #966018;
     }
     .tyc-pixel-game .game-stats {
       position: relative;
       z-index: 3;
-      border: 3px solid #fff;
+      border: 3px solid #e8c75e;
       border-radius: 5px;
-      background: linear-gradient(180deg, rgba(81,35,150,0.96), rgba(29,18,81,0.97));
-      box-shadow: 0 4px 0 #321264, 0 8px 18px rgba(15,23,42,0.24);
+      background: rgba(9, 43, 32, 0.97);
+      box-shadow: 0 4px 0 #735018, 0 8px 18px rgba(4, 25, 18, 0.36);
     }
     .tyc-pixel-game .gstat {
       min-height: 31px;
-      border: 2px solid #321264;
+      border: 2px solid #2c5e47;
       border-radius: 4px;
-      background: #fff;
-      box-shadow: 0 3px 0 #9d88d4;
-      color: #241551;
+      background: #fff9dd;
+      box-shadow: 0 3px 0 #9a6d24;
+      color: #17392b;
       font-weight: 1000;
     }
-    .tyc-pixel-game .gstat strong { color: #ec297b; }
+    .tyc-pixel-game .gstat strong { color: #0a7d57; }
     .tyc-arcade-banner {
       position: relative;
       z-index: 4;
@@ -3176,14 +3176,12 @@ const TycoonStyles: React.FC = () => (
       gap: 14px;
       margin: 0 0 15px;
       padding: 10px 13px 12px;
-      border: 4px solid #fff;
+      border: 4px solid #f6d463;
       border-radius: 7px;
-      background:
-        radial-gradient(circle at 50% -20%, rgba(255,255,255,0.28), transparent 42%),
-        linear-gradient(180deg, #206bea, #0b2d9c);
+      background: #0b3d2d;
       box-shadow:
-        0 0 0 4px #321264,
-        0 7px 0 #12082f,
+        0 0 0 4px #4f3311,
+        0 7px 0 #061a14,
         0 13px 23px rgba(0,0,0,0.33);
     }
     .tyc-arcade-banner::before,
@@ -3377,42 +3375,42 @@ const TycoonStyles: React.FC = () => (
     }
     .tyc-pixel-game .tyc-msg,
     .tyc-pixel-game .tyc-online-turn {
-      border: 3px solid #fff;
+      border: 3px solid #f8da75;
       border-radius: 5px;
-      outline: 3px solid #321264;
-      background: linear-gradient(180deg, #fff4ad, #ffd65a);
-      color: #4a194c;
-      box-shadow: 0 5px 0 #9a4200;
+      outline: 3px solid #184634;
+      background: #ffe47f;
+      color: #193b2d;
+      box-shadow: 0 5px 0 #8b5813;
       font-weight: 1000;
     }
     .tyc-pixel-game .tyc-q,
     .tyc-pixel-game .tyc-chance,
     .tyc-pixel-game .tyc-win,
     .tyc-pixel-game .tyc-setup {
-      border: 4px solid #fff;
+      border: 4px solid #f7d66c;
       border-radius: 7px;
-      outline: 5px solid #321264;
-      background: rgba(255,255,255,0.97);
-      box-shadow: 0 8px 0 #14072e, 0 18px 34px rgba(0,0,0,0.3);
+      outline: 5px solid #184634;
+      background: rgba(255, 252, 232, 0.98);
+      box-shadow: 0 8px 0 #061a14, 0 18px 34px rgba(0,0,0,0.3);
     }
     .tyc-pixel-game .tyc-choice {
-      border: 3px solid #321264;
+      border: 3px solid #285d46;
       border-radius: 4px;
-      box-shadow: 0 4px 0 #b9a4eb;
+      box-shadow: 0 4px 0 #8a6a2a;
       font-weight: 800;
     }
     .tyc-pixel-game .tyc-choice:hover:not(:disabled) {
-      border-color: #ff42a1;
-      background: #fff4ad;
+      border-color: #147858;
+      background: #fff1a6;
       transform: translateY(-1px);
-      box-shadow: 0 5px 0 #9d2568;
+      box-shadow: 0 5px 0 #8a5916;
     }
     .tyc-pixel-game .tyc-q-tag,
     .tyc-pixel-game .tyc-chance-tag {
       border: 3px solid #fff;
       border-radius: 4px;
-      background: linear-gradient(180deg, #ff4ca6, #9f1f85);
-      box-shadow: 0 4px 0 #321264;
+      background: #1a7657;
+      box-shadow: 0 4px 0 #113d2e;
     }
     .tyc-pixel-over {
       width: 100%;
@@ -3686,14 +3684,14 @@ const TycoonStyles: React.FC = () => (
     .tyc-pixel-setup .tyc-ready-actions > button {
       border-width: 3px;
       border-radius: 5px;
-      box-shadow: 0 4px 0 #b9a4eb;
+      box-shadow: 0 4px 0 #8c7a4d;
     }
     .tyc-pixel-setup .tyc-mode-switch button.active,
     .tyc-pixel-setup .tyc-count button.active,
     .tyc-pixel-setup .tyc-character-picker > button.active {
       border-color: #fff;
-      background: linear-gradient(180deg, #fff4ad, #ffcb3d);
-      box-shadow: 0 0 0 3px #5a1c89, 0 5px 0 #9b4100;
+      background: #ffe070;
+      box-shadow: 0 0 0 3px #1d664b, 0 5px 0 #8b5813;
     }
     @media (min-width: 901px) {
       .tyc-pixel-playing .game-topbar { display: none; }

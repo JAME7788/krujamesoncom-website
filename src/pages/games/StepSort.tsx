@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import './GameStyles.css';
 
 interface Task { title: string; emoji: string; steps: { emoji: string; text: string }[] }
 
@@ -136,7 +137,7 @@ const StepSort: React.FC = () => {
   const orderedPool = useMemo(() => pool, [pool]);
 
   return (
-    <div className="container section-padding" style={{ paddingTop: '5rem', maxWidth: 620, textAlign: 'center' }}>
+    <div className="game-page compact-game-page" style={{ maxWidth: 620, textAlign: 'center' }}>
       <Link to="/games" className="btn-ghost" style={{ float: 'left' }}><ChevronLeft size={16} /> เกมทั้งหมด</Link>
       <h1>🔢 เรียงขั้นตอนด้วยรูป</h1>
       <p style={{ color: '#6b7280' }}>กดการ์ดให้ถูกลำดับ 1 → 2 → 3 → 4 (ฝึกคิดเป็นขั้นตอน) — ป.1-3</p>

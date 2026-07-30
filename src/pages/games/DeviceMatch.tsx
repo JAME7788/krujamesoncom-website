@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import './GameStyles.css';
 
 interface Device { emoji: string; name: string; use: string }
 
@@ -61,7 +62,7 @@ const DeviceMatch: React.FC = () => {
   };
 
   return (
-    <div className="container section-padding" style={{ paddingTop: '5rem', maxWidth: 640, textAlign: 'center' }}>
+    <div className="game-page compact-game-page" style={{ maxWidth: 640, textAlign: 'center' }}>
       <Link to="/games" className="btn-ghost" style={{ float: 'left' }}><ChevronLeft size={16} /> เกมทั้งหมด</Link>
       <h1>🔌 จับคู่อุปกรณ์คอมพิวเตอร์</h1>
       <p style={{ color: '#6b7280' }}>ดูรูปแล้วเลือกชื่อที่ถูกต้อง — เหมาะกับ ป.1-3</p>

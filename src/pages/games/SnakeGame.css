@@ -9,16 +9,18 @@
   position: relative;
   display: grid;
   gap: 1px;
-  background: #1f2937;
-  padding: 4px;
-  border-radius: 12px;
+  background: #102820;
+  padding: 5px;
+  border: 5px solid #f3c955;
+  border-radius: 5px;
   width: 100%;
   max-width: 540px;
   aspect-ratio: 1;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 0 0 4px #39250f, 0 9px 0 #061914;
+  image-rendering: pixelated;
 }
 .snake-cell {
-  background: #374151;
+  background: #234b38;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,14 +28,14 @@
   border-radius: 2px;
 }
 .snake-cell.head {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  background: #f5c842;
   font-size: 1rem;
-  border-radius: 6px;
+  border-radius: 2px;
   z-index: 2;
 }
 .snake-cell.body {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  border-radius: 4px;
+  background: #5ecb56;
+  border-radius: 1px;
 }
 .snake-cell.food {
   font-size: 1rem;
@@ -53,16 +55,16 @@
 .snake-btn {
   width: 56px;
   height: 56px;
-  border: 0;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
+  border: 3px solid #4b310d;
+  border-radius: 4px;
+  background: #f4c642;
+  color: #16362a;
   font-family: inherit;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+  box-shadow: 0 5px 0 #8f5712;
   user-select: none;
 }
 .snake-btn:active {

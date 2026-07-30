@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import './GameStyles.css';
 
 interface Scenario { emoji: string; text: string; safe: boolean; why: string }
 
@@ -58,7 +59,7 @@ const SafetyGame: React.FC = () => {
   const isCorrect = answered !== null && answered === cur.safe;
 
   return (
-    <div className="container section-padding" style={{ paddingTop: '5rem', maxWidth: 620, textAlign: 'center' }}>
+    <div className="game-page compact-game-page" style={{ maxWidth: 620, textAlign: 'center' }}>
       <Link to="/games" className="btn-ghost" style={{ float: 'left' }}><ChevronLeft size={16} /> เกมทั้งหมด</Link>
       <h1>🛡️ ปลอดภัยหรือไม่ปลอดภัย?</h1>
       <p style={{ color: '#6b7280' }}>อ่านสถานการณ์แล้วเลือก — ฝึกใช้เทคโนโลยีอย่างปลอดภัย (ป.4-ม.3)</p>

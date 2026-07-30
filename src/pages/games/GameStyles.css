@@ -494,3 +494,360 @@
   .bit-value { font-size: 1.5rem; }
   .pattern-cell { width: 50px; height: 50px; font-size: 1.4rem; }
 }
+
+/* ================= Pixel Learning World Theme ================= */
+.game-page {
+  --pixel-ink: #10261f;
+  --pixel-deep: #061d17;
+  --pixel-green: #174936;
+  --pixel-green-2: #246b48;
+  --pixel-gold: #f5c84b;
+  --pixel-gold-deep: #855412;
+  --pixel-paper: #fff9df;
+  --pixel-cyan: #39d8d0;
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 1440px);
+  max-width: 1440px;
+  color: var(--pixel-ink);
+}
+
+.game-page::before,
+.game-page::after {
+  position: fixed;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+}
+
+.game-page::before {
+  z-index: -2;
+  background: #071d18 url('/media/games/pixel-world/pixel-learning-world.webp') center top / cover no-repeat;
+  image-rendering: pixelated;
+}
+
+.game-page::after {
+  z-index: -1;
+  background: rgba(2, 15, 12, 0.52);
+}
+
+.game-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+.game-topbar {
+  min-height: 70px;
+  padding: 0.8rem 1rem;
+  border: 4px solid #f5ce62;
+  border-radius: 6px;
+  background: rgba(7, 29, 24, 0.94);
+  box-shadow: 0 0 0 4px #40270f, 0 7px 0 #07120f;
+}
+
+.game-topbar h1,
+.game-topbar h2,
+.game-topbar h3,
+.game-topbar p {
+  color: #fff7cb;
+  text-shadow: 0 2px 0 #65400e;
+}
+
+.game-back,
+.compact-game-page .btn-ghost {
+  min-height: 42px;
+  border: 3px solid #17392e;
+  border-radius: 4px;
+  background: #fff8d7;
+  box-shadow: 0 4px 0 #99601b;
+  color: #17392e;
+  font-weight: 900;
+}
+
+.game-back:hover,
+.compact-game-page .btn-ghost:hover {
+  border-color: #14372d;
+  color: #0d5b43;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 0 #99601b;
+}
+
+.game-back:active,
+.compact-game-page .btn-ghost:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #99601b;
+}
+
+.game-stats {
+  gap: 10px;
+  padding: 0.9rem;
+  border: 3px solid #5e8a65;
+  border-radius: 5px;
+  background: rgba(9, 40, 31, 0.94);
+  box-shadow: 0 5px 0 #061914;
+}
+
+.gstat {
+  min-height: 38px;
+  border: 2px solid #c7932e;
+  border-radius: 4px;
+  background: #fff9df;
+  box-shadow: 0 3px 0 #6d4717;
+  color: #1d3528;
+}
+
+.gstat strong {
+  color: #0b7556;
+}
+
+.btn-game-start,
+.compact-game-page .btn-primary {
+  min-height: 46px;
+  border: 3px solid #49310d;
+  border-radius: 5px;
+  background: #f6c744;
+  box-shadow: 0 5px 0 #8f5511;
+  color: #14261e;
+  font-weight: 900;
+  text-shadow: none;
+}
+
+.btn-game-start:hover,
+.compact-game-page .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #8f5511;
+}
+
+.btn-game-start:active,
+.compact-game-page .btn-primary:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #8f5511;
+}
+
+.btn-secondary,
+.mode-btn {
+  min-height: 42px;
+  border: 3px solid #234d3b;
+  border-radius: 4px;
+  background: #f8f1cf;
+  box-shadow: 0 4px 0 #173328;
+  color: #173b2d;
+}
+
+.mode-btn.active {
+  border-color: #66420d;
+  background: #f8d861;
+  color: #153326;
+}
+
+.puzzle-card,
+.binary-card,
+.compact-game-page .card {
+  border: 4px solid #193d30;
+  border-radius: 6px;
+  background: var(--pixel-paper);
+  box-shadow:
+    0 0 0 3px #c78d2b,
+    0 8px 0 #071b15,
+    0 16px 28px rgba(0, 0, 0, 0.3);
+}
+
+.compact-game-page > h1 {
+  clear: both;
+  margin: 0 0 0.3rem;
+  padding: 1rem;
+  border: 4px solid #f5ce62;
+  border-radius: 5px;
+  background: rgba(7, 29, 24, 0.94);
+  box-shadow: 0 6px 0 #07120f;
+  color: #fff7cb;
+  text-shadow: 0 3px 0 #65400e;
+}
+
+.compact-game-page > p,
+.compact-game-page > div:not(.card) {
+  color: #fffbdc !important;
+  text-shadow: 0 2px 0 #07120f;
+}
+
+.compact-game-page .card p {
+  color: #3f5147 !important;
+  text-shadow: none;
+}
+
+.compact-game-page .card button {
+  border-radius: 4px !important;
+  box-shadow: 0 4px 0 rgba(41, 62, 48, 0.8);
+}
+
+.game-overlay {
+  border: 4px solid #f5ce62;
+  background: rgba(255, 249, 223, 0.96);
+  box-shadow: inset 0 0 0 4px #1b4535;
+}
+
+.game-tips {
+  border: 3px solid #a86b17;
+  border-left-width: 9px;
+  border-radius: 5px;
+  background: #fff2b9;
+  box-shadow: 0 4px 0 #533711;
+  color: #4c350b;
+}
+
+.mouse-arena,
+.kb-arena,
+.bug-arena {
+  border: 5px solid #f3c955;
+  border-radius: 6px;
+  background-color: #123c2e;
+  background-image:
+    linear-gradient(rgba(5, 28, 21, 0.28), rgba(5, 28, 21, 0.28)),
+    url('/media/games/pixel-world/pixel-learning-world.webp');
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 0 0 4px #39250f, 0 9px 0 #061914;
+  image-rendering: pixelated;
+}
+
+.mouse-target,
+.falling-letter {
+  border: 3px solid #57380f;
+  border-radius: 4px;
+  background: #f6cf54;
+  box-shadow: 0 5px 0 #7d4e12, 0 0 0 3px #fff3b6;
+}
+
+.kb-floor {
+  border-top: 4px solid #f3c955;
+  background: rgba(6, 26, 20, 0.9);
+}
+
+.sortable-item,
+.pattern-cell,
+.pattern-opt,
+.bit-btn,
+.level-pill {
+  border-radius: 4px;
+  box-shadow: 0 3px 0 #7c5b25;
+}
+
+.si-num {
+  border: 2px solid #fff1ad;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0 #172c23;
+}
+
+.puzzle-result {
+  border-width: 3px;
+  border-radius: 4px;
+  box-shadow: 0 3px 0 rgba(19, 49, 37, 0.45);
+}
+
+.bits-row {
+  padding: 1rem;
+  border: 3px dashed #b98424;
+  background: #f4e7b9;
+}
+
+.bit-btn.on {
+  border-color: #65400e;
+  background: #f4c33e;
+  box-shadow: 0 5px 0 #815015;
+}
+
+.bin-string {
+  border: 3px solid #2dd4bf;
+  border-radius: 3px;
+  background: #092820;
+  color: #ffdc59;
+}
+
+.mem-card-front,
+.mem-card-back {
+  border: 3px solid #f0c852;
+  border-radius: 4px;
+  box-shadow: 0 5px 0 #17382c;
+}
+
+.mem-card-front {
+  background: #164b38;
+  color: #ffda5f;
+  text-shadow: 2px 2px 0 #071b15;
+}
+
+.mem-card-back {
+  background: #fff7d4;
+  border-color: #2b6f52;
+}
+
+.pattern-cell {
+  border-color: #2a6b50;
+  background: #e6f2c9;
+  color: #16402f;
+}
+
+.pattern-cell.unknown {
+  border-color: #b77417;
+  background: #ffe182;
+  color: #6e430c;
+}
+
+.game-page input,
+.game-page select,
+.game-page textarea {
+  border: 3px solid #315846;
+  border-radius: 4px;
+  background: #fffdf0;
+  box-shadow: inset 0 2px 0 rgba(45, 70, 55, 0.12);
+}
+
+.game-page button:focus-visible,
+.game-page a:focus-visible,
+.game-page input:focus-visible,
+.game-page select:focus-visible {
+  outline: 4px solid var(--pixel-cyan);
+  outline-offset: 4px;
+}
+
+.game-page button:disabled {
+  box-shadow: none;
+  filter: saturate(0.5);
+}
+
+@media (max-width: 700px) {
+  .game-page {
+    padding-inline: 0.65rem;
+  }
+
+  .game-topbar {
+    padding: 0.65rem;
+    border-width: 3px;
+  }
+
+  .game-topbar h2 {
+    font-size: 1.15rem;
+  }
+
+  .game-stats {
+    padding: 0.65rem;
+  }
+
+  .gstat {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .mouse-arena,
+  .kb-arena,
+  .bug-arena {
+    height: min(62vh, 500px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-page *,
+  .games-hub * {
+    scroll-behavior: auto !important;
+  }
+}

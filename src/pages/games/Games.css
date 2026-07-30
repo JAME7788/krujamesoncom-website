@@ -84,3 +84,193 @@
   font-weight: 700;
   font-size: 0.9rem;
 }
+
+/* Pixel Learning World */
+.games-hub {
+  --pixel-ink: #10261f;
+  --pixel-forest: #123c2e;
+  --pixel-forest-deep: #071d18;
+  --pixel-gold: #f7c948;
+  --pixel-gold-dark: #9a6218;
+  --pixel-paper: #fff8dc;
+  position: relative;
+  isolation: isolate;
+  max-width: 1480px;
+  color: var(--pixel-ink);
+}
+
+.games-hub::before,
+.games-hub::after {
+  position: fixed;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+}
+
+.games-hub::before {
+  z-index: -2;
+  background: #071d18 url('/media/games/pixel-world/pixel-learning-world.webp') center top / cover no-repeat;
+  image-rendering: pixelated;
+}
+
+.games-hub::after {
+  z-index: -1;
+  background: rgba(3, 18, 14, 0.48);
+}
+
+.games-hub .games-header {
+  position: relative;
+  overflow: hidden;
+  max-width: 1060px;
+  margin: 0 auto 2rem;
+  padding: 2rem clamp(1rem, 4vw, 3.5rem);
+  border: 4px solid #f8d66d;
+  border-radius: 6px;
+  background: rgba(7, 29, 24, 0.92);
+  box-shadow:
+    0 0 0 4px #3d2410,
+    0 8px 0 #07120f,
+    0 18px 35px rgba(0, 0, 0, 0.3);
+}
+
+.games-hub .games-header::before,
+.games-hub .games-header::after {
+  position: absolute;
+  top: 14px;
+  width: 12px;
+  height: 12px;
+  border: 3px solid #5b350f;
+  background: var(--pixel-gold);
+  box-shadow: 0 0 0 2px #fceca8;
+  content: '';
+}
+
+.games-hub .games-header::before { left: 14px; }
+.games-hub .games-header::after { right: 14px; }
+
+.games-hub .games-header h1,
+.games-hub .games-header h2 {
+  color: #fff7cb;
+  text-shadow: 0 3px 0 #62400e, 3px 3px 0 #122019;
+}
+
+.games-hub .games-header h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+}
+
+.games-hub .games-header p {
+  max-width: 780px;
+  margin-inline: auto;
+  color: #d8ead7;
+  line-height: 1.75;
+}
+
+.games-hub .badge-yellow {
+  border: 2px solid #3d2410;
+  border-radius: 3px;
+  background: var(--pixel-gold);
+  box-shadow: 3px 3px 0 #6c4313;
+  color: #1b2b20;
+}
+
+.games-hub .games-header > button,
+.games-hub section button {
+  border-radius: 4px !important;
+  box-shadow: 0 3px 0 #152e25;
+}
+
+.games-hub .games-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
+  gap: 1.4rem;
+}
+
+.games-hub .game-card-big {
+  position: relative;
+  gap: 0.8rem;
+  overflow: hidden;
+  padding: 1.25rem;
+  border: 4px solid #203f33;
+  border-top-width: 8px;
+  border-radius: 5px;
+  background: var(--pixel-paper);
+  box-shadow:
+    0 0 0 3px #d19a37,
+    0 8px 0 #0a1f19,
+    0 15px 24px rgba(0, 0, 0, 0.28);
+}
+
+.games-hub .game-card-big::after {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 6px;
+  height: 6px;
+  background: #d19a37;
+  box-shadow: -8px 0 #d19a37, 0 -8px #d19a37;
+  content: '';
+}
+
+.games-hub .game-card-big:hover {
+  transform: translateY(-5px);
+  box-shadow:
+    0 0 0 3px #f5cb55,
+    0 12px 0 #0a1f19,
+    0 20px 30px rgba(0, 0, 0, 0.34);
+}
+
+.games-hub .game-card-big:focus-visible {
+  outline: 4px solid #5eead4;
+  outline-offset: 5px;
+}
+
+.games-hub .gc-emoji {
+  width: 72px;
+  height: 72px;
+  border: 3px solid #183d30;
+  border-radius: 4px;
+  box-shadow: 4px 4px 0 #b67924;
+  image-rendering: pixelated;
+}
+
+.games-hub .gc-tag,
+.games-hub .gc-tag-skill {
+  border: 1px solid #315245;
+  border-radius: 3px;
+}
+
+.games-hub .gc-info h3 {
+  color: #14291f;
+  font-size: 1.18rem;
+}
+
+.games-hub .gc-info p {
+  color: #4d5b52;
+}
+
+.games-hub .gc-cta {
+  border-top: 2px dashed #c9aa5a;
+}
+
+.games-hub section > .games-header {
+  max-width: 900px;
+  padding-block: 1.35rem;
+}
+
+@media (max-width: 680px) {
+  .games-hub {
+    padding-inline: 0.75rem;
+  }
+
+  .games-hub .games-header {
+    padding: 1.5rem 1rem;
+    border-width: 3px;
+  }
+
+  .games-hub .games-header h1 {
+    font-size: 2rem;
+  }
+
+  .games-hub .game-card-big {
+    padding: 1rem;
+  }
+}
