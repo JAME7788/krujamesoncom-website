@@ -1,73 +1,86 @@
-# React + TypeScript + Vite
+# Kru James Soncom Classroom
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+เว็บห้องเรียนเทคโนโลยีสำหรับนักเรียนระดับ ป.1-ม.3 ครอบคลุมบทเรียน สไลด์ เกมฝึก
+ห้องเรียน 3D การบ้าน การเช็กชื่อ และระบบวัดผล K/P/A ของครูในระบบเดียว
 
-Currently, two official plugins are available:
+อัปเดตเอกสารล่าสุด: **31 กรกฎาคม 2569**
+รุ่นระบบฝั่งครู: commit `589b85e`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ความสามารถหลัก
 
-## React Compiler
+- หลักสูตรวิทยาการคำนวณและการออกแบบเทคโนโลยีตามตัวชี้วัด ว 4.1 และ ว 4.2
+- แผนเทคโนโลยี ป.1-6 ชั้นละ 40 แผน รวม 240 แผน โดย 1 แผนใช้เวลา 50 นาที
+- ศูนย์ "คาบเรียนวันนี้" สำหรับเช็กชื่อ เปิดสไลด์ เปิดบทเรียน ควิซ เกม และมอบหมายงาน
+- กำหนดการสอน บันทึกวันที่สอนจริง สถานะเลื่อนสอน/สอนชดเชย และบันทึกหลังสอน
+- คะแนน K/P/A จากแบบทดสอบ เกม การบ้าน งานปฏิบัติ การเข้าเรียน และการประเมินของครู
+- คลังข้อสอบแบ่งง่าย/ปานกลาง/ยาก สุ่มชุด 10 ข้อ และวิเคราะห์ผลรายข้อ
+- การบ้านผ่านลิงก์ เช่น Canva พร้อมรูบริก K/P และการตรวจรายคน
+- เกมในเว็บ 24 เกม และห้องเรียน 3D
+- ระบบเผยแพร่เนื้อหา เวอร์ชันย้อนหลัง ประวัติการแก้ไข และสิทธิ์ admin/teacher/viewer
+- Firebase Firestore เป็นแหล่งข้อมูลร่วม พร้อม local cache เมื่อเครือข่ายมีปัญหา
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## เส้นทางสำคัญ
 
-## Expanding the ESLint configuration
+| URL | การใช้งาน |
+|---|---|
+| `/` | หน้าแรกและเข้าสู่ระบบนักเรียน |
+| `/courses` | รายวิชาและหน่วยการเรียนรู้ |
+| `/games` | เกมฝึกทักษะทั้งหมด |
+| `/world` | ห้องเรียน 3D |
+| `/homework` | งานและการบ้านของนักเรียน |
+| `/dashboard` | ความก้าวหน้าของนักเรียน |
+| `/admin` | แผงควบคุมครู 29 เมนู |
+| `/live/host` | ครูเปิดควิซสด |
+| `/live` | นักเรียนเข้าร่วมควิซสด |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## การทำงานของคะแนน
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. นักเรียนเข้าสู่บทเรียน เกม แบบทดสอบ หรือส่งงาน
+2. ระบบบันทึก progress และหลักฐานกลางใน `learningEvidence`
+3. หลักฐานระบุแหล่งที่มา ตัวชี้วัด วิชา ห้องเรียน เวลา และประเภท K/P/A
+4. คะแนนกิจกรรมไม่เกินคะแนนเต็ม โดยกิจกรรมในคาบมีน้ำหนักสูงกว่านอกคาบ
+5. ครูตรวจ แก้ไข หรือเพิ่มงานภายนอกได้จากสมุดคะแนน K/P/A
+6. การแก้ไขสำคัญถูกบันทึกใน `teacherAuditLogs`
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## เริ่มพัฒนาในเครื่อง
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+เปิด [http://127.0.0.1:5173](http://127.0.0.1:5173)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## ตรวจระบบ
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm test
+npm run lint
+npm run build
+npm run qa:games
+npm run qa:world
 ```
+
+ผลตรวจรุ่น `589b85e`:
+
+- Vitest ผ่าน 154/154 tests
+- ESLint ผ่าน
+- Production build ผ่าน
+- Browser smoke test ผ่าน 27 เส้นทาง
+- ไม่พบ console error/warning ในรอบตรวจล่าสุด
+
+## Firebase
+
+คัดลอกค่าที่ต้องใช้จาก `.env.example` ไปยัง environment ของเครื่องหรือ Vercel
+โดยห้าม commit รหัสผ่านหรือ secret จริงลง repository
+
+ระบบรองรับ Firebase Auth สำหรับครูแล้ว แต่ยังคงมี legacy admin fallback เพื่อไม่ให้ระบบเดิมหยุดทำงาน
+ก่อนใช้ข้อมูลนักเรียนจริงผ่านอินเทอร์เน็ตสาธารณะ ต้องตั้งค่า Firebase Auth, `teacherProfiles`,
+App Check และตรวจ Firestore Rules ตาม [SECURITY.md](SECURITY.md)
+
+## เอกสาร
+
+- [SYSTEMS.md](SYSTEMS.md) — โครงสร้างและการเชื่อมโยงทุกระบบ
+- [SECURITY.md](SECURITY.md) — สถานะความปลอดภัยและสิ่งที่ต้องตั้งค่า
+- [CHANGELOG.md](CHANGELOG.md) — ประวัติการพัฒนา
+- [tests/README.md](tests/README.md) — แนวทางชุดทดสอบ

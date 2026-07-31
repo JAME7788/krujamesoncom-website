@@ -1,5 +1,23 @@
 # 🔐 ความปลอดภัยของเว็บ Kru James
 
+## สถานะล่าสุด 31 กรกฎาคม 2569
+
+- เพิ่มทางเข้าสู่ระบบครูด้วย Firebase Auth และรองรับบทบาท `admin`, `teacher`, `viewer` แล้ว
+- เพิ่ม collection `teacherProfiles` สำหรับกำหนดบทบาทและสถานะบัญชีครู
+- Firestore Rules รุ่นที่รองรับระบบคาบ หลักฐาน K/P/A คลังข้อสอบ เวอร์ชันเนื้อหา
+  และประวัติการแก้ไข ถูก deploy ไปยังโปรเจกต์ `krujamesoncom-website-9f134` แล้ว
+- ระบบเดิมยังมี legacy admin fallback เพื่อไม่ให้การใช้งานหยุดชะงัก จึงยังไม่ถือว่า
+  การยืนยันตัวตนและ PDPA ปลอดภัยสมบูรณ์จนกว่าจะสร้างบัญชีครู Firebase และนำ fallback ออก
+
+### ขั้นตอนเปิดใช้บัญชีครู Firebase
+
+1. เปิด Email/Password provider ใน Firebase Authentication
+2. สร้างบัญชีครูและนำ `uid` มาสร้างเอกสาร `teacherProfiles/{uid}`
+3. กำหนด `{ "role": "admin", "active": true }` สำหรับผู้ดูแลหลัก
+4. ตั้ง `VITE_TEACHER_AUTH_EMAIL` ใน environment ของ Vercel หรือเครื่องที่ deploy
+5. ทดสอบเข้าสู่ระบบ แก้คะแนน บันทึกคาบ และอ่าน audit log ก่อนปิด legacy fallback
+6. เปิด App Check แบบ Enforce เมื่อยืนยันว่าโดเมน production ทำงานถูกต้อง
+
 รายงานการตรวจ (pentest) + สิ่งที่ต้องทำ เรียงตามความสำคัญ
 
 ---

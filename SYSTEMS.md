@@ -16,6 +16,46 @@
 
 **Tech stack:** React 19 + TypeScript + Vite + Framer Motion + Firebase + Vercel Functions
 
+## อัปเดตระบบฝั่งครู — 31 กรกฎาคม 2569
+
+รุ่น `589b85e` รวมการทำงานฝั่งครูให้ใช้ข้อมูลชุดเดียวกันตั้งแต่คาบเรียนจนถึงผลการเรียน
+
+```mermaid
+flowchart LR
+  A[คาบเรียนวันนี้] --> B[เช็กชื่อ]
+  A --> C[สไลด์ บทเรียน เกม ควิซ]
+  A --> D[การบ้านและงานภายนอก]
+  B --> E[หลักฐาน A]
+  C --> F[หลักฐาน K/P]
+  D --> F
+  E --> G[สมุดคะแนน K/P/A]
+  F --> G
+  G --> H[รายงานและบันทึกหลังสอน]
+```
+
+### ระบบที่เพิ่ม
+
+- `TeacherClassroomHub` — ควบคุมคาบ เช็กชื่อ เครื่องมือสอน หลักฐาน และหลังสอนในหน้าเดียว
+- `technologyLessonPlans` — แผน ป.1-6 ชั้นละ 40 แผน แผนละ 50 นาที
+- `teachingSessionService` — วันที่ตามแผน วันที่สอนจริง และสถานะรายคาบ
+- `learningEvidenceService` — หลักฐานกลาง K/P/A จากทุกกิจกรรม
+- `QuestionBankManager` — คลังข้อสอบ 10 ข้อแบบแบ่งระดับและวิเคราะห์รายข้อ
+- `HomeworkManager` — งานผ่านลิงก์ คะแนน K และรูบริก P
+- `AuditLogViewer` — ประวัติการแก้คะแนน เนื้อหา แผน งาน และข้อสอบ
+- `contentService` — draft/publish, version history และ restore
+
+### Firestore collections ที่เกี่ยวข้อง
+
+`teachingSessions`, `learningEvidence`, `questionBank`, `courseVersions`,
+`teacherAuditLogs`, `teacherProfiles`, `lessonRecords`, `homeworkAssignments`,
+`homeworkSubmissions`, `grades`, `progress` และ `attendance`
+
+### สถานะการตรวจสอบ
+
+- 154/154 tests ผ่าน
+- lint และ production build ผ่าน
+- ตรวจหน้าเว็บ 27 เส้นทาง ไม่มีหน้าเสีย ไม่มี horizontal overflow และไม่มี console error/warning
+
 ---
 
 ## 🗺️ Routing Map
@@ -282,7 +322,7 @@ Admin → ทุกคอร์ส (16+)
 
 ## 🎮 12. Mini Games (เกมฝึก)
 
-### 21 เกมใน catalog
+### 24 เกมใน catalog
 | เกม | ฝึก | ระดับ |
 |-----|------|------|
 | 🖱️ Mouse Practice | ใช้เมาส์ | ป.1-3 |
@@ -347,26 +387,22 @@ Admin → ทุกคอร์ส (16+)
 
 ---
 
-## 🛡️ 15. Admin Dashboard (12 Tabs)
+## 🛡️ 15. Admin Dashboard (29 เมนู)
 
-| Tab | ฟังก์ชัน |
+| หมวด | เมนู |
 |-----|---------|
-| 📊 **ภาพรวม** | 6 KPI cards + classroom bars + ตารางสอนวันนี้ |
-| 👥 **จัดการนักเรียน** | CRUD roster |
-| 📅 **เช็คชื่อตามตาราง** | Auto-attendance per day |
-| 📋 **เก็บคะแนน K/P/A** | Grade book ตัวจริง |
-| 📣 **ประกาศข่าวสาร** | CRUD announcements |
-| 🗓️ **ปฏิทินกิจกรรม** | CRUD events |
-| 📊 **สถิตินักเรียนในเว็บ** | Engagement table |
-| 📈 **พัฒนาการรายคน** | กราฟ + breakdown รายคน |
-| ✏️ **จัดการรายวิชา** | Course Builder (custom courses + import/export JSON) |
-| 🕐 **จัดการตารางสอน** | Schedule CRUD |
-| 🐛 **Error Log** | ดู error 50 รายการล่าสุด |
-| ℹ️ **ข้อมูลเว็บการสอน** | Site info + Firebase status |
+| การสอนวันนี้ (1) | คาบเรียนวันนี้ |
+| หน้าหลักและสถิติ (4) | ภาพรวมระบบ, ห้องเรียน 3D, สถิตินักเรียนในเว็บ, พัฒนาการรายคน |
+| ชั้นเรียนและเช็กชื่อ (3) | จัดการนักเรียน, เช็กชื่อตามตาราง, เช็กชื่อ Quick |
+| การวัดผล (7) | เก็บคะแนน K/P/A, แบบประเมินและหลังสอน, คลังข้อสอบ, ทักษะอาชีพ, Bonus, คำถามประจำวัน, งานวิจัย WBI |
+| จัดการบทเรียน (7) | จัดการรายวิชา, แผนเทคโนโลยี ป.1, กำหนดการสอน ป.1-6, แผนข้อ 5 ป.1-6, ปลดล็อกบทเรียน, จัดการสไลด์, จัดการตารางสอน |
+| สื่อสารและงาน (3) | ประกาศข่าวสาร, ปฏิทินกิจกรรม, การบ้าน |
+| ตั้งค่าระบบ (4) | ธีมและสำรองข้อมูล, ประวัติการแก้ไข, ข้อมูลเว็บ, Error Log |
 
 ### ไฟล์
 - `src/pages/AdminDashboard.tsx`
-- `src/components/{StudentManager, GradeBook, AnnouncementManager, CalendarManager, CourseBuilder}.tsx`
+- `src/components/TeacherClassroomHub.tsx`
+- `src/components/{StudentManager, GradeBook, HomeworkManager, QuestionBankManager, AuditLogViewer}.tsx`
 
 ---
 
@@ -386,10 +422,12 @@ Admin → ทุกคอร์ส (16+)
 ## 🔥 17. Firebase Security
 
 ### Firestore Rules (`firestore.rules`)
-- 🎓 Students/Progress: นักเรียนเขียนได้แค่ของตัวเอง
-- 📋 Grades: อ่านได้ทุกคน เขียนได้แค่ admin
-- 📢 Announcements/Calendar: อ่านสาธารณะ แก้ได้แค่ admin
-- 🛡️ Default deny
+- รองรับ `teacherProfiles` และบทบาทครูผ่าน Firebase Auth
+- เพิ่ม validation รูปร่างและขนาดข้อมูลใน collections หลัก
+- รองรับ collections ของคาบเรียน หลักฐาน K/P/A คลังข้อสอบ เวอร์ชัน และ audit log
+- ระบบเดิมบาง collection ยังเปิดตาม shape-based rules เพื่อรองรับ legacy client
+- ก่อนใช้งานข้อมูลจริงสาธารณะต้องเปิด App Check, ย้ายบัญชีครูเข้า Firebase Auth
+  และปิด legacy fallback ตาม `SECURITY.md`
 
 ### Deploy
 ```bash
@@ -551,7 +589,7 @@ VITE_FIREBASE_APP_ID=...
 - 🤝 Parent Portal (QR code)
 
 ### Technical
-- 🧪 Unit tests (Vitest)
+- ✅ Unit tests (Vitest) — 154 tests ผ่านในรุ่น `589b85e`
 - 📊 Real analytics (Plausible)
 - 🔒 Stricter Firestore rules
 - 🚀 SSR (Next.js migration?)
@@ -569,7 +607,7 @@ VITE_FIREBASE_APP_ID=...
 | Rich Slides | **85 สไลด์** ใน 17 หน่วย |
 | แบบทดสอบ | **200+ ข้อ** |
 | Resources (เครื่องมือ) | **107+** รายการ |
-| เกมในเว็บ | **21 เกมใน catalog** |
+| เกมในเว็บ | **24 เกมใน catalog** |
 | Achievements | **18 badges** |
 | รายชื่อนักเรียน 2569 | **115 คน** 9 ห้อง |
 | Pages | **17 pages** |
