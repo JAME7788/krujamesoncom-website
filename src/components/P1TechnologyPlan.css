@@ -546,6 +546,57 @@
   margin: 12px 0 0;
 }
 
+.p1plan-reflection-live {
+  border: 1px solid #0f766e;
+  border-left-width: 5px;
+  background: #f8fffd;
+}
+
+.p1plan-reflection-title {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.p1plan-reflection-title h4 {
+  margin: 0;
+}
+
+.p1plan-reflection-title > span {
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.p1plan-reflection-title > span.complete {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.p1plan-reflection-title > span.draft {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.p1plan-reflection .p1plan-reflection-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.p1plan-reflection-metrics span {
+  padding: 8px 10px;
+  border-left: 3px solid #14b8a6;
+  background: #fff;
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+.p1plan-reflection-metrics strong {
+  color: #0f172a;
+}
+
 .p1plan-hour-table {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -812,7 +863,8 @@
   .p1plan-scoring,
   .p1plan-hour-table,
   .p1plan-post-fields,
-  .p1plan-post-kpis {
+  .p1plan-post-kpis,
+  .p1plan-reflection .p1plan-reflection-metrics {
     grid-template-columns: 1fr;
   }
 

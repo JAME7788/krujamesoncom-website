@@ -106,6 +106,25 @@ export const makeLessonRecordId = (
   return `${classroomKey(classroom)}-${subject}-plan-${planNo}-hour-${hourNo}-${teachingDate}`;
 };
 
+/** เลือกบันทึกของแผนเดียวกัน โดยให้วันสอนที่ตรงกันมาก่อน แล้วจึงใช้ฉบับล่าสุด */
+export const findLessonRecordForPlan = (
+  records: LessonRecord[],
+  classroom: string,
+  subject: Subject,
+  planNo: number,
+  preferredDate?: string,
+): LessonRecord | undefined => {
+  const candidates = records
+    .filter((item) => (
+      !item.archived
+      && item.classroom === classroom
+      && item.subject === subject
+      && item.planNo === planNo
+    ))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  return candidates.find((item) => item.teachingDate === preferredDate) || candidates[0];
+};
+
 export const fetchLessonRecords = async (
   classroom = 'ป.1',
   subject: Subject = 'main',
