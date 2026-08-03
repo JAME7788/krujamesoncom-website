@@ -585,8 +585,13 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
             <button type="button" onClick={() => window.open('/live/host', '_blank')}><FileQuestion size={17} /> ควิซสด</button>
             <button type="button" onClick={() => window.open('/games', '_blank')}><Gamepad2 size={17} /> เกมฝึก</button>
             <button type="button" onClick={() => onNavigate('homework')}><BookOpen size={17} /> มอบหมายงาน</button>
-            <button type="button" className="complete" onClick={() => void changeSessionStatus('completed')} disabled={busy}>
-              <CheckCircle2 size={17} /> จบคาบ
+            <button
+              type="button"
+              className="complete"
+              onClick={() => document.getElementById('post-teaching-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              disabled={busy}
+            >
+              <CheckCircle2 size={17} /> บันทึกหลังสอน
             </button>
           </div>
         </>
@@ -704,7 +709,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
           </button>
         </section>
 
-        <section className="teacher-classroom-panel post-panel">
+        <section id="post-teaching-form" className="teacher-classroom-panel post-panel">
           <div className="panel-heading">
             <div>
               <span>ขั้นที่ 4</span>
