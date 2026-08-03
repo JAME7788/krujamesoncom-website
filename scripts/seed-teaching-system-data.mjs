@@ -393,10 +393,11 @@ const main = async () => {
       server.ssrLoadModule('/src/data/primaryTechnologyCompetencyPlans.ts'),
     ]);
 
-    const [progressDocs, sessionDocs, gradeDocs, remoteRosterDocument] = await Promise.all([
+    const [progressDocs, sessionDocs, gradeDocs, assessmentDocs, remoteRosterDocument] = await Promise.all([
       listCollection(rest, 'progress'),
       listCollection(rest, 'teachingSessions'),
       listCollection(rest, 'grades'),
+      listCollection(rest, 'studentAssessments'),
       getDocument(rest, 'settings/rosters2569'),
     ]);
     const rosterSource = remoteRosterDocument?.classrooms
@@ -406,6 +407,7 @@ const main = async () => {
     const classrooms = students.allClassrooms2569.filter((classroom) => Array.isArray(rosterSource[classroom]));
     const savedSessions = new Map(sessionDocs.map((item) => [item.id, item.data]));
     const savedGrades = new Map(gradeDocs.map((item) => [item.id, item.data]));
+    const savedAssessments = new Map(assessmentDocs.map((item) => [item.id, item.data]));
     const allPlans = plans.getAllTechnologyLessonPlans();
     const writes = [];
     const counts = {};
@@ -511,6 +513,9 @@ const main = async () => {
         .filter((template) => template.id !== 'post-lesson')
         .forEach((template) => {
           const id = [ACADEMIC_YEAR, TERM, classroom, template.id, 'main'].map(safeId).join('__');
+          const savedAssessment = savedAssessments.get(id);
+          // ข้อมูลที่ครูยืนยันเป็นข้อมูลจริง ห้าม seed ตั้งต้นเขียนทับ
+          if (savedAssessment?.confirmedByTeacher === true) return;
           const entries = Object.fromEntries(roster.map((student) => {
             const medium = mediumCodes.has(student.studentCode);
             return [student.studentCode, {
