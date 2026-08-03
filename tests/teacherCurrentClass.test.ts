@@ -18,9 +18,14 @@ describe('ศูนย์คาบเรียนวันนี้', () => {
     expect(schedule.rows).toHaveLength(40);
     expect(sessions).toHaveLength(40);
     expect(sessions.every((session) => session.classroom === 'ม.1' && session.subject === 'cs')).toBe(true);
-    expect(sessions.find((session) => session.plannedDate === '2026-08-03')?.period).toBe(13);
+    expect(sessions.find((session) => session.plannedDate === '2026-08-03')?.period).toBe(12);
     expect(attendanceSubjectForClassroom('ม.1')).toBe('cs');
     expect(attendanceSubjectForClassroom('ป.1')).toBe('main');
+  });
+
+  it('ไม่เปิดศูนย์คาบเรียนในวันหยุดราชการ', () => {
+    const visakhaSubstitute = new Date(2026, 5, 1, 9, 0);
+    expect(currentOrNextTeachingSlot(defaultSchedule, visakhaSubstitute)).toBeUndefined();
   });
 
   it('คาบทักษะอาชีพที่แยกจากคะแนนต้องไม่ถูกเปิดเป็นคาบวิทยาการคำนวณ', () => {

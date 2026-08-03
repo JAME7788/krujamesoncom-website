@@ -22,7 +22,10 @@ import type { StudentInfo } from '../data/students2569';
 import type { TechnologyGradeId } from '../data/technologyTeachingSchedule';
 import { COURSE_TEACHER_NAME } from '../services/gradeService';
 import { fetchRostersFromFirebase, loadAllRosters } from '../services/rosterService';
-import { buildDefaultTeachingSessions } from '../services/teachingSessionService';
+import {
+  fetchTeachingSessions,
+  type TeachingSession,
+} from '../services/teachingSessionService';
 import {
   loadClassroomAssessment,
   makeClassroomAssessmentId,
@@ -44,11 +47,6 @@ const gradeIdFromClassroom = (classroom: string): TechnologyGradeId | null => {
   const match = classroom.match(/^([ปม])\.(\d)$/);
   if (!match) return null;
   return `${match[1] === 'ป' ? 'p' : 'm'}${match[2]}` as TechnologyGradeId;
-};
-
-const postLessonPlansForClassroom = (classroom: string) => {
-  const gradeId = gradeIdFromClassroom(classroom);
-  return gradeId ? buildDefaultTeachingSessions(gradeId).slice(0, 11) : [];
 };
 
 const makeEntry = (student: StudentInfo, current?: StudentAssessmentEntry): StudentAssessmentEntry => ({
@@ -114,6 +112,7 @@ const StudentAssessmentHub: React.FC = () => {
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [bulkCategory, setBulkCategory] = useState('knowledge');
   const [bulkScore, setBulkScore] = useState(3);
+  const [teachingSessions, setTeachingSessions] = useState<TeachingSession[]>([]);
   const dirtyRef = useRef(false);
   const loadSequenceRef = useRef(0);
 
@@ -123,7 +122,18 @@ const StudentAssessmentHub: React.FC = () => {
     [rosters],
   );
   const roster = useMemo(() => rosters[classroom] || [], [classroom, rosters]);
-  const postLessonPlans = useMemo(() => postLessonPlansForClassroom(classroom), [classroom]);
+  const postLessonPlans = useMemo(() => teachingSessions.filter((session) => {
+    const inSelectedTerm = term === 'ทั้งปี' || String(session.semester) === term;
+    const hasReachedClass = session.plannedDate <= todayKey()
+      || session.status === 'completed'
+      || session.status === 'in_progress'
+      || session.status === 'makeup';
+    return inSelectedTerm && hasReachedClass;
+  }), [teachingSessions, term]);
+  const selectedPostSession = useMemo(
+    () => postLessonPlans.find((item) => String(item.period) === lessonNo),
+    [lessonNo, postLessonPlans],
+  );
   const contextKey = kind === 'post-lesson' ? `${lessonDate}__plan-${lessonNo || '1'}` : 'main';
 
   useEffect(() => {
@@ -133,6 +143,27 @@ const StudentAssessmentHub: React.FC = () => {
       setClassroom((current) => remote[current] ? current : (Object.keys(remote)[0] || 'ป.1'));
     });
   }, []);
+
+  useEffect(() => {
+    const gradeId = gradeIdFromClassroom(classroom);
+    let active = true;
+    const request = gradeId ? fetchTeachingSessions(gradeId) : Promise.resolve([]);
+    void request.then((items) => {
+      if (active) setTeachingSessions(items);
+    });
+    return () => { active = false; };
+  }, [classroom]);
+
+  useEffect(() => {
+    if (kind !== 'post-lesson' || postLessonPlans.length === 0) return;
+    if (postLessonPlans.some((item) => String(item.period) === lessonNo)) return;
+    const latest = postLessonPlans[postLessonPlans.length - 1];
+    const timer = window.setTimeout(() => {
+      setLessonNo(String(latest.period));
+      setLessonDate(latest.teachingDate || latest.plannedDate);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [kind, lessonNo, postLessonPlans]);
 
   useEffect(() => {
     const sequence = ++loadSequenceRef.current;
@@ -149,10 +180,18 @@ const StudentAssessmentHub: React.FC = () => {
           term,
           kind,
           contextKey,
+          ...(kind === 'post-lesson' && selectedPostSession
+            ? { sessionId: selectedPostSession.id, archived: false }
+            : {}),
           entries: mergeRosterEntries(roster, base.entries),
           meta: {
             ...base.meta,
-            ...(kind === 'post-lesson' ? { teachingDate: lessonDate, planNo: lessonNo } : {}),
+            ...(kind === 'post-lesson' ? {
+              teachingDate: lessonDate,
+              planNo: lessonNo,
+              unitName: selectedPostSession?.unitTitle || base.meta.unitName,
+              lessonTitle: selectedPostSession?.lessonTitle || base.meta.lessonTitle,
+            } : {}),
           },
         };
         setAssessment(next);
@@ -169,7 +208,7 @@ const StudentAssessmentHub: React.FC = () => {
         setSaveState('error');
         showToast(`โหลดแบบประเมินไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`, 'error');
       });
-  }, [academicYear, classroom, contextKey, kind, lessonDate, lessonNo, roster, showToast, term]);
+  }, [academicYear, classroom, contextKey, kind, lessonDate, lessonNo, roster, selectedPostSession, showToast, term]);
 
   const persist = useCallback(async (value: ClassroomAssessment, silent = false) => {
     setSaveState('saving');
@@ -197,9 +236,10 @@ const StudentAssessmentHub: React.FC = () => {
 
   const handleKindChange = (nextKind: StudentAssessmentKind) => {
     const nextTemplate = getStudentAssessmentTemplate(nextKind);
-    if (nextKind === 'post-lesson' && postLessonPlans[0]) {
-      setLessonNo(String(postLessonPlans[0].period));
-      setLessonDate(postLessonPlans[0].plannedDate);
+    const latestPlan = postLessonPlans[postLessonPlans.length - 1];
+    if (nextKind === 'post-lesson' && latestPlan) {
+      setLessonNo(String(latestPlan.period));
+      setLessonDate(latestPlan.teachingDate || latestPlan.plannedDate);
     }
     setAssessment(null);
     setSaveState('idle');
@@ -321,14 +361,10 @@ const StudentAssessmentHub: React.FC = () => {
         <label>ชั้นเรียน
           <select value={classroom} onChange={(event) => {
             const nextClassroom = event.target.value;
-            const firstPlan = postLessonPlansForClassroom(nextClassroom)[0];
             setAssessment(null);
             setSaveState('idle');
             setClassroom(nextClassroom);
-            if (kind === 'post-lesson' && firstPlan) {
-              setLessonNo(String(firstPlan.period));
-              setLessonDate(firstPlan.plannedDate);
-            }
+            setLessonNo('');
           }}>
             {classrooms.map((item) => <option key={item}>{item}</option>)}
           </select>
@@ -353,17 +389,18 @@ const StudentAssessmentHub: React.FC = () => {
         </label>
         {kind === 'post-lesson' && (
           <>
-            <label>แผนหลังสอน (11 แผน)
+            <label>แผนหลังสอน ({postLessonPlans.length} คาบที่ถึงกำหนด)
               <select value={lessonNo} onChange={(event) => {
                 const selected = postLessonPlans.find((item) => String(item.period) === event.target.value);
                 setAssessment(null);
                 setSaveState('idle');
                 setLessonNo(event.target.value);
-                if (selected) setLessonDate(selected.plannedDate);
+                if (selected) setLessonDate(selected.teachingDate || selected.plannedDate);
               }}>
                 {postLessonPlans.map((item) => (
                   <option key={item.id} value={item.period}>
                     แผนที่ {item.period} — {item.lessonTitle}
+                    {item.status === 'completed' ? ' · สอนแล้ว' : item.plannedDate === todayKey() ? ' · วันนี้' : ''}
                   </option>
                 ))}
               </select>

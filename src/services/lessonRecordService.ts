@@ -38,6 +38,8 @@ export interface LessonRecordOfficialFields {
 
 export interface LessonRecord extends LessonRecordOfficialFields {
   id: string;
+  /** รหัสคาบกลางที่เชื่อมตารางสอน เช็กชื่อ K/P/A และบันทึกหลังสอนเข้าด้วยกัน */
+  sessionId?: string;
   classroom: string;
   subject: Subject;
   courseName: string;
@@ -131,14 +133,24 @@ export const saveLessonRecord = async (
   },
 ): Promise<LessonRecord> => {
   if (!firebaseAvailable()) throw new Error('Firebase ยังไม่ได้ตั้งค่า');
-  const id = makeLessonRecordId(
+  const generatedId = makeLessonRecordId(
     input.planNo,
     input.hourNo,
     input.teachingDate,
     input.classroom,
     input.subject,
   );
-  const current = loadLessonRecords().find((item) => item.id === id);
+  const current = loadLessonRecords().find((item) => (
+    (input.sessionId && item.sessionId === input.sessionId)
+    || item.id === generatedId
+    || (
+      item.classroom === input.classroom
+      && item.subject === input.subject
+      && item.planNo === input.planNo
+      && item.hourNo === input.hourNo
+    )
+  ));
+  const id = current?.id || generatedId;
   const record: LessonRecord = {
     ...input,
     id,

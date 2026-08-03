@@ -243,7 +243,12 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const existing = records.find((item) => (
-        item.planNo === selectedPeriod && item.teachingDate === teachingDate
+        (selectedSession?.id && item.sessionId === selectedSession.id)
+        || (
+          item.planNo === selectedPeriod
+          && item.classroom === classroom
+          && item.subject === subject
+        )
       ));
       setRecordForm(existing ? {
         // บันทึกเก่ายังไม่มีช่องของแบบราชการ จึงเติมจากรายชื่อห้องและช่องเดิมให้แทน
@@ -258,7 +263,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
       } : { ...recordFormDefault, totalStudents: roster.length });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [records, selectedPeriod, teachingDate, roster.length]);
+  }, [classroom, records, roster.length, selectedPeriod, selectedSession?.id, subject]);
 
   const indicatorIds = useMemo(() => new Set(
     getIndicators(classroom, subject)
@@ -450,6 +455,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
     try {
       const row = schedule.rows.find((item) => item.period === selectedPeriod);
       const saved = await saveLessonRecord({
+        sessionId: selectedSession.id,
         classroom,
         subject,
         courseName: schedule.courseName,

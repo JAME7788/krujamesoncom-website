@@ -6,10 +6,11 @@ describe('ความปลอดภัยของการเติมข้�
     const source = await readFile('scripts/seed-teaching-system-data.mjs', 'utf8');
     expect(source).toContain("listCollection(rest, 'studentAssessments')");
     expect(source).toContain('savedAssessment?.confirmedByTeacher === true');
-    expect(source).toContain('.filter((row) => row.period <= 11)');
+    expect(source).toContain('.filter((row) => row.plannedDate < TODAY)');
+    expect(source).toContain("server.ssrLoadModule('/src/services/teachingSessionService.ts')");
 
     const abilitySync = await readFile('scripts/sync-student-ability-assessments.mjs', 'utf8');
-    expect(abilitySync).toContain('const POST_PLAN_COUNT = 11');
+    expect(abilitySync).toContain("session.status === 'completed'");
     expect(abilitySync).toContain('current?.confirmedByTeacher === true');
   });
 });

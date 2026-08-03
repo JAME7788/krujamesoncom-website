@@ -7,6 +7,7 @@ import {
 } from '../data/technologyTeachingSchedule';
 import type { Subject } from './gradeService';
 import { writeAuditLog } from './auditLogService';
+import { isSchoolTeachingDate } from '../data/schoolCalendar2569';
 
 export type TeachingSessionStatus =
   | 'planned'
@@ -77,18 +78,32 @@ const firstWeekdayOnOrAfter = (start: Date, weekday: number) => {
   return date;
 };
 
-const dateForRow = (
+const teachingDatesForRows = (
   gradeId: TechnologyGradeId,
-  row: TechnologyTeachingScheduleRow,
-): string => {
-  const [year, month, day] = (row.semester === 1
-    ? TERM_1_START_DATE
-    : TERM_2_START_DATE).split('-').map(Number);
-  const termStart = new Date(year, month - 1, day);
-  const first = firstWeekdayOnOrAfter(termStart, weekdayByGrade[gradeId]);
-  const weekInTerm = row.semester === 1 ? row.week - 1 : row.week - 21;
-  first.setDate(first.getDate() + Math.max(0, weekInTerm) * 7);
-  return toIsoDate(first);
+  rows: TechnologyTeachingScheduleRow[],
+): Map<number, string> => {
+  const result = new Map<number, string>();
+  ([1, 2] as const).forEach((semester) => {
+    const semesterRows = rows
+      .filter((row) => row.semester === semester)
+      .sort((a, b) => a.period - b.period);
+    const [year, month, day] = (semester === 1
+      ? TERM_1_START_DATE
+      : TERM_2_START_DATE).split('-').map(Number);
+    const cursor = firstWeekdayOnOrAfter(
+      new Date(year, month - 1, day),
+      weekdayByGrade[gradeId],
+    );
+
+    semesterRows.forEach((row) => {
+      while (!isSchoolTeachingDate(toIsoDate(cursor))) {
+        cursor.setDate(cursor.getDate() + 7);
+      }
+      result.set(row.period, toIsoDate(cursor));
+      cursor.setDate(cursor.getDate() + 7);
+    });
+  });
+  return result;
 };
 
 const sessionId = (
@@ -115,6 +130,7 @@ export const buildDefaultTeachingSessions = (
 ): TeachingSession[] => {
   const schedule = buildTechnologyTeachingSchedule(gradeId);
   const subject: Subject = gradeId.startsWith('m') ? 'cs' : 'main';
+  const plannedDates = teachingDatesForRows(gradeId, schedule.rows);
   return schedule.rows.map((row) => ({
     id: sessionId(gradeId, subject, row.period),
     academicYear: ACADEMIC_YEAR,
@@ -128,7 +144,7 @@ export const buildDefaultTeachingSessions = (
     unitTitle: row.unitTitle,
     lessonTitle: row.lessonTitle,
     indicatorCodes: row.indicators,
-    plannedDate: dateForRow(gradeId, row),
+    plannedDate: plannedDates.get(row.period) || '',
     status: 'planned',
     updatedAt: 0,
     updatedBy: 'system',
@@ -140,10 +156,15 @@ const mergeDefaults = (
   saved: TeachingSession[],
 ): TeachingSession[] => {
   const byId = new Map(saved.map((item) => [item.id, item]));
-  return buildDefaultTeachingSessions(gradeId).map((item) => ({
-    ...item,
-    ...(byId.get(item.id) || {}),
-  }));
+  return buildDefaultTeachingSessions(gradeId).map((item) => {
+    const saved = byId.get(item.id);
+    return {
+      ...item,
+      ...(saved || {}),
+      // วันที่ตามแผนเป็นข้อมูลกลางจากปฏิทินโรงเรียน ไม่ใช้ค่ารุ่นเก่าที่นับวันหยุดเป็นคาบ
+      plannedDate: item.plannedDate,
+    };
+  });
 };
 
 export const fetchTeachingSessions = async (

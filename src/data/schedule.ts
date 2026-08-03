@@ -3,6 +3,7 @@
 
 import { db } from '../services/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { isSchoolTeachingDate, isoDateInBangkok } from './schoolCalendar2569';
 
 export interface ClassSlot {
   id: string;
@@ -123,6 +124,7 @@ export const isInClassTime = (
   schedule: ClassSlot[]
 ): boolean => {
   const d = new Date(timestamp);
+  if (!isSchoolTeachingDate(isoDateInBangkok(d))) return false;
   const day = d.getDay();
   const minutes = d.getHours() * 60 + d.getMinutes();
   return schedule.some(
@@ -137,6 +139,7 @@ export const isInClassTime = (
 
 /** ดึงคาบเรียนของวันนี้ (เรียงตามเวลา) */
 export const todaySlots = (schedule: ClassSlot[]): ClassSlot[] => {
+  if (!isSchoolTeachingDate(isoDateInBangkok())) return [];
   const day = new Date().getDay();
   return schedule
     .filter((s) => s.day === day)
@@ -148,6 +151,7 @@ export const currentOrNextTeachingSlot = (
   schedule: ClassSlot[],
   at = new Date(),
 ): ClassSlot | undefined => {
+  if (!isSchoolTeachingDate(isoDateInBangkok(at))) return undefined;
   const currentMinutes = at.getHours() * 60 + at.getMinutes();
   const slots = schedule
     .filter((slot) => slot.day === at.getDay() && !slot.excludeFromGrading)

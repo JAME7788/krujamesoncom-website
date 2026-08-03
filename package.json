@@ -24,6 +24,8 @@
     "teacher-auth:apply": "node scripts/setup-teacher-auth.mjs --apply",
     "ability:check": "node scripts/sync-student-ability-assessments.mjs",
     "ability:apply": "node scripts/sync-student-ability-assessments.mjs --apply",
+    "teaching-progress:check": "node scripts/sync-teaching-progress.mjs",
+    "teaching-progress:apply": "node scripts/sync-teaching-progress.mjs --apply",
     "test": "vitest run",
     "test:watch": "vitest",
     "qa:smoke": "node scripts/qa-smoke.mjs"

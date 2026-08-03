@@ -14,8 +14,6 @@ const GRADED_IDS = [
   'p1', 'p2', 'p3', 'p4', 'p5', 'p6',
   'm1-cs', 'm1-design', 'm2-cs', 'm2-design', 'm3-cs', 'm3-design',
 ];
-const WEEKDAY_BY_GRADE = { p1: 4, p2: 1, p3: 5, p4: 3, p5: 3, p6: 4, m1: 1, m2: 5, m3: 4 };
-const TERM_START = { 1: '2026-05-05', 2: '2026-11-02' };
 
 const parseEnv = (source) => Object.fromEntries(
   source
@@ -60,16 +58,6 @@ const isoDate = (date) => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-};
-
-const dateForScheduleRow = (gradeId, row) => {
-  const [year, month, day] = TERM_START[row.semester].split('-').map(Number);
-  const first = new Date(year, month - 1, day);
-  const offset = (WEEKDAY_BY_GRADE[gradeId] - first.getDay() + 7) % 7;
-  first.setDate(first.getDate() + offset);
-  const weekInTerm = row.semester === 1 ? row.week - 1 : row.week - 21;
-  first.setDate(first.getDate() + Math.max(0, weekInTerm) * 7);
-  return isoDate(first);
 };
 
 const stableUnique = (values) => [...new Set(values.filter(Boolean))];
@@ -384,13 +372,14 @@ const main = async () => {
   });
 
   try {
-    const [curriculum, schedules, plans, students, templates, competencyPlans] = await Promise.all([
+    const [curriculum, schedules, plans, students, templates, competencyPlans, teaching] = await Promise.all([
       server.ssrLoadModule('/src/data/curriculum.ts'),
       server.ssrLoadModule('/src/data/technologyTeachingSchedule.ts'),
       server.ssrLoadModule('/src/data/technologyLessonPlans.ts'),
       server.ssrLoadModule('/src/data/students2569.ts'),
       server.ssrLoadModule('/src/data/studentAssessmentTemplates.ts'),
       server.ssrLoadModule('/src/data/primaryTechnologyCompetencyPlans.ts'),
+      server.ssrLoadModule('/src/services/teachingSessionService.ts'),
     ]);
 
     const [progressDocs, sessionDocs, gradeDocs, assessmentDocs, remoteRosterDocument] = await Promise.all([
@@ -420,9 +409,10 @@ const main = async () => {
     TEACHING_IDS.forEach((gradeId) => {
       const schedule = schedules.buildTechnologyTeachingSchedule(gradeId);
       const subject = subjectFor(gradeId);
-      scheduleRowsByGrade[gradeId] = schedule.rows.map((row) => ({
-        ...row,
-        plannedDate: dateForScheduleRow(gradeId, row),
+      const defaultSessions = teaching.buildDefaultTeachingSessions(gradeId);
+      scheduleRowsByGrade[gradeId] = defaultSessions.map((session) => ({
+        ...schedule.rows.find((row) => row.period === session.period),
+        ...session,
       }));
       scheduleRowsByGrade[gradeId].forEach((row) => {
         const id = `${ACADEMIC_YEAR}_${gradeId}_${subject}_${String(row.period).padStart(2, '0')}`;
@@ -444,8 +434,12 @@ const main = async () => {
           learningActivity: row.learningActivity,
           evidence: row.evidence,
           assessment: row.assessment,
-          status: previous.status || 'planned',
-          ...(previous.teachingDate ? { teachingDate: previous.teachingDate } : {}),
+          status: previous.status && previous.status !== 'planned'
+            ? previous.status
+            : row.plannedDate < TODAY ? 'completed' : 'planned',
+          ...((previous.teachingDate || row.plannedDate < TODAY)
+            ? { teachingDate: previous.teachingDate || row.plannedDate }
+            : {}),
           ...(previous.note ? { note: previous.note } : {}),
           ...(previous.startedAt ? { startedAt: previous.startedAt } : {}),
           ...(previous.completedAt ? { completedAt: previous.completedAt } : {}),
@@ -459,7 +453,7 @@ const main = async () => {
       const classroom = classroomFor(gradeId);
       const roster = rosterSource[classroom] || [];
       scheduleRowsByGrade[gradeId]
-        .filter((row) => row.period <= 11)
+        .filter((row) => row.plannedDate < TODAY)
         .forEach((row) => {
           const id = gradeId === 'p1'
             ? `p1-plan-${row.period}-hour-1-${row.plannedDate}`
@@ -467,6 +461,7 @@ const main = async () => {
           const plan = allPlans[gradeId]?.find((item) => item.no === row.period);
           add('lessonRecords', id, {
             id,
+            sessionId: row.id,
             classroom,
             subject: 'main',
             courseName: 'เทคโนโลยี (วิทยาการคำนวณ)',
@@ -711,7 +706,7 @@ const main = async () => {
       title: 'เริ่มกำหนดการสอนภาคเรียนที่ 2',
       desc: 'ระบบเริ่มใช้คาบที่ 21 เป็นต้นไปตามวันสอนประจำชั้น',
       type: 'activity',
-      date: TERM_START[2],
+      date: teaching.TERM_2_START_DATE,
       createdAt: NOW,
     });
 

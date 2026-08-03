@@ -29,6 +29,9 @@ export interface StudentAssessmentMeta {
 
 export interface ClassroomAssessment {
   id: string;
+  /** รหัสคาบกลางสำหรับเชื่อมกับตารางสอน เช็กชื่อ และบันทึกหลังสอน */
+  sessionId?: string;
+  archived?: boolean;
   kind: StudentAssessmentKind;
   classroom: string;
   academicYear: string;

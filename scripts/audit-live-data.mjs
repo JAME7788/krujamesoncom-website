@@ -111,6 +111,7 @@ const main = async () => {
   const activeRecords = records.filter((item) => item.archived !== true);
   const courses = Array.isArray(details.courses) ? details.courses : [];
   const studentAssessments = Array.isArray(details.studentAssessments) ? details.studentAssessments : [];
+  const activeStudentAssessments = studentAssessments.filter((item) => item.archived !== true);
   const competencyAssessments = Array.isArray(details.primaryCompetencyAssessments)
     ? details.primaryCompetencyAssessments
     : [];
@@ -130,6 +131,10 @@ const main = async () => {
           || !Array.isArray(item.indicatorCodes)
         )).length,
         completed: sessions.filter((item) => item.status === 'completed').length,
+        completedByClassroom: countBy(
+          sessions.filter((item) => item.status === 'completed'),
+          'classroom',
+        ),
         withTeachingDate: sessions.filter((item) => item.teachingDate).length,
       },
       questionBank: {
@@ -173,15 +178,17 @@ const main = async () => {
       },
       studentAssessments: {
         documents: studentAssessments.length,
-        entries: studentAssessments.reduce(
+        active: activeStudentAssessments.length,
+        archived: studentAssessments.length - activeStudentAssessments.length,
+        entries: activeStudentAssessments.reduce(
           (sum, item) => sum + Object.keys(item.entries || {}).length,
           0,
         ),
-        awaitingTeacherConfirmation: studentAssessments.filter((item) => item.provisional !== false).length,
-        confirmedByTeacher: studentAssessments.filter((item) => item.confirmedByTeacher === true).length,
-        postLessonDrafts: studentAssessments.filter((item) => item.kind === 'post-lesson').length,
+        awaitingTeacherConfirmation: activeStudentAssessments.filter((item) => item.provisional !== false).length,
+        confirmedByTeacher: activeStudentAssessments.filter((item) => item.confirmedByTeacher === true).length,
+        postLessonDrafts: activeStudentAssessments.filter((item) => item.kind === 'post-lesson').length,
         postLessonByClassroom: countBy(
-          studentAssessments.filter((item) => item.kind === 'post-lesson'),
+          activeStudentAssessments.filter((item) => item.kind === 'post-lesson'),
           'classroom',
         ),
       },

@@ -7,7 +7,6 @@ import { createServer } from 'vite';
 const APPLY = process.argv.includes('--apply');
 const ACADEMIC_YEAR = '2569';
 const TERM = '1';
-const POST_PLAN_COUNT = 11;
 const NOW = Date.now();
 const UPDATED_BY = 'teacher-ability-profile-2026-08-03';
 
@@ -157,18 +156,23 @@ const main = async () => {
       server.ssrLoadModule('/src/data/studentAssessmentTemplates.ts'),
       server.ssrLoadModule('/src/data/studentAbilityProfile.ts'),
     ]);
-    const [rosterDocument, assessmentDocs, competencyDocs, lessonRecordDocs, sessionDocs] = await Promise.all([
+    const [rosterDocument, assessmentDocs, competencyDocs, lessonRecordDocs, sessionDocs, attendanceDocs] = await Promise.all([
       getDocument(rest, 'settings/rosters2569'),
       listCollection(rest, 'studentAssessments'),
       listCollection(rest, 'primaryCompetencyAssessments'),
       listCollection(rest, 'lessonRecords'),
       listCollection(rest, 'teachingSessions'),
+      listCollection(rest, 'attendance'),
     ]);
     const rosters = rosterDocument?.classrooms || {};
     const classrooms = Object.keys(rosters).sort((a, b) => a.localeCompare(b, 'th', { numeric: true }));
     const assessmentsById = new Map(assessmentDocs.map((item) => [item.id, item.data]));
     const lessonRecordsById = new Map(lessonRecordDocs.map((item) => [item.id, item.data]));
     const profiles = new Map();
+    const targetPostIds = new Set();
+    const targetRecordIds = new Set();
+    const completedSessionCounts = {};
+    const attendanceMatchedCounts = {};
 
     classrooms.forEach((classroom) => {
       const source = assessmentsById.get(assessmentId(classroom, 'learner-analysis'));
@@ -238,21 +242,28 @@ const main = async () => {
 
       const sessions = sessionDocs
         .map((item) => item.data)
-        .filter((session) => session.classroom === classroom)
-        .sort((a, b) => Number(a.period) - Number(b.period))
-        .slice(0, POST_PLAN_COUNT);
-      if (sessions.length !== POST_PLAN_COUNT) throw new Error(`${classroom} มีแผนไม่ครบ ${POST_PLAN_COUNT}`);
+        .filter((session) => session.classroom === classroom && session.status === 'completed')
+        .sort((a, b) => Number(a.period) - Number(b.period));
+      completedSessionCounts[classroom] = sessions.length;
+      attendanceMatchedCounts[classroom] = 0;
+      if (sessions.length === 0) throw new Error(`${classroom} ยังไม่มีคาบสถานะสอนแล้ว`);
 
       sessions.forEach((session) => {
         const contextKey = `${session.plannedDate}__plan-${session.period}`;
         const id = assessmentId(classroom, 'post-lesson', contextKey);
-        const current = assessmentsById.get(id);
-        if (current?.confirmedByTeacher === true) return;
+        targetPostIds.add(id);
+        const priorPlanDocument = assessmentDocs.find((item) => (
+          item.data.classroom === classroom
+          && item.data.kind === 'post-lesson'
+          && Number(item.data.meta?.planNo) === Number(session.period)
+        ));
+        const current = assessmentsById.get(id) || priorPlanDocument?.data;
         const entries = {};
         roster.forEach((student) => {
           const percent = profiles.get(classroom).get(student.studentCode);
           const copy = ability.abilityProfileCopy(percent);
           entries[student.studentCode] = {
+            ...(current?.entries?.[student.studentCode] || {}),
             studentCode: student.studentCode,
             studentNo: student.no,
             studentName: student.name,
@@ -266,14 +277,17 @@ const main = async () => {
           collectionName: 'studentAssessments',
           id,
           data: {
+            ...(current || {}),
             id,
+            sessionId: session.id,
             kind: 'post-lesson',
             classroom,
             academicYear: ACADEMIC_YEAR,
             term: TERM,
             contextKey,
-            entries,
+            entries: current?.confirmedByTeacher === true ? current.entries : entries,
             meta: {
+              ...(current?.meta || {}),
               subjectName: session.subject === 'cs' ? 'วิทยาการคำนวณ' : 'เทคโนโลยี (วิทยาการคำนวณ)',
               unitName: session.unitTitle,
               lessonTitle: session.lessonTitle,
@@ -285,19 +299,34 @@ const main = async () => {
               improvements: '',
               nextAction: 'ครูตรวจหลักฐาน K/P/A รายคนและยืนยันหลังจบคาบ',
               suggestion: 'ข้อมูลนี้เป็นฉบับร่างจากโปรไฟล์ผู้เรียน ไม่ใช่ผลตัดสินสุดท้าย',
-              status: 'draft',
+              status: current?.confirmedByTeacher === true ? current.meta?.status || 'complete' : 'draft',
             },
-            provisional: true,
-            confirmedByTeacher: false,
+            archived: false,
+            provisional: current?.confirmedByTeacher === true ? false : true,
+            confirmedByTeacher: current?.confirmedByTeacher === true,
             profileSource: 'learner-analysis',
             updatedAt: NOW,
             updatedBy: 'system-post-plan-draft-2569',
           },
         });
 
-        const recordId = lessonRecordId(session);
-        const currentRecord = lessonRecordsById.get(recordId);
+        const priorRecordDocument = lessonRecordDocs.find((item) => (
+          item.data.classroom === classroom
+          && item.data.subject === session.subject
+          && Number(item.data.planNo) === Number(session.period)
+        ));
+        const recordId = priorRecordDocument?.id || lessonRecordId(session);
+        targetRecordIds.add(recordId);
+        const currentRecord = lessonRecordsById.get(recordId) || priorRecordDocument?.data;
         if (currentRecord?.status === 'complete') return;
+        const attendance = attendanceDocs.find((item) => (
+          item.data.classroom === classroom
+          && item.data.date === (session.teachingDate || session.plannedDate)
+        ))?.data;
+        if (attendance) attendanceMatchedCounts[classroom] += 1;
+        const attendanceStatuses = Object.values(attendance?.records || {});
+        const presentCount = attendanceStatuses.filter((status) => status === 'present' || status === 'late').length;
+        const absentCount = attendanceStatuses.filter((status) => status === 'absent').length;
         const percents = roster.map((student) => profiles.get(classroom).get(student.studentCode));
         const passedCount = percents.filter((percent) => percent >= 60).length;
         const averagePercent = average(percents);
@@ -306,6 +335,7 @@ const main = async () => {
           id: recordId,
           data: {
             id: recordId,
+            sessionId: session.id,
             classroom,
             subject: session.subject,
             courseName: session.subject === 'cs' ? 'วิทยาการคำนวณ' : 'เทคโนโลยี (วิทยาการคำนวณ)',
@@ -314,8 +344,8 @@ const main = async () => {
             teachingDate: session.plannedDate,
             indicatorCodes: session.indicatorCodes || [],
             snapshot: {
-              present: 0,
-              absent: 0,
+              present: presentCount,
+              absent: absentCount,
               totalStudents: roster.length,
               passed: passedCount,
               averageK: Math.round((averagePercent / 100) * 150) / 10,
@@ -383,9 +413,13 @@ const main = async () => {
       });
     });
 
+    assessmentDocs.forEach(({ id, data }) => {
+      if (data.kind !== 'post-lesson' || targetPostIds.has(id) || data.archived === true) return;
+      writes.push({ collectionName: 'studentAssessments', id, data: { archived: true, updatedAt: NOW } });
+    });
+
     lessonRecordDocs.forEach(({ id, data }) => {
-      if (Number(data.planNo) <= POST_PLAN_COUNT || data.status === 'complete' || data.archived === true) return;
-      if (!String(data.summary || '').includes('ฉบับร่างอัตโนมัติ')) return;
+      if (targetRecordIds.has(id) || data.status === 'complete' || data.archived === true) return;
       writes.push({ collectionName: 'lessonRecords', id, data: { archived: true, updatedAt: NOW } });
     });
 
@@ -400,7 +434,8 @@ const main = async () => {
       classrooms: classrooms.length,
       students: classrooms.reduce((sum, classroom) => sum + rosters[classroom].length, 0),
       standardAbilityAssessments: classrooms.length * standardKinds.length,
-      postPlansPerClassroom: POST_PLAN_COUNT,
+      completedSessionCounts,
+      attendanceMatchedCounts,
       writes: countByCollection,
       totalWrites: writes.length,
     }, null, 2));
@@ -414,6 +449,7 @@ const main = async () => {
       assessmentDocs,
       competencyDocs,
       lessonRecordDocs,
+      attendanceDocs,
     }, null, 2), 'utf8');
     await commitWrites(rest, writes);
 
@@ -424,16 +460,20 @@ const main = async () => {
     ]);
     const postByClassroom = Object.fromEntries(classrooms.map((classroom) => [
       classroom,
-      savedAssessments.filter((item) => item.data.classroom === classroom && item.data.kind === 'post-lesson').length,
+      savedAssessments.filter((item) => (
+        item.data.classroom === classroom
+        && item.data.kind === 'post-lesson'
+        && item.data.archived !== true
+      )).length,
     ]));
     const activeRecordsByClassroom = Object.fromEntries(classrooms.map((classroom) => [
       classroom,
       savedRecords.filter((item) => item.data.classroom === classroom && item.data.archived !== true).length,
     ]));
-    if (Object.values(postByClassroom).some((count) => count !== POST_PLAN_COUNT)) {
+    if (Object.entries(postByClassroom).some(([classroom, count]) => count !== completedSessionCounts[classroom])) {
       throw new Error(`จำนวนแบบหลังแผนไม่ครบ: ${JSON.stringify(postByClassroom)}`);
     }
-    if (Object.values(activeRecordsByClassroom).some((count) => count !== POST_PLAN_COUNT)) {
+    if (Object.entries(activeRecordsByClassroom).some(([classroom, count]) => count !== completedSessionCounts[classroom])) {
       throw new Error(`จำนวนบันทึกหลังสอนไม่ครบ: ${JSON.stringify(activeRecordsByClassroom)}`);
     }
     const confirmedCompetencies = savedCompetencies.filter((item) => item.data.confirmedByTeacher === true).length;
