@@ -39,11 +39,29 @@ describe('P.1 post-teaching draft', () => {
   it.each(p1LessonPlans)('creates a useful plan-specific draft for plan $no', (plan) => {
     const draft = buildP1PostTeachingDraft(plan);
     expect(draft.summary).toContain(plan.title);
-    expect(draft.summary).toContain('ครูต้องตรวจ');
+    expect(draft.summary).toContain('ยังไม่มีผล K/P/A');
     expect(draft.strengths.length).toBeGreaterThan(30);
-    expect(draft.problems).toContain('20-30');
+    expect(draft.problems).not.toContain('20-30');
     expect(draft.improvements.length).toBeGreaterThan(30);
     expect(draft.nextAction.length).toBeGreaterThan(30);
+  });
+
+  it('writes a positive official narrative from the recorded K/P/A result', () => {
+    const draft = buildP1PostTeachingDraft(p1LessonPlans[0], {
+      totalStudents: 11,
+      passed: 11,
+      averageK: 13.2,
+      averageP: 26.3,
+      attitudePassed: 11,
+    });
+
+    expect(draft.summary).toContain('ผ่านจุดประสงค์ 11 คน จากทั้งหมด 11 คน');
+    expect(draft.summary).toContain('ร้อยละ 100');
+    expect(draft.summary).toContain('13.2/15');
+    expect(draft.summary).toContain('26.3/30');
+    expect(draft.summary).toContain('ด้านคุณลักษณะ (A) 11 คน');
+    expect(draft.problems).toContain('ผู้เรียนทุกคนผ่านจุดประสงค์');
+    expect(draft.problems).not.toContain('อาจ');
   });
 
   it('selects the record for the planned date before a newer unrelated date', () => {

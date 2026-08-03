@@ -17,6 +17,7 @@ import {
   Presentation,
   RefreshCw,
   Save,
+  Sparkles,
   Users,
 } from 'lucide-react';
 import {
@@ -65,6 +66,11 @@ import {
   splitIsoToThai,
   percentOf,
 } from '../utils/lessonRecordDocx';
+import {
+  buildP1PostTeachingDraft,
+  hasPostTeachingResult,
+  isLegacyPostTeachingText,
+} from '../utils/p1PostTeachingDraft';
 import {
   fetchAssignmentsFromFirebase,
   fetchSubmissionsFromFirebase,
@@ -250,20 +256,30 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
           && item.subject === subject
         )
       ));
+      const resultSnapshot = existing?.snapshot;
+      const narrative = buildP1PostTeachingDraft(selectedPlan, resultSnapshot);
+      const resultText = (value: string | undefined, fallback: string) => (
+        isLegacyPostTeachingText(value) ? fallback : value || fallback
+      );
       setRecordForm(existing ? {
         // บันทึกเก่ายังไม่มีช่องของแบบราชการ จึงเติมจากรายชื่อห้องและช่องเดิมให้แทน
-        totalStudents: existing.totalStudents ?? roster.length,
-        passedCount: existing.passedCount ?? 0,
-        summary: existing.summary ?? existing.strengths ?? '',
-        strengths: existing.strengths,
-        problems: existing.problems,
-        causes: existing.causes,
-        improvements: existing.improvements,
-        nextAction: existing.nextAction,
-      } : { ...recordFormDefault, totalStudents: roster.length });
+        totalStudents: resultSnapshot?.totalStudents || existing.totalStudents || roster.length,
+        passedCount: resultSnapshot?.passed ?? existing.passedCount ?? 0,
+        summary: resultText(existing.summary ?? existing.strengths, narrative.summary),
+        strengths: resultText(existing.strengths, narrative.strengths),
+        problems: resultText(existing.problems, narrative.problems),
+        causes: resultText(existing.causes, narrative.causes),
+        improvements: resultText(existing.improvements, narrative.improvements),
+        nextAction: resultText(existing.nextAction, narrative.nextAction),
+      } : {
+        ...recordFormDefault,
+        totalStudents: resultSnapshot?.totalStudents || roster.length,
+        passedCount: resultSnapshot?.passed || 0,
+        ...narrative,
+      });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [classroom, records, roster.length, selectedPeriod, selectedSession?.id, subject]);
+  }, [classroom, records, roster.length, selectedPeriod, selectedPlan, selectedSession?.id, subject]);
 
   const indicatorIds = useMemo(() => new Set(
     getIndicators(classroom, subject)
@@ -310,6 +326,25 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
       }).length,
     };
   }, [attendance.records, grades, indicatorIds, roster.length]);
+
+  useEffect(() => {
+    if (!hasPostTeachingResult(snapshot)) return;
+    const narrative = buildP1PostTeachingDraft(selectedPlan, snapshot);
+    const timer = window.setTimeout(() => {
+      setRecordForm((current) => ({
+        ...current,
+        totalStudents: snapshot.totalStudents,
+        passedCount: snapshot.passed,
+        summary: isLegacyPostTeachingText(current.summary) ? narrative.summary : current.summary,
+        strengths: isLegacyPostTeachingText(current.strengths) ? narrative.strengths : current.strengths,
+        problems: isLegacyPostTeachingText(current.problems) ? narrative.problems : current.problems,
+        causes: isLegacyPostTeachingText(current.causes) ? narrative.causes : current.causes,
+        improvements: isLegacyPostTeachingText(current.improvements) ? narrative.improvements : current.improvements,
+        nextAction: isLegacyPostTeachingText(current.nextAction) ? narrative.nextAction : current.nextAction,
+      }));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [selectedPlan, snapshot]);
 
   const classAssignments = assignments.filter((item) => (
     item.classroom === classroom
@@ -418,6 +453,17 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   };
 
   const failedCount = Math.max(0, recordForm.totalStudents - recordForm.passedCount);
+
+  const regeneratePostTeachingNarrative = () => {
+    const narrative = buildP1PostTeachingDraft(selectedPlan, snapshot);
+    setRecordForm((current) => ({
+      ...current,
+      totalStudents: snapshot.totalStudents || current.totalStudents,
+      passedCount: snapshot.passed,
+      ...narrative,
+    }));
+    toast.show('เรียบเรียงบันทึกเชิงบวกจากผล K/P/A และความสามารถของผู้เรียนแล้ว', 'success');
+  };
 
   /** ออกไฟล์ Word จริงตามแบบฟอร์มราชการของโรงเรียน ใช้ได้ทุกชั้นและทุกคาบ */
   const downloadOfficialDocx = () => {
@@ -761,6 +807,9 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
             </label>
           </div>
           <div className="post-buttons">
+            <button type="button" className="word-post-button" onClick={regeneratePostTeachingNarrative} disabled={!hasPostTeachingResult(snapshot)}>
+              <Sparkles size={17} /> เรียบเรียงจากผลจริง
+            </button>
             <button type="button" className="save-post-button" onClick={() => void savePostTeaching()} disabled={busy}>
               {busy ? <Loader2 className="spin" size={17} /> : <Save size={17} />}
               บันทึกหลังสอนและปิดคาบ

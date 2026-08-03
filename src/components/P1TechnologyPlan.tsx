@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Award, BookOpen, Calendar, CheckCircle2, ClipboardCheck, Download, ExternalLink,
-  FileText, Printer, RefreshCw, Save,
+  FileText, Printer, RefreshCw, Save, Sparkles,
 } from 'lucide-react';
 import {
   p1AnnualUnits,
@@ -33,7 +33,10 @@ import { fetchAttendance } from '../services/manualAttendanceService';
 import { loadSchedule } from '../data/schedule';
 import { buildDefaultTeachingSessions } from '../services/teachingSessionService';
 import { buildP1TechnologyPlanDocumentHtml } from '../utils/p1TechnologyPlanDocument';
-import { buildP1PostTeachingDraft } from '../utils/p1PostTeachingDraft';
+import {
+  buildP1PostTeachingDraft,
+  isLegacyPostTeachingText,
+} from '../utils/p1PostTeachingDraft';
 import { useToast } from './Toast';
 import OfficialLessonPlanHeader from './OfficialLessonPlanHeader';
 import './P1TechnologyPlan.css';
@@ -61,15 +64,17 @@ const emptySnapshot: LessonRecordSnapshot = {
 };
 
 const recordFormForPlan = (plan: P1LessonPlan, record?: LessonRecord) => {
-  const draft = buildP1PostTeachingDraft(plan);
-  const seededSummary = record?.summary?.startsWith('ฉบับร่างอัตโนมัติ') ? '' : record?.summary;
+  const draft = buildP1PostTeachingDraft(plan, record?.snapshot);
+  const resultText = (value: string | undefined, fallback: string) => (
+    isLegacyPostTeachingText(value) ? fallback : value || fallback
+  );
   return {
-    summary: seededSummary || draft.summary,
-    strengths: record?.strengths || draft.strengths,
-    problems: record?.problems || draft.problems,
-    causes: record?.causes || draft.causes,
-    improvements: record?.improvements || draft.improvements,
-    nextAction: record?.nextAction || draft.nextAction,
+    summary: resultText(record?.summary, draft.summary),
+    strengths: resultText(record?.strengths, draft.strengths),
+    problems: resultText(record?.problems, draft.problems),
+    causes: resultText(record?.causes, draft.causes),
+    improvements: resultText(record?.improvements, draft.improvements),
+    nextAction: resultText(record?.nextAction, draft.nextAction),
     status: record?.status || ('draft' as LessonRecord['status']),
   };
 };
@@ -196,12 +201,28 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
         }).length,
       };
       setSnapshot(nextSnapshot);
+      const narrative = buildP1PostTeachingDraft(plan, nextSnapshot);
+      setForm((current) => ({
+        ...current,
+        summary: isLegacyPostTeachingText(current.summary) ? narrative.summary : current.summary,
+        strengths: isLegacyPostTeachingText(current.strengths) ? narrative.strengths : current.strengths,
+        problems: isLegacyPostTeachingText(current.problems) ? narrative.problems : current.problems,
+        causes: isLegacyPostTeachingText(current.causes) ? narrative.causes : current.causes,
+        improvements: isLegacyPostTeachingText(current.improvements) ? narrative.improvements : current.improvements,
+        nextAction: isLegacyPostTeachingText(current.nextAction) ? narrative.nextAction : current.nextAction,
+      }));
       toast.show('ดึงเช็คชื่อและ K/P/A ล่าสุดมาใส่บันทึกแล้ว', 'success');
     } catch (error) {
       toast.show(`ดึงข้อมูลสรุปไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`, 'error');
     } finally {
       setBusy(false);
     }
+  };
+
+  const regenerateNarrative = () => {
+    const narrative = buildP1PostTeachingDraft(plan, snapshot);
+    setForm((current) => ({ ...current, ...narrative }));
+    toast.show('เรียบเรียงบันทึกเชิงบวกจากผล K/P/A ล่าสุดแล้ว', 'success');
   };
 
   const save = async () => {
@@ -289,9 +310,14 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
         <div><span>A ผ่าน</span><strong>{hasAssessmentData ? snapshot.attitudePassed : '-'}</strong></div>
       </div>
 
-      <button type="button" className="p1plan-refresh-record" onClick={() => void refreshSnapshot()} disabled={busy}>
-        <RefreshCw size={16} /> ดึงเช็คชื่อและ K/P/A ล่าสุด
-      </button>
+      <div className="p1plan-post-actions">
+        <button type="button" className="p1plan-refresh-record" onClick={() => void refreshSnapshot()} disabled={busy}>
+          <RefreshCw size={16} /> ดึงเช็คชื่อและ K/P/A ล่าสุด
+        </button>
+        <button type="button" className="p1plan-refresh-record" onClick={regenerateNarrative} disabled={!hasAssessmentData}>
+          <Sparkles size={16} /> เรียบเรียงผลเชิงบวกจากข้อมูลจริง
+        </button>
+      </div>
 
       <div className="p1plan-post-fields">
         <label className="wide">สรุปผลการจัดการเรียนรู้<textarea rows={3} value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} /></label>
