@@ -20,10 +20,16 @@ import {
   Users,
 } from 'lucide-react';
 import {
-  PRIMARY_TECHNOLOGY_GRADE_IDS,
+  TECHNOLOGY_GRADE_IDS,
   buildTechnologyTeachingSchedule,
-  type PrimaryTechnologyGradeId,
+  type TechnologyGradeId,
 } from '../data/technologyTeachingSchedule';
+import {
+  fetchScheduleFromFirebase,
+  currentOrNextTeachingSlot,
+  loadSchedule,
+  type ClassSlot,
+} from '../data/schedule';
 import { getTechnologyLessonPlans } from '../data/technologyLessonPlans';
 import {
   fetchTeachingSessions,
@@ -45,6 +51,7 @@ import {
   fetchClassroomFromFirebase,
   getIndicators,
   loadGrades,
+  type Subject,
   type StudentGrade,
 } from '../services/gradeService';
 import {
@@ -78,8 +85,30 @@ interface Props {
   onNavigate: (tab: TeacherTab) => void;
 }
 
-const classroomFromGrade = (gradeId: PrimaryTechnologyGradeId) => `ป.${gradeId.slice(1)}`;
-const today = () => new Date().toISOString().slice(0, 10);
+const classroomFromGrade = (gradeId: TechnologyGradeId) => (
+  `${gradeId.startsWith('p') ? 'ป' : 'ม'}.${gradeId.slice(1)}`
+);
+const gradeFromClassroom = (classroom: string): TechnologyGradeId | null => {
+  const match = classroom.match(/^([ปม])\.(\d)$/);
+  if (!match) return null;
+  const candidate = `${match[1] === 'ป' ? 'p' : 'm'}${match[2]}` as TechnologyGradeId;
+  return TECHNOLOGY_GRADE_IDS.includes(candidate) ? candidate : null;
+};
+const gradeForCurrentOrNextSlot = (slots: ClassSlot[], at = new Date()): TechnologyGradeId | null => {
+  return gradeFromClassroom(currentOrNextTeachingSlot(slots, at)?.classroom || '');
+};
+const studentIdFromRoster = (
+  classroom: string,
+  student: { no: number; name: string },
+) => `${classroom}_${student.no}_${student.name.replace(/\s/g, '')}`;
+const initialGrade = () => gradeForCurrentOrNextSlot(loadSchedule()) || 'p1';
+const today = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const emptyAttendance = (date: string, classroom: string): ManualAttendance => ({
   date,
@@ -126,8 +155,9 @@ const recordFormDefault = {
 };
 
 const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
-  const [gradeId, setGradeId] = useState<PrimaryTechnologyGradeId>('p1');
+  const [gradeId, setGradeId] = useState<TechnologyGradeId>(initialGrade);
   const classroom = classroomFromGrade(gradeId);
+  const subject: Subject = gradeId.startsWith('m') ? 'cs' : 'main';
   const [sessions, setSessions] = useState<TeachingSession[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState(1);
   const [teachingDate, setTeachingDate] = useState(today());
@@ -150,8 +180,9 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   const selectedPlan = plans.find((item) => item.no === selectedPeriod) || plans[0];
   const roster = useMemo(() => loadRoster(classroom), [classroom]);
 
-  const loadClassroomData = async (nextGradeId = gradeId) => {
+  const loadClassroomData = async (nextGradeId: TechnologyGradeId = gradeId) => {
     const nextClassroom = classroomFromGrade(nextGradeId);
+    const nextSubject: Subject = nextGradeId.startsWith('m') ? 'cs' : 'main';
     setLoading(true);
     try {
       const [
@@ -165,11 +196,11 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
       ] = await Promise.all([
         fetchTeachingSessions(nextGradeId),
         fetchAttendance(teachingDate, nextClassroom),
-        fetchClassroomFromFirebase(nextClassroom, 'main'),
-        fetchLessonRecords(nextClassroom, 'main'),
+        fetchClassroomFromFirebase(nextClassroom, nextSubject),
+        fetchLessonRecords(nextClassroom, nextSubject),
         fetchAssignmentsFromFirebase(),
         fetchSubmissionsFromFirebase(),
-        fetchLearningEvidence(nextClassroom, 'main'),
+        fetchLearningEvidence(nextClassroom, nextSubject),
       ]);
       setSessions(sessionItems);
       const exactToday = sessionItems.find((item) => (
@@ -178,7 +209,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
       const nextPending = sessionItems.find((item) => item.status !== 'completed');
       setSelectedPeriod(exactToday?.period || nextPending?.period || 1);
       setAttendanceState(attendanceData);
-      setGrades(remoteGrades?.length ? remoteGrades : loadGrades(nextClassroom, 'main'));
+      setGrades(remoteGrades?.length ? remoteGrades : loadGrades(nextClassroom, nextSubject));
       setRecords(lessonRecords);
       setAssignments(assignmentItems);
       setSubmissions(submissionItems);
@@ -198,6 +229,16 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
     // Reload only when class changes. Date has its own explicit handler.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gradeId]);
+
+  useEffect(() => {
+    let active = true;
+    void fetchScheduleFromFirebase().then((remoteSchedule) => {
+      if (!active || !remoteSchedule) return;
+      const scheduledGrade = gradeForCurrentOrNextSlot(remoteSchedule);
+      if (scheduledGrade) setGradeId(scheduledGrade);
+    });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -220,10 +261,10 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   }, [records, selectedPeriod, teachingDate, roster.length]);
 
   const indicatorIds = useMemo(() => new Set(
-    getIndicators(classroom, 'main')
+    getIndicators(classroom, subject)
       .filter((indicator) => selectedPlan.indicators.includes(indicator.code))
       .map((indicator) => indicator.id),
-  ), [classroom, selectedPlan.indicators]);
+  ), [classroom, selectedPlan.indicators, subject]);
 
   const snapshot = useMemo<LessonRecordSnapshot>(() => {
     if (!grades.length) return { ...emptySnapshot, totalStudents: roster.length };
@@ -267,6 +308,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
 
   const classAssignments = assignments.filter((item) => (
     item.classroom === classroom
+    && (!item.subject || item.subject === subject)
     && (!item.lessonPlanId || item.lessonPlanId === `${gradeId}-${selectedPeriod}`)
   ));
 
@@ -315,7 +357,13 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
     if (!student) return;
     setBusy(true);
     try {
-      await setStatus(teachingDate, classroom, studentCode, studentCode, status);
+      await setStatus(
+        teachingDate,
+        classroom,
+        studentCode,
+        studentIdFromRoster(classroom, student),
+        status,
+      );
       setAttendanceState(await fetchAttendance(teachingDate, classroom));
     } catch (error) {
       toast.show(`เช็กชื่อไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`, 'error');
@@ -332,7 +380,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
         classroom,
         roster.map((student) => ({
           studentCode: student.studentCode,
-          studentId: student.studentCode,
+          studentId: studentIdFromRoster(classroom, student),
         })),
       );
       setAttendanceState(await fetchAttendance(teachingDate, classroom));
@@ -403,7 +451,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
       const row = schedule.rows.find((item) => item.period === selectedPeriod);
       const saved = await saveLessonRecord({
         classroom,
-        subject: 'main',
+        subject,
         courseName: schedule.courseName,
         planNo: selectedPeriod,
         hourNo: 1,
@@ -463,9 +511,9 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
       <section className="teacher-classroom-toolbar">
         <label>
           ชั้นเรียน
-          <select value={gradeId} onChange={(event) => setGradeId(event.target.value as PrimaryTechnologyGradeId)}>
-            {PRIMARY_TECHNOLOGY_GRADE_IDS.map((item) => (
-              <option value={item} key={item}>ป.{item.slice(1)}</option>
+          <select value={gradeId} onChange={(event) => setGradeId(event.target.value as TechnologyGradeId)}>
+            {TECHNOLOGY_GRADE_IDS.map((item) => (
+              <option value={item} key={item}>{item.startsWith('p') ? 'ป' : 'ม'}.{item.slice(1)}</option>
             ))}
           </select>
         </label>

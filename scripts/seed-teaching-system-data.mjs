@@ -9,11 +9,12 @@ const TERM = '1';
 const TODAY = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
 const NOW = Date.now();
 const PRIMARY_IDS = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
+const TEACHING_IDS = [...PRIMARY_IDS, 'm1', 'm2', 'm3'];
 const GRADED_IDS = [
   'p1', 'p2', 'p3', 'p4', 'p5', 'p6',
   'm1-cs', 'm1-design', 'm2-cs', 'm2-design', 'm3-cs', 'm3-design',
 ];
-const WEEKDAY_BY_GRADE = { p1: 4, p2: 1, p3: 5, p4: 3, p5: 3, p6: 4 };
+const WEEKDAY_BY_GRADE = { p1: 4, p2: 1, p3: 5, p4: 3, p5: 3, p6: 4, m1: 1, m2: 5, m3: 4 };
 const TERM_START = { 1: '2026-05-05', 2: '2026-11-02' };
 
 const parseEnv = (source) => Object.fromEntries(
@@ -44,7 +45,7 @@ const classroomFor = (gradeId) => {
 
 const subjectFor = (gradeId) => {
   if (gradeId.includes('design')) return 'dt';
-  if (gradeId.includes('-cs')) return 'cs';
+  if (gradeId.includes('-cs') || gradeId.startsWith('m')) return 'cs';
   return 'main';
 };
 
@@ -414,21 +415,22 @@ const main = async () => {
     };
 
     const scheduleRowsByGrade = {};
-    PRIMARY_IDS.forEach((gradeId) => {
+    TEACHING_IDS.forEach((gradeId) => {
       const schedule = schedules.buildTechnologyTeachingSchedule(gradeId);
+      const subject = subjectFor(gradeId);
       scheduleRowsByGrade[gradeId] = schedule.rows.map((row) => ({
         ...row,
         plannedDate: dateForScheduleRow(gradeId, row),
       }));
       scheduleRowsByGrade[gradeId].forEach((row) => {
-        const id = `${ACADEMIC_YEAR}_${gradeId}_main_${String(row.period).padStart(2, '0')}`;
+        const id = `${ACADEMIC_YEAR}_${gradeId}_${subject}_${String(row.period).padStart(2, '0')}`;
         const previous = savedSessions.get(id) || {};
         add('teachingSessions', id, {
           id,
           academicYear: ACADEMIC_YEAR,
           gradeId,
           classroom: schedule.gradeLabel,
-          subject: 'main',
+          subject,
           period: row.period,
           week: row.week,
           semester: row.semester,

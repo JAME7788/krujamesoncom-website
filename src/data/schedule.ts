@@ -142,3 +142,17 @@ export const todaySlots = (schedule: ClassSlot[]): ClassSlot[] => {
     .filter((s) => s.day === day)
     .sort((a, b) => minutesOf(a.start) - minutesOf(b.start));
 };
+
+/** คาบที่กำลังสอน หรือคาบถัดไปของวัน โดยไม่นำคาบที่แยกออกจากการวัดผลมาเปิดในศูนย์คาบเรียน */
+export const currentOrNextTeachingSlot = (
+  schedule: ClassSlot[],
+  at = new Date(),
+): ClassSlot | undefined => {
+  const currentMinutes = at.getHours() * 60 + at.getMinutes();
+  const slots = schedule
+    .filter((slot) => slot.day === at.getDay() && !slot.excludeFromGrading)
+    .sort((a, b) => minutesOf(a.start) - minutesOf(b.start));
+  return slots.find((slot) => (
+    currentMinutes >= minutesOf(slot.start) && currentMinutes <= minutesOf(slot.end)
+  )) || slots.find((slot) => minutesOf(slot.start) > currentMinutes) || slots[0];
+};

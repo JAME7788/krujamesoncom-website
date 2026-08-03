@@ -23,6 +23,10 @@ export const ATTENDANCE_LABEL: Record<AttendanceStatus, { th: string; emoji: str
   sick:    { th: 'ลาป่วย',  emoji: '🤒', color: '#9ca3af', xp: 0 },
 };
 
+export const attendanceSubjectForClassroom = (classroom: string) => (
+  classroom.startsWith('ม.') ? 'cs' : 'main'
+);
+
 const fbAvailable = (): boolean => {
   try { return !!db && !!import.meta.env.VITE_FIREBASE_PROJECT_ID; } catch { return false; }
 };
@@ -135,7 +139,7 @@ export const setStatus = async (
     studentCode,
     studentName: rosterStudent?.name || studentCode,
     classroom,
-    subject: 'main',
+    subject: attendanceSubjectForClassroom(classroom),
     source: 'attendance',
     domain: 'A',
     title: `เช็กชื่อ ${date}`,

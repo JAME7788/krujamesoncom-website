@@ -1,8 +1,10 @@
 import { findGrade } from './curriculum';
 import {
   buildTechnologyTeachingSchedule,
+  curriculumGradeIdForTechnology,
   PRIMARY_TECHNOLOGY_GRADE_IDS,
   type PrimaryTechnologyGradeId,
+  type TechnologyGradeId,
   type TechnologyTeachingScheduleRow,
 } from './technologyTeachingSchedule';
 import {
@@ -21,10 +23,10 @@ import {
 
 export type TechnologyLessonPlan = P1LessonPlan;
 
-const gradeNumber = (gradeId: PrimaryTechnologyGradeId) => Number(gradeId.slice(1));
+const gradeNumber = (gradeId: TechnologyGradeId) => Number(gradeId.slice(1));
 
-const indicatorText = (gradeId: PrimaryTechnologyGradeId, code: string): string => {
-  const grade = findGrade(gradeId);
+const indicatorText = (gradeId: TechnologyGradeId, code: string): string => {
+  const grade = findGrade(curriculumGradeIdForTechnology(gradeId));
   return grade?.indicators.find((indicator) => indicator.code === code)?.text || code;
 };
 
@@ -107,11 +109,11 @@ const buildAssessments = (profile: Profile): P1PlanAssessment[] => {
 };
 
 const buildGeneratedPlan = (
-  gradeId: PrimaryTechnologyGradeId,
+  gradeId: TechnologyGradeId,
   row: TechnologyTeachingScheduleRow,
 ): TechnologyLessonPlan => {
   const number = gradeNumber(gradeId);
-  const gradeLabel = `ชั้นประถมศึกษาปีที่ ${number}`;
+  const gradeLabel = `${gradeId.startsWith('p') ? 'ชั้นประถมศึกษาปีที่' : 'ชั้นมัธยมศึกษาปีที่'} ${number}`;
   const descriptions = row.indicators.map((code) => indicatorText(gradeId, code));
 
   // จัดประเภทบทเรียนจากชื่อเรื่อง หน่วย และคำอธิบายตัวชี้วัด แล้วเลือกเนื้อหาให้ตรงวัย
@@ -121,7 +123,7 @@ const buildGeneratedPlan = (
     indicators: descriptions,
     activity: row.learningActivity,
   });
-  const band: AgeBand = ageBandOf(number);
+  const band: AgeBand = ageBandOf(gradeId.startsWith('m') ? 6 : number);
   const profile = getLessonProfile(category, band);
   const c = profile.content;
 
@@ -183,7 +185,7 @@ const buildGeneratedPlan = (
 };
 
 export const getTechnologyLessonPlans = (
-  gradeId: PrimaryTechnologyGradeId,
+  gradeId: TechnologyGradeId,
 ): TechnologyLessonPlan[] => {
   if (gradeId === 'p1') {
     return p1LessonPlans.map((plan) => ({

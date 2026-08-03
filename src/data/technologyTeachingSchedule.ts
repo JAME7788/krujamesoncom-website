@@ -6,6 +6,8 @@ import {
 } from './p1TechnologyPlan';
 
 export type PrimaryTechnologyGradeId = 'p1' | 'p2' | 'p3' | 'p4' | 'p5' | 'p6';
+export type SecondaryComputingGradeId = 'm1' | 'm2' | 'm3';
+export type TechnologyGradeId = PrimaryTechnologyGradeId | SecondaryComputingGradeId;
 
 export interface TechnologyTeachingScheduleRow {
   period: number;
@@ -29,7 +31,7 @@ export interface TechnologyTeachingScheduleUnit {
 }
 
 export interface TechnologyTeachingSchedule {
-  gradeId: PrimaryTechnologyGradeId;
+  gradeId: TechnologyGradeId;
   gradeLabel: string;
   fullGradeLabel: string;
   courseCode: string;
@@ -51,20 +53,36 @@ export const PRIMARY_TECHNOLOGY_GRADE_IDS: PrimaryTechnologyGradeId[] = [
   'p6',
 ];
 
+export const TECHNOLOGY_GRADE_IDS: TechnologyGradeId[] = [
+  ...PRIMARY_TECHNOLOGY_GRADE_IDS,
+  'm1',
+  'm2',
+  'm3',
+];
+
 // หมายเหตุ: ตารางชุดนี้ใช้พิมพ์ลงหัวแผนการสอน ต้องตรงกับ src/data/schedule.ts เสมอ
 // (คนละชุดกัน ถ้าแก้ที่เดียวจะทำให้เอกสารที่พิมพ์ออกมาไม่ตรงกับที่ระบบใช้คิดคะแนน)
-const WEEKLY_SLOTS: Record<PrimaryTechnologyGradeId, string> = {
+const WEEKLY_SLOTS: Record<TechnologyGradeId, string> = {
   p1: 'วันพฤหัสบดี 13:00-14:00 น.',
   p2: 'วันจันทร์ 13:50-14:40 น.',
   p3: 'วันศุกร์ 11:00-11:50 น.',
   p4: 'วันพุธ 09:20-10:10 น.',
   p5: 'วันพุธ 13:50-14:40 น.',
   p6: 'วันพฤหัสบดี 11:00-11:50 น.',
+  m1: 'วันจันทร์ 08:30-09:20 น.',
+  m2: 'วันศุกร์ 10:10-11:00 น.',
+  m3: 'วันพฤหัสบดี 09:20-10:10 น.',
 };
 
-const gradeNumber = (gradeId: PrimaryTechnologyGradeId) => Number(gradeId.slice(1));
+const gradeNumber = (gradeId: TechnologyGradeId) => Number(gradeId.slice(1));
 
-const courseCode = (gradeId: PrimaryTechnologyGradeId) => `ว1${gradeNumber(gradeId)}101`;
+const courseCode = (gradeId: TechnologyGradeId) => (
+  `${gradeId.startsWith('p') ? 'ว1' : 'ว2'}${gradeNumber(gradeId)}101`
+);
+
+export const curriculumGradeIdForTechnology = (gradeId: TechnologyGradeId) => (
+  gradeId.startsWith('m') ? `${gradeId}-cs` : gradeId
+);
 
 const allocatePeriods = (units: Unit[], total: number): number[] => {
   if (units.length === 0) return [];
@@ -231,9 +249,9 @@ const summarizeUnits = (
   });
 
 export const buildTechnologyTeachingSchedule = (
-  gradeId: PrimaryTechnologyGradeId,
+  gradeId: TechnologyGradeId,
 ): TechnologyTeachingSchedule => {
-  const grade = findGrade(gradeId);
+  const grade = findGrade(curriculumGradeIdForTechnology(gradeId));
   if (!grade) {
     throw new Error(`ไม่พบข้อมูลกำหนดการสอน ${gradeId}`);
   }
@@ -243,10 +261,10 @@ export const buildTechnologyTeachingSchedule = (
 
   return {
     gradeId,
-    gradeLabel: `ป.${number}`,
+    gradeLabel: `${gradeId.startsWith('p') ? 'ป' : 'ม'}.${number}`,
     fullGradeLabel: grade.title,
     courseCode: courseCode(gradeId),
-    courseName: 'เทคโนโลยี (วิทยาการคำนวณ)',
+    courseName: gradeId.startsWith('p') ? 'เทคโนโลยี (วิทยาการคำนวณ)' : 'วิทยาการคำนวณ',
     weeklySlot: WEEKLY_SLOTS[gradeId],
     totalHours: rows.length,
     description: grade.technologyProfile?.courseDescription || '',

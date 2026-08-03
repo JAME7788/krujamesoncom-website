@@ -2,7 +2,7 @@ import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firesto
 import { db } from './firebase';
 import {
   buildTechnologyTeachingSchedule,
-  type PrimaryTechnologyGradeId,
+  type TechnologyGradeId,
   type TechnologyTeachingScheduleRow,
 } from '../data/technologyTeachingSchedule';
 import type { Subject } from './gradeService';
@@ -18,7 +18,7 @@ export type TeachingSessionStatus =
 export interface TeachingSession {
   id: string;
   academicYear: string;
-  gradeId: PrimaryTechnologyGradeId;
+  gradeId: TechnologyGradeId;
   classroom: string;
   subject: Subject;
   period: number;
@@ -58,13 +58,16 @@ const toIsoDate = (date: Date) => {
 // ต้องตรงกับ defaultSchedule ใน src/data/schedule.ts เสมอ — มีเทสต์กันไว้ใน scheduleConsistency.test.ts
 // ป.1 เคยลงเป็น 3 (พุธ) ทำให้วันที่ "ตามแผน" ของทั้ง 40 คาบเลื่อนผิดวันทั้งหมด
 // นี่คือสำเนาตารางสอนชุดที่ 3 ของระบบ (อีกสองชุดคือ schedule.ts และ WEEKLY_SLOTS)
-const weekdayByGrade: Record<PrimaryTechnologyGradeId, number> = {
+const weekdayByGrade: Record<TechnologyGradeId, number> = {
   p1: 4,
   p2: 1,
   p3: 5,
   p4: 3,
   p5: 3,
   p6: 4,
+  m1: 1,
+  m2: 5,
+  m3: 4,
 };
 
 const firstWeekdayOnOrAfter = (start: Date, weekday: number) => {
@@ -75,7 +78,7 @@ const firstWeekdayOnOrAfter = (start: Date, weekday: number) => {
 };
 
 const dateForRow = (
-  gradeId: PrimaryTechnologyGradeId,
+  gradeId: TechnologyGradeId,
   row: TechnologyTeachingScheduleRow,
 ): string => {
   const [year, month, day] = (row.semester === 1
@@ -89,7 +92,7 @@ const dateForRow = (
 };
 
 const sessionId = (
-  gradeId: PrimaryTechnologyGradeId,
+  gradeId: TechnologyGradeId,
   subject: Subject,
   period: number,
 ) => `${ACADEMIC_YEAR}_${gradeId}_${subject}_${String(period).padStart(2, '0')}`;
@@ -108,15 +111,16 @@ export const loadTeachingSessions = (): TeachingSession[] => {
 };
 
 export const buildDefaultTeachingSessions = (
-  gradeId: PrimaryTechnologyGradeId,
+  gradeId: TechnologyGradeId,
 ): TeachingSession[] => {
   const schedule = buildTechnologyTeachingSchedule(gradeId);
+  const subject: Subject = gradeId.startsWith('m') ? 'cs' : 'main';
   return schedule.rows.map((row) => ({
-    id: sessionId(gradeId, 'main', row.period),
+    id: sessionId(gradeId, subject, row.period),
     academicYear: ACADEMIC_YEAR,
     gradeId,
     classroom: schedule.gradeLabel,
-    subject: 'main',
+    subject,
     period: row.period,
     week: row.week,
     semester: row.semester,
@@ -132,7 +136,7 @@ export const buildDefaultTeachingSessions = (
 };
 
 const mergeDefaults = (
-  gradeId: PrimaryTechnologyGradeId,
+  gradeId: TechnologyGradeId,
   saved: TeachingSession[],
 ): TeachingSession[] => {
   const byId = new Map(saved.map((item) => [item.id, item]));
@@ -143,7 +147,7 @@ const mergeDefaults = (
 };
 
 export const fetchTeachingSessions = async (
-  gradeId: PrimaryTechnologyGradeId,
+  gradeId: TechnologyGradeId,
 ): Promise<TeachingSession[]> => {
   const localForGrade = loadTeachingSessions().filter((item) => item.gradeId === gradeId);
   if (!firebaseAvailable()) return mergeDefaults(gradeId, localForGrade);
