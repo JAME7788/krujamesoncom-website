@@ -15,6 +15,7 @@ import {
   doc, setDoc, getDoc, getDocs, collection, serverTimestamp,
 } from 'firebase/firestore';
 import { loadSchedule, isInClassTime } from '../data/schedule';
+import { isNonScoringUserId } from './userAccessService';
 
 // ---------- Types ----------
 
@@ -371,6 +372,7 @@ const readFromFirebase = async (studentId: string): Promise<StudentProgressData>
 /** ดึง progress ของนักเรียนจาก Firebase ลง cache (เรียกตอน Dashboard/หน้าใดๆ mount) */
 export const fetchStudentProgress = async (studentId: string): Promise<StudentProgressData> => {
   if (!studentId) return emptyData('');
+  if (isNonScoringUserId(studentId)) return emptyData(studentId);
   const data = await readFromFirebase(studentId);
   setCached(data);
   return data;
@@ -384,7 +386,7 @@ export const fetchAllProgressFromFirebase = async (): Promise<StudentProgressDat
     const result: StudentProgressData[] = [];
     snap.forEach((d) => {
       const data = d.data() as StudentProgressData;
-      if (data?.studentId) {
+      if (data?.studentId && !isNonScoringUserId(data.studentId)) {
         const full = normalizeProgressData(data.studentId, data);
         result.push(full);
         setCached(full);
@@ -492,6 +494,7 @@ const recomputeTotals = (data: StudentProgressData) => {
 
 /** เขียนลง Firebase + อัปเดต in-memory cache (await ให้ครบ — Firebase เป็น source of truth) */
 const persist = async (data: StudentProgressData): Promise<boolean> => {
+  if (isNonScoringUserId(data.studentId)) return false;
   recordGlobalInClassDayIfApplicable(data);
   recomputeTotals(data);
   setCached(data);

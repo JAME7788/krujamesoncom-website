@@ -10,6 +10,11 @@ import AchievementsBadge from './AchievementsBadge';
 import DarkModeToggle from './DarkModeToggle';
 import AITutor from './AITutor';
 import { fetchScheduleFromFirebase } from '../data/schedule';
+import {
+  isAdminPortalUser,
+  isExternalVisitor,
+  isScoreEligibleUser,
+} from '../services/userAccessService';
 import './Layout.css';
 
 interface LayoutProps {
@@ -25,6 +30,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isCookieOpen, setIsCookieOpen] = useState(false);
   const isImmersive = location.pathname.startsWith('/world');
+  const scoreEligible = isScoreEligibleUser(user);
+  const externalVisitor = isExternalVisitor(user);
+  const adminUser = isAdminPortalUser(user);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -61,7 +69,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'ห้องเรียน 3D', path: '/world', icon: <Box size={18} /> },
   ];
 
-  if (user) {
+  if (scoreEligible) {
     navLinks.push({ name: 'การบ้าน', path: '/homework', icon: <Award size={18} /> });
     navLinks.push({ name: 'แดชบอร์ด', path: '/dashboard', icon: <LayoutDashboard size={18} /> });
   }
@@ -94,7 +102,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="nav-actions">
             <SearchBar />
             <DarkModeToggle />
-            {user && <AchievementsBadge />}
+            {scoreEligible && <AchievementsBadge />}
             <button 
               className="icon-btn" 
               onClick={() => setIsContactOpen(true)} 
@@ -111,7 +119,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {user.name.split(' ')[0]}
                     {partner && <span className="partner-tag">👯</span>}
                   </span>
-                  <span className="user-chip-class">{user.classroom}/{user.studentNumber}</span>
+                  <span className="user-chip-class">
+                    {externalVisitor ? 'ผู้ทดลอง • ไม่เก็บคะแนน' : adminUser ? 'ครู/ผู้ดูแล' : `${user.classroom}/${user.studentNumber}`}
+                  </span>
                 </div>
                 {user.id !== 'admin_teacher_account' && (
                   <Link className="user-chip-switch" to="/login" title="เปลี่ยนนักเรียน">
@@ -159,7 +169,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {user.name}
                     {partner && <span className="partner-tag">👯 {partner.name.split(' ').slice(-1)[0]}</span>}
                   </div>
-                  <div className="user-chip-class">ชั้น {user.classroom} • เลขที่ {user.studentNumber}</div>
+                  <div className="user-chip-class">
+                    {externalVisitor ? 'ผู้ทดลองภายนอก • ไม่เก็บคะแนน' : adminUser ? 'ครู/ผู้ดูแลระบบ' : `ชั้น ${user.classroom} • เลขที่ ${user.studentNumber}`}
+                  </div>
                 </div>
               </div>
             )}

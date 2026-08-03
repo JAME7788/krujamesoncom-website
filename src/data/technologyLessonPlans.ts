@@ -11,6 +11,13 @@ import {
   type P1PlanAssessment,
   type P1PlanStep,
 } from './p1TechnologyPlan';
+import {
+  ageBandOf,
+  classifyLesson,
+  getLessonProfile,
+  type AgeBand,
+  type LessonCategory,
+} from './lessonContentProfiles';
 
 export type TechnologyLessonPlan = P1LessonPlan;
 
@@ -21,70 +28,83 @@ const indicatorText = (gradeId: PrimaryTechnologyGradeId, code: string): string 
   return grade?.indicators.find((indicator) => indicator.code === code)?.text || code;
 };
 
+type Profile = ReturnType<typeof getLessonProfile>;
+
+/**
+ * ขั้นสอนถูกสร้างจาก "ประเภทบทเรียน × ช่วงวัย" ไม่ใช่เทมเพลตกลางอันเดียว
+ * บทเรียนเรื่องความปลอดภัยกับเรื่องเขียนโปรแกรมจึงมีกิจกรรมคนละแบบจริง
+ */
 const buildSteps = (
   row: TechnologyTeachingScheduleRow,
-  gradeLabel: string,
-): P1PlanStep[] => [
-  {
-    phase: 'ขั้นนำเข้าสู่บทเรียน',
-    minutes: 5,
-    teacher: `นำเสนอสถานการณ์ใกล้ตัวเกี่ยวกับ “${row.lessonTitle}” แล้วตั้งคำถามให้ผู้เรียนคาดการณ์คำตอบ`,
-    students: 'สังเกตสถานการณ์ เล่าประสบการณ์เดิม และบอกสิ่งที่อยากรู้ด้วยภาษาของตนเอง',
-    evidence: 'คำตอบก่อนเรียนและการมีส่วนร่วมในการสนทนา',
-  },
-  {
-    phase: 'ขั้นสร้างความเข้าใจ',
-    minutes: 10,
-    teacher: `อธิบายแนวคิดสำคัญของ ${row.lessonTitle} ทีละขั้น พร้อมสาธิตตัวอย่างที่เหมาะกับ${gradeLabel}`,
-    students: 'ฟัง สังเกต เปรียบเทียบตัวอย่าง และตอบคำถามตรวจสอบความเข้าใจระหว่างเรียน',
-    evidence: 'คำตอบปากเปล่า บันทึกสั้น และผลคำถามระหว่างเรียน',
-  },
-  {
-    phase: 'ขั้นฝึกปฏิบัติแบบมีผู้ชี้แนะ',
-    minutes: 15,
-    teacher: `สาธิตภารกิจ จากนั้นให้คำใบ้เป็นลำดับโดยไม่บอกคำตอบทั้งหมด: ${row.learningActivity}`,
-    students: 'ลงมือทำตามขั้นตอนเป็นคู่ อธิบายเหตุผลให้เพื่อนฟัง ตรวจสอบผล และแก้ไขเมื่อพบข้อผิดพลาด',
-    evidence: row.evidence,
-  },
-  {
-    phase: 'ขั้นประยุกต์ใช้ด้วยตนเอง',
-    minutes: 15,
-    teacher: 'มอบโจทย์ระดับพื้นฐานและโจทย์ท้าทาย สังเกตการทำงาน และบันทึกหลักฐาน K/P/A รายคน',
-    students: 'เลือกวิธีทำงาน สร้างชิ้นงานหรือคำตอบ ทดสอบผล ปรับปรุง และขอความช่วยเหลือเมื่อจำเป็น',
-    evidence: `ชิ้นงานรายบุคคล ภาพหน้าจอ หรือใบงานประจำชั่วโมงที่ ${row.period}`,
-  },
-  {
-    phase: 'ขั้นสรุปและสะท้อนการเรียนรู้',
-    minutes: 5,
-    teacher: 'ทบทวนคำสำคัญ ให้ผู้เรียนตอบบัตรออกจากห้อง และแจ้งสิ่งที่จะเรียนต่อในคาบถัดไป',
-    students: 'สรุปสิ่งที่เรียนรู้หนึ่งข้อ บอกสิ่งที่ทำได้และสิ่งที่ต้องฝึกเพิ่ม แล้วส่งหลักฐานก่อนออกจากห้อง',
-    evidence: 'บัตรออกจากห้องและการประเมินตนเอง',
-  },
-];
+  profile: Profile,
+): P1PlanStep[] => {
+  const c = profile.content;
+  return [
+    {
+      phase: 'ขั้นนำเข้าสู่บทเรียน',
+      minutes: 5,
+      teacher: c.hook,
+      students: 'สังเกตสถานการณ์ เล่าประสบการณ์เดิม และคาดการณ์คำตอบด้วยภาษาของตนเอง',
+      evidence: 'คำตอบก่อนเรียนและการมีส่วนร่วมในการสนทนา',
+    },
+    {
+      phase: 'ขั้นสร้างความเข้าใจ',
+      minutes: 10,
+      teacher: c.concept,
+      students: `ฟัง สังเกตการสาธิต จดคำสำคัญ (${profile.vocabulary.slice(0, 3).join(' ')}) และตอบคำถามตรวจสอบความเข้าใจ`,
+      evidence: 'คำตอบปากเปล่าและบันทึกคำสำคัญระหว่างเรียน',
+    },
+    {
+      phase: 'ขั้นฝึกปฏิบัติแบบมีผู้ชี้แนะ',
+      minutes: 15,
+      teacher: `นำผู้เรียนทำภารกิจต่อไปนี้โดยให้คำใบ้ทีละขั้นแทนการบอกคำตอบ: ${c.guided}`,
+      students: `ลงมือทำเป็นคู่ อธิบายเหตุผลให้เพื่อนฟัง และแก้ไขเมื่อผลไม่เป็นไปตามที่คาด (เชื่อมกับกิจกรรมของหน่วย: ${row.learningActivity})`,
+      evidence: row.evidence,
+    },
+    {
+      phase: 'ขั้นประยุกต์ใช้ด้วยตนเอง',
+      minutes: 15,
+      teacher: 'มอบโจทย์พื้นฐานและโจทย์ท้าทาย เดินสังเกตรายคน และบันทึกหลักฐาน K/P/A ระหว่างปฏิบัติ',
+      students: c.independent,
+      evidence: `${c.product} (ชั่วโมงที่ ${row.period})`,
+    },
+    {
+      phase: 'ขั้นสรุปและสะท้อนการเรียนรู้',
+      minutes: 5,
+      teacher: `ทบทวนคำสำคัญ ตั้งคำถามสะท้อนการเรียนรู้: “${c.reflect}” แล้วแจ้งสิ่งที่จะเรียนต่อ`,
+      students: 'สรุปสิ่งที่เรียนรู้ 1 ข้อ บอกสิ่งที่ทำได้และสิ่งที่ต้องฝึกเพิ่ม แล้วส่งบัตรออกจากห้อง',
+      evidence: 'บัตรออกจากห้องและการประเมินตนเอง',
+    },
+  ];
+};
 
-const buildAssessments = (): P1PlanAssessment[] => [
-  {
-    domain: 'K',
-    method: 'ถามตอบระหว่างเรียน แบบฝึกหรือแบบทดสอบท้ายคาบ',
-    instrument: 'แบบทดสอบตามตัวชี้วัดและแบบตรวจคำตอบ',
-    criteria: 'ตอบถูกอย่างน้อยร้อยละ 60 และอธิบายแนวคิดด้วยภาษาของตนเองได้',
-    webRecord: 'คะแนนแบบทดสอบและกิจกรรมความรู้ถูกบันทึกเข้าหลักฐาน K อัตโนมัติ',
-  },
-  {
-    domain: 'P',
-    method: 'สังเกตขั้นตอนการปฏิบัติและตรวจชิ้นงาน',
-    instrument: 'รูบริก P 4 ระดับ: ไม่ผ่าน พอใช้ ปานกลาง และดีมาก',
-    criteria: 'ปฏิบัติครบขั้นตอน ทดสอบผล และปรับปรุงงานจนใช้งานได้',
-    webRecord: 'กิจกรรมในเว็บ ชิ้นงาน และคะแนนรูบริกถูกรวมเป็นหลักฐาน P โดยไม่เกินคะแนนเต็ม',
-  },
-  {
-    domain: 'A',
-    method: 'สังเกตความรับผิดชอบ ความเพียร การทำงานร่วมกัน และการใช้เทคโนโลยีอย่างปลอดภัย',
-    instrument: 'แบบสังเกตพฤติกรรมรายบุคคล',
-    criteria: 'แสดงพฤติกรรมที่กำหนดอย่างสม่ำเสมออย่างน้อย 3 ใน 4 รายการ',
-    webRecord: 'การเข้าเรียน ความสม่ำเสมอ และความพยายามเป็นข้อมูลประกอบ A โดยครูยืนยันผล',
-  },
-];
+/** เกณฑ์ประเมินอิงเรื่องที่สอนและวัย ไม่ใช่ข้อความกลางที่ใช้ได้กับทุกแผน */
+const buildAssessments = (profile: Profile): P1PlanAssessment[] => {
+  const c = profile.content;
+  return [
+    {
+      domain: 'K',
+      method: profile.kMethod,
+      instrument: 'แบบทดสอบหรือคำถามตรวจสอบความเข้าใจตามตัวชี้วัด',
+      criteria: c.kCriteria,
+      webRecord: 'คะแนนแบบทดสอบและกิจกรรมความรู้ในเว็บถูกบันทึกเข้าหลักฐาน K อัตโนมัติ',
+    },
+    {
+      domain: 'P',
+      method: profile.pMethod,
+      instrument: 'รูบริก P 4 ระดับ: ไม่ผ่าน พอใช้ ปานกลาง และดีมาก',
+      criteria: c.pCriteria,
+      webRecord: 'กิจกรรมในเว็บ ชิ้นงาน และคะแนนรูบริกถูกรวมเป็นหลักฐาน P โดยไม่เกินคะแนนเต็ม',
+    },
+    {
+      domain: 'A',
+      method: profile.aMethod,
+      instrument: 'แบบสังเกตพฤติกรรมรายบุคคล',
+      criteria: c.aCriteria,
+      webRecord: 'การเข้าเรียนในคาบและความสม่ำเสมอเป็นข้อมูลประกอบ A โดยครูยืนยันผล',
+    },
+  ];
+};
 
 const buildGeneratedPlan = (
   gradeId: PrimaryTechnologyGradeId,
@@ -94,6 +114,17 @@ const buildGeneratedPlan = (
   const gradeLabel = `ชั้นประถมศึกษาปีที่ ${number}`;
   const descriptions = row.indicators.map((code) => indicatorText(gradeId, code));
 
+  // จัดประเภทบทเรียนจากชื่อเรื่อง หน่วย และคำอธิบายตัวชี้วัด แล้วเลือกเนื้อหาให้ตรงวัย
+  const category: LessonCategory = classifyLesson({
+    title: row.lessonTitle,
+    unit: row.unitTitle,
+    indicators: descriptions,
+    activity: row.learningActivity,
+  });
+  const band: AgeBand = ageBandOf(number);
+  const profile = getLessonProfile(category, band);
+  const c = profile.content;
+
   return {
     no: row.period,
     unitNo: row.unitNo,
@@ -101,14 +132,13 @@ const buildGeneratedPlan = (
     weeks: `สัปดาห์ที่ ${row.week}`,
     hours: 1,
     indicators: row.indicators,
-    essentialQuestion: `เราจะใช้ความรู้เรื่อง “${row.lessonTitle}” แก้ปัญหาหรือสร้างผลงานให้ดีขึ้นได้อย่างไร`,
-    concept: `${row.lessonTitle} เป็นส่วนหนึ่งของหน่วย ${row.unitTitle} ผู้เรียนต้องเข้าใจแนวคิด เลือกวิธีทำงานอย่างเป็นขั้นตอน ลงมือปฏิบัติ ตรวจสอบผล และอธิบายเหตุผลได้เหมาะสมกับวัย`,
+    // ต่างจากคำถามสะท้อนท้ายคาบ (c.reflect) — อันนี้เป็นคำถามกรอบของทั้งแผน
+    essentialQuestion: `เราจะใช้ความรู้เรื่อง “${row.lessonTitle}” กับงาน${profile.label}ให้ได้ผลดีขึ้นอย่างไร`,
+    concept: `${row.lessonTitle} อยู่ในหน่วย ${row.unitTitle} จัดอยู่ในกลุ่ม${profile.label} `
+      + `สำหรับ${gradeLabel} เน้นให้ผู้เรียน${c.independent}`,
     vocabulary: [
-      row.unitTitle,
+      ...profile.vocabulary,
       row.lessonTitle,
-      'ขั้นตอน',
-      'ตรวจสอบ',
-      'ปรับปรุง',
     ].filter((value, index, values) => value && values.indexOf(value) === index),
     objectives: [
       {
@@ -117,11 +147,11 @@ const buildGeneratedPlan = (
       },
       {
         domain: 'P',
-        text: `ปฏิบัติภารกิจ “${row.learningActivity}” ตามขั้นตอน พร้อมตรวจสอบและปรับปรุงผลงานได้`,
+        text: c.independent,
       },
       {
         domain: 'A',
-        text: 'มีวินัย ใฝ่เรียนรู้ รับผิดชอบ ใช้อุปกรณ์อย่างปลอดภัย และรับฟังความคิดเห็นของผู้อื่น',
+        text: c.aCriteria,
       },
     ],
     content: [
@@ -130,27 +160,20 @@ const buildGeneratedPlan = (
       `การนำไปใช้: ${row.learningActivity}`,
       'การตรวจสอบผลและอธิบายเหตุผลจากหลักฐาน',
     ],
-    steps: buildSteps(row, gradeLabel),
+    steps: buildSteps(row, profile),
     media: [
       { label: 'สไลด์บทเรียนในเว็บ' },
-      { label: 'เกมหรือกิจกรรมฝึกทักษะที่เชื่อมตัวชี้วัด' },
+      { label: `เกมหรือกิจกรรมฝึก${profile.label}ที่เชื่อมตัวชี้วัด` },
       { label: 'ใบงานประจำชั่วโมงและบัตรออกจากห้อง' },
     ],
     worksheet: `ใบงานชั่วโมงที่ ${row.period}: ${row.lessonTitle}`,
-    product: row.evidence,
+    product: c.product,
     checkQuestions: [
       `${row.lessonTitle} หมายถึงอะไร อธิบายด้วยภาษาของตนเอง`,
-      'ขั้นตอนสำคัญของภารกิจวันนี้มีอะไรบ้าง',
-      'เราตรวจสอบได้อย่างไรว่าคำตอบหรือชิ้นงานถูกต้อง',
-      'ถ้าผลยังไม่สำเร็จ ควรย้อนกลับไปแก้ไขขั้นตอนใด เพราะอะไร',
-      'ความรู้นี้นำไปใช้ในชีวิตประจำวันหรือวิชาอื่นได้อย่างไร',
-    ],
-    assessments: buildAssessments(),
-    support: [
-      'ผู้เรียนที่ต้องการความช่วยเหลือใช้บัตรภาพ ตัวอย่างสำเร็จ และคำใบ้ทีละขั้น',
-      'จัดเพื่อนช่วยเพื่อนโดยสลับบทบาทผู้ปฏิบัติและผู้ตรวจสอบ',
-      'ผู้เรียนที่ทำได้เร็วรับโจทย์ท้าทายที่ต้องอธิบายเหตุผลหรือสร้างวิธีใหม่',
-    ],
+      ...c.questions,
+    ].filter((value, index, values) => values.indexOf(value) === index),
+    assessments: buildAssessments(profile),
+    support: c.support,
     researchEvidence: [
       'คะแนนก่อนเรียนและหลังเรียนตามตัวชี้วัด',
       'เวลาปฏิบัติ จำนวนครั้งที่ลอง และการแก้ไขข้อผิดพลาด',

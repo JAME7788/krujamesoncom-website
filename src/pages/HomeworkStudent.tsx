@@ -10,6 +10,7 @@ import { trackMediaClick } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
 import { getLinkedUnits } from '../services/gradeService';
+import { isScoreEligibleUser } from '../services/userAccessService';
 
 const HomeworkStudent: React.FC = () => {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ const HomeworkStudent: React.FC = () => {
   const [, setDataVersion] = useState(0);
 
   useEffect(() => {
-    if (!user) return;
+    if (!isScoreEligibleUser(user)) return;
     let cancelled = false;
     Promise.all([fetchAssignmentsFromFirebase(), fetchSubmissionsFromFirebase()])
       .then(() => {
@@ -38,6 +39,18 @@ const HomeworkStudent: React.FC = () => {
     return <div className="container section-padding" style={{ paddingTop: '6rem', textAlign: 'center' }}>
       <h2>กรุณา Login ก่อน</h2>
     </div>;
+  }
+
+  if (!isScoreEligibleUser(user)) {
+    return (
+      <div className="container section-padding" style={{ paddingTop: '7rem', textAlign: 'center' }}>
+        <div className="card" style={{ maxWidth: 620, margin: '0 auto', padding: '2rem' }}>
+          <AlertCircle size={44} color="#f59e0b" />
+          <h2>การบ้านสำหรับนักเรียนในโรงเรียน</h2>
+          <p>บัญชีครูและผู้ทดลองภายนอกไม่สามารถส่งงาน และระบบจะไม่สร้างคะแนนจากหน้านี้</p>
+        </div>
+      </div>
+    );
   }
 
   const handleSubmit = async () => {

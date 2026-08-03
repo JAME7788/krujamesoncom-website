@@ -41,6 +41,8 @@ export interface TeachingSession {
 const COLLECTION = 'teachingSessions';
 const ACADEMIC_YEAR = '2569';
 const LOCAL_KEY = 'krujames_teaching_sessions_v1';
+export const TERM_1_START_DATE = '2026-05-05';
+export const TERM_2_START_DATE = '2026-11-02';
 
 const firebaseAvailable = () => {
   try { return Boolean(db && import.meta.env.VITE_FIREBASE_PROJECT_ID); } catch { return false; }
@@ -53,8 +55,11 @@ const toIsoDate = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
+// ต้องตรงกับ defaultSchedule ใน src/data/schedule.ts เสมอ — มีเทสต์กันไว้ใน scheduleConsistency.test.ts
+// ป.1 เคยลงเป็น 3 (พุธ) ทำให้วันที่ "ตามแผน" ของทั้ง 40 คาบเลื่อนผิดวันทั้งหมด
+// นี่คือสำเนาตารางสอนชุดที่ 3 ของระบบ (อีกสองชุดคือ schedule.ts และ WEEKLY_SLOTS)
 const weekdayByGrade: Record<PrimaryTechnologyGradeId, number> = {
-  p1: 3,
+  p1: 4,
   p2: 1,
   p3: 5,
   p4: 3,
@@ -73,9 +78,10 @@ const dateForRow = (
   gradeId: PrimaryTechnologyGradeId,
   row: TechnologyTeachingScheduleRow,
 ): string => {
-  const termStart = row.semester === 1
-    ? new Date(2026, 4, 16)
-    : new Date(2026, 10, 2);
+  const [year, month, day] = (row.semester === 1
+    ? TERM_1_START_DATE
+    : TERM_2_START_DATE).split('-').map(Number);
+  const termStart = new Date(year, month - 1, day);
   const first = firstWeekdayOnOrAfter(termStart, weekdayByGrade[gradeId]);
   const weekInTerm = row.semester === 1 ? row.week - 1 : row.week - 21;
   first.setDate(first.getDate() + Math.max(0, weekInTerm) * 7);

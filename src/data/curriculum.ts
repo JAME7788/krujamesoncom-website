@@ -1471,6 +1471,44 @@ if (!grades.some((g) => g.id === 'electronics-basic')) {
   });
 }
 
+const activityPatternFor = (gradeId: string, unit: Unit): string[] => {
+  const topic = unit.topics?.[0] || unit.title;
+
+  if (gradeId.includes('design')) {
+    return [
+      `วิเคราะห์ปัญหาและความต้องการจากสถานการณ์เรื่อง ${topic}`,
+      `ออกแบบและสร้างต้นแบบเรื่อง ${unit.title} โดยบันทึกเหตุผลของแต่ละขั้นตอน`,
+      'ทดสอบต้นแบบ รับข้อเสนอแนะ แล้วปรับปรุงพร้อมอธิบายสิ่งที่เปลี่ยนแปลง',
+    ];
+  }
+  if (gradeId.startsWith('ai-')) {
+    return [
+      `สำรวจและจัดกลุ่มข้อมูลที่เกี่ยวข้องกับ ${topic}`,
+      `ทดลองใช้แบบจำลอง AI ในภารกิจเรื่อง ${unit.title} แล้วบันทึกผลที่ถูกและผิด`,
+      'ตรวจอคติ ความน่าเชื่อถือ และผลกระทบก่อนสรุปวิธีใช้ AI อย่างรับผิดชอบ',
+    ];
+  }
+  if (gradeId === 'arduino' || gradeId === 'electronics-basic') {
+    return [
+      `อ่านแผนภาพ ระบุอุปกรณ์ และตรวจข้อควรระวังก่อนทดลองเรื่อง ${topic}`,
+      `ต่อหรือจำลองวงจรเรื่อง ${unit.title} ตามลำดับ พร้อมบันทึกค่าที่สังเกตได้`,
+      'ทดสอบทีละส่วน หาสาเหตุของข้อผิดพลาด และปรับปรุงวงจรให้ทำงานตามเงื่อนไข',
+    ];
+  }
+  return [
+    `แยกองค์ประกอบและเขียนขั้นตอนแก้ปัญหาเรื่อง ${topic}`,
+    `สร้างชิ้นงานหรือโปรแกรมสั้นเกี่ยวกับ ${unit.title} แล้วทดลองด้วยกรณีทดสอบ`,
+    'ค้นหาข้อผิดพลาด แก้ไข และอธิบายเหตุผลของวิธีที่เลือกให้เพื่อนเข้าใจ',
+  ];
+};
+
+// Every course unit needs an explicit learn-practise-reflect path for lesson planning.
+grades.forEach((grade) => {
+  grade.units?.forEach((unit) => {
+    if (!unit.activities?.length) unit.activities = activityPatternFor(grade.id, unit);
+  });
+});
+
 export const findGrade = (gradeId: string) => grades.find((g) => g.id === gradeId);
 export const findIndicator = (gradeId: string, idx: number) => {
   const g = findGrade(gradeId);

@@ -5,11 +5,13 @@ import { Lock, LogIn, Shield, Sparkles, Eye } from 'lucide-react';
 import Curriculum from './Curriculum';
 import { useAuth } from '../context/AuthContext';
 import { isAdminAuthed } from '../services/authAdmin';
+import { isExternalVisitor } from '../services/userAccessService';
 import './Courses.css';
 
 const Courses: React.FC = () => {
   const { user, partner } = useAuth();
   const isAdmin = isAdminAuthed();
+  const externalVisitor = isExternalVisitor(user);
 
   // ถ้ายังไม่ login (ไม่ใช่นักเรียน + ไม่ใช่แอดมิน) → แสดงหน้า gate
   if (!user && !isAdmin) {
@@ -57,6 +59,11 @@ const Courses: React.FC = () => {
           <p>
             <Eye size={14} style={{ verticalAlign: 'middle' }} /> โหมด <strong>Admin</strong> —
             ดูคอร์สทุกชั้น (ครูสามารถเข้าทุกคอร์สเพื่อตรวจสอบเนื้อหา)
+          </p>
+        ) : externalVisitor && user ? (
+          <p>
+            <Eye size={14} style={{ verticalAlign: 'middle' }} /> สวัสดี <strong>{user.name}</strong>
+            {' — '}โหมดทดลองเปิดให้เรียนได้ทุกชั้น โดยไม่บันทึกคะแนนหรือเช็กชื่อ
           </p>
         ) : user ? (
           <p>

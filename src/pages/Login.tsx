@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
 import {
   LogIn, GraduationCap, Sparkles, Users, ChevronLeft, ChevronRight,
-  Search, Edit3, CheckCircle2, UserPlus, Lock,
+  Search, CheckCircle2, UserPlus, Lock, Globe2, ShieldCheck,
 } from 'lucide-react';
 import { allClassrooms2569 } from '../data/students2569';
 import type { StudentInfo } from '../data/students2569';
@@ -17,7 +17,7 @@ type Step = 'classroom' | 'student';
 const ACCESS_FLAG = 'krujames_access_granted_v1';
 
 const Login: React.FC = () => {
-  const { user, loginAsStudent, clearStudentSession } = useAuth();
+  const { user, loginAsStudent, loginAsExternalVisitor, clearStudentSession } = useAuth();
   const [students2569, setStudents2569] = useState<Record<string, StudentInfo[]>>(() => loadAllRosters());
   const [loginReady, setLoginReady] = useState(false);
   const [accessGranted, setAccessGranted] = useState<boolean>(() => {
@@ -26,6 +26,9 @@ const Login: React.FC = () => {
   const [codeInput, setCodeInput] = useState('');
   const [codeError, setCodeError] = useState('');
   const [currentCode, setCurrentCode] = useState<string>(() => loadSiteSettings().accessCode);
+  const [externalMode, setExternalMode] = useState(false);
+  const [externalName, setExternalName] = useState('');
+  const [externalError, setExternalError] = useState('');
 
   useEffect(() => {
     // ดึง access code ล่าสุดจาก Firebase (เผื่อครูเปลี่ยน)
@@ -41,11 +44,7 @@ const Login: React.FC = () => {
   const [selected, setSelected] = useState<string[]>([]);           // studentCode[] ที่เลือก (1 หรือ 2 คน)
   const [search, setSearch] = useState('');
   const [submitting, setSubmitting] = useState<string | null>(null);
-
-  // Manual mode (ถ้าไม่อยู่ในรายชื่อ)
-  const [manualMode, setManualMode] = useState(false);
-  const [manualName, setManualName] = useState('');
-  const [manualNo, setManualNo] = useState('');
+  const [loginError, setLoginError] = useState('');
 
   // ⚠️ All hooks ต้องอยู่ก่อน early return เพื่อ rules-of-hooks
   const studentList: StudentInfo[] = useMemo(() => {
@@ -81,7 +80,8 @@ const Login: React.FC = () => {
       </div>
     );
   }
-  if (user?.id === 'admin_teacher_account') return <Navigate to="/dashboard" />;
+  if (user?.accountType === 'admin') return <Navigate to="/admin" />;
+  if (user?.accountType === 'external') return <Navigate to="/games" />;
   if (user) return <Navigate to="/dashboard" />;
 
   // ขั้นที่ 0: ต้องใส่รหัสเข้าระบบก่อน (รหัสเดียวทั้งโรงเรียน — ครูแจ้ง)
@@ -110,6 +110,22 @@ const Login: React.FC = () => {
       setCodeError('รหัสไม่ถูกต้อง — ลองอีกครั้ง');
       setCodeInput('');
     };
+    const tryExternalLogin = async () => {
+      const name = externalName.replace(/\s+/g, ' ').trim();
+      if (name.length < 2) {
+        setExternalError('กรุณากรอกชื่ออย่างน้อย 2 ตัวอักษร');
+        return;
+      }
+      setSubmitting('external');
+      setExternalError('');
+      try {
+        await loginAsExternalVisitor(name);
+      } catch (error) {
+        setExternalError(error instanceof Error ? error.message : 'เข้าโหมดทดลองไม่สำเร็จ');
+      } finally {
+        setSubmitting(null);
+      }
+    };
     return (
       <div className="login-page page-transition">
         <div className="login-bg"></div>
@@ -121,50 +137,96 @@ const Login: React.FC = () => {
         >
           <div className="login-header">
             <div className="auth-icon">
-              <Lock size={44} />
+              {externalMode ? <Globe2 size={44} /> : <Lock size={44} />}
             </div>
             <span className="badge-yellow" style={{ marginBottom: '0.75rem' }}>
-              <Sparkles size={14} /> Student Portal
+              <Sparkles size={14} /> {externalMode ? 'Website Trial' : 'Student Portal'}
             </span>
-            <h1>ใส่รหัสเข้าระบบ</h1>
-            <p>กรุณาใส่รหัสที่ครูแจ้งก่อนเข้าใช้งาน</p>
+            <h1>{externalMode ? 'นักเรียนนอกทดลองใช้' : 'ใส่รหัสเข้าระบบ'}</h1>
+            <p>
+              {externalMode
+                ? 'กรอกชื่อเพื่อทดลองบทเรียนและเกม โดยไม่บันทึกคะแนน'
+                : 'กรุณาใส่รหัสที่ครูแจ้งก่อนเข้าใช้งาน'}
+            </p>
           </div>
 
-          <input
-            type="text"
-            value={codeInput}
-            onChange={(e) => { setCodeInput(e.target.value); setCodeError(''); }}
-            onKeyDown={(e) => { if (e.key === 'Enter') tryUnlock(); }}
-            placeholder="รหัสเข้าระบบ"
-            autoFocus
-            spellCheck={false}
-            style={{
-              width: '100%', padding: '14px 16px',
-              fontSize: '1.4rem', textAlign: 'center', letterSpacing: '0.3rem',
-              border: codeError ? '2px solid #ef4444' : '2px solid #e5e7eb',
-              borderRadius: 12, fontFamily: 'inherit', marginTop: 8,
-              boxSizing: 'border-box', textTransform: 'lowercase',
-            }}
-          />
+          <div className="portal-mode-switch" role="tablist" aria-label="ประเภทผู้เข้าใช้งาน">
+            <button
+              type="button"
+              className={!externalMode ? 'active' : ''}
+              onClick={() => { setExternalMode(false); setExternalError(''); }}
+            >
+              <GraduationCap size={17} /> นักเรียนโรงเรียน
+            </button>
+            <button
+              type="button"
+              className={externalMode ? 'active' : ''}
+              onClick={() => { setExternalMode(true); setCodeError(''); }}
+            >
+              <Globe2 size={17} /> นักเรียนนอก
+            </button>
+          </div>
 
-          {codeError && (
-            <p style={{ color: '#ef4444', fontSize: '0.9rem', marginTop: 8 }}>
-              {codeError}
-            </p>
+          {externalMode ? (
+            <>
+              <label className="external-name-field">
+                <span>ชื่อผู้ทดลองใช้</span>
+                <input
+                  type="text"
+                  value={externalName}
+                  onChange={(event) => {
+                    setExternalName(event.target.value);
+                    setExternalError('');
+                  }}
+                  onKeyDown={(event) => { if (event.key === 'Enter') void tryExternalLogin(); }}
+                  placeholder="กรอกชื่อ"
+                  maxLength={100}
+                  autoFocus
+                  autoComplete="name"
+                />
+              </label>
+              {externalError && <p className="login-inline-error">{externalError}</p>}
+              <div className="external-privacy-note">
+                <ShieldCheck size={20} />
+                <span>
+                  เก็บเฉพาะชื่อและเวลาเข้าใช้เพื่อสถิติการเผยแพร่เว็บไซต์
+                  ไม่เพิ่มเข้ารายชื่อนักเรียน ไม่เช็กชื่อ และไม่สร้างคะแนน K/P/A
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={codeInput}
+                onChange={(e) => { setCodeInput(e.target.value); setCodeError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') void tryUnlock(); }}
+                placeholder="รหัสเข้าระบบ"
+                autoFocus
+                spellCheck={false}
+                className={`access-code-input ${codeError ? 'has-error' : ''}`}
+              />
+              {codeError && <p className="login-inline-error">{codeError}</p>}
+            </>
           )}
 
           <button
-            onClick={tryUnlock}
-            disabled={!codeInput.trim()}
+            onClick={() => { if (externalMode) void tryExternalLogin(); else void tryUnlock(); }}
+            disabled={externalMode ? !externalName.trim() || submitting === 'external' : !codeInput.trim()}
             className="btn-login-submit"
             style={{ marginTop: 16 }}
           >
-            <LogIn size={18} /> เข้าใช้งาน
+            <LogIn size={18} />
+            {externalMode
+              ? submitting === 'external' ? 'กำลังเข้า...' : 'เริ่มทดลองใช้'
+              : 'เข้าใช้งาน'}
           </button>
 
-          <p style={{ marginTop: 16, fontSize: '0.8rem', color: '#9ca3af' }}>
-            * รหัสจะใช้ได้ครั้งเดียวต่อการเปิดเบราว์เซอร์ — ปิดแล้วต้องใส่ใหม่
-          </p>
+          {!externalMode && (
+            <p style={{ marginTop: 16, fontSize: '0.8rem', color: '#9ca3af' }}>
+              * รหัสจะใช้ได้ครั้งเดียวต่อการเปิดเบราว์เซอร์ — ปิดแล้วต้องใส่ใหม่
+            </p>
+          )}
         </motion.div>
       </div>
     );
@@ -192,8 +254,14 @@ const Login: React.FC = () => {
 
   const loginSingle = async (s: StudentInfo) => {
     setSubmitting(s.studentCode);
-    await loginAsStudent(s.name, classroom, String(s.no));
-    setSubmitting(null);
+    setLoginError('');
+    try {
+      await loginAsStudent(s.name, classroom, String(s.no));
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : 'เข้าสู่ระบบไม่สำเร็จ');
+    } finally {
+      setSubmitting(null);
+    }
   };
 
   const loginPair = async () => {
@@ -203,22 +271,20 @@ const Login: React.FC = () => {
     const s2 = (students2569[classroom] || []).find((s) => s.studentCode === code2);
     if (!s1 || !s2) return;
     setSubmitting('pair');
+    setLoginError('');
     // login เป็นคู่ — ระบบจะบันทึกคะแนนให้ทั้ง 2 คน
-    await loginAsStudent(
-      s1.name,
-      classroom,
-      String(s1.no),
-      { name: s2.name, classroom, studentNumber: String(s2.no) }
-    );
-    setSubmitting(null);
-  };
-
-  const handleManualLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualName.trim() || !manualNo.trim()) return;
-    setSubmitting('manual');
-    await loginAsStudent(manualName.trim(), classroom, manualNo);
-    setSubmitting(null);
+    try {
+      await loginAsStudent(
+        s1.name,
+        classroom,
+        String(s1.no),
+        { name: s2.name, classroom, studentNumber: String(s2.no) }
+      );
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : 'เข้าสู่ระบบไม่สำเร็จ');
+    } finally {
+      setSubmitting(null);
+    }
   };
 
   return (
@@ -307,8 +373,7 @@ const Login: React.FC = () => {
                 <ChevronLeft size={16} /> กลับไปเลือกห้อง
               </button>
 
-              {!manualMode ? (
-                <>
+              <>
                   <div className="search-box">
                     <Search size={16} />
                     <input
@@ -419,56 +484,12 @@ const Login: React.FC = () => {
                     </motion.div>
                   )}
 
-                  <button
-                    className="manual-toggle"
-                    onClick={() => setManualMode(true)}
-                  >
-                    <Edit3 size={14} /> ไม่อยู่ในรายชื่อ? — กรอกชื่อเอง
-                  </button>
+                  {loginError && <p className="login-inline-error">{loginError}</p>}
+                  <div className="roster-protection-note">
+                    <ShieldCheck size={18} />
+                    <span>ไม่พบชื่อหรือข้อมูลไม่ถูกต้อง กรุณาแจ้งครู ไม่สามารถสร้างบัญชีนักเรียนเองได้</span>
+                  </div>
                 </>
-              ) : (
-                <form onSubmit={handleManualLogin} className="manual-form">
-                  <div className="input-group">
-                    <label>ชื่อ-นามสกุล</label>
-                    <input
-                      type="text"
-                      placeholder="ตัวอย่าง: ด.ช. สมชาย ใจดี"
-                      required
-                      value={manualName}
-                      onChange={(e) => setManualName(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                  <div className="input-group">
-                    <label>เลขที่</label>
-                    <input
-                      type="number"
-                      placeholder="01"
-                      required
-                      min="1"
-                      max="99"
-                      value={manualNo}
-                      onChange={(e) => setManualNo(e.target.value)}
-                    />
-                  </div>
-                  <button
-                    className="btn-login-submit"
-                    type="submit"
-                    disabled={submitting !== null}
-                  >
-                    {submitting === 'manual' ? 'กำลังเข้าสู่ระบบ...' : (
-                      <><LogIn size={20} /> เข้าสู่ห้องเรียน</>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    className="back-btn"
-                    onClick={() => setManualMode(false)}
-                  >
-                    <ChevronLeft size={16} /> กลับไปเลือกจากรายชื่อ
-                  </button>
-                </form>
-              )}
             </motion.div>
           )}
         </AnimatePresence>

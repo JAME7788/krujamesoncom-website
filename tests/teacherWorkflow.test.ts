@@ -7,6 +7,7 @@ import {
 } from '../src/data/technologyTeachingSchedule';
 import {
   buildDefaultTeachingSessions,
+  TERM_1_START_DATE,
 } from '../src/services/teachingSessionService';
 import {
   drawQuestionSet,
@@ -36,6 +37,16 @@ describe('teacher hourly workflow', () => {
     expect(sessions.every((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.plannedDate))).toBe(true);
     expect(sessions.slice(0, 20).every((item) => item.semester === 1)).toBe(true);
     expect(sessions.slice(20).every((item) => item.semester === 2)).toBe(true);
+  });
+
+  it('starts the 2569 teaching schedule from the school opening date', () => {
+    expect(TERM_1_START_DATE).toBe('2026-05-05');
+    expect(buildDefaultTeachingSessions('p1')[0].plannedDate).toBe('2026-05-07');
+    expect(buildDefaultTeachingSessions('p2')[0].plannedDate).toBe('2026-05-11');
+    expect(buildDefaultTeachingSessions('p3')[0].plannedDate).toBe('2026-05-08');
+    expect(buildDefaultTeachingSessions('p4')[0].plannedDate).toBe('2026-05-06');
+    expect(buildDefaultTeachingSessions('p5')[0].plannedDate).toBe('2026-05-06');
+    expect(buildDefaultTeachingSessions('p6')[0].plannedDate).toBe('2026-05-07');
   });
 
   it('keeps lesson record ids unique by classroom and subject', () => {

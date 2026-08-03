@@ -13,7 +13,30 @@ export interface LessonRecordSnapshot {
   attitudePassed: number;
 }
 
-export interface LessonRecord {
+/**
+ * ช่องที่แบบฟอร์มราชการของโรงเรียนบังคับ (ไฟล์ตัวอย่างบันทึกหลังสอน 2569)
+ * แต่ของเดิมในระบบไม่มี จึงเติมเป็น optional ไว้ก่อน เพื่อไม่ให้บันทึกเก่าที่มีอยู่แล้วพัง
+ *
+ * หัวกระดาษของแบบราชการต้องมี: หน่วยที่+เรื่อง, แผนที่+เรื่อง, สัปดาห์ที่,
+ * ภาคเรียน, ปีการศึกษา และข้อ 1 ต้องมีจำนวนนักเรียนผ่าน/ไม่ผ่านพร้อมร้อยละ
+ */
+export interface LessonRecordOfficialFields {
+  week?: number;
+  semester?: 1 | 2;
+  academicYear?: string;
+  unitNo?: number;
+  unitTitle?: string;
+  planTitle?: string;
+  /** ข้อ 1 ผลการจัดการเรียนรู้ — ร้อยละคำนวณจากสามค่านี้ ไม่เก็บซ้ำ */
+  totalStudents?: number;
+  passedCount?: number;
+  failedCount?: number;
+  /** ข้อ 2 สรุปผลการจัดการเรียนรู้ (ของเดิมใช้ strengths ซึ่งไม่ตรงหัวข้อราชการ) */
+  summary?: string;
+  teacherPosition?: string;
+}
+
+export interface LessonRecord extends LessonRecordOfficialFields {
   id: string;
   classroom: string;
   subject: Subject;
@@ -33,6 +56,12 @@ export interface LessonRecord {
   createdAt: number;
   updatedAt: number;
 }
+
+/** ร้อยละผ่าน/ไม่ผ่าน คำนวณตอนแสดงผล ไม่เก็บลงฐานข้อมูลเพื่อไม่ให้ขัดกันเอง */
+export const lessonRecordPercent = (count?: number, total?: number): string => {
+  if (!total || total <= 0 || count === undefined) return '-';
+  return (Math.round((count / total) * 1000) / 10).toFixed(1);
+};
 
 const COLLECTION = 'lessonRecords';
 const LOCAL_KEY = 'krujames_lesson_records_v2';

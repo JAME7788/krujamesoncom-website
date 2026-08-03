@@ -1,6 +1,7 @@
 import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Subject } from './gradeService';
+import { isNonScoringUserId } from './userAccessService';
 
 export type EvidenceDomain = 'K' | 'P' | 'A';
 export type EvidenceSource =
@@ -77,7 +78,9 @@ export const makeEvidenceId = (
 
 export const recordLearningEvidence = async (
   input: Omit<LearningEvidence, 'id' | 'createdAt'>,
-): Promise<LearningEvidence> => {
+): Promise<LearningEvidence | null> => {
+  if (isNonScoringUserId(input.studentId)) return null;
+
   const id = makeEvidenceId(input);
   const evidence: LearningEvidence = clean({
     ...input,

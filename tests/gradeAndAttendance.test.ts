@@ -199,8 +199,9 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
     const grade = makeStudentGrade();
     const indicator = getIndicators('ป.1')[0];
     const linked = getLinkedUnits('ป.1').find((item) => item.indicator.id === indicator.id);
-    const inClassTimestamp = new Date(2026, 4, 20, 8, 40).getTime(); // พุธ 08:40
-    const outsideTimestamp = new Date(2026, 4, 20, 10, 0).getTime();
+    // ป.1 เรียนพฤหัสบดี 13:00-14:00 — 21 พ.ค. 2026 เป็นวันพฤหัสบดี
+    const inClassTimestamp = new Date(2026, 4, 21, 13, 30).getTime();
+    const outsideTimestamp = new Date(2026, 4, 21, 15, 0).getTime();
     expect(linked?.units.length).toBeGreaterThan(0);
     const unit = linked!.units[0];
     grade.indicators[indicator.id] = {
@@ -215,9 +216,11 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
         [`${unit.gradeId}_${unit.unitNo}`]: makeUnit({
           bestQuizScore: 2,
           bestQuizMax: 10,
+          // ตั้ง inClass เป็น false ทั้งคู่โดยตั้งใจ — จำลองหลักฐานที่บันทึกไว้ตอนตารางสอนยังผิด
+          // ระบบต้องคิดใหม่จาก timestamp ไม่ใช่เชื่อค่าที่ค้างไว้ ไม่งั้นจะได้ 4 (2+2) แทน 7 (5+2)
           scoreEvidence: [
             { id: 'in-class', type: 'practice', timestamp: inClassTimestamp, inClass: false, basePoints: 5 },
-            { id: 'outside', type: 'practice', timestamp: outsideTimestamp, inClass: true, basePoints: 5 },
+            { id: 'outside', type: 'practice', timestamp: outsideTimestamp, inClass: false, basePoints: 5 },
           ],
         }),
       },
@@ -236,6 +239,48 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
     const score = loadGrades('ป.1')[0].indicators[indicator.id];
     expect(score.webPScore).toBe(7);
     expect(score.k).toBe(12);
+  });
+
+  // ข้อมูลเก่าส่วนใหญ่ไม่มี scoreEvidence (ป.1 มีแค่ 1 ใน 26 คน) จึงตกมาทางนี้
+  // เดิมทางนี้เหมา ×0.4 ให้ทุกอย่าง ทำให้งานที่ทำในคาบถูกหักคะแนน 60% ทั้งที่มาเรียนจริง
+  it.each([
+    { case: 'ทำในคาบทั้งหมด ต้องได้เต็ม', hours: [13, 13], expected: 6 },
+    { case: 'ทำนอกคาบทั้งหมด ต้องได้ 40%', hours: [15, 16], expected: 2.4 },
+    { case: 'ทำในคาบครึ่งหนึ่ง ต้องได้ตามสัดส่วน', hours: [13, 16], expected: 4.2 },
+  ])('ข้อมูลเก่าที่ไม่มี scoreEvidence: $case', ({ hours, expected }) => {
+    const grade = makeStudentGrade();
+    const indicator = getIndicators('ป.1')[0];
+    const unit = getLinkedUnits('ป.1').find((item) => item.indicator.id === indicator.id)!.units[0];
+    cacheGradesLocally('ป.1', [grade]);
+    progressState.items = [{
+      studentId: 'ป.1_1_นักเรียนทดสอบ',
+      units: {
+        // 2 กิจกรรม fun = 3 คะแนน/ชิ้น = 6 คะแนนก่อนคูณ และไม่มี scoreEvidence เลย
+        [`${unit.gradeId}_${unit.unitNo}`]: makeUnit({
+          funClicked: ['เกมที่ 1', 'เกมที่ 2'],
+          scoreEvidence: [],
+        }),
+      },
+      // 21 พ.ค. 2026 = พฤหัสบดี, คาบ ป.1 คือ 13:00-14:00
+      activities: hours.map((hour, i) => ({
+        type: 'fun' as const,
+        gradeId: unit.gradeId,
+        unitNo: unit.unitNo,
+        detail: `เกมที่ ${i + 1}`,
+        timestamp: new Date(2026, 4, 21, hour, 30).getTime(),
+      })),
+      attempts: [],
+      daysActive: [],
+      inClassDays: [],
+      totalPoints: 0,
+      totalSlidesViewed: 0,
+      totalActivities: 0,
+      unitsCompleted: 0,
+      lastActive: Date.now(),
+    }];
+
+    syncFromProgress('ป.1', 'student-1', 'ป.1_1_นักเรียนทดสอบ', 'main', 'local');
+    expect(loadGrades('ป.1')[0].indicators[indicator.id].webPScore).toBe(expected);
   });
 
   it('คำถามห้อง 3D ต้องให้ K ได้ไม่เกิน 50% ของตัวชี้วัด', () => {

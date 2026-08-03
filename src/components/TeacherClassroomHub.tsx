@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
+  FileDown,
   FileQuestion,
   Gamepad2,
   Loader2,
@@ -39,6 +40,8 @@ import {
 } from '../services/manualAttendanceService';
 import { loadRoster } from '../services/rosterService';
 import {
+  ACADEMIC_YEAR,
+  COURSE_TEACHER_NAME,
   fetchClassroomFromFirebase,
   getIndicators,
   loadGrades,
@@ -50,6 +53,11 @@ import {
   type LessonRecord,
   type LessonRecordSnapshot,
 } from '../services/lessonRecordService';
+import {
+  downloadLessonRecordDocx,
+  splitIsoToThai,
+  percentOf,
+} from '../utils/lessonRecordDocx';
 import {
   fetchAssignmentsFromFirebase,
   fetchSubmissionsFromFirebase,
@@ -104,7 +112,12 @@ const statusClass: Record<AttendanceStatus, string> = {
   sick: 'sick',
 };
 
+// ช่องของแบบฟอร์มราชการ (ไฟล์ตัวอย่างบันทึกหลังสอน 2569) รวมอยู่ในฟอร์มเดียวกับของเดิม
+// ไม่แยกเป็นเมนูใหม่ เพราะบันทึกหลังสอนต้องผูกกับแผนรายคาบและเพิ่มคาบใหม่ได้เอง
 const recordFormDefault = {
+  totalStudents: 0,
+  passedCount: 0,
+  summary: '',
   strengths: '',
   problems: '',
   causes: '',
@@ -192,15 +205,19 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
         item.planNo === selectedPeriod && item.teachingDate === teachingDate
       ));
       setRecordForm(existing ? {
+        // บันทึกเก่ายังไม่มีช่องของแบบราชการ จึงเติมจากรายชื่อห้องและช่องเดิมให้แทน
+        totalStudents: existing.totalStudents ?? roster.length,
+        passedCount: existing.passedCount ?? 0,
+        summary: existing.summary ?? existing.strengths ?? '',
         strengths: existing.strengths,
         problems: existing.problems,
         causes: existing.causes,
         improvements: existing.improvements,
         nextAction: existing.nextAction,
-      } : recordFormDefault);
+      } : { ...recordFormDefault, totalStudents: roster.length });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [records, selectedPeriod, teachingDate]);
+  }, [records, selectedPeriod, teachingDate, roster.length]);
 
   const indicatorIds = useMemo(() => new Set(
     getIndicators(classroom, 'main')
@@ -347,10 +364,43 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
     }
   };
 
+  const failedCount = Math.max(0, recordForm.totalStudents - recordForm.passedCount);
+
+  /** ออกไฟล์ Word จริงตามแบบฟอร์มราชการของโรงเรียน ใช้ได้ทุกชั้นและทุกคาบ */
+  const downloadOfficialDocx = () => {
+    const thai = splitIsoToThai(teachingDate);
+    const row = schedule.rows.find((item) => item.period === selectedPeriod);
+    downloadLessonRecordDocx([{
+      courseName: schedule.courseName,
+      gradeLabel: gradeId.slice(1),
+      unitNo: row?.unitNo ?? '',
+      unitTitle: row?.unitTitle ?? '',
+      planNo: selectedPeriod,
+      planTitle: selectedPlan?.title ?? row?.lessonTitle ?? '',
+      week: row?.week ?? '',
+      day: thai.day,
+      month: thai.month,
+      buddhistYear: thai.buddhistYear,
+      semester: row?.semester ?? 1,
+      academicYear: ACADEMIC_YEAR,
+      totalStudents: recordForm.totalStudents,
+      passedCount: recordForm.passedCount,
+      summary: recordForm.summary,
+      problems: recordForm.problems,
+      improvements: recordForm.improvements,
+      teacherName: COURSE_TEACHER_NAME,
+      teacherPosition: 'ครูผู้ช่วย',
+      deputyName: 'นางสาวเจนจีรา บุญเกตุ',
+      directorName: 'นายปรัชญา ปรางค์ชัยภูมิ',
+      schoolName: 'โรงเรียนบ้านคลองมดแดง',
+    }], `บันทึกหลังสอน_${classroom}_คาบ${selectedPeriod}_${teachingDate}.docx`);
+  };
+
   const savePostTeaching = async () => {
     if (!selectedSession) return;
     setBusy(true);
     try {
+      const row = schedule.rows.find((item) => item.period === selectedPeriod);
       const saved = await saveLessonRecord({
         classroom,
         subject: 'main',
@@ -360,6 +410,14 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
         teachingDate,
         indicatorCodes: selectedPlan.indicators,
         snapshot,
+        // ช่องของแบบฟอร์มราชการ เก็บคู่กับช่องเดิมของระบบ
+        week: row?.week,
+        semester: row?.semester,
+        academicYear: ACADEMIC_YEAR,
+        unitNo: row?.unitNo,
+        unitTitle: row?.unitTitle,
+        planTitle: selectedPlan?.title ?? row?.lessonTitle,
+        failedCount,
         ...recordForm,
         status: 'complete',
       });
@@ -600,27 +658,58 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
             </div>
             <b><CalendarDays size={15} /> {teachingDate}</b>
           </div>
+          <div className="post-counts">
+            <label>นักเรียนทั้งหมด (คน)
+              <input
+                type="number"
+                min={0}
+                value={recordForm.totalStudents}
+                onChange={(event) => setRecordForm({ ...recordForm, totalStudents: Number(event.target.value) })}
+              />
+            </label>
+            <label>ผ่านจุดประสงค์ (คน)
+              <input
+                type="number"
+                min={0}
+                max={recordForm.totalStudents}
+                value={recordForm.passedCount}
+                onChange={(event) => setRecordForm({ ...recordForm, passedCount: Number(event.target.value) })}
+              />
+            </label>
+            <div className="post-calc">
+              ไม่ผ่าน <b>{failedCount}</b> คน
+              <small>ผ่าน {percentOf(recordForm.passedCount, recordForm.totalStudents)}% · ไม่ผ่าน {percentOf(failedCount, recordForm.totalStudents)}%</small>
+            </div>
+          </div>
           <div className="post-form">
-            <label>สิ่งที่ผู้เรียนทำได้ดี
+            <label className="wide">2. สรุปผลการจัดการเรียนรู้ <em>(ลงในแบบราชการ)</em>
+              <textarea rows={3} value={recordForm.summary} onChange={(event) => setRecordForm({ ...recordForm, summary: event.target.value })} />
+            </label>
+            <label>3. ปัญหาและอุปสรรคระหว่างการจัดกิจกรรมการสอน
+              <textarea rows={3} value={recordForm.problems} onChange={(event) => setRecordForm({ ...recordForm, problems: event.target.value })} />
+            </label>
+            <label>4. การปรับปรุงและพัฒนา
+              <textarea rows={3} value={recordForm.improvements} onChange={(event) => setRecordForm({ ...recordForm, improvements: event.target.value })} />
+            </label>
+            <label>สิ่งที่ผู้เรียนทำได้ดี <em>(บันทึกภายใน)</em>
               <textarea rows={2} value={recordForm.strengths} onChange={(event) => setRecordForm({ ...recordForm, strengths: event.target.value })} />
             </label>
-            <label>ปัญหาที่พบ
-              <textarea rows={2} value={recordForm.problems} onChange={(event) => setRecordForm({ ...recordForm, problems: event.target.value })} />
-            </label>
-            <label>สาเหตุ
+            <label>สาเหตุ <em>(บันทึกภายใน)</em>
               <textarea rows={2} value={recordForm.causes} onChange={(event) => setRecordForm({ ...recordForm, causes: event.target.value })} />
             </label>
-            <label>แนวทางปรับปรุง
-              <textarea rows={2} value={recordForm.improvements} onChange={(event) => setRecordForm({ ...recordForm, improvements: event.target.value })} />
-            </label>
-            <label className="wide">สิ่งที่จะทำคาบถัดไป
+            <label className="wide">สิ่งที่จะทำคาบถัดไป <em>(บันทึกภายใน)</em>
               <textarea rows={2} value={recordForm.nextAction} onChange={(event) => setRecordForm({ ...recordForm, nextAction: event.target.value })} />
             </label>
           </div>
-          <button type="button" className="save-post-button" onClick={() => void savePostTeaching()} disabled={busy}>
-            {busy ? <Loader2 className="spin" size={17} /> : <Save size={17} />}
-            บันทึกหลังสอนและปิดคาบ
-          </button>
+          <div className="post-buttons">
+            <button type="button" className="save-post-button" onClick={() => void savePostTeaching()} disabled={busy}>
+              {busy ? <Loader2 className="spin" size={17} /> : <Save size={17} />}
+              บันทึกหลังสอนและปิดคาบ
+            </button>
+            <button type="button" className="word-post-button" onClick={downloadOfficialDocx}>
+              <FileDown size={17} /> ดาวน์โหลด Word (แบบราชการ)
+            </button>
+          </div>
         </section>
       </div>
     </div>

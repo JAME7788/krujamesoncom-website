@@ -51,8 +51,10 @@ export const PRIMARY_TECHNOLOGY_GRADE_IDS: PrimaryTechnologyGradeId[] = [
   'p6',
 ];
 
+// หมายเหตุ: ตารางชุดนี้ใช้พิมพ์ลงหัวแผนการสอน ต้องตรงกับ src/data/schedule.ts เสมอ
+// (คนละชุดกัน ถ้าแก้ที่เดียวจะทำให้เอกสารที่พิมพ์ออกมาไม่ตรงกับที่ระบบใช้คิดคะแนน)
 const WEEKLY_SLOTS: Record<PrimaryTechnologyGradeId, string> = {
-  p1: 'วันพุธ 08:30-09:20 น.',
+  p1: 'วันพฤหัสบดี 13:00-14:00 น.',
   p2: 'วันจันทร์ 13:50-14:40 น.',
   p3: 'วันศุกร์ 11:00-11:50 น.',
   p4: 'วันพุธ 09:20-10:10 น.',

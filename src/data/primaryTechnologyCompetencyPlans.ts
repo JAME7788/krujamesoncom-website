@@ -75,7 +75,7 @@ export const primaryTechnologyCompetencyPlans: PrimaryTechnologyCompetencyPlan[]
   {
     id: 'outcome5-p1',
     grade: 'ป.1',
-    schedule: 'วันพุธ 08:30-09:20 น.',
+    schedule: 'วันพฤหัสบดี 13:00-14:00 น.',
     title: 'นักสำรวจข้อมูลรอบตัว',
     childMission: 'ตามหาข้อมูลสัตว์และพืชในโรงเรียน แล้วเก็บให้หาเจอง่าย',
     context: 'ข้อมูลสิ่งมีชีวิตใกล้ตัวในโรงเรียน',

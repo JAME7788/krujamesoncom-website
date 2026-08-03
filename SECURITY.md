@@ -1,22 +1,30 @@
 # 🔐 ความปลอดภัยของเว็บ Kru James
 
-## สถานะล่าสุด 31 กรกฎาคม 2569
+## สถานะล่าสุด 3 สิงหาคม 2569
 
 - เพิ่มทางเข้าสู่ระบบครูด้วย Firebase Auth และรองรับบทบาท `admin`, `teacher`, `viewer` แล้ว
 - เพิ่ม collection `teacherProfiles` สำหรับกำหนดบทบาทและสถานะบัญชีครู
+- เปิด Email/Password provider สร้างบัญชีครู กำหนด custom claim `admin` และสร้าง `teacherProfiles/{uid}` แล้ว
+- ระบบส่งอีเมลตั้งรหัสผ่านไปยังอีเมลครูแล้ว ต้องตั้งรหัสผ่านและทดสอบเข้าสู่ระบบก่อนปิด legacy fallback
 - Firestore Rules รุ่นที่รองรับระบบคาบ หลักฐาน K/P/A คลังข้อสอบ เวอร์ชันเนื้อหา
   และประวัติการแก้ไข ถูก deploy ไปยังโปรเจกต์ `krujamesoncom-website-9f134` แล้ว
 - ระบบเดิมยังมี legacy admin fallback เพื่อไม่ให้การใช้งานหยุดชะงัก จึงยังไม่ถือว่า
-  การยืนยันตัวตนและ PDPA ปลอดภัยสมบูรณ์จนกว่าจะสร้างบัญชีครู Firebase และนำ fallback ออก
+  การยืนยันตัวตนและ PDPA ปลอดภัยสมบูรณ์จนกว่าจะทดสอบบัญชี Firebase และนำ fallback ออก
+
+### การแยกบัญชีนักเรียนและผู้ทดลอง
+
+- รหัส `admin_teacher_account` และรหัสที่ขึ้นต้นด้วย `external_visitor_` ถูกปฏิเสธจากระบบคะแนนกลาง
+- Firestore Rules ป้องกัน id สองประเภทนี้จาก `students`, `progress`, `learningEvidence` และ `homeworkSubmissions`
+- รายชื่อผู้ทดลองอยู่ใน `externalVisitors` และอ่านได้เฉพาะบัญชีครู Firebase ที่ยืนยันแล้ว
+- `externalVisitorStats/summary` เก็บเฉพาะยอดเข้าทดลองรวมที่ไม่ระบุบุคคล
+- เก็บชื่อเพื่อสถิติการเผยแพร่เท่านั้น ไม่ควรขอเลขประจำตัว เบอร์โทร อีเมล หรือข้อมูลอ่อนไหวอื่น
 
 ### ขั้นตอนเปิดใช้บัญชีครู Firebase
 
-1. เปิด Email/Password provider ใน Firebase Authentication
-2. สร้างบัญชีครูและนำ `uid` มาสร้างเอกสาร `teacherProfiles/{uid}`
-3. กำหนด `{ "role": "admin", "active": true }` สำหรับผู้ดูแลหลัก
-4. ตั้ง `VITE_TEACHER_AUTH_EMAIL` ใน environment ของ Vercel หรือเครื่องที่ deploy
-5. ทดสอบเข้าสู่ระบบ แก้คะแนน บันทึกคาบ และอ่าน audit log ก่อนปิด legacy fallback
-6. เปิด App Check แบบ Enforce เมื่อยืนยันว่าโดเมน production ทำงานถูกต้อง
+1. เปิดอีเมลตั้งรหัสผ่านที่ระบบส่งไปยังอีเมลครู แล้วกำหนดรหัสใหม่
+2. ตั้ง `VITE_TEACHER_AUTH_EMAIL` ใน environment ของ Vercel ให้ตรงกับบัญชีครู
+3. ทดสอบเข้าสู่ระบบ แก้คะแนน บันทึกคาบ และอ่าน audit log ก่อนปิด legacy fallback
+4. เปิด App Check แบบ Enforce เมื่อยืนยันว่าโดเมน production ทำงานถูกต้อง
 
 รายงานการตรวจ (pentest) + สิ่งที่ต้องทำ เรียงตามความสำคัญ
 

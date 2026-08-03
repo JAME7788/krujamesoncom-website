@@ -6,6 +6,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import type { StudentProgressData, ActivityLog } from './progressService';
 import type { ClassSlot } from '../data/schedule';
 import { isInClassTime } from '../data/schedule';
+import { isNonScoringUserId } from './userAccessService';
 
 export interface StudentRecord {
   id: string;
@@ -45,6 +46,7 @@ export const fetchAllStudents = async (): Promise<StudentRecord[]> => {
       const sSnap = await getDocs(collection(db, 'students'));
       sSnap.forEach((d) => {
         const data = d.data() as { id: string; name: string; classroom: string; studentNumber: string };
+        if (!data.id || isNonScoringUserId(data.id)) return;
         records[data.id] = {
           id: data.id,
           name: data.name,
@@ -56,6 +58,7 @@ export const fetchAllStudents = async (): Promise<StudentRecord[]> => {
       const pSnap = await getDocs(collection(db, 'progress'));
       pSnap.forEach((d) => {
         const data = d.data() as StudentProgressData;
+        if (!data.studentId || isNonScoringUserId(data.studentId)) return;
         if (records[data.studentId]) {
           records[data.studentId].progress = data;
         } else {

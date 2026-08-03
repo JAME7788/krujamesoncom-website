@@ -11,6 +11,7 @@ import {
 import type { Subject } from '../services/gradeService';
 import { getSummary } from '../services/progressService';
 import './ReportCard.css';
+import { isScoreEligibleUser } from '../services/userAccessService';
 
 const ReportCard: React.FC = () => {
   const { user, partner } = useAuth();
@@ -21,7 +22,7 @@ const ReportCard: React.FC = () => {
   const stats = useMemo(() => (user ? getSummary(user.id) : null), [user]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!isScoreEligibleUser(user)) return;
 
     const syncGrades = async () => {
       setLoadingGrades(true);
@@ -56,6 +57,19 @@ const ReportCard: React.FC = () => {
           <h2>กรุณาเข้าสู่ระบบ</h2>
           <p>เพื่อดูสมุดรายงานผลการเรียนของคุณ</p>
           <Link to="/login" className="btn-primary">เข้าสู่ระบบ</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isScoreEligibleUser(user)) {
+    return (
+      <div className="report-card-page container section-padding">
+        <div className="rc-empty">
+          <GraduationCap size={48} />
+          <h2>สมุดรายงานสำหรับนักเรียนในโรงเรียน</h2>
+          <p>บัญชีครูและผู้ทดลองภายนอกไม่มีการสร้างหรือบันทึกผลการเรียน</p>
+          <Link to="/courses" className="btn-primary">ไปหน้าบทเรียน</Link>
         </div>
       </div>
     );

@@ -37,6 +37,7 @@ import RichSlideViewer from '../components/RichSlideViewer';
 import '../components/RichSlideViewer.css';
 import { hasRichSlides, getRichSlides, type RichSlide } from '../data/richSlides';
 import { fetchCustomSlides } from '../services/slideService';
+import { detectLessonTheme, type LessonTheme } from '../utils/lessonTheme';
 import './UnitDetail.css';
 
 const mergeList = (...lists: Array<string[] | undefined>) => {
@@ -373,6 +374,15 @@ const generatedSlideThemes: NonNullable<RichSlide['theme']>[] = [
 const lessonSlideToRichSlide = (text: string, index: number): RichSlide => {
   const parsed = parseLessonSlide(text);
   const bulletEmoji = ['1️⃣', '2️⃣', '3️⃣'];
+  // เลือกกล่องเน้นจากเนื้อหาของสไลด์แผ่นนั้นเอง แล้วหมุนไปเรื่อย ๆ
+  // เพื่อไม่ให้ทุกแผ่นในหน่วยเดียวกันขึ้นข้อความเตือนอันเดียวกันซ้ำ
+  //
+  // ต้องตรวจจากหัวข้อกับบูลเล็ตที่แยกแล้วเท่านั้น ห้ามใช้ text ดิบ
+  // เพราะข้อความดิบมีตัวคั่น "PROMPT:" ของ teachingNote ติดมาด้วย
+  // ซึ่งไปตรงกับรูปแบบ /Prompt/i ของ detectLessonTheme ทำให้ทุกแผ่นกลายเป็นธีม AI
+  const callouts = getThemeCallouts(
+    detectLessonTheme(`${parsed.title} ${parsed.bullets.join(' ')}`),
+  );
   return {
     title: parsed.title,
     emoji: parsed.emoji,
@@ -382,6 +392,7 @@ const lessonSlideToRichSlide = (text: string, index: number): RichSlide => {
       emoji: bulletEmoji[bulletIndex] || '•',
       text: bullet,
     })),
+    callout: callouts[index % callouts.length],
     teachingNote: parsed.note,
   };
 };
@@ -408,7 +419,7 @@ const getVisibleSlideIndexes = (total: number, current: number, maxVisible = 15)
   return Array.from({ length: visible }, (_, index) => start + index);
 };
 
-type LessonTheme = 'ai' | 'data' | 'coding' | 'safety' | 'file' | 'internet' | 'problem' | 'default';
+// ตรรกะจัดธีมย้ายไป src/utils/lessonTheme.ts แล้ว (ดูเหตุผลและบั๊กที่กันไว้ในไฟล์นั้น)
 
 const uniqueCleanItems = (items: Array<string | undefined>) => {
   const seen = new Set<string>();
@@ -420,17 +431,6 @@ const uniqueCleanItems = (items: Array<string | undefined>) => {
       seen.add(item);
       return true;
     });
-};
-
-const detectLessonTheme = (text: string): LessonTheme => {
-  if (/AI|ปัญญาประดิษฐ์|Machine Learning|Prompt|โมเดล/i.test(text)) return 'ai';
-  if (/อินเทอร์เน็ต|Internet|เว็บไซต์|แหล่งข้อมูล|Google|อีเมล|คำค้น/i.test(text)) return 'internet';
-  if (/ข้อมูล|Data|กราฟ|แผนภูมิ|ค้นหา|ประมวลผล|Visualization|Regression|K-NN|Pivot/i.test(text)) return 'data';
-  if (/โปรแกรม|โค้ด|Coding|Scratch|Loop|คำสั่ง|ผังงาน|อัลกอริทึม|บล็อก/i.test(text)) return 'coding';
-  if (/ปลอดภัย|ส่วนตัว|รหัสผ่าน|ออนไลน์|สารสนเทศ|Deepfake|PDPA|มารยาท|หลอกลวง/i.test(text)) return 'safety';
-  if (/ไฟล์|โฟลเดอร์|จัดเก็บ|Word|Paint|PowerPoint|เอกสาร|คีย์บอร์ด|เมาส์|เปิด-ปิด|เครื่องพิมพ์/i.test(text)) return 'file';
-  if (/ปัญหา|ลองผิดลองถูก|เปรียบเทียบ|ขั้นตอน|วางแผน|ตรวจสอบ/i.test(text)) return 'problem';
-  return 'default';
 };
 
 const getLearnerTone = (gradeId: string) => {
@@ -546,12 +546,103 @@ const getThemeVocabulary = (theme: LessonTheme) => {
   }
 };
 
-const buildTopicLessonSlide = (topic: string, index: number, theme: LessonTheme, grade: Grade) => {
-  const tone = getLearnerTone(grade.id);
-  return makeLessonSlide(`หัวข้อที่ ${index + 1}: ${shortenTopicTitle(topic)}`, [
-    `สาระสำคัญ: ${topic}`,
+/**
+ * กล่องเน้นตามธีม — RichSlideViewer รองรับ callout อยู่แล้วแต่สไลด์อัตโนมัติไม่เคยใช้
+ * ทำให้สไลด์ของหน่วยที่ไม่มีคนออกแบบเอง (24 จาก 26 หน่วยของ ป.1-6) เป็นข้อความล้วนทุกแผ่น
+ * เนื้อหาในนี้ต้องไม่ซ้ำกับ teachingNote ที่แสดงอยู่ด้านล่างสไลด์อยู่แล้ว
+ */
+const getThemeCallouts = (theme: LessonTheme): NonNullable<RichSlide['callout']>[] => {
+  switch (theme) {
+    case 'coding':
+      return [
+        { type: 'tip', text: 'อ่านคำสั่งจากบนลงล่างทีละบรรทัด แล้วชี้นิ้วตามไปด้วย จะเห็นจุดที่ผิดง่ายขึ้น' },
+        { type: 'warn', text: 'โปรแกรมที่ทำงานได้ครั้งเดียว อาจยังไม่ถูก ลองทดสอบซ้ำด้วยค่าอื่นก่อนสรุป' },
+        { type: 'fun', text: 'ลองท้าเพื่อนว่าใครใช้คำสั่งน้อยกว่ากันแล้วยังทำงานได้เหมือนเดิม' },
+        { type: 'tip', text: 'ถ้าติดนาน ให้ลบออกทีละส่วนจนโปรแกรมกลับมาทำงาน แล้วค่อยใส่กลับทีละชิ้น' },
+      ];
+    case 'data':
+      return [
+        { type: 'tip', text: 'ตั้งคำถามให้ชัดก่อนเก็บข้อมูล จะได้รู้ว่าต้องเก็บอะไรและไม่ต้องเก็บอะไร' },
+        { type: 'warn', text: 'กราฟที่แกนไม่เริ่มที่ศูนย์ อาจทำให้ความต่างดูมากเกินความจริง' },
+        { type: 'tip', text: 'ใส่ชื่อกราฟและป้ายกำกับเสมอ ไม่อย่างนั้นคนอ่านจะเดาความหมายผิด' },
+        { type: 'fun', text: 'ลองเก็บข้อมูลจริงในห้อง แล้วดูว่าผลตรงกับที่เราเดาไว้ก่อนหรือไม่' },
+      ];
+    case 'ai':
+      return [
+        { type: 'warn', text: 'AI ตอบผิดได้และตอบผิดอย่างมั่นใจด้วย ต้องตรวจกับแหล่งอื่นก่อนเชื่อ' },
+        { type: 'tip', text: 'ยิ่งบอก AI ชัดว่าต้องการอะไร เพื่อใคร และยาวแค่ไหน คำตอบยิ่งตรงขึ้น' },
+        { type: 'warn', text: 'อย่าพิมพ์ชื่อจริง เลขบัตร ที่อยู่ หรือรูปหน้าเพื่อนลงในเครื่องมือ AI' },
+        { type: 'fun', text: 'ลองถามคำถามเดิมสองครั้ง แล้วดูว่าคำตอบเหมือนเดิมไหม เพราะอะไร' },
+      ];
+    case 'safety':
+      return [
+        { type: 'warn', text: 'ถ้ามีคนขอข้อมูลส่วนตัวหรือขอให้เก็บเป็นความลับจากผู้ปกครอง ให้บอกครูทันที' },
+        { type: 'tip', text: 'รหัสผ่านที่ดีคือยาวและเดาไม่ได้ ไม่ใช่ชื่อเล่นหรือวันเกิดของเรา' },
+        { type: 'warn', text: 'สิ่งที่ลบไปแล้วอาจยังมีคนบันทึกภาพหน้าจอไว้ คิดก่อนโพสต์ทุกครั้ง' },
+        { type: 'tip', text: 'ก่อนกดลิงก์ ให้ดูก่อนว่าใครส่งมาและพาไปเว็บอะไร' },
+      ];
+    case 'internet':
+      return [
+        { type: 'tip', text: 'ใช้คำค้นที่เจาะจงขึ้น เช่น ใส่ปี สถานที่ หรือคำว่า "วิธี" ลงไปด้วย' },
+        { type: 'warn', text: 'อันดับแรกในผลค้นหาไม่ได้แปลว่าน่าเชื่อถือที่สุดเสมอไป' },
+        { type: 'tip', text: 'ดูว่าใครเขียน เขียนเมื่อไร และมีการอ้างอิงแหล่งอื่นหรือไม่' },
+        { type: 'fun', text: 'ลองค้นเรื่องเดียวกันด้วยคำค้นสองแบบ แล้วเทียบว่าผลต่างกันแค่ไหน' },
+      ];
+    case 'file':
+      return [
+        { type: 'tip', text: 'ตั้งชื่อไฟล์ให้บอกได้ว่าเป็นงานอะไรของใคร เช่น ใบงาน1_สมชาย' },
+        { type: 'warn', text: 'กดบันทึกระหว่างทำงานบ่อย ๆ ไฟดับหรือเครื่องค้างจะได้ไม่เสียงานทั้งหมด' },
+        { type: 'tip', text: 'แยกโฟลเดอร์ตามวิชาหรือตามเดือน จะหางานเจอเร็วกว่ากองรวมกัน' },
+        { type: 'fun', text: 'ลองจับเวลาว่าหาไฟล์ที่ตั้งชื่อดีกับตั้งชื่อมั่ว ๆ ใช้เวลาต่างกันแค่ไหน' },
+      ];
+    case 'problem':
+      return [
+        { type: 'tip', text: 'แยกปัญหาใหญ่เป็นชิ้นเล็ก ๆ แล้วแก้ทีละชิ้น จะง่ายกว่าคิดรวดเดียว' },
+        { type: 'warn', text: 'วิธีที่ใช้ได้กับโจทย์หนึ่ง อาจใช้ไม่ได้กับอีกโจทย์ ต้องตรวจก่อนใช้ซ้ำ' },
+        { type: 'tip', text: 'เขียนสิ่งที่รู้และสิ่งที่ต้องหาออกมาก่อน จะเห็นทางแก้ชัดขึ้น' },
+        { type: 'fun', text: 'ลองหาวิธีที่สองที่ให้คำตอบเดียวกัน แล้วเทียบว่าวิธีไหนเร็วกว่า' },
+      ];
+    default:
+      return [
+        { type: 'tip', text: 'อธิบายสิ่งที่เรียนให้เพื่อนฟังได้ แปลว่าเราเข้าใจจริง ไม่ใช่แค่จำ' },
+        { type: 'fun', text: 'ลองหาตัวอย่างเรื่องนี้จากของใกล้ตัวที่บ้านหรือในโรงเรียนมา 1 อย่าง' },
+        { type: 'tip', text: 'จดคำสำคัญไว้ 3 คำ แล้วทบทวนก่อนเรียนคาบหน้า' },
+      ];
+  }
+};
+
+/** ภารกิจสั้นที่นักเรียนลงมือได้จริง อิงหัวข้อของแผ่นนั้น ไม่ใช่ข้อความกลาง */
+const getThemeStudentTask = (theme: LessonTheme, topic: string) => {
+  const short = shortenTopicTitle(topic);
+  switch (theme) {
+    case 'coding':
+      return `ลองทำ: เขียนขั้นตอนของ "${short}" เป็นข้อ 1 2 3 แล้วให้เพื่อนทำตามดูว่าได้ผลตรงกันไหม`;
+    case 'data':
+      return `ลองทำ: ตั้งคำถาม 1 ข้อเกี่ยวกับ "${short}" เก็บข้อมูลจากเพื่อน 5 คน แล้วทำตารางสรุป`;
+    case 'ai':
+      return `ลองทำ: ยกตัวอย่าง "${short}" ที่เจอในชีวิตจริง 1 อย่าง แล้วบอกว่าต้องตรวจสอบอะไรก่อนเชื่อ`;
+    case 'safety':
+      return `ลองทำ: เขียนสถานการณ์เสี่ยงเรื่อง "${short}" 1 ข้อ พร้อมบอกว่าจะรับมืออย่างไร`;
+    case 'file':
+      return `ลองทำ: สร้างงานสั้น ๆ เรื่อง "${short}" ตั้งชื่อไฟล์ให้สื่อความหมาย แล้วเปิดกลับมาใหม่ให้ได้`;
+    case 'internet':
+      return `ลองทำ: ค้น "${short}" จาก 2 เว็บ แล้วบอกว่าเว็บไหนน่าเชื่อถือกว่า เพราะอะไร`;
+    case 'problem':
+      return `ลองทำ: แยก "${short}" ออกเป็นปัญหาย่อย 2-3 ข้อ แล้วเลือกแก้ข้อที่ง่ายที่สุดก่อน`;
+    default:
+      return `ลองทำ: ยกตัวอย่าง "${short}" จากชีวิตประจำวัน 1 เรื่อง แล้วอธิบายให้เพื่อนฟัง`;
+  }
+};
+
+const buildTopicLessonSlide = (topic: string, index: number, theme: LessonTheme) => {
+  const shortTitle = shortenTopicTitle(topic);
+  // เดิมบูลเล็ตแรกเขียน "สาระสำคัญ: {topic}" ซึ่งซ้ำกับชื่อแผ่นทั้งดุ้นเมื่อหัวข้อไม่มีเครื่องหมาย :
+  // เด็กจึงอ่านประโยคเดียวกันสองรอบโดยไม่ได้ข้อมูลเพิ่ม ใส่เฉพาะตอนที่มีรายละเอียดเกินชื่อแผ่นจริง
+  const detailBullet = topic.trim() !== shortTitle ? `สาระสำคัญ: ${topic}` : null;
+  return makeLessonSlide(`หัวข้อที่ ${index + 1}: ${shortTitle}`, [
+    ...(detailBullet ? [detailBullet] : []),
     getThemeAction(theme),
-    tone.action,
+    getThemeStudentTask(theme, topic),
   ], {
     explain: `สไลด์นี้พานักเรียนจับใจความของหัวข้อ "${topic}" โดยเชื่อมจากเรื่องใกล้ตัวไปสู่ทักษะตามตัวชี้วัด ครูควรให้เด็กพูด อธิบาย หรือทดลองสั้น ๆ เพื่อให้เห็นว่าเด็กเข้าใจจริง ไม่ใช่เพียงอ่านตามสไลด์`,
     example: getThemeExample(theme, topic),
@@ -793,7 +884,7 @@ const buildIndicatorSlides = (grade: Grade, unit: Unit, notes: LessonNotes): str
   ];
 
   topics.slice(0, 6).forEach((topic, index) => {
-    slides.push(buildTopicLessonSlide(topic, index, theme, grade));
+    slides.push(buildTopicLessonSlide(topic, index, theme));
   });
 
   if (theme === 'ai') {

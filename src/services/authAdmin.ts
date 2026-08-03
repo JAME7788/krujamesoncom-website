@@ -58,7 +58,14 @@ export const adminLogout = () => {
 };
 
 const storeSession = (session: AdminSession) => {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  // ถ้า localStorage เต็มหรือถูกปิด (โหมดส่วนตัว) setItem จะ throw
+  // เดิมไม่ดัก error จึงถูก catch ก้อนนอกของ firebaseTeacherLogin กลืนไป
+  // แล้วคืน null ทำให้ครูที่กรอกรหัสถูกต้องเห็นข้อความว่า "รหัสผ่านไม่ถูกต้อง"
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch (e) {
+    console.error('Failed to store teacher session', e);
+  }
 };
 
 export const firebaseTeacherLogin = async (

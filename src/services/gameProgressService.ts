@@ -19,6 +19,7 @@ import {
   getCourseAccessSettings,
   type CourseAccessSettings,
 } from './courseAccessService';
+import { isScoreEligibleUser, type PortalAccountType } from './userAccessService';
 
 export type GameProgressId =
   | 'mouse'
@@ -53,6 +54,7 @@ type StudentLike = {
   name: string;
   classroom: string;
   studentNumber: string;
+  accountType?: PortalAccountType;
 };
 
 type TargetUnit = {
@@ -277,7 +279,7 @@ export const recordGameProgress = async (
   const courseAccessSettings = await fetchCourseAccessSettings().catch(() => getCourseAccessSettings());
 
   students.forEach((student) => {
-    if (!student?.id || student.id === 'admin_teacher_account' || seen.has(student.id)) return;
+    if (!isScoreEligibleUser(student) || seen.has(student.id)) return;
     seen.add(student.id);
     activeStudents.push(student);
   });

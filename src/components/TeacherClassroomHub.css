@@ -434,9 +434,81 @@
   resize: vertical;
 }
 
-.save-post-button {
+/* ข้อ 1 ของแบบฟอร์มราชการ: จำนวนนักเรียนผ่าน/ไม่ผ่าน พร้อมร้อยละที่คิดให้อัตโนมัติ */
+.post-counts {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  margin-bottom: 10px;
+}
+
+.post-counts label {
+  color: #556176;
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 750;
+  gap: 5px;
+}
+
+.post-counts input {
+  background: #fff;
+  border: 1px solid #cfd8e6;
+  border-radius: 6px;
+  color: #172033;
+  font: inherit;
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.post-calc {
+  background: #eef2f9;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.post-calc small {
+  color: #62708a;
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.post-form label em {
+  color: #8a94a8;
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.post-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
   margin-top: 12px;
-  margin-left: auto;
+}
+
+.save-post-button {
+  margin-top: 0;
+  margin-left: 0;
+}
+
+.word-post-button {
+  align-items: center;
+  background: #1d4ed8;
+  border: 1px solid #1d4ed8;
+  border-radius: 6px;
+  color: #fff;
+  display: inline-flex;
+  font-weight: 750;
+  gap: 7px;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 12px;
 }
 
 .teacher-classroom-loading {
@@ -479,6 +551,22 @@
   .teacher-classroom-toolbar,
   .post-form {
     grid-template-columns: 1fr;
+  }
+
+  .post-counts {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .post-calc {
+    grid-column: 1 / -1;
+  }
+
+  .post-buttons {
+    justify-content: stretch;
+  }
+
+  .post-buttons button {
+    flex: 1 1 auto;
   }
 
   .teacher-classroom-period,

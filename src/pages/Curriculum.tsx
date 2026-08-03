@@ -23,10 +23,12 @@ import {
   type CourseAccessSettings,
 } from '../services/courseAccessService';
 import './Curriculum.css';
+import { isExternalVisitor } from '../services/userAccessService';
 
 const Curriculum: React.FC = () => {
   const { user } = useAuth();
   const isAdmin = isAdminAuthed();
+  const externalVisitor = isExternalVisitor(user);
   const [selectedCourse, setSelectedCourse] = useState<Grade | null>(null);
   const [unlockedMap, setUnlockedMap] = useState<UnitUnlockMap>(() => getUnlockedUnits());
   const [courseAccessSettings, setCourseAccessSettings] = useState<CourseAccessSettings>(() => getCourseAccessSettings());
@@ -34,14 +36,14 @@ const Curriculum: React.FC = () => {
 
   // กรองคอร์สตามสิทธิ์
   const visibleGrades = useMemo(() => {
-    if (isAdmin) return grades; // Admin เห็นทุกคอร์ส
+    if (isAdmin || externalVisitor) return grades; // Admin/ผู้ทดลองเห็นทุกคอร์ส
     if (!user) return [];        // ไม่ login = ไม่เห็น
     const allowed = getCourseIdsForClassroom(user.classroom);
     return grades.filter((g) =>
       allowed.includes(g.id) &&
       isCourseOpenForClassroom(user.classroom, g.id, courseAccessSettings)
     );
-  }, [user, isAdmin, courseAccessSettings]);
+  }, [user, isAdmin, externalVisitor, courseAccessSettings]);
 
   // Stop scrolling when modal is open
   React.useEffect(() => {
@@ -94,7 +96,12 @@ const Curriculum: React.FC = () => {
           <Eye size={16} /> <strong>Admin View</strong> — ดูทุกคอร์ส ({grades.length} คอร์ส)
         </div>
       )}
-      {user && !isAdmin && (
+      {externalVisitor && user && (
+        <div className="student-view-banner">
+          🌐 <strong>โหมดทดลองภายนอก</strong> — เปิดให้ดู {visibleGrades.length} คอร์ส และไม่เก็บคะแนน K/P/A
+        </div>
+      )}
+      {user && !isAdmin && !externalVisitor && (
         <div className="student-view-banner">
           📚 <strong>คอร์สสำหรับชั้น {user.classroom}</strong> — แสดง {visibleGrades.length} คอร์ส
         </div>
@@ -234,7 +241,7 @@ const Curriculum: React.FC = () => {
                   <h3><ListChecks size={20} className="text-primary" /> เนื้อหาที่จะได้เรียน ({selectedCourse.units?.length || 0} หน่วย)</h3>
                   <div className="modal-units-list">
                     {selectedCourse.units?.map((u: Unit) => {
-                      const locked = isUnitLocked(selectedCourse.id, u.no, unlockedMap);
+                      const locked = !externalVisitor && isUnitLocked(selectedCourse.id, u.no, unlockedMap);
                       return (
                         <Link
                           key={u.no}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
@@ -31,6 +31,11 @@ import type { CalendarEvent } from '../services/calendarService';
 import { loadSchedule, dayNames, minutesOf, fetchScheduleFromFirebase } from '../data/schedule';
 import type { ClassSlot } from '../data/schedule';
 import './Dashboard.css';
+import {
+  isAdminPortalUser,
+  isExternalVisitor,
+  isScoreEligibleUser,
+} from '../services/userAccessService';
 
 const activityIcon: Record<ActivityType, React.ReactNode> = {
   slide: <FileText size={16} />,
@@ -70,6 +75,7 @@ const Dashboard: React.FC = () => {
   const [now, setNow] = useState(new Date());
   const [schedule, setSchedule] = useState<ClassSlot[]>(() => loadSchedule());
   const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
+  const scoreEligible = isScoreEligibleUser(user);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -77,7 +83,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!scoreEligible || !user) return;
 
     const syncData = async () => {
       try {
@@ -111,7 +117,25 @@ const Dashboard: React.FC = () => {
     }, 15000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, scoreEligible]);
+
+  if (isAdminPortalUser(user)) return <Navigate to="/admin" replace />;
+
+  if (isExternalVisitor(user)) {
+    return (
+      <div className="dashboard container section-padding" style={{ paddingTop: '7rem' }}>
+        <div className="section-card glass" style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center', padding: '2.25rem' }}>
+          <Gamepad2 size={52} color="#2563eb" />
+          <h1>โหมดทดลองสำหรับผู้เรียนภายนอก</h1>
+          <p>ทดลองบทเรียนและเกมได้เต็มที่ โดยระบบไม่เช็กชื่อ ไม่สร้างรายงานผล และไม่บันทึกคะแนน K/P/A</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', marginTop: 20 }}>
+            <Link to="/courses" className="btn-primary"><BookOpen size={18} /> เลือกบทเรียน</Link>
+            <Link to="/games" className="btn-secondary"><Gamepad2 size={18} /> ทดลองเกม</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!user || !summary) {
     return (

@@ -2,12 +2,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../services/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { loadRoster } from '../services/rosterService';
+import { recordExternalVisitor } from '../services/externalVisitorService';
+import {
+  ADMIN_USER_ID,
+  getPortalAccountType,
+  isScoreEligibleUser,
+  type PortalUserIdentity,
+} from '../services/userAccessService';
 
-interface Student {
-  id: string;
-  name: string;
-  classroom: string;
-  studentNumber: string;
+export interface Student extends PortalUserIdentity {
+  accountType: 'student' | 'external' | 'admin';
+  studentCode?: string;
   loginTime?: number;
 }
 
@@ -21,6 +27,7 @@ interface AuthContextType {
     studentNumber: string,
     partner?: { name: string; classroom: string; studentNumber: string }
   ) => Promise<void>;
+  loginAsExternalVisitor: (name: string) => Promise<void>;
   logout: () => void;
   clearStudentSession: () => void;
   /** คืน id ของทุกคนที่ active อยู่ตอนนี้ (1 หรือ 2) — ใช้บันทึกคะแนนให้ครบ */
@@ -30,8 +37,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const buildId = (name: string, classroom: string, studentNumber: string) =>
-  `${classroom}_${studentNumber}_${name.replace(/\s/g, '')}`;
+/**
+ * เลขที่ที่หายไปเคยหลุดเข้ามาเป็นสตริง "undefined" (จาก String(undefined) ซึ่ง TS ไม่เตือน)
+ * ทำให้เกิดเอกสาร progress คนละใบ เช่น "ป.1_undefined_ชื่อ" — พบจริงในฐานข้อมูลหลายสิบใบ
+ * ตัวจับคู่ใบเกรดเจอใบ exact ก่อนเสมอ กิจกรรมในใบ undefined จึงถูกทิ้งถาวร
+ * จึงกันไม่ให้ค่าว่างกลายเป็นเลขที่ และใช้ 'na' ที่ชัดว่าไม่ใช่เลขที่แทน
+ * (ชื่อยังอยู่ใน id ตัวจับคู่แบบชื่อจึงยังตามเจอได้)
+ */
+export const normalizeStudentNumber = (studentNumber: string): string => {
+  const raw = String(studentNumber ?? '').trim();
+  if (!raw || raw === 'undefined' || raw === 'null' || raw === 'NaN') return 'na';
+  return raw;
+};
+
+// ชื่อไม่ซ้ำกับ buildStudentId ใน gradeService.ts ที่รับพารามิเตอร์คนละลำดับ
+export const buildStudentLoginId = (name: string, classroom: string, studentNumber: string) =>
+  `${classroom}_${normalizeStudentNumber(studentNumber)}_${name.replace(/\s/g, '')}`;
+
+const buildId = buildStudentLoginId;
 
 const STUDENT_KEY = 'current_student';
 const PARTNER_KEY = 'current_partner';
@@ -64,6 +87,22 @@ const removeStudentSessionStorage = () => {
   localStorage.removeItem(PARTNER_KEY);
 };
 
+const normalizeStoredUser = (value: Student): Student => ({
+  ...value,
+  accountType: getPortalAccountType(value),
+});
+
+const normalizeName = (name: string) => name.replace(/\s+/g, ' ').trim();
+
+const findRosterStudent = (name: string, classroom: string, studentNumber: string) => {
+  const normalizedName = normalizeName(name);
+  const normalizedNumber = Number(normalizeStudentNumber(studentNumber));
+  return loadRoster(classroom).find((student) => (
+    normalizeName(student.name) === normalizedName
+    && student.no === normalizedNumber
+  ));
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<Student | null>(() => {
     const legacyStudent = localStorage.getItem(STUDENT_KEY);
@@ -80,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           removeStudentSessionStorage();
           return null;
         }
-        return parsed;
+        return normalizeStoredUser(parsed as Student);
       } catch (e) {
         console.error('Failed to parse current student', e);
       }
@@ -91,10 +130,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const parsed = JSON.parse(adminSession);
         if (Date.now() < parsed.expiresAt) {
           return {
-            id: 'admin_teacher_account',
+            id: ADMIN_USER_ID,
             name: 'คุณครู (Admin)',
             classroom: 'ป.1',
             studentNumber: '00',
+            accountType: 'admin',
           };
         }
       } catch (e) {
@@ -113,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           removeStudentSessionStorage();
           return null;
         }
-        return parsed;
+        return normalizeStoredUser(parsed as Student);
       } catch (e) {
         console.error('Failed to parse partner', e);
       }
@@ -124,6 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading] = useState(false);
 
   const persistStudent = async (s: Student) => {
+    if (!isScoreEligibleUser(s)) return;
     try {
       const ref = doc(db, 'students', s.id);
       const snap = await getDoc(ref);
@@ -141,11 +182,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     studentNumber: string,
     partnerInfo?: { name: string; classroom: string; studentNumber: string }
   ) => {
+    const rosterMain = findRosterStudent(name, classroom, studentNumber);
+    if (!rosterMain) {
+      throw new Error('ไม่พบข้อมูลในรายชื่อนักเรียน กรุณาแจ้งครูผู้สอน');
+    }
+    const rosterPartner = partnerInfo
+      ? findRosterStudent(partnerInfo.name, partnerInfo.classroom, partnerInfo.studentNumber)
+      : undefined;
+    if (partnerInfo && !rosterPartner) {
+      throw new Error('ไม่พบข้อมูลเพื่อนร่วมเครื่องในรายชื่อนักเรียน');
+    }
     const main: Student = {
-      id: buildId(name, classroom, studentNumber),
-      name,
+      id: buildId(rosterMain.name, classroom, String(rosterMain.no)),
+      name: rosterMain.name,
       classroom,
-      studentNumber,
+      studentNumber: String(rosterMain.no),
+      studentCode: rosterMain.studentCode,
+      accountType: 'student',
       loginTime: Date.now(),
     };
     removeStudentSessionStorage();
@@ -155,12 +208,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // นับ login เป็นกิจกรรม → เช็คชื่อตามตารางเห็นเวลาเข้าเรียนจริง (ไม่ตีเป็นขาด/สาย)
     void import('../services/progressService').then(({ trackLogin }) => trackLogin(main.id));
 
-    if (partnerInfo) {
+    if (partnerInfo && rosterPartner) {
       const p: Student = {
-        id: buildId(partnerInfo.name, partnerInfo.classroom, partnerInfo.studentNumber),
-        name: partnerInfo.name,
+        id: buildId(rosterPartner.name, partnerInfo.classroom, String(rosterPartner.no)),
+        name: rosterPartner.name,
         classroom: partnerInfo.classroom,
-        studentNumber: partnerInfo.studentNumber,
+        studentNumber: String(rosterPartner.no),
+        studentCode: rosterPartner.studentCode,
+        accountType: 'student',
         loginTime: Date.now(),
       };
       setSessionItem(PARTNER_KEY, JSON.stringify(p));
@@ -178,6 +233,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginAsExternalVisitor = async (name: string) => {
+    const { userId, visitor } = await recordExternalVisitor(name);
+    const externalUser: Student = {
+      id: userId,
+      name: visitor.displayName,
+      classroom: 'ผู้ทดลองภายนอก',
+      studentNumber: '-',
+      accountType: 'external',
+      loginTime: Date.now(),
+    };
+    removeStudentSessionStorage();
+    setSessionItem(STUDENT_KEY, JSON.stringify(externalUser));
+    setUser(externalUser);
+    setPartner(null);
+  };
+
   const clearStudentSession = () => {
     removeStudentSessionStorage();
     setUser(null);
@@ -193,7 +264,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    if (!user || user.id === 'admin_teacher_account') return;
+    if (!user || user.accountType === 'admin') return;
 
     const checkSession = () => {
       const savedStudent = getSessionItem(STUDENT_KEY);
@@ -217,13 +288,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getActiveIds = (): string[] => {
     const ids: string[] = [];
-    if (user) ids.push(user.id);
-    if (partner) ids.push(partner.id);
+    if (isScoreEligibleUser(user)) ids.push(user.id);
+    if (isScoreEligibleUser(partner)) ids.push(partner.id);
     return ids;
   };
 
   return (
-    <AuthContext.Provider value={{ user, partner, loading, loginAsStudent, logout, clearStudentSession, getActiveIds, persistStudent }}>
+    <AuthContext.Provider value={{
+      user,
+      partner,
+      loading,
+      loginAsStudent,
+      loginAsExternalVisitor,
+      logout,
+      clearStudentSession,
+      getActiveIds,
+      persistStudent,
+    }}>
       {children}
     </AuthContext.Provider>
   );

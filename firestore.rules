@@ -36,6 +36,12 @@ service cloud.firestore {
     function baseWrite(maxFields) {
       return isMap() && fieldsUnder(maxFields);
     }
+    function isAcademicStudentId(id) {
+      return id is string
+        && id.size() > 0
+        && id != 'admin_teacher_account'
+        && !id.matches('^external_visitor_.*');
+    }
     function isTeacher() {
       return request.auth != null
         && (
@@ -74,7 +80,8 @@ service cloud.firestore {
     // ====== Students (รายชื่อ) ======
     match /students/{studentId} {
       allow read: if true;
-      allow write: if baseWrite(20)
+      allow write: if isAcademicStudentId(studentId)
+                   && baseWrite(20)
                    && strOk('name', 200)
                    && strOk('classroom', 20)
                    && strOk('studentNumber', 10);
@@ -84,7 +91,7 @@ service cloud.firestore {
     match /progress/{studentId} {
       allow read: if true;
       // progress มี nested arrays/maps เยอะ — จำกัดจำนวน top-level field
-      allow write: if baseWrite(40);
+      allow write: if isAcademicStudentId(studentId) && baseWrite(40);
     }
 
     // ====== Grades (K/P/A + ทักษะอาชีพ) ======
@@ -133,7 +140,8 @@ service cloud.firestore {
 
     match /learningEvidence/{evidenceId} {
       allow read: if true;
-      allow create, update: if baseWrite(30)
+      allow create, update: if isAcademicStudentId(request.resource.data.studentId)
+                   && baseWrite(30)
                    && strOk('studentName', 300)
                    && strOk('classroom', 20)
                    && strOk('title', 500)
@@ -197,7 +205,8 @@ service cloud.firestore {
 
     match /homeworkSubmissions/{id} {
       allow read: if true;
-      allow write: if baseWrite(30)
+      allow write: if isAcademicStudentId(request.resource.data.studentId)
+                   && baseWrite(30)
                    && strOk('studentName', 300)
                    && strOk('classroom', 20)
                    && strOk('contentUrl', 3000)
@@ -239,6 +248,27 @@ service cloud.firestore {
     match /surveys/{studentId} {
       allow read: if true;
       allow write: if baseWrite(10);
+    }
+
+    // ====== External website trial visitors ======
+    // ผู้ทดลองกรอกเฉพาะชื่อ และไม่ถูกนำไปปนกับ students/progress/grades
+    match /externalVisitors/{visitorId} {
+      allow read, delete: if isTeacher();
+      allow create, update: if baseWrite(10)
+                   && strOk('id', 200)
+                   && strOk('displayName', 100)
+                   && strOk('source', 50)
+                   && request.resource.data.id == visitorId
+                   && request.resource.data.source == 'website-trial';
+    }
+
+    // เปิดเฉพาะยอดรวมที่ไม่ระบุตัวบุคคลให้หน้า Admin แบบ legacy ดูสถิติได้
+    match /externalVisitorStats/{statId} {
+      allow read: if true;
+      allow create, update: if baseWrite(8)
+                   && strOk('source', 50)
+                   && request.resource.data.source == 'website-trial';
+      allow delete: if isTeacher();
     }
 
     // ====== Live Quiz Rooms ======

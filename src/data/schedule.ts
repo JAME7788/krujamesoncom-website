@@ -30,12 +30,14 @@ export const defaultSchedule: ClassSlot[] = [
   { id: 's-tue-6',  classroom: 'ม.1', day: 2, start: '13:50', end: '14:40', subject: 'ทักษะอาชีพ', excludeFromGrading: true },
   { id: 's-tue-7',  classroom: 'ม.1', day: 2, start: '14:40', end: '15:30', subject: 'ทักษะอาชีพ', excludeFromGrading: true },
   // พุธ
-  { id: 's-wed-1',  classroom: 'ป.1', day: 3, start: '08:30', end: '09:20', subject: 'เทคโนโลยี' },
   { id: 's-wed-2',  classroom: 'ป.4', day: 3, start: '09:20', end: '10:10', subject: 'เทคโนโลยี' },
   { id: 's-wed-6',  classroom: 'ป.5', day: 3, start: '13:50', end: '14:40', subject: 'เทคโนโลยี' },
   // พฤหัสบดี
   { id: 's-thu-2',  classroom: 'ม.3', day: 4, start: '09:20', end: '10:10', subject: 'วิทยาการคำนวณ' },
   { id: 's-thu-4',  classroom: 'ป.6', day: 4, start: '11:00', end: '11:50', subject: 'เทคโนโลยี' },
+  // ป.1 เคยลงผิดเป็นพุธเช้า ทำให้งานทั้งห้องถูกนับเป็น "นอกคาบ" 100%
+  // ผล: P เหลือ 40% และ A ขาดไป 4 คะแนน — ครูยืนยันคาบจริงคือพฤหัสบดีบ่าย
+  { id: 's-wed-1',  classroom: 'ป.1', day: 4, start: '13:00', end: '14:00', subject: 'เทคโนโลยี' },
   // ศุกร์
   { id: 's-fri-3',  classroom: 'ม.2', day: 5, start: '10:10', end: '11:00', subject: 'วิทยาการคำนวณ' },
   { id: 's-fri-4',  classroom: 'ป.3', day: 5, start: '11:00', end: '11:50', subject: 'เทคโนโลยี' },

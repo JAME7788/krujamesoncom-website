@@ -5,6 +5,7 @@ import {
   Download, Search, RefreshCw, Plus, Trash2, Save, CheckCircle2,
   XCircle, BookOpen, Award, FileText, Gamepad2, PlayCircle,
   LogOut, Pencil, Lock, MonitorPlay,
+  Globe2,
 } from 'lucide-react';
 import AdminGate from '../components/AdminGate';
 import CourseBuilder from '../components/CourseBuilder';
@@ -28,6 +29,7 @@ import PrimaryTechnologyPlans from '../components/PrimaryTechnologyPlans';
 import CoursePlan5 from '../components/CoursePlan5';
 import StudentAssessmentHub from '../components/StudentAssessmentHub';
 import TeacherClassroomHub from '../components/TeacherClassroomHub';
+import ExternalVisitorManager from '../components/ExternalVisitorManager';
 import QuestionBankManager from '../components/QuestionBankManager';
 import AuditLogViewer from '../components/AuditLogViewer';
 import { loadErrors, clearErrors } from '../services/errorLogger';
@@ -45,7 +47,7 @@ import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'today' | 'overview' | 'world' | 'roster' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
+type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -78,6 +80,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     title: '👥 ชั้นเรียนและเช็คชื่อ',
     items: [
       { id: 'roster', label: 'จัดการนักเรียน', icon: <Users size={16} /> },
+      { id: 'external-visitors', label: 'ผู้ทดลองภายนอก', icon: <Globe2 size={16} /> },
       { id: 'attendance', label: 'เช็คชื่อตามตาราง', icon: <Calendar size={16} /> },
       { id: 'quick-att', label: 'เช็คชื่อ Quick (มา/ขาด/ลา)', icon: <Calendar size={16} /> },
     ]
@@ -568,6 +571,12 @@ const AdminDashboardInner: React.FC = () => {
                   </p>
                 </div>
                 <StudentManager />
+              </motion.div>
+            )}
+
+            {tab === 'external-visitors' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <ExternalVisitorManager />
               </motion.div>
             )}
 

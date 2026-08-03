@@ -5,6 +5,7 @@ import { recordGameProgress } from '../services/gameProgressService';
 import type { GameProgressId } from '../services/gameProgressService';
 import { celebrate } from '../utils/celebrate';
 import { addCoins, coinsForGameScore } from '../services/coinService';
+import { isScoreEligibleUser } from '../services/userAccessService';
 
 type GameProgressOptions = {
   recordOnce?: boolean;
@@ -23,7 +24,7 @@ export const useGameProgress = (
   return useCallback(
     async (score?: number, activityKey?: string) => {
       celebrate(); // 🎉 ฉลองทุกครั้งที่เล่นจบ (เสียง + confetti) — เด็กทุกคนรวม guest
-      if (!user || user.id === 'admin_teacher_account') return;
+      if (!isScoreEligibleUser(user)) return;
       if (recordOnce && recordedRef.current) return;
       if (recordOnce) recordedRef.current = true;
 
@@ -33,7 +34,13 @@ export const useGameProgress = (
       addCoins(earned, user.id);
       toast.show(`🪙 ได้ ${earned} เหรียญ ไปสะสมซื้อตัวละครได้`, 'info');
       try {
-        const result = await recordGameProgress(gameId, gameTitle, [user, partner], score, activityKey);
+        const result = await recordGameProgress(
+          gameId,
+          gameTitle,
+          [user, isScoreEligibleUser(partner) ? partner : null],
+          score,
+          activityKey,
+        );
         if (result.saved > 0) {
           toast.show(
             `บันทึกคะแนนกิจกรรมเกมแล้ว${partner ? ' ให้ทั้ง 2 คน' : ''}`,
