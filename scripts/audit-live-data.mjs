@@ -108,6 +108,7 @@ const main = async () => {
   const questions = Array.isArray(details.questionBank) ? details.questionBank : [];
   const assignments = Array.isArray(details.homeworkAssignments) ? details.homeworkAssignments : [];
   const records = Array.isArray(details.lessonRecords) ? details.lessonRecords : [];
+  const activeRecords = records.filter((item) => item.archived !== true);
   const courses = Array.isArray(details.courses) ? details.courses : [];
   const studentAssessments = Array.isArray(details.studentAssessments) ? details.studentAssessments : [];
   const competencyAssessments = Array.isArray(details.primaryCompetencyAssessments)
@@ -146,8 +147,10 @@ const main = async () => {
       },
       lessonRecords: {
         total: records.length,
-        byClassroom: countBy(records, 'classroom'),
-        withTeachingDate: records.filter((item) => item.teachingDate).length,
+        active: activeRecords.length,
+        archived: records.length - activeRecords.length,
+        byClassroom: countBy(activeRecords, 'classroom'),
+        withTeachingDate: activeRecords.filter((item) => item.teachingDate).length,
       },
       customCourses: {
         total: courses.length,
@@ -175,6 +178,12 @@ const main = async () => {
           0,
         ),
         awaitingTeacherConfirmation: studentAssessments.filter((item) => item.provisional !== false).length,
+        confirmedByTeacher: studentAssessments.filter((item) => item.confirmedByTeacher === true).length,
+        postLessonDrafts: studentAssessments.filter((item) => item.kind === 'post-lesson').length,
+        postLessonByClassroom: countBy(
+          studentAssessments.filter((item) => item.kind === 'post-lesson'),
+          'classroom',
+        ),
       },
       primaryCompetencyAssessments: {
         total: competencyAssessments.length,

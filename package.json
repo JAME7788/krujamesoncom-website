@@ -22,6 +22,8 @@
     "students:clean:apply": "node scripts/clean-student-identities.mjs --apply",
     "teacher-auth:setup": "node scripts/setup-teacher-auth.mjs",
     "teacher-auth:apply": "node scripts/setup-teacher-auth.mjs --apply",
+    "ability:check": "node scripts/sync-student-ability-assessments.mjs",
+    "ability:apply": "node scripts/sync-student-ability-assessments.mjs --apply",
     "test": "vitest run",
     "test:watch": "vitest",
     "qa:smoke": "node scripts/qa-smoke.mjs"

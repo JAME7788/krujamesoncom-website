@@ -53,6 +53,8 @@ export interface LessonRecord extends LessonRecordOfficialFields {
   nextAction: string;
   teacherName: string;
   status: 'draft' | 'complete';
+  /** ซ่อนร่างอัตโนมัติที่ยังไม่อยู่ในชุดหลังแผนปัจจุบัน โดยไม่ลบข้อมูล */
+  archived?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -108,13 +110,13 @@ export const fetchLessonRecords = async (
 ): Promise<LessonRecord[]> => {
   if (!firebaseAvailable()) {
     return loadLessonRecords().filter((item) => (
-      item.classroom === classroom && item.subject === subject
+      item.classroom === classroom && item.subject === subject && !item.archived
     ));
   }
   const snapshot = await getDocs(collection(db, COLLECTION));
   const records = snapshot.docs
     .map((item) => item.data() as LessonRecord)
-    .filter((item) => item.classroom === classroom && item.subject === subject)
+    .filter((item) => item.classroom === classroom && item.subject === subject && !item.archived)
     .sort((a, b) => b.updatedAt - a.updatedAt);
   const otherRecords = loadLessonRecords().filter((item) => (
     item.classroom !== classroom || item.subject !== subject
@@ -142,6 +144,7 @@ export const saveLessonRecord = async (
     id,
     courseName: input.courseName || 'เทคโนโลยี (วิทยาการคำนวณ)',
     teacherName: COURSE_TEACHER_NAME,
+    archived: false,
     createdAt: current?.createdAt || Date.now(),
     updatedAt: Date.now(),
   };

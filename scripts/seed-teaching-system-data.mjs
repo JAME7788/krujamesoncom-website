@@ -459,7 +459,7 @@ const main = async () => {
       const classroom = classroomFor(gradeId);
       const roster = rosterSource[classroom] || [];
       scheduleRowsByGrade[gradeId]
-        .filter((row) => row.plannedDate <= TODAY)
+        .filter((row) => row.period <= 11)
         .forEach((row) => {
           const id = gradeId === 'p1'
             ? `p1-plan-${row.period}-hour-1-${row.plannedDate}`

@@ -19,8 +19,10 @@ import {
   type StudentAssessmentKind,
 } from '../data/studentAssessmentTemplates';
 import type { StudentInfo } from '../data/students2569';
+import type { TechnologyGradeId } from '../data/technologyTeachingSchedule';
 import { COURSE_TEACHER_NAME } from '../services/gradeService';
 import { fetchRostersFromFirebase, loadAllRosters } from '../services/rosterService';
+import { buildDefaultTeachingSessions } from '../services/teachingSessionService';
 import {
   loadClassroomAssessment,
   makeClassroomAssessmentId,
@@ -36,6 +38,17 @@ type SaveState = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
 const todayKey = () => {
   const date = new Date();
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
+const gradeIdFromClassroom = (classroom: string): TechnologyGradeId | null => {
+  const match = classroom.match(/^([ปม])\.(\d)$/);
+  if (!match) return null;
+  return `${match[1] === 'ป' ? 'p' : 'm'}${match[2]}` as TechnologyGradeId;
+};
+
+const postLessonPlansForClassroom = (classroom: string) => {
+  const gradeId = gradeIdFromClassroom(classroom);
+  return gradeId ? buildDefaultTeachingSessions(gradeId).slice(0, 11) : [];
 };
 
 const makeEntry = (student: StudentInfo, current?: StudentAssessmentEntry): StudentAssessmentEntry => ({
@@ -110,6 +123,7 @@ const StudentAssessmentHub: React.FC = () => {
     [rosters],
   );
   const roster = useMemo(() => rosters[classroom] || [], [classroom, rosters]);
+  const postLessonPlans = useMemo(() => postLessonPlansForClassroom(classroom), [classroom]);
   const contextKey = kind === 'post-lesson' ? `${lessonDate}__plan-${lessonNo || '1'}` : 'main';
 
   useEffect(() => {
@@ -183,6 +197,10 @@ const StudentAssessmentHub: React.FC = () => {
 
   const handleKindChange = (nextKind: StudentAssessmentKind) => {
     const nextTemplate = getStudentAssessmentTemplate(nextKind);
+    if (nextKind === 'post-lesson' && postLessonPlans[0]) {
+      setLessonNo(String(postLessonPlans[0].period));
+      setLessonDate(postLessonPlans[0].plannedDate);
+    }
     setAssessment(null);
     setSaveState('idle');
     setKind(nextKind);
@@ -302,9 +320,15 @@ const StudentAssessmentHub: React.FC = () => {
       <div className="sah-controls">
         <label>ชั้นเรียน
           <select value={classroom} onChange={(event) => {
+            const nextClassroom = event.target.value;
+            const firstPlan = postLessonPlansForClassroom(nextClassroom)[0];
             setAssessment(null);
             setSaveState('idle');
-            setClassroom(event.target.value);
+            setClassroom(nextClassroom);
+            if (kind === 'post-lesson' && firstPlan) {
+              setLessonNo(String(firstPlan.period));
+              setLessonDate(firstPlan.plannedDate);
+            }
           }}>
             {classrooms.map((item) => <option key={item}>{item}</option>)}
           </select>
@@ -329,18 +353,26 @@ const StudentAssessmentHub: React.FC = () => {
         </label>
         {kind === 'post-lesson' && (
           <>
+            <label>แผนหลังสอน (11 แผน)
+              <select value={lessonNo} onChange={(event) => {
+                const selected = postLessonPlans.find((item) => String(item.period) === event.target.value);
+                setAssessment(null);
+                setSaveState('idle');
+                setLessonNo(event.target.value);
+                if (selected) setLessonDate(selected.plannedDate);
+              }}>
+                {postLessonPlans.map((item) => (
+                  <option key={item.id} value={item.period}>
+                    แผนที่ {item.period} — {item.lessonTitle}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label>วันที่สอน
               <input type="date" value={lessonDate} onChange={(event) => {
                 setAssessment(null);
                 setSaveState('idle');
                 setLessonDate(event.target.value);
-              }} />
-            </label>
-            <label>แผนที่
-              <input type="number" min="1" value={lessonNo} onChange={(event) => {
-                setAssessment(null);
-                setSaveState('idle');
-                setLessonNo(event.target.value);
               }} />
             </label>
           </>
