@@ -781,6 +781,44 @@
   gap: 8px;
 }
 
+.p1plan-auto-post {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+}
+
+.p1plan-auto-post.active {
+  background: #ecfdf5;
+  border-color: #0f766e;
+}
+
+.p1plan-auto-post:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.p1plan-auto-post input {
+  accent-color: #0f766e;
+  height: 18px;
+  margin: 0;
+  width: 18px;
+}
+
+.p1plan-auto-post span {
+  display: grid;
+  gap: 2px;
+}
+
+.p1plan-auto-post small {
+  color: #64748b;
+}
+
 .p1plan-refresh-record:disabled {
   cursor: not-allowed;
   opacity: 0.55;

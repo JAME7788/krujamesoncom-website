@@ -177,6 +177,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [evidence, setEvidence] = useState<LearningEvidence[]>([]);
   const [recordForm, setRecordForm] = useState(recordFormDefault);
+  const [autoPostTeaching, setAutoPostTeaching] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
@@ -347,16 +348,16 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
         ...current,
         totalStudents: snapshot.totalStudents,
         passedCount: snapshot.passed,
-        summary: isLegacyPostTeachingText(current.summary) ? narrative.summary : current.summary,
-        strengths: isLegacyPostTeachingText(current.strengths) ? narrative.strengths : current.strengths,
-        problems: isLegacyPostTeachingText(current.problems) ? narrative.problems : current.problems,
-        causes: isLegacyPostTeachingText(current.causes) ? narrative.causes : current.causes,
-        improvements: isLegacyPostTeachingText(current.improvements) ? narrative.improvements : current.improvements,
-        nextAction: isLegacyPostTeachingText(current.nextAction) ? narrative.nextAction : current.nextAction,
+        summary: autoPostTeaching || isLegacyPostTeachingText(current.summary) ? narrative.summary : current.summary,
+        strengths: autoPostTeaching || isLegacyPostTeachingText(current.strengths) ? narrative.strengths : current.strengths,
+        problems: autoPostTeaching || isLegacyPostTeachingText(current.problems) ? narrative.problems : current.problems,
+        causes: autoPostTeaching || isLegacyPostTeachingText(current.causes) ? narrative.causes : current.causes,
+        improvements: autoPostTeaching || isLegacyPostTeachingText(current.improvements) ? narrative.improvements : current.improvements,
+        nextAction: autoPostTeaching || isLegacyPostTeachingText(current.nextAction) ? narrative.nextAction : current.nextAction,
       }));
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [postTeachingReady, selectedPlan, snapshot]);
+  }, [autoPostTeaching, postTeachingReady, selectedPlan, snapshot]);
 
   const classAssignments = assignments.filter((item) => (
     item.classroom === classroom
@@ -476,6 +477,19 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
       ...narrative,
     }));
     toast.show('เรียบเรียงบันทึกเชิงบวกจากผล K/P/A และความสามารถของผู้เรียนแล้ว', 'success');
+  };
+
+  const toggleAutoPostTeaching = (checked: boolean) => {
+    setAutoPostTeaching(checked);
+    if (!checked || !postTeachingReady || !hasPostTeachingResult(snapshot)) return;
+    const narrative = buildP1PostTeachingDraft(selectedPlan, snapshot);
+    setRecordForm((current) => ({
+      ...current,
+      totalStudents: snapshot.totalStudents || current.totalStudents,
+      passedCount: snapshot.passed,
+      ...narrative,
+    }));
+    toast.show('เปิดสรุปหลังแผนอัตโนมัติ และกรอกครบทุกช่องแล้ว', 'success');
   };
 
   /** ออกไฟล์ Word จริงตามแบบฟอร์มราชการของโรงเรียน ใช้ได้ทุกชั้นและทุกคาบ */
@@ -807,6 +821,18 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
               <small>ผ่าน {percentOf(recordForm.passedCount, recordForm.totalStudents)}% · ไม่ผ่าน {percentOf(failedCount, recordForm.totalStudents)}%</small>
             </div>
           </div>}
+          <label className={`auto-post-toggle ${autoPostTeaching ? 'active' : ''}`}>
+            <input
+              type="checkbox"
+              checked={autoPostTeaching}
+              disabled={!postTeachingReady || !hasPostTeachingResult(snapshot)}
+              onChange={(event) => toggleAutoPostTeaching(event.target.checked)}
+            />
+            <span>
+              <strong>สรุปหลังแผนอัตโนมัติ</strong>
+              <small>ติ๊กเพื่อเรียบเรียงผลจริงลงครบทุกช่อง และปรับตาม K/P/A ล่าสุด</small>
+            </span>
+          </label>
           <div className="post-form">
             <label className="wide">2. สรุปผลการจัดการเรียนรู้ <em>(ลงในแบบราชการ)</em>
               <textarea rows={3} disabled={!postTeachingReady} value={recordForm.summary} onChange={(event) => setRecordForm({ ...recordForm, summary: event.target.value })} />

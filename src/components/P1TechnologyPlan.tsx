@@ -128,6 +128,7 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
       : emptySnapshot,
   );
   const [form, setForm] = useState(() => recordFormForPlan(plan, initialRecord, initialReady));
+  const [autoPostTeaching, setAutoPostTeaching] = useState(false);
   const [busy, setBusy] = useState(false);
   const toast = useToast();
   const savedRecord = records.find((item) => (
@@ -287,6 +288,23 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
     toast.show('เรียบเรียงบันทึกเชิงบวกจากผล K/P/A ล่าสุดแล้ว', 'success');
   };
 
+  const toggleAutoPostTeaching = (checked: boolean) => {
+    setAutoPostTeaching(checked);
+    if (!checked || !postTeachingReady || !hasAssessmentData) return;
+    const narrative = buildP1PostTeachingDraft(plan, snapshot);
+    setForm((current) => ({ ...current, ...narrative }));
+    toast.show('เปิดสรุปหลังแผนอัตโนมัติ และกรอกครบทุกช่องแล้ว', 'success');
+  };
+
+  useEffect(() => {
+    if (!autoPostTeaching || !postTeachingReady || !hasAssessmentData) return;
+    const narrative = buildP1PostTeachingDraft(plan, snapshot);
+    const timer = window.setTimeout(() => {
+      setForm((current) => ({ ...current, ...narrative }));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [autoPostTeaching, hasAssessmentData, plan, postTeachingReady, snapshot]);
+
   const save = async () => {
     if (!postTeachingReady) {
       toast.show('ต้องเริ่มคาบหรือสอนแผนนี้ก่อน จึงจะบันทึกหลังสอนได้', 'info');
@@ -387,6 +405,19 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
           <Sparkles size={16} /> เรียบเรียงผลเชิงบวกจากข้อมูลจริง
         </button>
       </div>
+
+      <label className={`p1plan-auto-post ${autoPostTeaching ? 'active' : ''}`}>
+        <input
+          type="checkbox"
+          checked={autoPostTeaching}
+          disabled={!postTeachingReady || !hasAssessmentData}
+          onChange={(event) => toggleAutoPostTeaching(event.target.checked)}
+        />
+        <span>
+          <strong>สรุปหลังแผนอัตโนมัติ</strong>
+          <small>ติ๊กเพื่อเรียบเรียงผลจริงลงครบทุกช่อง และปรับตาม K/P/A ล่าสุด</small>
+        </span>
+      </label>
 
       <div className="p1plan-post-fields">
         <label className="wide">สรุปผลการจัดการเรียนรู้<textarea rows={3} disabled={!postTeachingReady} value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} /></label>

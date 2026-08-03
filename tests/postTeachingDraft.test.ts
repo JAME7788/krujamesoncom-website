@@ -94,6 +94,14 @@ describe('P.1 post-teaching draft', () => {
     expect(draft.summary).toContain('ด้านคุณลักษณะ (A) 11 คน');
     expect(draft.problems).toContain('ผู้เรียนทุกคนผ่านจุดประสงค์');
     expect(draft.problems).not.toContain('อาจ');
+    expect([
+      draft.summary,
+      draft.strengths,
+      draft.problems,
+      draft.causes,
+      draft.improvements,
+      draft.nextAction,
+    ].every((value) => value.trim().length > 30)).toBe(true);
   });
 
   it('selects the record for the planned date before a newer unrelated date', () => {
