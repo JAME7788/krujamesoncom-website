@@ -668,6 +668,16 @@
   font-size: 0.84rem;
 }
 
+.p1plan-post-record-heading .p1plan-unused-note {
+  width: fit-content;
+  margin-top: 8px;
+  padding: 6px 9px;
+  border-left: 3px solid #94a3b8;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 700;
+}
+
 .p1plan-post-record-controls,
 .p1plan-post-footer {
   display: flex;
@@ -713,6 +723,14 @@
   background: #fff;
   color: #0f172a;
   font: inherit;
+}
+
+.p1plan-post-record input:disabled,
+.p1plan-post-record select:disabled,
+.p1plan-post-record textarea:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 
 .p1plan-post-kpis {

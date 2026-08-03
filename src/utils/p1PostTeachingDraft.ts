@@ -17,6 +17,13 @@ export interface PostTeachingResult {
   attitudePassed: number;
 }
 
+export interface PostTeachingReadiness {
+  sessionStatus?: 'planned' | 'in_progress' | 'completed' | 'postponed' | 'makeup';
+  recordStatus?: 'draft' | 'complete';
+  teachingDate?: string;
+  hasResult?: boolean;
+}
+
 const objective = (plan: P1LessonPlan, domain: 'K' | 'P' | 'A') => (
   plan.objectives.find((item) => item.domain === domain)?.text || plan.title
 );
@@ -42,6 +49,17 @@ export const hasPostTeachingResult = (result?: Partial<PostTeachingResult>): res
     || Number(result.attitudePassed) > 0
   ))
 );
+
+/** แผนอนาคตต้องว่าง จนกว่าจะเริ่มคาบ สอนแล้ว หรือมีผลจริงของวันที่ผ่านมา */
+export const isPostTeachingReady = (
+  value: PostTeachingReadiness,
+): boolean => {
+  if (value.sessionStatus === 'in_progress' || value.sessionStatus === 'completed' || value.sessionStatus === 'makeup') {
+    return true;
+  }
+  if (value.recordStatus === 'complete') return true;
+  return false;
+};
 
 const legacyDraftMarkers = [
   'ฉบับร่างหลังแผน',

@@ -31,11 +31,17 @@ import {
 import { fetchAllStudents, computeAttendance } from '../services/adminService';
 import { fetchAttendance } from '../services/manualAttendanceService';
 import { loadSchedule } from '../data/schedule';
-import { buildDefaultTeachingSessions } from '../services/teachingSessionService';
+import {
+  buildDefaultTeachingSessions,
+  fetchTeachingSessions,
+  loadTeachingSessions,
+} from '../services/teachingSessionService';
 import { buildP1TechnologyPlanDocumentHtml } from '../utils/p1TechnologyPlanDocument';
 import {
   buildP1PostTeachingDraft,
+  hasPostTeachingResult,
   isLegacyPostTeachingText,
+  isPostTeachingReady,
 } from '../utils/p1PostTeachingDraft';
 import { useToast } from './Toast';
 import OfficialLessonPlanHeader from './OfficialLessonPlanHeader';
@@ -63,7 +69,18 @@ const emptySnapshot: LessonRecordSnapshot = {
   attitudePassed: 0,
 };
 
-const recordFormForPlan = (plan: P1LessonPlan, record?: LessonRecord) => {
+const emptyRecordForm = () => ({
+  summary: '',
+  strengths: '',
+  problems: '',
+  causes: '',
+  improvements: '',
+  nextAction: '',
+  status: 'draft' as LessonRecord['status'],
+});
+
+const recordFormForPlan = (plan: P1LessonPlan, record?: LessonRecord, ready = true) => {
+  if (!ready) return emptyRecordForm();
   const draft = buildP1PostTeachingDraft(plan, record?.snapshot);
   const resultText = (value: string | undefined, fallback: string) => (
     isLegacyPostTeachingText(value) ? fallback : value || fallback
@@ -81,10 +98,15 @@ const recordFormForPlan = (plan: P1LessonPlan, record?: LessonRecord) => {
 
 const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
   const sessions = useMemo(() => getP1HourlySessions(plan), [plan]);
-  const scheduledSession = useMemo(
+  const defaultSession = useMemo(
     () => buildDefaultTeachingSessions('p1').find((item) => item.period === plan.no),
     [plan.no],
   );
+  const cachedSession = useMemo(
+    () => loadTeachingSessions().find((item) => item.gradeId === 'p1' && item.period === plan.no),
+    [plan.no],
+  );
+  const [scheduledSession, setScheduledSession] = useState(cachedSession || defaultSession);
   const hourNo = 1;
   const initialRecords = useMemo(() => loadLessonRecords(), []);
   const plannedDate = scheduledSession?.teachingDate || scheduledSession?.plannedDate || new Date().toISOString().slice(0, 10);
@@ -92,12 +114,20 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
     () => findLessonRecordForPlan(initialRecords, 'ป.1', 'main', plan.no, plannedDate),
     [initialRecords, plan.no, plannedDate],
   );
+  const initialReady = isPostTeachingReady({
+    sessionStatus: scheduledSession?.status,
+    recordStatus: initialRecord?.status,
+    teachingDate: initialRecord?.teachingDate,
+    hasResult: hasPostTeachingResult(initialRecord?.snapshot),
+  });
   const [teachingDate, setTeachingDate] = useState(initialRecord?.teachingDate || plannedDate);
   const [records, setRecords] = useState<LessonRecord[]>(initialRecords);
   const [snapshot, setSnapshot] = useState<LessonRecordSnapshot>(
-    initialRecord?.snapshot || { ...emptySnapshot, totalStudents: initialRecord?.totalStudents || 0 },
+    initialReady
+      ? initialRecord?.snapshot || { ...emptySnapshot, totalStudents: initialRecord?.totalStudents || 0 }
+      : emptySnapshot,
   );
-  const [form, setForm] = useState(() => recordFormForPlan(plan, initialRecord));
+  const [form, setForm] = useState(() => recordFormForPlan(plan, initialRecord, initialReady));
   const [busy, setBusy] = useState(false);
   const toast = useToast();
   const savedRecord = records.find((item) => (
@@ -107,6 +137,13 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
     && item.teachingDate === teachingDate
     && !item.archived
   ));
+  const planRecord = savedRecord || findLessonRecordForPlan(records, 'ป.1', 'main', plan.no, plannedDate);
+  const postTeachingReady = isPostTeachingReady({
+    sessionStatus: scheduledSession?.status,
+    recordStatus: planRecord?.status,
+    teachingDate: planRecord?.teachingDate,
+    hasResult: hasPostTeachingResult(planRecord?.snapshot),
+  });
   const hasAssessmentData = snapshot.passed > 0
     || snapshot.averageK > 0
     || snapshot.averageP > 0
@@ -114,14 +151,28 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
 
   useEffect(() => {
     let cancelled = false;
-    fetchLessonRecords()
-      .then((items) => {
+    Promise.all([
+      fetchLessonRecords().catch(() => initialRecords),
+      fetchTeachingSessions('p1').catch(() => (cachedSession ? [cachedSession] : [])),
+    ])
+      .then(([items, sessionItems]) => {
         if (cancelled) return;
         setRecords(items);
-        const existing = findLessonRecordForPlan(items, 'ป.1', 'main', plan.no, plannedDate);
-        if (existing?.teachingDate) setTeachingDate(existing.teachingDate);
-        setSnapshot(existing?.snapshot || { ...emptySnapshot, totalStudents: existing?.totalStudents || 0 });
-        setForm(recordFormForPlan(plan, existing));
+        const nextSession = sessionItems.find((item) => item.period === plan.no) || cachedSession || defaultSession;
+        setScheduledSession(nextSession);
+        const nextPlannedDate = nextSession?.teachingDate || nextSession?.plannedDate || plannedDate;
+        const existing = findLessonRecordForPlan(items, 'ป.1', 'main', plan.no, nextPlannedDate);
+        const ready = isPostTeachingReady({
+          sessionStatus: nextSession?.status,
+          recordStatus: existing?.status,
+          teachingDate: existing?.teachingDate,
+          hasResult: hasPostTeachingResult(existing?.snapshot),
+        });
+        setTeachingDate(existing?.teachingDate || nextPlannedDate);
+        setSnapshot(ready
+          ? existing?.snapshot || { ...emptySnapshot, totalStudents: existing?.totalStudents || 0 }
+          : emptySnapshot);
+        setForm(recordFormForPlan(plan, existing, ready));
       })
       .catch(() => undefined);
     return () => { cancelled = true; };
@@ -133,11 +184,21 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
     const existing = records.find((item) => (
       item.id === makeLessonRecordId(plan.no, nextHourNo, nextDate)
     ));
-    setSnapshot(existing?.snapshot || emptySnapshot);
-    setForm(recordFormForPlan(plan, existing));
+    const ready = isPostTeachingReady({
+      sessionStatus: scheduledSession?.status,
+      recordStatus: existing?.status,
+      teachingDate: existing?.teachingDate,
+      hasResult: hasPostTeachingResult(existing?.snapshot),
+    });
+    setSnapshot(ready ? existing?.snapshot || emptySnapshot : emptySnapshot);
+    setForm(recordFormForPlan(plan, existing, ready));
   };
 
   const refreshSnapshot = async () => {
+    if (!postTeachingReady) {
+      toast.show('แผนนี้ยังไม่ถูกใช้ จึงยังไม่ดึงผลมาใส่บันทึกหลังสอน', 'info');
+      return;
+    }
     setBusy(true);
     try {
       const [remoteGrades, students, manualAttendance] = await Promise.all([
@@ -220,12 +281,17 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
   };
 
   const regenerateNarrative = () => {
+    if (!postTeachingReady) return;
     const narrative = buildP1PostTeachingDraft(plan, snapshot);
     setForm((current) => ({ ...current, ...narrative }));
     toast.show('เรียบเรียงบันทึกเชิงบวกจากผล K/P/A ล่าสุดแล้ว', 'success');
   };
 
   const save = async () => {
+    if (!postTeachingReady) {
+      toast.show('ต้องเริ่มคาบหรือสอนแผนนี้ก่อน จึงจะบันทึกหลังสอนได้', 'info');
+      return;
+    }
     setBusy(true);
     try {
       const saved = await saveLessonRecord({
@@ -263,8 +329,10 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
       <section className="p1plan-reflection p1plan-reflection-live">
         <div className="p1plan-reflection-title">
           <h4>12. บันทึกหลังสอน</h4>
-          <span className={savedRecord?.status === 'complete' ? 'complete' : 'draft'}>
-            {savedRecord?.status === 'complete' ? 'บันทึกสมบูรณ์' : 'ฉบับร่าง รอครูตรวจ'}
+          <span className={postTeachingReady && savedRecord?.status === 'complete' ? 'complete' : 'draft'}>
+            {!postTeachingReady
+              ? 'ยังไม่สอน · เว้นว่าง'
+              : savedRecord?.status === 'complete' ? 'บันทึกสมบูรณ์' : 'ฉบับร่าง รอครูตรวจ'}
           </span>
         </div>
         <div className="p1plan-reflection-metrics">
@@ -286,6 +354,7 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
           <span>บันทึกจริงหลังจบคาบ</span>
           <h4><ClipboardCheck size={20} /> บันทึกหลังสอนลง Firebase</h4>
           <p>{sessions[hourNo - 1]?.title} • {plan.indicators.join(', ')}</p>
+          {!postTeachingReady && <p className="p1plan-unused-note">แผนนี้ยังไม่ถูกใช้ ช่องบันทึกหลังสอนจึงเว้นว่างไว้ก่อน</p>}
         </div>
         <div className="p1plan-post-record-controls">
           <div className="p1plan-post-record-plan">
@@ -293,7 +362,7 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
             <strong>แผนที่ {plan.no} · {sessions[0]?.minutes || p1TechnologyCourse.periodMinutes} นาที</strong>
           </div>
           <label>วันที่สอน
-            <input type="date" value={teachingDate} onChange={(event) => {
+            <input type="date" value={teachingDate} disabled={!postTeachingReady} onChange={(event) => {
               const nextDate = event.target.value;
               setTeachingDate(nextDate);
               selectRecord(hourNo, nextDate);
@@ -303,7 +372,7 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
       </div>
 
       <div className="p1plan-post-kpis">
-        <div><span>มาเรียน</span><strong>{snapshot.present > 0 ? `${snapshot.present}/${snapshot.totalStudents}` : 'รอดึงข้อมูล'}</strong></div>
+        <div><span>มาเรียน</span><strong>{!postTeachingReady ? '-' : snapshot.present > 0 ? `${snapshot.present}/${snapshot.totalStudents}` : 'รอดึงข้อมูล'}</strong></div>
         <div><span>ผ่านจุดประสงค์</span><strong>{hasAssessmentData ? snapshot.passed : '-'}</strong></div>
         <div><span>K เฉลี่ย</span><strong>{hasAssessmentData ? `${snapshot.averageK}/15` : '-'}</strong></div>
         <div><span>P เฉลี่ย</span><strong>{hasAssessmentData ? `${snapshot.averageP}/30` : '-'}</strong></div>
@@ -311,31 +380,31 @@ const PostTeachingRecord = ({ plan }: { plan: P1LessonPlan }) => {
       </div>
 
       <div className="p1plan-post-actions">
-        <button type="button" className="p1plan-refresh-record" onClick={() => void refreshSnapshot()} disabled={busy}>
+        <button type="button" className="p1plan-refresh-record" onClick={() => void refreshSnapshot()} disabled={busy || !postTeachingReady}>
           <RefreshCw size={16} /> ดึงเช็คชื่อและ K/P/A ล่าสุด
         </button>
-        <button type="button" className="p1plan-refresh-record" onClick={regenerateNarrative} disabled={!hasAssessmentData}>
+        <button type="button" className="p1plan-refresh-record" onClick={regenerateNarrative} disabled={!postTeachingReady || !hasAssessmentData}>
           <Sparkles size={16} /> เรียบเรียงผลเชิงบวกจากข้อมูลจริง
         </button>
       </div>
 
       <div className="p1plan-post-fields">
-        <label className="wide">สรุปผลการจัดการเรียนรู้<textarea rows={3} value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} /></label>
-        <label>สิ่งที่ผู้เรียนทำได้ดี<textarea rows={3} value={form.strengths} onChange={(event) => setForm({ ...form, strengths: event.target.value })} /></label>
-        <label>ปัญหาที่พบ<textarea rows={3} value={form.problems} onChange={(event) => setForm({ ...form, problems: event.target.value })} /></label>
-        <label>สาเหตุ<textarea rows={3} value={form.causes} onChange={(event) => setForm({ ...form, causes: event.target.value })} /></label>
-        <label>แนวทางปรับปรุง<textarea rows={3} value={form.improvements} onChange={(event) => setForm({ ...form, improvements: event.target.value })} /></label>
-        <label className="wide">สิ่งที่จะทำในคาบถัดไป<textarea rows={2} value={form.nextAction} onChange={(event) => setForm({ ...form, nextAction: event.target.value })} /></label>
+        <label className="wide">สรุปผลการจัดการเรียนรู้<textarea rows={3} disabled={!postTeachingReady} value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} /></label>
+        <label>สิ่งที่ผู้เรียนทำได้ดี<textarea rows={3} disabled={!postTeachingReady} value={form.strengths} onChange={(event) => setForm({ ...form, strengths: event.target.value })} /></label>
+        <label>ปัญหาที่พบ<textarea rows={3} disabled={!postTeachingReady} value={form.problems} onChange={(event) => setForm({ ...form, problems: event.target.value })} /></label>
+        <label>สาเหตุ<textarea rows={3} disabled={!postTeachingReady} value={form.causes} onChange={(event) => setForm({ ...form, causes: event.target.value })} /></label>
+        <label>แนวทางปรับปรุง<textarea rows={3} disabled={!postTeachingReady} value={form.improvements} onChange={(event) => setForm({ ...form, improvements: event.target.value })} /></label>
+        <label className="wide">สิ่งที่จะทำในคาบถัดไป<textarea rows={2} disabled={!postTeachingReady} value={form.nextAction} onChange={(event) => setForm({ ...form, nextAction: event.target.value })} /></label>
       </div>
 
       <div className="p1plan-post-footer">
         <label>สถานะ
-          <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as LessonRecord['status'] })}>
+          <select value={form.status} disabled={!postTeachingReady} onChange={(event) => setForm({ ...form, status: event.target.value as LessonRecord['status'] })}>
             <option value="complete">บันทึกสมบูรณ์</option>
             <option value="draft">ฉบับร่าง</option>
           </select>
         </label>
-        <button type="button" onClick={() => void save()} disabled={busy || !teachingDate}>
+        <button type="button" onClick={() => void save()} disabled={busy || !teachingDate || !postTeachingReady}>
           <Save size={17} /> {busy ? 'กำลังบันทึก...' : 'บันทึกหลังสอน'}
         </button>
       </div>

@@ -4,7 +4,10 @@ import {
   findLessonRecordForPlan,
   type LessonRecord,
 } from '../src/services/lessonRecordService';
-import { buildP1PostTeachingDraft } from '../src/utils/p1PostTeachingDraft';
+import {
+  buildP1PostTeachingDraft,
+  isPostTeachingReady,
+} from '../src/utils/p1PostTeachingDraft';
 
 const record = (teachingDate: string, updatedAt: number): LessonRecord => ({
   id: `p1-plan-1-hour-1-${teachingDate}`,
@@ -36,6 +39,35 @@ const record = (teachingDate: string, updatedAt: number): LessonRecord => ({
 });
 
 describe('P.1 post-teaching draft', () => {
+  it('keeps unused and future plans blank until teaching starts', () => {
+    expect(isPostTeachingReady({ sessionStatus: 'planned' })).toBe(false);
+    expect(isPostTeachingReady({ sessionStatus: 'postponed' })).toBe(false);
+    expect(isPostTeachingReady({
+      sessionStatus: 'planned',
+      recordStatus: 'draft',
+      teachingDate: '2026-08-10',
+      hasResult: true,
+    })).toBe(false);
+  });
+
+  it('opens post-teaching notes only for a used lesson or a completed record', () => {
+    expect(isPostTeachingReady({ sessionStatus: 'in_progress' })).toBe(true);
+    expect(isPostTeachingReady({ sessionStatus: 'completed' })).toBe(true);
+    expect(isPostTeachingReady({ sessionStatus: 'makeup' })).toBe(true);
+    expect(isPostTeachingReady({
+      sessionStatus: 'planned',
+      recordStatus: 'complete',
+      teachingDate: '2026-08-03',
+      hasResult: true,
+    })).toBe(true);
+    expect(isPostTeachingReady({
+      sessionStatus: 'planned',
+      recordStatus: 'draft',
+      teachingDate: '2026-08-03',
+      hasResult: true,
+    })).toBe(false);
+  });
+
   it.each(p1LessonPlans)('creates a useful plan-specific draft for plan $no', (plan) => {
     const draft = buildP1PostTeachingDraft(plan);
     expect(draft.summary).toContain(plan.title);

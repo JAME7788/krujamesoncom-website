@@ -70,6 +70,7 @@ import {
   buildP1PostTeachingDraft,
   hasPostTeachingResult,
   isLegacyPostTeachingText,
+  isPostTeachingReady,
 } from '../utils/p1PostTeachingDraft';
 import {
   fetchAssignmentsFromFirebase,
@@ -185,6 +186,20 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   const selectedSession = sessions.find((item) => item.period === selectedPeriod);
   const selectedPlan = plans.find((item) => item.no === selectedPeriod) || plans[0];
   const roster = useMemo(() => loadRoster(classroom), [classroom]);
+  const selectedRecord = records.find((item) => (
+    (selectedSession?.id && item.sessionId === selectedSession.id)
+    || (
+      item.planNo === selectedPeriod
+      && item.classroom === classroom
+      && item.subject === subject
+    )
+  ));
+  const postTeachingReady = isPostTeachingReady({
+    sessionStatus: selectedSession?.status,
+    recordStatus: selectedRecord?.status,
+    teachingDate: selectedRecord?.teachingDate,
+    hasResult: hasPostTeachingResult(selectedRecord?.snapshot),
+  });
 
   const loadClassroomData = async (nextGradeId: TechnologyGradeId = gradeId) => {
     const nextClassroom = classroomFromGrade(nextGradeId);
@@ -248,14 +263,11 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const existing = records.find((item) => (
-        (selectedSession?.id && item.sessionId === selectedSession.id)
-        || (
-          item.planNo === selectedPeriod
-          && item.classroom === classroom
-          && item.subject === subject
-        )
-      ));
+      const existing = selectedRecord;
+      if (!postTeachingReady) {
+        setRecordForm({ ...recordFormDefault, totalStudents: roster.length });
+        return;
+      }
       const resultSnapshot = existing?.snapshot;
       const narrative = buildP1PostTeachingDraft(selectedPlan, resultSnapshot);
       const resultText = (value: string | undefined, fallback: string) => (
@@ -279,7 +291,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
       });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [classroom, records, roster.length, selectedPeriod, selectedPlan, selectedSession?.id, subject]);
+  }, [postTeachingReady, roster.length, selectedPlan, selectedRecord]);
 
   const indicatorIds = useMemo(() => new Set(
     getIndicators(classroom, subject)
@@ -328,7 +340,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   }, [attendance.records, grades, indicatorIds, roster.length]);
 
   useEffect(() => {
-    if (!hasPostTeachingResult(snapshot)) return;
+    if (!postTeachingReady || !hasPostTeachingResult(snapshot)) return;
     const narrative = buildP1PostTeachingDraft(selectedPlan, snapshot);
     const timer = window.setTimeout(() => {
       setRecordForm((current) => ({
@@ -344,7 +356,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
       }));
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [selectedPlan, snapshot]);
+  }, [postTeachingReady, selectedPlan, snapshot]);
 
   const classAssignments = assignments.filter((item) => (
     item.classroom === classroom
@@ -455,6 +467,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   const failedCount = Math.max(0, recordForm.totalStudents - recordForm.passedCount);
 
   const regeneratePostTeachingNarrative = () => {
+    if (!postTeachingReady) return;
     const narrative = buildP1PostTeachingDraft(selectedPlan, snapshot);
     setRecordForm((current) => ({
       ...current,
@@ -496,7 +509,10 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   };
 
   const savePostTeaching = async () => {
-    if (!selectedSession) return;
+    if (!selectedSession || !postTeachingReady) {
+      toast.show('ต้องเริ่มคาบหรือสอนแผนนี้ก่อน จึงจะบันทึกหลังสอนได้', 'info');
+      return;
+    }
     setBusy(true);
     try {
       const row = schedule.rows.find((item) => item.period === selectedPeriod);
@@ -721,10 +737,10 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
             <button type="button" onClick={() => onNavigate('gradebook')}>เปิดสมุดคะแนน</button>
           </div>
           <div className="snapshot-grid">
-            <div><span>มาเรียน</span><strong>{snapshot.present}/{snapshot.totalStudents}</strong></div>
-            <div><span>ผ่านตัวชี้วัด</span><strong>{snapshot.passed}</strong></div>
-            <div><span>K เฉลี่ย</span><strong>{snapshot.averageK}</strong></div>
-            <div><span>P เฉลี่ย</span><strong>{snapshot.averageP}</strong></div>
+            <div><span>มาเรียน</span><strong>{postTeachingReady ? `${snapshot.present}/${snapshot.totalStudents}` : '-'}</strong></div>
+            <div><span>ผ่านตัวชี้วัด</span><strong>{postTeachingReady ? snapshot.passed : '-'}</strong></div>
+            <div><span>K เฉลี่ย</span><strong>{postTeachingReady ? snapshot.averageK : '-'}</strong></div>
+            <div><span>P เฉลี่ย</span><strong>{postTeachingReady ? snapshot.averageP : '-'}</strong></div>
           </div>
           <div className="evidence-summary">
             <span>หลักฐานคาบนี้ {sessionEvidence.length} รายการ</span>
@@ -763,11 +779,15 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
             </div>
             <b><CalendarDays size={15} /> {teachingDate}</b>
           </div>
-          <div className="post-counts">
+          {!postTeachingReady && (
+            <div className="all-clear">แผนนี้ยังไม่เริ่มสอน ระบบจึงเว้นบันทึกหลังสอนไว้ก่อน</div>
+          )}
+          {postTeachingReady && <div className="post-counts">
             <label>นักเรียนทั้งหมด (คน)
               <input
                 type="number"
                 min={0}
+                disabled={!postTeachingReady}
                 value={recordForm.totalStudents}
                 onChange={(event) => setRecordForm({ ...recordForm, totalStudents: Number(event.target.value) })}
               />
@@ -777,6 +797,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
                 type="number"
                 min={0}
                 max={recordForm.totalStudents}
+                disabled={!postTeachingReady}
                 value={recordForm.passedCount}
                 onChange={(event) => setRecordForm({ ...recordForm, passedCount: Number(event.target.value) })}
               />
@@ -785,36 +806,36 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
               ไม่ผ่าน <b>{failedCount}</b> คน
               <small>ผ่าน {percentOf(recordForm.passedCount, recordForm.totalStudents)}% · ไม่ผ่าน {percentOf(failedCount, recordForm.totalStudents)}%</small>
             </div>
-          </div>
+          </div>}
           <div className="post-form">
             <label className="wide">2. สรุปผลการจัดการเรียนรู้ <em>(ลงในแบบราชการ)</em>
-              <textarea rows={3} value={recordForm.summary} onChange={(event) => setRecordForm({ ...recordForm, summary: event.target.value })} />
+              <textarea rows={3} disabled={!postTeachingReady} value={recordForm.summary} onChange={(event) => setRecordForm({ ...recordForm, summary: event.target.value })} />
             </label>
             <label>3. ปัญหาและอุปสรรคระหว่างการจัดกิจกรรมการสอน
-              <textarea rows={3} value={recordForm.problems} onChange={(event) => setRecordForm({ ...recordForm, problems: event.target.value })} />
+              <textarea rows={3} disabled={!postTeachingReady} value={recordForm.problems} onChange={(event) => setRecordForm({ ...recordForm, problems: event.target.value })} />
             </label>
             <label>4. การปรับปรุงและพัฒนา
-              <textarea rows={3} value={recordForm.improvements} onChange={(event) => setRecordForm({ ...recordForm, improvements: event.target.value })} />
+              <textarea rows={3} disabled={!postTeachingReady} value={recordForm.improvements} onChange={(event) => setRecordForm({ ...recordForm, improvements: event.target.value })} />
             </label>
             <label>สิ่งที่ผู้เรียนทำได้ดี <em>(บันทึกภายใน)</em>
-              <textarea rows={2} value={recordForm.strengths} onChange={(event) => setRecordForm({ ...recordForm, strengths: event.target.value })} />
+              <textarea rows={2} disabled={!postTeachingReady} value={recordForm.strengths} onChange={(event) => setRecordForm({ ...recordForm, strengths: event.target.value })} />
             </label>
             <label>สาเหตุ <em>(บันทึกภายใน)</em>
-              <textarea rows={2} value={recordForm.causes} onChange={(event) => setRecordForm({ ...recordForm, causes: event.target.value })} />
+              <textarea rows={2} disabled={!postTeachingReady} value={recordForm.causes} onChange={(event) => setRecordForm({ ...recordForm, causes: event.target.value })} />
             </label>
             <label className="wide">สิ่งที่จะทำคาบถัดไป <em>(บันทึกภายใน)</em>
-              <textarea rows={2} value={recordForm.nextAction} onChange={(event) => setRecordForm({ ...recordForm, nextAction: event.target.value })} />
+              <textarea rows={2} disabled={!postTeachingReady} value={recordForm.nextAction} onChange={(event) => setRecordForm({ ...recordForm, nextAction: event.target.value })} />
             </label>
           </div>
           <div className="post-buttons">
-            <button type="button" className="word-post-button" onClick={regeneratePostTeachingNarrative} disabled={!hasPostTeachingResult(snapshot)}>
+            <button type="button" className="word-post-button" onClick={regeneratePostTeachingNarrative} disabled={!postTeachingReady || !hasPostTeachingResult(snapshot)}>
               <Sparkles size={17} /> เรียบเรียงจากผลจริง
             </button>
-            <button type="button" className="save-post-button" onClick={() => void savePostTeaching()} disabled={busy}>
+            <button type="button" className="save-post-button" onClick={() => void savePostTeaching()} disabled={busy || !postTeachingReady}>
               {busy ? <Loader2 className="spin" size={17} /> : <Save size={17} />}
               บันทึกหลังสอนและปิดคาบ
             </button>
-            <button type="button" className="word-post-button" onClick={downloadOfficialDocx}>
+            <button type="button" className="word-post-button" onClick={downloadOfficialDocx} disabled={!postTeachingReady}>
               <FileDown size={17} /> ดาวน์โหลด Word (แบบราชการ)
             </button>
           </div>
