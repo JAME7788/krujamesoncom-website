@@ -202,6 +202,16 @@ export const gamesCatalog: GameInfo[] = [
     path: '/games/pixel-art',
   },
   {
+    id: 'color-code-pixel',
+    title: '🧩 ระบายสีตามรหัสพิกเซล',
+    desc: 'อ่านรหัสสีทีละแถว เลือกสีและระบายตาราง 10×10 ให้ครบ 8 ภาพ พร้อมคำใบ้และตรวจความแม่นยำ',
+    emoji: '🧩',
+    level: 'ป.1-ม.3',
+    skill: 'การแทนข้อมูล/พิกัด/ความแม่นยำ',
+    color: '#0e7490',
+    path: '/games/color-code-pixel',
+  },
+  {
     id: 'logic-gates',
     title: '🔌 ประตูตรรกะ 7 แบบ',
     desc: 'แก้ 12 ข้อด้วย AND, OR, NOT, XOR, NAND, NOR และวงจรผสม เพื่อฝึกตรรกะบูลีน',

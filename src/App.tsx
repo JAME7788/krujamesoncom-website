@@ -28,6 +28,7 @@ const KeyboardPractice = React.lazy(() => import('./pages/games/KeyboardPractice
 const AlgorithmSorter = React.lazy(() => import('./pages/games/AlgorithmSorter'));
 const BinaryGame = React.lazy(() => import('./pages/games/BinaryGame'));
 const PixelArtGame = React.lazy(() => import('./pages/games/PixelArtGame'));
+const ColorCodePixelGame = React.lazy(() => import('./pages/games/ColorCodePixelGame'));
 const LogicGatesGame = React.lazy(() => import('./pages/games/LogicGatesGame'));
 const FileOrganizerGame = React.lazy(() => import('./pages/games/FileOrganizerGame'));
 const AlgorithmRunner3D = React.lazy(() => import('./pages/games/AlgorithmRunner3D'));
@@ -102,6 +103,7 @@ function App() {
                   <Route path="/games/step-sort" element={<LoginPromptOverlay><StepSort /></LoginPromptOverlay>} />
                   <Route path="/games/safety" element={<LoginPromptOverlay><SafetyGame /></LoginPromptOverlay>} />
                   <Route path="/games/pixel-art" element={<LoginPromptOverlay><PixelArtGame /></LoginPromptOverlay>} />
+                  <Route path="/games/color-code-pixel" element={<LoginPromptOverlay><ColorCodePixelGame /></LoginPromptOverlay>} />
                   <Route path="/games/logic-gates" element={<LoginPromptOverlay><LogicGatesGame /></LoginPromptOverlay>} />
                   <Route path="/games/file-organizer" element={<LoginPromptOverlay><FileOrganizerGame /></LoginPromptOverlay>} />
                   <Route path="/games/algorithm-runner-3d" element={<LoginPromptOverlay><AlgorithmRunner3D /></LoginPromptOverlay>} />

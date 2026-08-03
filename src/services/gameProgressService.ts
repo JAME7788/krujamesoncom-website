@@ -38,6 +38,7 @@ export type GameProgressId =
   | 'step-sort'
   | 'device-match'
   | 'pixel-art'
+  | 'color-code-pixel'
   | 'logic-gates'
   | 'file-organizer'
   | 'algorithm-runner-3d'
@@ -162,7 +163,7 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
     return [isPrimary ? primaryDigitalUnit(classroom) : middleCodingUnit(classroom)];
   }
   // การแทนข้อมูล/เลขฐานสอง (บิต→พิกเซล→รูปภาพ)
-  if (normalizedGameId === 'pixel-art') {
+  if (normalizedGameId === 'pixel-art' || normalizedGameId === 'color-code-pixel') {
     return [isPrimary ? primaryAlgorithmUnit(classroom) : middleBinaryUnit(classroom)];
   }
   // ตรรกะบูลีน AND/OR/NOT — แนวคิดเชิงคำนวณ
