@@ -156,14 +156,13 @@ const main = async () => {
       server.ssrLoadModule('/src/data/studentAssessmentTemplates.ts'),
       server.ssrLoadModule('/src/data/studentAbilityProfile.ts'),
     ]);
-    const [rosterDocument, assessmentDocs, competencyDocs, lessonRecordDocs, sessionDocs, attendanceDocs] = await Promise.all([
-      getDocument(rest, 'settings/rosters2569'),
-      listCollection(rest, 'studentAssessments'),
-      listCollection(rest, 'primaryCompetencyAssessments'),
-      listCollection(rest, 'lessonRecords'),
-      listCollection(rest, 'teachingSessions'),
-      listCollection(rest, 'attendance'),
-    ]);
+    // อ่านทีละ collection เพื่อลด burst request บน Firebase Spark ระหว่างคาบเรียน
+    const rosterDocument = await getDocument(rest, 'settings/rosters2569');
+    const assessmentDocs = await listCollection(rest, 'studentAssessments');
+    const competencyDocs = await listCollection(rest, 'primaryCompetencyAssessments');
+    const lessonRecordDocs = await listCollection(rest, 'lessonRecords');
+    const sessionDocs = await listCollection(rest, 'teachingSessions');
+    const attendanceDocs = await listCollection(rest, 'attendance');
     const rosters = rosterDocument?.classrooms || {};
     const classrooms = Object.keys(rosters).sort((a, b) => a.localeCompare(b, 'th', { numeric: true }));
     const assessmentsById = new Map(assessmentDocs.map((item) => [item.id, item.data]));
