@@ -118,6 +118,14 @@ const writeLocalRoom = (room: TycoonRoom) => {
   }
 };
 
+const removeLocalRoom = (code: string) => {
+  try {
+    localStorage.removeItem(localKey(code));
+  } catch {
+    // Local cleanup is best effort.
+  }
+};
+
 const emitRoom = (code: string) => {
   try {
     const channel = new BroadcastChannel(channelName(code));
@@ -463,6 +471,10 @@ export const publishTycoonGame = async (
       if (!snapshot.exists()) throw new Error('room-not-found');
       const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
       if (!room.players.some((player) => player.id === actorId)) throw new Error('player-not-found');
+      if (room.variant === 'digital-city' && room.game && game.phase !== 'over') {
+        const activeMember = orderedTycoonRoomPlayers(room)[room.game.turn];
+        if (!activeMember || activeMember.id !== actorId) throw new Error('turn-owner-only');
+      }
       if (room.game && room.game.version >= game.version) throw new Error('stale-version');
       const updated = normalizeRoom({
         ...room,
@@ -587,11 +599,7 @@ export const leaveTycoonRoom = async (code: string, playerId: string): Promise<v
       cacheRoom(next);
       return;
     }
-    try {
-      localStorage.removeItem(localKey(cleanCode));
-    } catch {
-      // Local cleanup is best effort.
-    }
+    removeLocalRoom(cleanCode);
     emitRoom(cleanCode);
   } catch (error) {
     console.warn('Tycoon room leave failed', error);
@@ -617,8 +625,9 @@ export const subscribeTycoonRoom = (
     doc(db, COLLECTION, cleanCode),
     (snapshot) => {
       if (!snapshot.exists()) {
-        onSyncMode?.('local');
-        onChange(readLocalRoom(cleanCode));
+        removeLocalRoom(cleanCode);
+        onSyncMode?.('firebase');
+        onChange(null);
         return;
       }
       onSyncMode?.('firebase');

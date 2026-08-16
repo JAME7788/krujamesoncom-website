@@ -156,4 +156,11 @@ describe('Digital City Quest competition content', () => {
     expect(pageCss).toContain('.dcq-tutorial-modal { z-index: 13000; }');
     expect(pageCss).toContain("url('/media/games/tycoon-theme/pixel-tech-campus.webp')");
   });
+
+  it('allows only one project upgrade per landing and exposes the score close button', () => {
+    expect(pageSource).not.toContain('setUpgradeTile(buyTile)');
+    expect(pageSource.match(/setUpgradeTile\(null\)/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(pageSource).toContain('aria-label="ปิดหน้าคะแนน"');
+    expect(pageSource).toContain('กลับมาที่ช่องเดิมเพื่อพัฒนาได้ถึงขั้น 3');
+  });
 });

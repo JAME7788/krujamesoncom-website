@@ -59,4 +59,12 @@ describe('tycoon multiplayer room rules', () => {
     expect(serviceSource).toContain('ONLINE_CONNECTION_ERROR');
     expect(serviceSource.match(/runTransaction\(db/g)?.length).toBeGreaterThanOrEqual(6);
   });
+
+  it('rejects out-of-turn Digital City state writes and clears deleted room caches', () => {
+    expect(serviceSource).toContain("throw new Error('turn-owner-only')");
+    expect(serviceSource).toContain("if (room.variant === 'digital-city' && room.game && game.phase !== 'over')");
+    expect(serviceSource).toContain('removeLocalRoom(cleanCode)');
+    expect(serviceSource).toContain("onSyncMode?.('firebase')");
+    expect(serviceSource).not.toContain('onChange(readLocalRoom(cleanCode));\n        return;');
+  });
 });
