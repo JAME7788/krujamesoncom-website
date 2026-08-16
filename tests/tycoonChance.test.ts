@@ -57,4 +57,13 @@ describe('บัตรเสี่ยงดวงเกมเศรษฐี', (
     expect(source).not.toContain('className="puzzle-actions tyc-external-roll"');
     expect(source).not.toContain('<div className="game-tips">\n          <strong>4 ทักษะที่ใช้ในเกมนี้');
   });
+
+  it('ผู้เล่นที่รอเห็นเฉพาะผลทอยและเวลา โดยไม่เห็นโจทย์ของคนกำลังเล่น', () => {
+    expect(source).toContain("isOnlineGame && !canTakeTurn && (phase === 'roll' || phase === 'question')");
+    expect(source).toContain('aria-label={`กำลังรอ ${me.name}`}');
+    expect(source).toContain("phase === 'question' && q && canTakeTurn && modalRoot");
+    expect(source).toContain('className="tyc-wait-stats"');
+    expect(source).toContain('className="tyc-event-player"');
+    expect(source).toContain('รอ {me?.name} ไปตาถัดไป');
+  });
 });

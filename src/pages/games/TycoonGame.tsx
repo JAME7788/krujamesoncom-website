@@ -1860,34 +1860,73 @@ const TycoonGame: React.FC = () => {
         modalRoot,
       )}
 
+      {isOnlineGame && !canTakeTurn && (phase === 'roll' || phase === 'question') && me && modalRoot && createPortal(
+        <div className="tyc-question-modal tyc-wait-turn-modal" role="status" aria-live="polite" aria-label={`กำลังรอ ${me.name}`}>
+          <div className="binary-card tyc-wait-turn-card">
+            <div className="tyc-wait-clock" aria-hidden="true"><Clock3 size={34} /></div>
+            <span className="tyc-wait-eyebrow">กำลังรอผู้เล่น</span>
+            <TycoonAvatar characterId={me.characterId} size="large" active />
+            <h3>รอ {me.name}</h3>
+            <p>{phase === 'question'
+              ? picked === null ? 'กำลังตอบคำถามประจำช่อง' : 'ตอบแล้ว กำลังเลือกดำเนินการต่อ'
+              : dice === null ? 'กำลังเตรียมทอยลูกเต๋า' : 'กำลังเดินตามผลการทอย'}</p>
+            <div className="tyc-wait-stats">
+              <div>
+                <Dices size={24} />
+                <span>ผลทอย</span>
+                <strong>{dice ?? '-'}</strong>
+              </div>
+              <div>
+                <Clock3 size={24} />
+                <span>{phase === 'question' ? 'เวลาตอบ' : 'เวลาเกม'}</span>
+                <strong>{phase === 'question' ? `${questionTime} วิ` : clock(timeLeft)}</strong>
+              </div>
+            </div>
+            <small>เมื่อถึงตาคุณ ระบบจะเปิดปุ่มเล่นให้อัตโนมัติ</small>
+          </div>
+        </div>,
+        modalRoot,
+      )}
+
       {phase === 'info' && modalRoot && createPortal(
         <div className="tyc-question-modal tyc-info-modal" role="dialog" aria-modal="true" aria-label="ผลการเดิน">
           <div className="binary-card tyc-turn-card">
-            <button
-              type="button"
-              className="tyc-chance-close"
-              onClick={() => next(ps)}
-              disabled={!canTakeTurn}
-              aria-label="ปิดผลการเดินและไปตาถัดไป"
-              title="ตาถัดไป"
-            >
-              <X size={22} />
-            </button>
+            {canTakeTurn && (
+              <button
+                type="button"
+                className="tyc-chance-close"
+                onClick={() => next(ps)}
+                aria-label="ปิดผลการเดินและไปตาถัดไป"
+                title="ตาถัดไป"
+              >
+                <X size={22} />
+              </button>
+            )}
             <div className="tyc-turn-card-tag">ผลการเดิน</div>
+            {me && (
+              <div className="tyc-event-player">
+                <TycoonAvatar characterId={me.characterId} size="small" active />
+                <span>ตาของ <b>{me.name}</b></span>
+              </div>
+            )}
             <div className="tyc-turn-card-icon">{upgradeTile !== null ? '🏗️' : '📍'}</div>
             <p>{msg}</p>
-            <div className="puzzle-actions tyc-turn-actions">
-              {upgradeTile !== null && me?.owned.includes(upgradeTile) && (me.levels[upgradeTile] || 0) < 3 && (
-                <button className="btn-secondary tyc-upgrade" onClick={upgrade} disabled={!canTakeTurn}>
-                  <Building2 size={17} />
-                  พัฒนาระดับ {(me.levels[upgradeTile] || 0) + 1}
-                  {' '}
-                  {baht(propertyUpgradeCost(upgradeTile, me.levels[upgradeTile] || 0))}
-                  {' '}บาท
-                </button>
-              )}
-              <button className="btn-game-start" onClick={() => next(ps)} disabled={!canTakeTurn}>ตาถัดไป →</button>
-            </div>
+            {canTakeTurn ? (
+              <div className="puzzle-actions tyc-turn-actions">
+                {upgradeTile !== null && me?.owned.includes(upgradeTile) && (me.levels[upgradeTile] || 0) < 3 && (
+                  <button className="btn-secondary tyc-upgrade" onClick={upgrade}>
+                    <Building2 size={17} />
+                    พัฒนาระดับ {(me.levels[upgradeTile] || 0) + 1}
+                    {' '}
+                    {baht(propertyUpgradeCost(upgradeTile, me.levels[upgradeTile] || 0))}
+                    {' '}บาท
+                  </button>
+                )}
+                <button className="btn-game-start" onClick={() => next(ps)}>ตาถัดไป →</button>
+              </div>
+            ) : (
+              <div className="tyc-event-wait"><Clock3 size={17} /> รอ {me?.name} ดำเนินการต่อ</div>
+            )}
           </div>
         </div>,
         modalRoot,
@@ -1896,29 +1935,40 @@ const TycoonGame: React.FC = () => {
       {phase === 'chance' && chance && modalRoot && createPortal(
         <div className="tyc-question-modal tyc-chance-modal" role="dialog" aria-modal="true" aria-label="บัตรเสี่ยงดวง">
           <div className="binary-card tyc-chance">
-            <button
-              type="button"
-              className="tyc-chance-close"
-              onClick={() => next(ps)}
-              disabled={!canTakeTurn}
-              aria-label="ปิดบัตรและไปตาถัดไป"
-              title="ตาถัดไป"
-            >
-              <X size={22} />
-            </button>
+            {canTakeTurn && (
+              <button
+                type="button"
+                className="tyc-chance-close"
+                onClick={() => next(ps)}
+                aria-label="ปิดบัตรและไปตาถัดไป"
+                title="ตาถัดไป"
+              >
+                <X size={22} />
+              </button>
+            )}
             <div className="tyc-chance-tag">🎴 บัตรเสี่ยงดวง</div>
+            {me && (
+              <div className="tyc-event-player">
+                <TycoonAvatar characterId={me.characterId} size="small" active />
+                <span><b>{me.name}</b> เปิดบัตรนี้</span>
+              </div>
+            )}
             <div className="tyc-chance-emoji">{chance.emoji}</div>
             <p>{chance.text}</p>
             {chance.effect && msg && <div className="tyc-chance-result">{msg}</div>}
-            <div className="puzzle-actions">
-              <button className="btn-game-start" onClick={() => next(ps)} disabled={!canTakeTurn}>ตาถัดไป →</button>
-            </div>
+            {canTakeTurn ? (
+              <div className="puzzle-actions">
+                <button className="btn-game-start" onClick={() => next(ps)}>ตาถัดไป →</button>
+              </div>
+            ) : (
+              <div className="tyc-event-wait"><Clock3 size={17} /> รอ {me?.name} ไปตาถัดไป</div>
+            )}
           </div>
         </div>,
         modalRoot,
       )}
 
-      {phase === 'question' && q && modalRoot && createPortal(
+      {phase === 'question' && q && canTakeTurn && modalRoot && createPortal(
         <div className="tyc-question-modal" role="dialog" aria-modal="true" aria-label="คำถามประจำช่อง">
           <div className="binary-card tyc-q" style={{ borderTopColor: CT_PILLARS[q.pillar].color }}>
             <div className={`tyc-question-timer${questionTime <= 3 ? ' danger' : ''}`}>
@@ -3059,6 +3109,96 @@ const TycoonStyles: React.FC = () => (
       text-align: center;
       box-shadow: 0 0 0 5px #155e75, 0 10px 0 #083344, 0 28px 70px rgba(0,0,0,0.5);
     }
+    .tyc-question-modal .tyc-wait-turn-card {
+      width: min(480px, 100%);
+      margin: 0;
+      padding: 28px 24px 24px;
+      border: 4px solid #f8da75;
+      border-top: 8px solid #22d3ee;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #f0fdff 0%, #e0f2fe 100%);
+      color: #164e63;
+      text-align: center;
+      box-shadow: 0 0 0 5px #164e63, 0 10px 0 #083344, 0 28px 70px rgba(0,0,0,0.5);
+    }
+    .tyc-wait-clock {
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 10px;
+      border: 4px solid #fff;
+      border-radius: 50%;
+      background: #0e7490;
+      color: #fff;
+      box-shadow: 0 0 0 4px #164e63, 0 5px 0 #083344;
+    }
+    .tyc-wait-clock svg { animation: tyc-wait-clock-spin 1.25s linear infinite; }
+    .tyc-wait-eyebrow {
+      display: inline-block;
+      margin: 7px 0 11px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #cffafe;
+      color: #155e75;
+      font-size: 0.72rem;
+      font-weight: 1000;
+    }
+    .tyc-wait-turn-card > .tyc-avatar { margin-inline: auto; }
+    .tyc-wait-turn-card h3 { margin: 9px 0 2px; color: #0f172a; font-size: 1.3rem; }
+    .tyc-wait-turn-card > p { margin: 0; color: #475569; font-size: 0.82rem; font-weight: 800; }
+    .tyc-wait-turn-card > small { display: block; margin-top: 13px; color: #64748b; font-weight: 700; }
+    .tyc-wait-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .tyc-wait-stats > div {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      align-items: center;
+      gap: 1px 8px;
+      min-height: 72px;
+      padding: 10px 12px;
+      border: 3px solid #bae6fd;
+      border-radius: 7px;
+      background: #fff;
+      text-align: left;
+      box-shadow: 0 4px 0 #0e7490;
+    }
+    .tyc-wait-stats svg { grid-row: 1 / 3; color: #0284c7; }
+    .tyc-wait-stats span { color: #64748b; font-size: 0.65rem; font-weight: 800; }
+    .tyc-wait-stats strong { color: #0f172a; font-size: 1.08rem; }
+    .tyc-event-player {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 5px 12px 5px 6px;
+      border: 2px solid #a5f3fc;
+      border-radius: 999px;
+      background: #ecfeff;
+      color: #155e75;
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+    .tyc-event-wait {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      margin-top: 14px;
+      padding: 8px 13px;
+      border: 2px solid #bae6fd;
+      border-radius: 6px;
+      background: #eff6ff;
+      color: #1e40af;
+      font-size: 0.76rem;
+      font-weight: 900;
+    }
+    .tyc-event-wait svg { animation: tyc-wait-clock-spin 1.25s linear infinite; }
     .tyc-turn-card-tag {
       display: inline-block;
       padding: 4px 14px;
@@ -4181,6 +4321,9 @@ const TycoonStyles: React.FC = () => (
       from { opacity: 0; transform: translateY(16px) scale(0.96); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
+    @keyframes tyc-wait-clock-spin {
+      to { transform: rotate(360deg); }
+    }
     @keyframes tyc-crown-bounce {
       0%, 100% { transform: rotate(12deg) translateY(0); }
       50% { transform: rotate(7deg) translateY(-5px); }
@@ -4363,7 +4506,8 @@ const TycoonStyles: React.FC = () => (
       }
       .tyc-question-modal .tyc-q,
       .tyc-question-modal .tyc-chance,
-      .tyc-question-modal .tyc-turn-card {
+      .tyc-question-modal .tyc-turn-card,
+      .tyc-question-modal .tyc-wait-turn-card {
         max-height: calc(100dvh - 16px);
         padding: 14px 12px;
       }
@@ -4630,6 +4774,8 @@ const TycoonStyles: React.FC = () => (
       .tyc-p.waiting::after,
       .tyc-p.waiting > .tyc-avatar,
       .tyc-p.is-cheering > .tyc-avatar,
+      .tyc-wait-clock svg,
+      .tyc-event-wait svg,
       .tyc-cheer-fx b,
       .tyc-cheer-fx i,
       .tyc-online-turn:not(.mine),
