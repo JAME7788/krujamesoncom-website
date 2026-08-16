@@ -1,10 +1,7 @@
 import {
-  deleteDoc,
   doc,
-  getDoc,
   onSnapshot,
   runTransaction,
-  setDoc,
 } from 'firebase/firestore';
 import type { CTQuestion } from '../data/ctBoardGame';
 import type { ChanceCard } from '../data/tycoonGame';
@@ -82,7 +79,7 @@ const COLLECTION = 'tycoonRooms';
 const ROOM_PREFIX = 'kj_tycoon_room_';
 const CHANNEL_PREFIX = 'kj-tycoon-room-';
 const MAX_PLAYERS = 4;
-let firestoreUnavailable = false;
+const ONLINE_CONNECTION_ERROR = 'เชื่อมต่อห้องออนไลน์ไม่ได้ กรุณาตรวจอินเทอร์เน็ตแล้วลองอีกครั้ง';
 
 const localKey = (code: string) => `${ROOM_PREFIX}${code}`;
 const channelName = (code: string) => `${CHANNEL_PREFIX}${code}`;
@@ -189,19 +186,6 @@ const cacheRoom = (room: TycoonRoom) => {
   return room;
 };
 
-const fetchRoom = async (code: string): Promise<TycoonRoom | null> => {
-  const cleanCode = code.replace(/\D/g, '').slice(0, 6);
-  if (!firestoreUnavailable) {
-    try {
-      const snapshot = await getDoc(doc(db, COLLECTION, cleanCode));
-      if (snapshot.exists()) return cacheRoom(normalizeRoom(snapshot.data() as Partial<TycoonRoom>));
-    } catch {
-      firestoreUnavailable = true;
-    }
-  }
-  return readLocalRoom(cleanCode);
-};
-
 export const generateTycoonRoomCode = () => (
   Math.floor(100000 + Math.random() * 900000).toString()
 );
@@ -226,40 +210,41 @@ export const createTycoonRoom = async (input: {
   minutes: 5 | 10 | 15;
   host: Pick<TycoonRoomPlayer, 'id' | 'name' | 'characterId'>;
 }): Promise<TycoonRoomResult> => {
-  let code = generateTycoonRoomCode();
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const existing = await fetchRoom(code);
-    if (!existing) break;
-    code = generateTycoonRoomCode();
-  }
-  const now = Date.now();
-  const room = normalizeRoom({
-    code,
-    name: input.name.trim() || 'ห้องเกมวิทยาการคำนวณ',
-    passwordHash: await passwordHash(code, input.password),
-    hostId: input.host.id,
-    status: 'lobby',
-    minutes: input.minutes,
-    players: [{
-      ...input.host,
-      ready: false,
-      joinedAt: now,
-      lastSeenAt: now,
-    }],
-    game: null,
-    createdAt: now,
-    updatedAt: now,
-  });
-  cacheRoom(room);
-  if (!firestoreUnavailable) {
+    const code = generateTycoonRoomCode();
+    const now = Date.now();
+    const room = normalizeRoom({
+      code,
+      name: input.name.trim() || 'ห้องเกมวิทยาการคำนวณ',
+      passwordHash: await passwordHash(code, input.password),
+      hostId: input.host.id,
+      status: 'lobby',
+      minutes: input.minutes,
+      players: [{
+        ...input.host,
+        ready: false,
+        joinedAt: now,
+        lastSeenAt: now,
+      }],
+      game: null,
+      createdAt: now,
+      updatedAt: now,
+    });
     try {
-      await setDoc(doc(db, COLLECTION, code), room, { merge: false });
+      await runTransaction(db, async (transaction) => {
+        const ref = doc(db, COLLECTION, code);
+        const snapshot = await transaction.get(ref);
+        if (snapshot.exists()) throw new Error('room-code-collision');
+        transaction.set(ref, room, { merge: false });
+      });
+      return { ok: true, room: cacheRoom(room) };
     } catch (error) {
-      firestoreUnavailable = true;
-      console.warn('Tycoon room saved locally only', error);
+      if (error instanceof Error && error.message === 'room-code-collision') continue;
+      console.warn('Tycoon room creation failed', error);
+      return { ok: false, error: ONLINE_CONNECTION_ERROR };
     }
   }
-  return { ok: true, room };
+  return { ok: false, error: 'สร้างรหัสห้องไม่สำเร็จ กรุณาลองอีกครั้ง' };
 };
 
 export const joinTycoonRoom = async (
@@ -268,20 +253,8 @@ export const joinTycoonRoom = async (
   player: Pick<TycoonRoomPlayer, 'id' | 'name' | 'characterId'>,
 ): Promise<TycoonRoomResult> => {
   const cleanCode = code.replace(/\D/g, '').slice(0, 6);
-  const current = await fetchRoom(cleanCode);
-  if (!current) return { ok: false, error: 'ไม่พบห้อง กรุณาตรวจรหัส 6 หลัก' };
-  if (current.status !== 'lobby') return { ok: false, error: 'ห้องนี้เริ่มเล่นแล้ว' };
-  if (current.passwordHash !== await passwordHash(cleanCode, password)) {
-    return { ok: false, error: 'รหัสผ่านห้องไม่ถูกต้อง' };
-  }
-  if (
-    current.players.some(
-      (member) => member.id !== player.id && member.characterId === player.characterId,
-    )
-  ) {
-    return { ok: false, error: 'ตัวละครนี้มีเพื่อนเลือกแล้ว กรุณาเลือกตัวอื่น' };
-  }
-
+  if (cleanCode.length !== 6) return { ok: false, error: 'กรุณาตรวจรหัสห้อง 6 หลัก' };
+  const expectedPasswordHash = await passwordHash(cleanCode, password);
   const now = Date.now();
   const addPlayer = (room: TycoonRoom) => {
     const existing = room.players.find((member) => member.id === player.id);
@@ -302,13 +275,13 @@ export const joinTycoonRoom = async (
   };
 
   try {
-    if (firestoreUnavailable) throw new Error('firebase-unavailable');
     const next = await runTransaction(db, async (transaction) => {
       const ref = doc(db, COLLECTION, cleanCode);
       const snapshot = await transaction.get(ref);
       if (!snapshot.exists()) throw new Error('room-not-found');
       const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
       if (room.status !== 'lobby') throw new Error('room-started');
+      if (room.passwordHash !== expectedPasswordHash) throw new Error('wrong-password');
       if (!room.players.some((member) => member.id === player.id) && room.players.length >= MAX_PLAYERS) {
         throw new Error('room-full');
       }
@@ -323,18 +296,23 @@ export const joinTycoonRoom = async (
     });
     return { ok: true, room: cacheRoom(next) };
   } catch (error) {
+    if (error instanceof Error && error.message === 'room-not-found') {
+      return { ok: false, error: 'ไม่พบห้อง กรุณาตรวจรหัส 6 หลัก' };
+    }
+    if (error instanceof Error && error.message === 'room-started') {
+      return { ok: false, error: 'ห้องนี้เริ่มเล่นแล้ว' };
+    }
+    if (error instanceof Error && error.message === 'wrong-password') {
+      return { ok: false, error: 'รหัสผ่านห้องไม่ถูกต้อง' };
+    }
     if (error instanceof Error && error.message === 'room-full') {
       return { ok: false, error: 'ห้องเต็มแล้ว รองรับสูงสุด 4 คน' };
     }
     if (error instanceof Error && error.message === 'character-taken') {
       return { ok: false, error: 'ตัวละครนี้มีเพื่อนเลือกแล้ว กรุณาเลือกตัวอื่น' };
     }
-    const local = addPlayer(current);
-    if (!local.players.some((member) => member.id === player.id)) {
-      return { ok: false, error: 'ห้องเต็มแล้ว รองรับสูงสุด 4 คน' };
-    }
-    cacheRoom(local);
-    return { ok: true, room: local };
+    console.warn('Tycoon room join failed', error);
+    return { ok: false, error: ONLINE_CONNECTION_ERROR };
   }
 };
 
@@ -343,9 +321,7 @@ export const updateTycoonRoomPlayer = async (
   playerId: string,
   patch: Partial<Pick<TycoonRoomPlayer, 'name' | 'characterId' | 'ready'>>,
 ): Promise<TycoonRoomResult> => {
-  const current = await fetchRoom(code);
-  if (!current) return { ok: false, error: 'ไม่พบห้อง' };
-  if (current.status !== 'lobby') return { ok: false, error: 'เปลี่ยนข้อมูลไม่ได้หลังเริ่มเกม' };
+  const cleanCode = code.replace(/\D/g, '').slice(0, 6);
 
   const applyPatch = (room: TycoonRoom) => {
     const nextCharacter = patch.characterId;
@@ -372,12 +348,13 @@ export const updateTycoonRoomPlayer = async (
   };
 
   try {
-    if (firestoreUnavailable) throw new Error('firebase-unavailable');
     const next = await runTransaction(db, async (transaction) => {
-      const ref = doc(db, COLLECTION, current.code);
+      const ref = doc(db, COLLECTION, cleanCode);
       const snapshot = await transaction.get(ref);
       if (!snapshot.exists()) throw new Error('room-not-found');
       const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
+      if (room.status !== 'lobby') throw new Error('room-started');
+      if (!room.players.some((member) => member.id === playerId)) throw new Error('player-not-found');
       const updated = applyPatch(room);
       if (!updated) throw new Error('character-taken');
       transaction.set(ref, updated, { merge: false });
@@ -385,12 +362,20 @@ export const updateTycoonRoomPlayer = async (
     });
     return { ok: true, room: cacheRoom(next) };
   } catch (error) {
+    if (error instanceof Error && error.message === 'room-not-found') {
+      return { ok: false, error: 'ไม่พบห้อง' };
+    }
+    if (error instanceof Error && error.message === 'room-started') {
+      return { ok: false, error: 'เปลี่ยนข้อมูลไม่ได้หลังเริ่มเกม' };
+    }
+    if (error instanceof Error && error.message === 'player-not-found') {
+      return { ok: false, error: 'ไม่พบผู้เล่นในห้อง กรุณาเข้าห้องใหม่' };
+    }
     if (error instanceof Error && error.message === 'character-taken') {
       return { ok: false, error: 'ตัวละครนี้มีเพื่อนเลือกแล้ว' };
     }
-    const local = applyPatch(current);
-    if (!local) return { ok: false, error: 'ตัวละครนี้มีเพื่อนเลือกแล้ว' };
-    return { ok: true, room: cacheRoom(local) };
+    console.warn('Tycoon player update failed', error);
+    return { ok: false, error: ONLINE_CONNECTION_ERROR };
   }
 };
 
@@ -399,28 +384,38 @@ export const startTycoonMultiplayerRoom = async (
   hostId: string,
   game: TycoonGameSnapshot,
 ): Promise<TycoonRoomResult> => {
-  const current = await fetchRoom(code);
-  if (!current) return { ok: false, error: 'ไม่พบห้อง' };
-  if (current.hostId !== hostId) return { ok: false, error: 'เฉพาะเจ้าของห้องเท่านั้นที่เริ่มเกมได้' };
-  if (!canStartTycoonRoom(current)) {
-    return { ok: false, error: 'ต้องมีอย่างน้อย 2 คน และทุกคนต้องกดพร้อม' };
-  }
-  const next = normalizeRoom({
-    ...current,
-    status: 'playing',
-    game,
-    updatedAt: Date.now(),
-  });
-  cacheRoom(next);
-  if (!firestoreUnavailable) {
-    try {
-      await setDoc(doc(db, COLLECTION, current.code), next, { merge: false });
-    } catch (error) {
-      firestoreUnavailable = true;
-      console.warn('Tycoon game started locally only', error);
+  const cleanCode = code.replace(/\D/g, '').slice(0, 6);
+  try {
+    const next = await runTransaction(db, async (transaction) => {
+      const ref = doc(db, COLLECTION, cleanCode);
+      const snapshot = await transaction.get(ref);
+      if (!snapshot.exists()) throw new Error('room-not-found');
+      const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
+      if (room.hostId !== hostId) throw new Error('host-only');
+      if (!canStartTycoonRoom(room)) throw new Error('players-not-ready');
+      const updated = normalizeRoom({
+        ...room,
+        status: 'playing',
+        game,
+        updatedAt: Date.now(),
+      });
+      transaction.set(ref, updated, { merge: false });
+      return updated;
+    });
+    return { ok: true, room: cacheRoom(next) };
+  } catch (error) {
+    if (error instanceof Error && error.message === 'room-not-found') {
+      return { ok: false, error: 'ไม่พบห้อง' };
     }
+    if (error instanceof Error && error.message === 'host-only') {
+      return { ok: false, error: 'เฉพาะเจ้าของห้องเท่านั้นที่เริ่มเกมได้' };
+    }
+    if (error instanceof Error && error.message === 'players-not-ready') {
+      return { ok: false, error: 'ต้องมีอย่างน้อย 2 คน และทุกคนต้องกดพร้อม' };
+    }
+    console.warn('Tycoon game start failed', error);
+    return { ok: false, error: ONLINE_CONNECTION_ERROR };
   }
-  return { ok: true, room: next };
 };
 
 export const publishTycoonGame = async (
@@ -428,61 +423,70 @@ export const publishTycoonGame = async (
   actorId: string,
   game: TycoonGameSnapshot,
 ): Promise<boolean> => {
-  const current = await fetchRoom(code);
-  if (!current || !current.players.some((player) => player.id === actorId)) return false;
-  if (current.game && current.game.version >= game.version) return false;
-  const next = normalizeRoom({
-    ...current,
-    status: game.phase === 'over' ? 'finished' : 'playing',
-    game,
-    updatedAt: Date.now(),
-  });
-  cacheRoom(next);
-  if (!firestoreUnavailable) {
-    try {
-      await setDoc(doc(db, COLLECTION, current.code), next, { merge: false });
-      return true;
-    } catch (error) {
-      firestoreUnavailable = true;
-      console.warn('Tycoon turn synced locally only', error);
-    }
+  const cleanCode = code.replace(/\D/g, '').slice(0, 6);
+  try {
+    const next = await runTransaction(db, async (transaction) => {
+      const ref = doc(db, COLLECTION, cleanCode);
+      const snapshot = await transaction.get(ref);
+      if (!snapshot.exists()) throw new Error('room-not-found');
+      const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
+      if (!room.players.some((player) => player.id === actorId)) throw new Error('player-not-found');
+      if (room.game && room.game.version >= game.version) throw new Error('stale-version');
+      const updated = normalizeRoom({
+        ...room,
+        status: game.phase === 'over' ? 'finished' : 'playing',
+        game,
+        updatedAt: Date.now(),
+      });
+      transaction.set(ref, updated, { merge: false });
+      return updated;
+    });
+    cacheRoom(next);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.message === 'stale-version') return false;
+    console.warn('Tycoon turn sync failed', error);
+    return false;
   }
-  return true;
 };
 
 export const leaveTycoonRoom = async (code: string, playerId: string): Promise<void> => {
-  const room = await fetchRoom(code);
-  if (!room) return;
-  const players = room.players.filter((player) => player.id !== playerId);
-  if (players.length === 0) {
+  const cleanCode = code.replace(/\D/g, '').slice(0, 6);
+  try {
+    const next = await runTransaction(db, async (transaction) => {
+      const ref = doc(db, COLLECTION, cleanCode);
+      const snapshot = await transaction.get(ref);
+      if (!snapshot.exists()) return null;
+      const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
+      const players = room.players.filter((player) => player.id !== playerId);
+      if (players.length === 0) {
+        transaction.delete(ref);
+        return null;
+      }
+      const updated = normalizeRoom({
+        ...room,
+        hostId: room.hostId === playerId
+          ? orderedTycoonRoomPlayers({ ...room, players })[0].id
+          : room.hostId,
+        players,
+        updatedAt: Date.now(),
+      });
+      transaction.set(ref, updated, { merge: false });
+      return updated;
+    });
+
+    if (next) {
+      cacheRoom(next);
+      return;
+    }
     try {
-      localStorage.removeItem(localKey(room.code));
+      localStorage.removeItem(localKey(cleanCode));
     } catch {
       // Local cleanup is best effort.
     }
-    emitRoom(room.code);
-    if (!firestoreUnavailable) {
-      try {
-        await deleteDoc(doc(db, COLLECTION, room.code));
-      } catch {
-        firestoreUnavailable = true;
-      }
-    }
-    return;
-  }
-  const next = normalizeRoom({
-    ...room,
-    hostId: room.hostId === playerId ? orderedTycoonRoomPlayers({ ...room, players })[0].id : room.hostId,
-    players,
-    updatedAt: Date.now(),
-  });
-  cacheRoom(next);
-  if (!firestoreUnavailable) {
-    try {
-      await setDoc(doc(db, COLLECTION, room.code), next, { merge: false });
-    } catch {
-      firestoreUnavailable = true;
-    }
+    emitRoom(cleanCode);
+  } catch (error) {
+    console.warn('Tycoon room leave failed', error);
   }
 };
 

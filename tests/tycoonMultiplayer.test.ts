@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   canStartTycoonRoom,
@@ -5,6 +6,8 @@ import {
   orderedTycoonRoomPlayers,
   type TycoonRoom,
 } from '../src/services/tycoonMultiplayerService';
+
+const serviceSource = readFileSync('src/services/tycoonMultiplayerService.ts', 'utf8');
 
 const room = (ready: boolean[]): TycoonRoom => ({
   code: '123456',
@@ -47,5 +50,13 @@ describe('tycoon multiplayer room rules', () => {
       'player-2',
       'player-3',
     ]);
+  });
+
+  it('requires Firebase confirmation instead of silently creating a one-device room', () => {
+    expect(serviceSource).not.toContain('firestoreUnavailable');
+    expect(serviceSource).not.toContain('saved locally only');
+    expect(serviceSource).not.toContain('return { ok: true, room: local }');
+    expect(serviceSource).toContain('ONLINE_CONNECTION_ERROR');
+    expect(serviceSource.match(/runTransaction\(db/g)?.length).toBeGreaterThanOrEqual(6);
   });
 });
