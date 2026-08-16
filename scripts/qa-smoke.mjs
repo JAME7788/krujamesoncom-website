@@ -84,10 +84,22 @@ const run = async () => {
       const pageState = await page.evaluate(({ mustInclude, mustExclude }) => {
         const root = document.getElementById('root');
         const bodyText = document.body?.innerText || '';
+        const lessonButtons = document.querySelectorAll('.glc-open');
+        const lessonOverlays = document.querySelectorAll('.glc-overlay');
+        const lessonCards = document.querySelectorAll('.glc-card');
+        const lessonOverlay = lessonOverlays[0];
+        const lessonModalLayerValid = lessonButtons.length === 0 || (
+          lessonOverlays.length === 1
+          && lessonCards.length === 1
+          && lessonOverlay?.parentElement === document.body
+          && Number(window.getComputedStyle(lessonOverlay).zIndex) >= 2147483000
+        );
         return {
           mounted: !!root && root.childElementCount > 0,
           includesExpected: !mustInclude || bodyText.includes(mustInclude),
           excludesBlockedState: !mustExclude || !bodyText.includes(mustExclude),
+          lessonModalLayerValid,
+          lessonModalCount: lessonCards.length,
           headings: Array.from(document.querySelectorAll('h1,h2,h3'))
             .slice(0, 8)
             .map((element) => element.textContent?.trim())
@@ -101,6 +113,7 @@ const run = async () => {
         pageState.mounted
         && pageState.includesExpected
         && pageState.excludesBlockedState
+        && pageState.lessonModalLayerValid
         && errors.length === 0
       ) passed += 1;
       else failures.push({ path: target.path, ...pageState, errors });
