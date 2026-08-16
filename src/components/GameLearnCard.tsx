@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BookOpen, X, Rocket, Lightbulb } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { gameLessons, ageTierFromClassroom, ageTierLabel } from '../data/gameLessons';
@@ -52,6 +53,23 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
     try { localStorage.setItem(seenKey, '1'); } catch { /* ignore */ }
   };
 
+  useEffect(() => {
+    if (!open) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        try { localStorage.setItem(seenKey, '1'); } catch { /* ignore */ }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open, seenKey]);
+
   const themeVars = {
     '--glc': lesson.color,
     '--glc-deep': darken(lesson.color),
@@ -66,7 +84,7 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
         <BookOpen size={16} /> บทเรียน
       </button>
 
-      {open && (
+      {open && createPortal((
         <div className="glc-overlay" onClick={close} role="dialog" aria-label={`บทเรียน ${lesson.title}`}>
           <section className="glc-card" onClick={(e) => e.stopPropagation()} style={themeVars}>
             <header className="glc-head">
@@ -111,7 +129,7 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
             </button>
           </section>
         </div>
-      )}
+      ), document.body)}
 
       <style>{`
         .glc-open {
@@ -124,7 +142,7 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
         .glc-open:hover { background: var(--glc, #6366f1); color: #fff; }
 
         .glc-overlay {
-          position: fixed; inset: 0; z-index: 9998;
+          position: fixed; inset: 0; z-index: 2147483000;
           display: grid; place-items: center; padding: 16px;
           background: rgba(15, 23, 42, 0.62); backdrop-filter: blur(6px);
           animation: glcFade 0.18s ease;
