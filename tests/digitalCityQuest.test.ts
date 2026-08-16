@@ -133,4 +133,15 @@ describe('Digital City Quest competition content', () => {
     expect(pageSource).toContain('showPlayerReveal && <div className="dcq-player-reveal"');
     expect(pageCss).toContain('.dcq-playing-page > .dcq-player-reveal');
   });
+
+  it('shows queued effects for economy, learning, building, dice, map, and victory events', () => {
+    expect(pageSource).toContain("queueImpact('pay'");
+    expect(pageSource).toContain("queueImpact('earn'");
+    expect(pageSource).toContain("queueImpact('build'");
+    expect(pageSource).toContain("queueImpact('upgrade'");
+    expect(pageSource).toContain('dcq-roll-result');
+    expect(pageSource).toContain('dcq-map-fx');
+    expect(pageSource).toContain('dcq-victory-rays');
+    expect(pageCss).toContain('.dcq-playing-page > .dcq-impact-fx');
+  });
 });

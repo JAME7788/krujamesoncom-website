@@ -78,6 +78,16 @@ import './DigitalCityQuestGame.css';
 type Phase = 'setup' | TycoonGamePhase;
 type Player = TycoonPlayerState;
 type PlayMode = 'shared' | 'online';
+type ImpactFxKind = 'earn' | 'pay' | 'build' | 'upgrade' | 'correct' | 'wrong' | 'event' | 'shield';
+
+interface ImpactFx {
+  id: number;
+  kind: ImpactFxKind;
+  icon: string;
+  title: string;
+  detail: string;
+  amount?: number;
+}
 
 const START_BUDGET = 7_000;
 const ROUND_GRANT = 900;
@@ -87,6 +97,7 @@ const ACTIVE_ROOM_KEY = 'kj_digital_city_active_room';
 const PLAYER_ID_KEY = 'kj_tycoon_player_id';
 const DOMAIN_KEYS = Object.keys(LITERACY_DOMAINS) as LiteracyDomain[];
 const FX_PARTICLES = Array.from({ length: 12 }, (_, index) => index);
+const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 const formatNumber = (value: number) => value.toLocaleString('th-TH');
 const formatClock = (seconds: number) => (
@@ -285,6 +296,7 @@ const DigitalCityQuestGame: React.FC = () => {
   const [finishReason, setFinishReason] = useState('');
   const [showDashboard, setShowDashboard] = useState(false);
   const [showPlayerReveal, setShowPlayerReveal] = useState(false);
+  const [impactQueue, setImpactQueue] = useState<ImpactFx[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [reflection, setReflection] = useState({ strategy: '', evidence: '', transfer: '' });
   const [reflectionSaved, setReflectionSaved] = useState(false);
@@ -316,6 +328,18 @@ const DigitalCityQuestGame: React.FC = () => {
   const rankedPlayers = useMemo(() => (
     [...players].sort((a, b) => scoreDigitalCityPlayer(b).total - scoreDigitalCityPlayer(a).total)
   ), [players]);
+  const impactFx = impactQueue[0] || null;
+
+  const queueImpact = (kind: ImpactFxKind, icon: string, title: string, detail: string, amount?: number) => {
+    setImpactQueue((current) => [...current, {
+      id: Date.now() + current.length,
+      kind,
+      icon,
+      title,
+      detail,
+      amount,
+    }]);
+  };
 
   const drawQuestion = (player: Player) => selectDigitalCityQuestion(
     player.missionProgress || {},
@@ -385,6 +409,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setGameEndsAt(endsAt);
     setFinishReason('');
     setShowPlayerReveal(true);
+    setImpactQueue([]);
     setReflectionSaved(false);
     resetTurnUi();
     setMessage(`เริ่มภารกิจ ทุกทีมได้รับงบพัฒนา ${formatNumber(START_BUDGET)} เครดิต`);
@@ -427,6 +452,13 @@ const DigitalCityQuestGame: React.FC = () => {
       });
       setPlayers(recoverBudget(after));
       setPhase('info');
+      queueImpact(
+        protectedByFriend ? 'shield' : 'pay',
+        protectedByFriend ? '🛡️' : '💳',
+        protectedByFriend ? 'เกราะงบทำงาน!' : 'ชำระค่าบริการ',
+        protectedByFriend ? `${current.name} ไม่เสียเครดิตในรอบนี้` : `${current.name} จ่ายให้ ${owner.name}`,
+        protectedByFriend ? 0 : -paid,
+      );
       setMessage(protectedByFriend
         ? `เกราะจากเพื่อนช่วยคุ้มครองงบในโครงการ ${tile.property?.name}`
         : `ใช้บริการ ${tile.property?.name} ${formatNumber(paid)} เครดิต เจ้าของได้คะแนนร่วมพัฒนา`);
@@ -458,6 +490,7 @@ const DigitalCityQuestGame: React.FC = () => {
       } : player);
       setPlayers(after);
       setPhase('info');
+      queueImpact('earn', '🤝', 'ทุนชุมชน', `${current.name} ได้รับทุนและคะแนนความร่วมมือ`, 250);
       setMessage('เวิร์กช็อปชุมชน: รับงบ 250 เครดิต และความร่วมมือ +1');
       return;
     }
@@ -468,6 +501,7 @@ const DigitalCityQuestGame: React.FC = () => {
         : player);
       setPlayers(recoverBudget(after));
       setPhase('info');
+      queueImpact('pay', '🚨', 'กู้คืนระบบ', `${current.name} ย้ายเข้าศูนย์ฟื้นฟู`, -300);
       setMessage('ตรวจพบช่องโหว่: ย้ายเข้าศูนย์ฟื้นฟูระบบ ใช้งบ 300 เครดิต แต่ยังแข่งขันต่อได้');
       return;
     }
@@ -499,6 +533,7 @@ const DigitalCityQuestGame: React.FC = () => {
       ));
       setPlayers(funded);
       setIsRolling(false);
+      if (passed) queueImpact('earn', '🏙️', 'ผ่านรอบมหานคร', `${activePlayer.name} รับทุนพัฒนารอบใหม่`, ROUND_GRANT);
       land(funded, position);
     };
     window.setTimeout(() => move(1), 360);
@@ -535,6 +570,13 @@ const DigitalCityQuestGame: React.FC = () => {
       };
     });
     setPlayers(after);
+    queueImpact(
+      correct ? 'correct' : 'wrong',
+      correct ? '✅' : '💡',
+      correct ? 'วิเคราะห์ถูกต้อง!' : choice < 0 ? 'หมดเวลาภารกิจ' : 'ลองใหม่ในภารกิจถัดไป',
+      correct ? `รับรางวัลหลักฐานขั้น ${question.stage}` : 'ระบบแสดงเหตุผลเพื่อใช้พัฒนาคำตอบ',
+      correct ? 350 + (question.stage * 100) : undefined,
+    );
     setMessage(correct
       ? `ถูกต้อง: ${question.why}`
       : `${choice < 0 ? 'หมดเวลา' : 'ยังไม่ถูก'}: ${question.why}`);
@@ -562,6 +604,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setBuyTile(null);
     setUpgradeTile(buyTile);
     setPhase('info');
+    queueImpact('build', '🏗️', 'เปิดโครงการสำเร็จ', `${activePlayer.name} สร้าง ${project.name}`, -project.price);
     setMessage(`เปิดโครงการ ${project.name} สำเร็จ ได้คะแนนกลยุทธ์ +2`);
   };
 
@@ -580,6 +623,7 @@ const DigitalCityQuestGame: React.FC = () => {
       levels: { ...player.levels, [upgradeTile]: level + 1 },
       strategyScore: Math.min(25, (player.strategyScore || 0) + 1),
     } : player));
+    queueImpact('upgrade', '⚙️', 'อัปเกรดโครงการ', `${project.name} ขึ้นสู่ขั้น ${level + 1}`, -cost);
     setMessage(`พัฒนา ${project.name} เป็นขั้น ${level + 1} ได้คะแนนกลยุทธ์ +1`);
   };
 
@@ -595,6 +639,13 @@ const DigitalCityQuestGame: React.FC = () => {
       evidenceScore: Math.min(20, (player.evidenceScore || 0) + choice.evidence),
     } : player);
     setPlayers(recoverBudget(after));
+    queueImpact(
+      'event',
+      eventCard.emoji,
+      choice.budget >= 0 ? 'เหตุการณ์สร้างโอกาส' : 'เหตุการณ์ท้าทาย',
+      choice.result,
+      choice.budget || undefined,
+    );
     setMessage(choice.result);
   };
 
@@ -758,6 +809,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setPhase('setup');
     setPlayers([]);
     setShowPlayerReveal(false);
+    setImpactQueue([]);
     setUsedQuestionIds([]);
     setReflection({ strategy: '', evidence: '', transfer: '' });
     setReflectionSaved(false);
@@ -786,6 +838,14 @@ const DigitalCityQuestGame: React.FC = () => {
     const timer = window.setTimeout(() => setShowPlayerReveal(false), 2_250);
     return () => window.clearTimeout(timer);
   }, [showPlayerReveal]);
+
+  useEffect(() => {
+    if (!impactFx) return undefined;
+    const timer = window.setTimeout(() => {
+      setImpactQueue((current) => current.filter((item) => item.id !== impactFx.id));
+    }, 1_450);
+    return () => window.clearTimeout(timer);
+  }, [impactFx]);
 
   useEffect(() => {
     if (playMode !== 'online' || !onlineRoomCode) return undefined;
@@ -987,6 +1047,10 @@ const DigitalCityQuestGame: React.FC = () => {
       <main ref={setModalRoot} className="game-page dcq-page dcq-over-page">
         <section className="dcq-results">
           <div className="dcq-result-hero">
+            <div className="dcq-victory-rays" aria-hidden="true" />
+            <div className="dcq-victory-pixels" aria-hidden="true">
+              {FX_PARTICLES.map((particle) => <i key={particle} style={{ '--fx-i': particle } as React.CSSProperties} />)}
+            </div>
             <div className="dcq-crown"><Avatar characterId={winner.characterId} size="large" active /><Crown /></div>
             <span>SMART CITY CHAMPION</span><h1>{winner.name} ชนะ!</h1>
             <p>{finishReason}</p><strong>{winnerScore.total}/100 คะแนน</strong>
@@ -1029,9 +1093,17 @@ const DigitalCityQuestGame: React.FC = () => {
             </div>
           ))}
         </div>
+        <div className="dcq-launch-countdown"><span>3</span><span>2</span><span>1</span><strong>GO!</strong></div>
         <div className="dcq-player-reveal-confetti">
           {FX_PARTICLES.map((particle) => <i key={particle} style={{ '--fx-i': particle } as React.CSSProperties} />)}
         </div>
+      </div>}
+      {impactFx && <div key={impactFx.id} className={`dcq-impact-fx is-${impactFx.kind}`} role="status" aria-live="polite">
+        <div className="dcq-impact-wave" aria-hidden="true" />
+        <span className="dcq-impact-icon">{impactFx.icon}</span>
+        <div><small>MISSION EFFECT</small><strong>{impactFx.title}</strong><p>{impactFx.detail}</p></div>
+        {impactFx.amount !== undefined && <b className={impactFx.amount >= 0 ? 'positive' : 'negative'}>{impactFx.amount >= 0 ? '+' : ''}{formatNumber(impactFx.amount)} เครดิต</b>}
+        <span className="dcq-impact-particles" aria-hidden="true">{FX_PARTICLES.map((particle) => <i key={particle} style={{ '--fx-i': particle } as React.CSSProperties} />)}</span>
       </div>}
       <nav className="dcq-game-tools">
         <span><Clock3 size={17} /><b>{formatClock(timeLeft)}</b></span>
@@ -1053,6 +1125,7 @@ const DigitalCityQuestGame: React.FC = () => {
             <span className="dcq-flying-dice dice-a">⚄</span>
             <span className="dcq-flying-dice dice-b">⚂</span>
             <span className="dcq-flying-dice dice-c">⚅</span>
+            <span className="dcq-roll-result"><small>ผลทอย</small><b>{dice ? DICE_FACES[dice - 1] : '⚄'}</b><strong>{dice}</strong></span>
           </div>
         )}
         <div className="dcq-board">
@@ -1071,6 +1144,11 @@ const DigitalCityQuestGame: React.FC = () => {
           <div className="dcq-board-center">
             <span>SMART CITY CORE</span>
             <img src="/media/games/tycoon-theme/pixel-tech-campus.webp" alt="มหานครเทคโนโลยีพิกเซล" />
+            <aside className="dcq-map-fx" aria-hidden="true">
+              <i className="beacon beacon-a" /><i className="beacon beacon-b" /><i className="beacon beacon-c" />
+              <i className="data-bit bit-a" /><i className="data-bit bit-b" /><i className="data-bit bit-c" /><i className="data-bit bit-d" />
+              <b className="status-a">GRID ONLINE</b><b className="status-b">ENERGY 100%</b>
+            </aside>
             <div><b>ตา {activePlayer.name}</b><small>{message}</small></div>
             {phase === 'roll' && <button type="button" onClick={roll} disabled={isRolling || !canTakeTurn}><Dices size={28} /><span>{isRolling ? 'กำลังเดิน' : canTakeTurn ? 'ทอยลูกเต๋า' : 'รอผู้เล่น'}</span></button>}
           </div>
