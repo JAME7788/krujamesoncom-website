@@ -72,4 +72,12 @@ describe('Digital City Quest competition content', () => {
     expect(pageSource).toContain('modalRoot?.requestFullscreen()');
     expect(pageSource).not.toContain('document.fullscreenElement || document.body');
   });
+
+  it('carries the arcade reveal, dice burst, movement, and active-player effects', () => {
+    expect(pageSource).toContain('dcq-player-reveal');
+    expect(pageSource).toContain('dcq-roll-fx');
+    expect(pageSource).toContain('dcq-flying-dice');
+    expect(pageSource).toContain('dcq-step-fx');
+    expect(pageSource).toContain("' current'");
+  });
 });

@@ -84,6 +84,7 @@ const BOARD_SIZE = DIGITAL_CITY_BOARD.length;
 const ACTIVE_ROOM_KEY = 'kj_digital_city_active_room';
 const PLAYER_ID_KEY = 'kj_tycoon_player_id';
 const DOMAIN_KEYS = Object.keys(LITERACY_DOMAINS) as LiteracyDomain[];
+const FX_PARTICLES = Array.from({ length: 12 }, (_, index) => index);
 
 const formatNumber = (value: number) => value.toLocaleString('th-TH');
 const formatClock = (seconds: number) => (
@@ -998,6 +999,21 @@ const DigitalCityQuestGame: React.FC = () => {
         <div><span>PIXEL TECH</span><strong>DIGITAL CITY QUEST</strong><small>ภารกิจกู้มหานครอัจฉริยะ</small></div>
         <div className="dcq-header-score"><Coins size={20} /><b>{formatNumber(activePlayer?.money || 0)}</b><span>เครดิต</span></div>
       </header>
+      <div className="dcq-player-reveal" aria-hidden="true">
+        <div className="dcq-player-reveal-flare" />
+        <div className="dcq-player-reveal-title"><span>ภารกิจเริ่มแล้ว</span><strong>ทีมกู้มหานคร</strong></div>
+        <div className="dcq-player-reveal-cast">
+          {players.map((player) => (
+            <div key={player.idx} className="dcq-player-reveal-card" style={{ '--player-i': player.idx, '--player-color': TYCOON_TOKENS[player.idx].color } as React.CSSProperties}>
+              <Avatar characterId={player.characterId} size="large" walking active={player.idx === turn} />
+              <b>{player.name}</b>
+            </div>
+          ))}
+        </div>
+        <div className="dcq-player-reveal-confetti">
+          {FX_PARTICLES.map((particle) => <i key={particle} style={{ '--fx-i': particle } as React.CSSProperties} />)}
+        </div>
+      </div>
       <nav className="dcq-game-tools">
         <span><Clock3 size={17} /><b>{formatClock(timeLeft)}</b></span>
         <span><Avatar characterId={activePlayer.characterId} size="token" /><b>{activePlayer.name}</b></span>
@@ -1008,17 +1024,29 @@ const DigitalCityQuestGame: React.FC = () => {
       </nav>
       {supportMessage && <div className="dcq-support-toast"><HeartHandshake size={18} /> {supportMessage}</div>}
       <section className={`dcq-board-shell${isRolling ? ' rolling' : ''}`}>
+        {isRolling && (
+          <div key={`${turn}-${dice}-${activePlayer.pos}`} className="dcq-roll-fx" aria-hidden="true">
+            <span className="dcq-roll-ring ring-a" />
+            <span className="dcq-roll-ring ring-b" />
+            <span className="dcq-roll-burst">
+              {FX_PARTICLES.map((particle) => <i key={particle} style={{ '--fx-i': particle } as React.CSSProperties} />)}
+            </span>
+            <span className="dcq-flying-dice dice-a">⚄</span>
+            <span className="dcq-flying-dice dice-b">⚂</span>
+            <span className="dcq-flying-dice dice-c">⚅</span>
+          </div>
+        )}
         <div className="dcq-board">
           {DIGITAL_CITY_BOARD.map((tile, index) => {
             const [row, column] = tileGridPos(index);
             const owner = players.find((player) => player.owned.includes(index));
             const occupants = players.filter((player) => player.pos === index);
-            return <article key={index} className={`dcq-tile kind-${tile.kind}${owner ? ' owned' : ''}${occupants.length ? ' occupied' : ''}`} style={{ gridRow: row, gridColumn: column, '--project': tile.property?.groupColor || '#38bdf8', '--owner': owner ? TYCOON_TOKENS[owner.idx].color : '#fff' } as React.CSSProperties}>
+            return <article key={index} className={`dcq-tile kind-${tile.kind}${owner ? ' owned' : ''}${occupants.length ? ' occupied' : ''}${occupants.some((player) => player.idx === turn) ? ' current' : ''}`} style={{ gridRow: row, gridColumn: column, '--project': tile.property?.groupColor || '#38bdf8', '--owner': owner ? TYCOON_TOKENS[owner.idx].color : '#fff', '--tile-i': index } as React.CSSProperties}>
               <span className="dcq-tile-icon">{tile.property ? tile.property.emoji : <SpecialIcon kind={tile.kind} />}</span>
               <b>{tile.property?.name || (tile.kind === 'start' ? 'ศูนย์บัญชาการ' : tile.kind === 'chance' ? 'เหตุการณ์เมือง' : tile.kind === 'question' ? 'ภารกิจหลักฐาน' : tile.kind === 'rest' ? 'เวิร์กช็อปชุมชน' : tile.kind === 'gotoRest' ? 'ตรวจช่องโหว่' : 'ศูนย์วิจัย')}</b>
               {tile.property && <small>{formatNumber(tile.property.price)}</small>}
               {owner && <i className="dcq-owner-mark">{(owner.levels[index] || 0) + 1}</i>}
-              {occupants.length > 0 && <div className="dcq-tokens">{occupants.map((player) => <Avatar key={player.idx} characterId={player.characterId} size="token" walking={isRolling && player.idx === turn} active={player.idx === turn} />)}</div>}
+              {occupants.length > 0 && <div className="dcq-tokens">{isRolling && occupants.some((player) => player.idx === turn) && <span className="dcq-step-fx" aria-hidden="true">{FX_PARTICLES.slice(0, 8).map((particle) => <i key={particle} style={{ '--fx-i': particle } as React.CSSProperties} />)}</span>}{occupants.map((player) => <Avatar key={player.idx} characterId={player.characterId} size="token" walking={isRolling && player.idx === turn} active={player.idx === turn} />)}</div>}
             </article>;
           })}
           <div className="dcq-board-center">
@@ -1031,7 +1059,7 @@ const DigitalCityQuestGame: React.FC = () => {
         <aside className="dcq-player-rail">
           {players.map((player) => {
             const score = scoreDigitalCityPlayer(player);
-            return <article key={player.idx} className={player.idx === turn ? 'active' : ''} style={{ '--team': TYCOON_TOKENS[player.idx].color } as React.CSSProperties}><Avatar characterId={player.characterId} size="small" active={player.idx === turn} /><div><b>{player.name}</b><span>{player.idx === turn ? 'กำลังปฏิบัติภารกิจ' : 'รอสนับสนุนทีม'}</span><small>งบ {formatNumber(player.money)} • โครงการ {player.owned.length} • ครบ {completedGroups(player)} กลุ่ม</small></div><strong>{score.total}</strong></article>;
+            return <article key={player.idx} className={player.idx === turn ? 'active' : ''} style={{ '--team': TYCOON_TOKENS[player.idx].color, '--player-i': player.idx } as React.CSSProperties}><Avatar characterId={player.characterId} size="small" active={player.idx === turn} /><div><b>{player.name}</b><span>{player.idx === turn ? 'กำลังปฏิบัติภารกิจ' : 'รอสนับสนุนทีม'}</span><small>งบ {formatNumber(player.money)} • โครงการ {player.owned.length} • ครบ {completedGroups(player)} กลุ่ม</small></div><strong>{score.total}</strong></article>;
           })}
         </aside>
       </section>
