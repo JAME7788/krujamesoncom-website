@@ -33,8 +33,10 @@ import {
   DIGITAL_CITY_EVENTS,
   DIGITAL_CITY_QUESTIONS,
   LITERACY_DOMAINS,
+  digitalCityQuestionId,
   isDigitalCityEvent,
   isDigitalCityQuestion,
+  selectDigitalCityQuestion,
 } from '../../data/digitalCityQuest';
 import type {
   DigitalCityEvent,
@@ -269,6 +271,7 @@ const DigitalCityQuestGame: React.FC = () => {
   const [dice, setDice] = useState<number | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [question, setQuestion] = useState<DigitalCityQuestion | null>(null);
+  const [usedQuestionIds, setUsedQuestionIds] = useState<string[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
   const [questionTime, setQuestionTime] = useState(QUESTION_SECONDS);
   const [questionEndsAt, setQuestionEndsAt] = useState(0);
@@ -312,25 +315,17 @@ const DigitalCityQuestGame: React.FC = () => {
     [...players].sort((a, b) => scoreDigitalCityPlayer(b).total - scoreDigitalCityPlayer(a).total)
   ), [players]);
 
-  const drawQuestion = (player: Player) => {
-    const activeMission = Object.entries(player.missionProgress || {})
-      .find(([, stage]) => stage > 0 && stage < 3);
-    if (activeMission) {
-      const [missionId, stage] = activeMission;
-      const linked = DIGITAL_CITY_QUESTIONS.find((item) => (
-        item.missionId === missionId && item.stage === stage + 1
-      ));
-      if (linked) return linked;
-    }
-    const unfinished = DIGITAL_CITY_QUESTIONS.filter((item) => (
-      (player.missionProgress?.[item.missionId] || 0) === 0
+  const drawQuestion = (player: Player) => selectDigitalCityQuestion(
+    player.missionProgress || {},
+    player.mastery || {},
+    usedQuestionIds,
+  );
+
+  const rememberQuestion = (nextQuestion: DigitalCityQuestion) => {
+    const questionId = digitalCityQuestionId(nextQuestion);
+    setUsedQuestionIds((current) => (
+      current.includes(questionId) ? current : [...current, questionId]
     ));
-    const domainCounts = DOMAIN_KEYS.map((domain) => ({ domain, count: player.mastery?.[domain] || 0 }));
-    const weakest = [...domainCounts].sort((a, b) => a.count - b.count)[0]?.domain;
-    const pool = unfinished.filter((item) => item.domain === weakest);
-    const missions = (pool.length > 0 ? pool : unfinished.length > 0 ? unfinished : DIGITAL_CITY_QUESTIONS)
-      .filter((item) => item.stage === 1);
-    return pick(missions.length > 0 ? missions : DIGITAL_CITY_QUESTIONS);
   };
 
   const recoverBudget = (list: Player[]): Player[] => list.map((player) => {
@@ -382,6 +377,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setPlayers(list);
     setTurn(0);
     setTurnSerial(0);
+    setUsedQuestionIds([]);
     setPhase('roll');
     setTimeLeft(minutes * 60);
     setGameEndsAt(endsAt);
@@ -398,6 +394,7 @@ const DigitalCityQuestGame: React.FC = () => {
       const owner = list.find((player) => player.owned.includes(position));
       if (!owner) {
         const nextQuestion = drawQuestion(current);
+        rememberQuestion(nextQuestion);
         setQuestion(nextQuestion);
         setPicked(null);
         setQuestionTime(QUESTION_SECONDS);
@@ -441,6 +438,7 @@ const DigitalCityQuestGame: React.FC = () => {
     }
     if (tile.kind === 'question' || tile.kind === 'learn') {
       const nextQuestion = drawQuestion(current);
+      rememberQuestion(nextQuestion);
       setQuestion(nextQuestion);
       setPicked(null);
       setQuestionTime(QUESTION_SECONDS);
@@ -670,6 +668,7 @@ const DigitalCityQuestGame: React.FC = () => {
       variant: 'digital-city',
       turnSerial: 0,
       supportMessage: '',
+      usedQuestionIds: [],
       phase: 'roll',
       players: list,
       turn: 0,
@@ -698,6 +697,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setPlayers(list);
     setTurn(0);
     setTurnSerial(0);
+    setUsedQuestionIds([]);
     setPhase('roll');
     setGameEndsAt(endsAt);
     setTimeLeft(onlineRoom.minutes * 60);
@@ -752,6 +752,7 @@ const DigitalCityQuestGame: React.FC = () => {
     if (onlineRoomCode) leaveRoom();
     setPhase('setup');
     setPlayers([]);
+    setUsedQuestionIds([]);
     setReflection({ strategy: '', evidence: '', transfer: '' });
     setReflectionSaved(false);
   };
@@ -812,6 +813,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setEventCard(remoteEvent);
     setMessage(remote.message);
     setSupportMessage(remote.supportMessage || '');
+    setUsedQuestionIds(remote.usedQuestionIds || []);
     setBuyTile(remote.buyTile);
     setUpgradeTile(remote.upgradeTile);
     setFinishReason(remote.finishReason);
@@ -828,6 +830,7 @@ const DigitalCityQuestGame: React.FC = () => {
       variant: 'digital-city',
       turnSerial,
       supportMessage,
+      usedQuestionIds,
       phase,
       players,
       turn,
@@ -855,7 +858,7 @@ const DigitalCityQuestGame: React.FC = () => {
       void publishTycoonGame(onlineRoom.code, multiplayerPlayerId, { ...base, version, updatedBy: multiplayerPlayerId });
     }, 130);
     return () => window.clearTimeout(timer);
-  }, [buyTile, dice, eventCard, finishReason, gameEndsAt, isOnlineGame, isRolling, message, multiplayerPlayerId, onlineRoom, phase, picked, players, question, questionEndsAt, supportMessage, turn, turnSerial, upgradeTile]);
+  }, [buyTile, dice, eventCard, finishReason, gameEndsAt, isOnlineGame, isRolling, message, multiplayerPlayerId, onlineRoom, phase, picked, players, question, questionEndsAt, supportMessage, turn, turnSerial, upgradeTile, usedQuestionIds]);
 
   useEffect(() => {
     if (phase === 'setup' || phase === 'over') return undefined;
@@ -893,7 +896,7 @@ const DigitalCityQuestGame: React.FC = () => {
             <div>
               <span className="dcq-kicker"><Sparkles size={16} /> PISA MISSION BOARD</span>
               <h1>ร่วมทีมคิด วิเคราะห์ และกู้ระบบเมือง</h1>
-              <p>อ่านหลักฐานจากสถานการณ์จริง ตัดสินใจเป็นลำดับ และสะสมคะแนนสมรรถนะ 100 คะแนน โดยไม่มีผู้เล่นล้มละลายออกจากเกม</p>
+              <p>อ่านหลักฐานจากคลัง {DIGITAL_CITY_QUESTIONS.length} ข้อที่ไม่ซ้ำกันทั้งห้อง ตัดสินใจเป็นลำดับ และสะสมคะแนนสมรรถนะ 100 คะแนน</p>
             </div>
             <div className="dcq-score-orbit" aria-label="คะแนนเต็ม 100">
               <strong>100</strong><span>คะแนนสมรรถนะ</span>

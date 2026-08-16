@@ -69,6 +69,7 @@ export interface TycoonGameSnapshot {
   variant?: TycoonGameVariant;
   turnSerial?: number;
   supportMessage?: string;
+  usedQuestionIds?: string[];
 }
 
 export interface TycoonRoom {
@@ -169,6 +170,9 @@ const normalizeGame = (value: unknown): TycoonGameSnapshot | null => {
     variant: source.variant === 'digital-city' ? 'digital-city' : 'classic',
     turnSerial: Number(source.turnSerial) || 0,
     supportMessage: String(source.supportMessage || ''),
+    usedQuestionIds: Array.isArray(source.usedQuestionIds)
+      ? [...new Set(source.usedQuestionIds.map((id) => String(id)).filter(Boolean))].slice(0, 300)
+      : [],
   };
 };
 
