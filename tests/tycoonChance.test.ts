@@ -4,6 +4,7 @@ import { CHANCE_CARDS } from '../src/data/tycoonGame';
 import type { ChanceEffect } from '../src/data/tycoonGame';
 
 const source = readFileSync('src/pages/games/TycoonGame.tsx', 'utf8');
+const layoutSource = readFileSync('src/components/Layout.tsx', 'utf8');
 
 describe('บัตรเสี่ยงดวงเกมเศรษฐี', () => {
   it('มีบัตรที่กระทบผู้เล่นคนอื่น — บอร์ดเกมต้องมีปฏิสัมพันธ์ ไม่ใช่ต่างคนต่างเล่น', () => {
@@ -47,5 +48,13 @@ describe('บัตรเสี่ยงดวงเกมเศรษฐี', (
     expect(source).toContain('role="dialog" aria-modal="true" aria-label="บัตรเสี่ยงดวง"');
     expect(source).toContain('aria-label="ปิดบัตรและไปตาถัดไป"');
     expect(source).toContain('z-index: 2147482000');
+  });
+
+  it('หน้าเล่นหลักเหลือเฉพาะกระดาน และย้ายข้อมูลเสริมเป็น popup', () => {
+    expect(layoutSource).toContain("location.pathname === '/games/tycoon'");
+    expect(source).toContain('aria-modal="true" aria-label="ผลการเดิน"');
+    expect(source).toContain('className="tyc-msg tyc-msg-toast"');
+    expect(source).not.toContain('className="puzzle-actions tyc-external-roll"');
+    expect(source).not.toContain('<div className="game-tips">\n          <strong>4 ทักษะที่ใช้ในเกมนี้');
   });
 });

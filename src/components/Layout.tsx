@@ -29,7 +29,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isCookieOpen, setIsCookieOpen] = useState(false);
-  const isImmersive = location.pathname.startsWith('/world');
+  const isImmersive = location.pathname.startsWith('/world')
+    || location.pathname === '/games/tycoon';
   const scoreEligible = isScoreEligibleUser(user);
   const externalVisitor = isExternalVisitor(user);
   const adminUser = isAdminPortalUser(user);
@@ -76,7 +77,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="app-container">
-      <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
+      {!isImmersive && <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container nav-content">
           {/* Logo */}
           <Link to="/" className="logo">
@@ -144,10 +145,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </button>
           </div>
         </div>
-      </nav>
+      </nav>}
 
       {/* Mobile menu drawer */}
-      {isMenuOpen && (
+      {!isImmersive && isMenuOpen && (
         <>
           <div className="mobile-menu-backdrop" onClick={() => setIsMenuOpen(false)} />
           <aside className="mobile-menu">

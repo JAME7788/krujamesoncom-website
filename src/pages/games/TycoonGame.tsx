@@ -38,7 +38,7 @@ import { useAuth } from '../../context/AuthContext';
 import GameLearnCard from '../../components/GameLearnCard';
 import CharacterShop from '../../components/CharacterShop';
 import { ageTierFromClassroom } from '../../data/gameLessons';
-import { QUESTION_BANK, CT_PILLARS, PILLAR_ORDER } from '../../data/ctBoardGame';
+import { QUESTION_BANK, CT_PILLARS } from '../../data/ctBoardGame';
 import type { CTQuestion } from '../../data/ctBoardGame';
 import { pickQuestionWithoutRecent } from '../../data/ctQuestionBank';
 import {
@@ -276,6 +276,7 @@ const TycoonGame: React.FC = () => {
   const [questionTime, setQuestionTime] = useState(QUESTION_SECONDS);
   const [chance, setChance] = useState<ChanceCard | null>(null);
   const [msg, setMsg] = useState('');
+  const [showMessageToast, setShowMessageToast] = useState(false);
   const [buyTile, setBuyTile] = useState<number | null>(null);
   const [rentTile, setRentTile] = useState<number | null>(null);
   const [rentOwner, setRentOwner] = useState<number | null>(null);
@@ -304,6 +305,16 @@ const TycoonGame: React.FC = () => {
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [showCharacterShop]);
+
+  useEffect(() => {
+    if (!msg || phase !== 'roll') {
+      setShowMessageToast(false);
+      return undefined;
+    }
+    setShowMessageToast(true);
+    const timer = window.setTimeout(() => setShowMessageToast(false), 2400);
+    return () => window.clearTimeout(timer);
+  }, [msg, phase]);
 
   const [multiplayerPlayerId] = useState(getMultiplayerPlayerId);
   const applyingRemoteRef = useRef(false);
@@ -1628,6 +1639,15 @@ const TycoonGame: React.FC = () => {
           <ChevronLeft size={16} />
           <span>เกม</span>
         </Link>
+        <button
+          type="button"
+          className="gstat tyc-icon-control"
+          onClick={() => setShowCharacterShop(true)}
+          title="ร้านตัวละคร"
+          aria-label="เปิดร้านตัวละคร"
+        >
+          <Store size={17} />
+        </button>
         <div className="gstat tyc-turn-stat">
           {me && <TycoonAvatar characterId={me.characterId} size="token" active />}
           <span>ตาของ</span>
@@ -1639,6 +1659,15 @@ const TycoonGame: React.FC = () => {
         <button className="gstat" onClick={() => setView3d((v) => !v)} title="สลับมุมมองกระดาน">
           {view3d ? '🧊 มุมมอง 3D' : '⬜ มุมมอง 2D'}
         </button>
+        {isOnlineGame && onlineRoom && (
+          <div
+            className={`gstat tyc-online-stat${canTakeTurn ? ' mine' : ''}`}
+            title={`รหัสห้อง ${onlineRoom.code}`}
+          >
+            <Wifi size={16} />
+            <span>{canTakeTurn ? 'ถึงตาคุณ' : `รอ ${me?.name || 'เพื่อน'}`}</span>
+          </div>
+        )}
         <button
           className="gstat tyc-icon-control"
           onClick={() => setSoundOn((current) => !current)}
@@ -1826,51 +1855,42 @@ const TycoonGame: React.FC = () => {
         </div>
       </div>
 
-      {isOnlineGame && onlineRoom && (
-        <div className={`tyc-online-turn${canTakeTurn ? ' mine' : ''}`}>
-          <Wifi size={16} />
-          {!canTakeTurn && onlineMember && (
-            <TycoonAvatar
-              characterId={onlineMember.characterId}
-              size="token"
-              className="tyc-online-wait-avatar"
-            />
-          )}
-          <span>ห้อง {onlineRoom.code}</span>
-          <b>{canTakeTurn ? 'ถึงตาของคุณ' : `รอ ${me?.name || 'เพื่อน'} เล่น`}</b>
-          {!canTakeTurn && (
-            <span className="tyc-waiting-dots" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
-          )}
-        </div>
+      {showMessageToast && msg && modalRoot && createPortal(
+        <div className="tyc-msg tyc-msg-toast" role="status" aria-live="polite">{msg}</div>,
+        modalRoot,
       )}
 
-      {msg && <div className="tyc-msg">{msg}</div>}
-
-      {phase === 'roll' && (
-        <div className="puzzle-actions tyc-external-roll">
-          <button className="btn-game-start tyc-dice" onClick={roll} disabled={isRolling || !canTakeTurn}>
-            <Dices size={20} /> {isRolling ? 'กำลังทอย...' : 'ทอยลูกเต๋า'}
-          </button>
-        </div>
-      )}
-
-      {phase === 'info' && (
-        <div className="puzzle-actions tyc-turn-actions">
-          {upgradeTile !== null && me?.owned.includes(upgradeTile) && (me.levels[upgradeTile] || 0) < 3 && (
-            <button className="btn-secondary tyc-upgrade" onClick={upgrade} disabled={!canTakeTurn}>
-              <Building2 size={17} />
-              พัฒนาระดับ {(me.levels[upgradeTile] || 0) + 1}
-              {' '}
-              {baht(propertyUpgradeCost(upgradeTile, me.levels[upgradeTile] || 0))}
-              {' '}บาท
+      {phase === 'info' && modalRoot && createPortal(
+        <div className="tyc-question-modal tyc-info-modal" role="dialog" aria-modal="true" aria-label="ผลการเดิน">
+          <div className="binary-card tyc-turn-card">
+            <button
+              type="button"
+              className="tyc-chance-close"
+              onClick={() => next(ps)}
+              disabled={!canTakeTurn}
+              aria-label="ปิดผลการเดินและไปตาถัดไป"
+              title="ตาถัดไป"
+            >
+              <X size={22} />
             </button>
-          )}
-          <button className="btn-game-start" onClick={() => next(ps)} disabled={!canTakeTurn}>ตาถัดไป →</button>
-        </div>
+            <div className="tyc-turn-card-tag">ผลการเดิน</div>
+            <div className="tyc-turn-card-icon">{upgradeTile !== null ? '🏗️' : '📍'}</div>
+            <p>{msg}</p>
+            <div className="puzzle-actions tyc-turn-actions">
+              {upgradeTile !== null && me?.owned.includes(upgradeTile) && (me.levels[upgradeTile] || 0) < 3 && (
+                <button className="btn-secondary tyc-upgrade" onClick={upgrade} disabled={!canTakeTurn}>
+                  <Building2 size={17} />
+                  พัฒนาระดับ {(me.levels[upgradeTile] || 0) + 1}
+                  {' '}
+                  {baht(propertyUpgradeCost(upgradeTile, me.levels[upgradeTile] || 0))}
+                  {' '}บาท
+                </button>
+              )}
+              <button className="btn-game-start" onClick={() => next(ps)} disabled={!canTakeTurn}>ตาถัดไป →</button>
+            </div>
+          </div>
+        </div>,
+        modalRoot,
       )}
 
       {phase === 'chance' && chance && modalRoot && createPortal(
@@ -1889,6 +1909,7 @@ const TycoonGame: React.FC = () => {
             <div className="tyc-chance-tag">🎴 บัตรเสี่ยงดวง</div>
             <div className="tyc-chance-emoji">{chance.emoji}</div>
             <p>{chance.text}</p>
+            {chance.effect && msg && <div className="tyc-chance-result">{msg}</div>}
             <div className="puzzle-actions">
               <button className="btn-game-start" onClick={() => next(ps)} disabled={!canTakeTurn}>ตาถัดไป →</button>
             </div>
@@ -1928,6 +1949,7 @@ const TycoonGame: React.FC = () => {
                 );
               })}
             </div>
+            {picked !== null && <div className="tyc-question-feedback">{msg}</div>}
             {picked !== null && (
               <div className="puzzle-actions">
                 {buyTile !== null && picked === q.answer ? (
@@ -1947,9 +1969,6 @@ const TycoonGame: React.FC = () => {
         modalRoot,
       )}
 
-      <div className="game-tips">
-        🧠 <strong>4 ทักษะที่ใช้ในเกมนี้:</strong> {PILLAR_ORDER.map((k) => `${CT_PILLARS[k].emoji} ${CT_PILLARS[k].short}`).join(' · ')}
-      </div>
       <TycoonStyles />
     </div>
   );
@@ -2509,6 +2528,23 @@ const TycoonStyles: React.FC = () => (
     .tyc-accuracy { margin-top: 3px; padding-top: 3px; border-top: 1px solid #e2e8f0; color: #0f766e; font-size: 0.65rem; font-weight: 800; }
 
     .tyc-msg { text-align: center; padding: 11px 14px; border-radius: 7px; background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; font-weight: 700; margin: 12px 0; }
+    .tyc-msg-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      z-index: 2147481000;
+      width: min(680px, calc(100vw - 28px));
+      margin: 0;
+      border: 3px solid #f8da75;
+      outline: 3px solid #184634;
+      background: #ffe47f;
+      color: #193b2d;
+      box-shadow: 0 5px 0 #8b5813, 0 14px 30px rgba(0,0,0,0.3);
+      font-weight: 1000;
+      pointer-events: none;
+      transform: translateX(-50%);
+      animation: tyc-question-dialog-in 180ms ease-out;
+    }
     .tyc-dice { font-size: 1.05rem; }
     .tyc-dice:disabled { cursor: wait; opacity: 0.75; }
     .tyc-timer { display: inline-flex; align-items: center; gap: 5px; }
@@ -2992,7 +3028,8 @@ const TycoonStyles: React.FC = () => (
       animation: tyc-question-backdrop-in 160ms ease-out;
     }
     .tyc-question-modal .tyc-q,
-    .tyc-question-modal .tyc-chance {
+    .tyc-question-modal .tyc-chance,
+    .tyc-question-modal .tyc-turn-card {
       width: min(680px, 100%);
       max-height: calc(100dvh - 36px);
       margin: 0;
@@ -3010,6 +3047,31 @@ const TycoonStyles: React.FC = () => (
       background: linear-gradient(180deg, #fffdf2 0%, #fff7d6 100%);
       box-shadow: 0 0 0 5px #7c2d12, 0 10px 0 #451a03, 0 28px 70px rgba(0,0,0,0.5);
     }
+    .tyc-question-modal .tyc-q {
+      background: #fffced;
+      color: #1e293b;
+    }
+    .tyc-question-modal .tyc-turn-card {
+      width: min(560px, 100%);
+      padding: 28px 24px 24px;
+      border-top-color: #22d3ee;
+      background: linear-gradient(180deg, #f0fdff 0%, #e0f2fe 100%);
+      text-align: center;
+      box-shadow: 0 0 0 5px #155e75, 0 10px 0 #083344, 0 28px 70px rgba(0,0,0,0.5);
+    }
+    .tyc-turn-card-tag {
+      display: inline-block;
+      padding: 4px 14px;
+      border: 3px solid #fff;
+      border-radius: 4px;
+      background: #0e7490;
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 1000;
+      box-shadow: 0 4px 0 #164e63;
+    }
+    .tyc-turn-card-icon { margin: 13px 0 5px; font-size: 2.8rem; line-height: 1; }
+    .tyc-turn-card p { color: #164e63; font-size: 1.02rem; font-weight: 900; line-height: 1.6; }
     .tyc-chance-close {
       position: absolute;
       top: 10px;
@@ -3046,6 +3108,18 @@ const TycoonStyles: React.FC = () => (
     }
     .tyc-chance-emoji { font-size: 3rem; margin: 10px 0 4px; }
     .tyc-chance p { font-size: 1.02rem; font-weight: 700; color: #1e293b; line-height: 1.6; }
+    .tyc-chance-result,
+    .tyc-question-feedback {
+      margin-top: 12px;
+      padding: 9px 11px;
+      border: 2px solid #86efac;
+      border-radius: 5px;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 0.82rem;
+      font-weight: 900;
+      line-height: 1.45;
+    }
     .tyc-q-text { font-size: 1.06rem; font-weight: 700; color: #1e293b; line-height: 1.6; margin: 12px 0 14px; }
     .tyc-choices { display: flex; flex-direction: column; gap: 8px; }
     .tyc-choice { padding: 12px 14px; border-radius: 10px; border: 2px solid #e2e8f0; background: #fff; text-align: left; font-family: inherit; font-size: 0.95rem; color: #1f2937; cursor: pointer; }
@@ -3073,21 +3147,40 @@ const TycoonStyles: React.FC = () => (
         url('/media/games/pixel-world/pixel-learning-world.webp') center top / cover fixed;
       box-shadow: 0 0 0 4px #f2c64d, 0 0 38px rgba(5, 35, 26, 0.38);
     }
+    .tyc-pixel-setup { padding: 12px 12px 28px; }
     .tyc-pixel-playing {
       width: 100%;
+      height: 100dvh;
       max-width: none;
-      padding: 4.6rem 12px 16px;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      gap: 8px;
+      overflow: hidden;
+      padding: 8px 12px 12px;
     }
     .tyc-compact-back {
-      display: none;
+      display: inline-flex;
       color: #321264;
       text-decoration: none;
+    }
+    .tyc-pixel-playing .game-topbar { display: none; }
+    .tyc-pixel-playing .game-stats {
+      margin: 0;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .tyc-pixel-playing .glc-open {
+      min-height: 31px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      white-space: nowrap;
     }
     .tyc-pixel-playing:fullscreen {
       width: 100vw;
       height: 100dvh;
       max-width: none;
-      overflow: auto;
+      overflow: hidden;
       padding: 10px;
       background-position: center;
     }
@@ -3221,7 +3314,7 @@ const TycoonStyles: React.FC = () => (
       grid-template-columns: minmax(120px, 1fr) minmax(280px, 1.65fr) minmax(120px, 1fr);
       align-items: center;
       gap: 14px;
-      margin: 0 0 15px;
+      margin: 0;
       padding: 10px 13px 12px;
       border: 4px solid #f6d463;
       border-radius: 7px;
@@ -3310,8 +3403,11 @@ const TycoonStyles: React.FC = () => (
       text-shadow: 0 2px 0 #081d65;
     }
     .tyc-pixel-playing .tyc-wrap {
+      min-height: 0;
+      height: 100%;
       gap: 16px;
       padding: 14px;
+      overflow: hidden;
       border: 4px solid #fff;
       border-radius: 7px;
       outline: 5px solid #321264;
@@ -3397,7 +3493,13 @@ const TycoonStyles: React.FC = () => (
       color: #fff;
       text-shadow: 0 2px 0 #9b3d00;
     }
-    .tyc-pixel-playing .tyc-side { gap: 11px; }
+    .tyc-pixel-playing .tyc-side {
+      min-height: 0;
+      gap: 11px;
+      overflow: auto;
+      padding: 4px;
+      overscroll-behavior: contain;
+    }
     .tyc-pixel-playing .tyc-p {
       border: 3px solid #fff;
       border-left: 8px solid var(--player-color);
@@ -3463,7 +3565,7 @@ const TycoonStyles: React.FC = () => (
       width: 100%;
       max-width: none;
       min-height: 100dvh;
-      padding: 4.6rem 16px 32px;
+      padding: 12px 16px 32px;
     }
     .tyc-pixel-game .tyc-win {
       position: relative;
@@ -3741,11 +3843,8 @@ const TycoonStyles: React.FC = () => (
       box-shadow: 0 0 0 3px #1d664b, 0 5px 0 #8b5813;
     }
     @media (min-width: 901px) {
-      .tyc-pixel-playing .game-topbar { display: none; }
-      .tyc-pixel-playing .tyc-compact-back { display: inline-flex; }
       .tyc-pixel-playing .tyc-arcade-banner {
         min-height: 70px;
-        margin-bottom: 8px;
         padding: 5px 10px 7px;
       }
       .tyc-pixel-playing .tyc-arcade-logo strong { font-size: clamp(1.5rem, 3vw, 2.05rem); }
@@ -3758,7 +3857,6 @@ const TycoonStyles: React.FC = () => (
       .tyc-pixel-playing .tyc-arcade-hearts svg { width: 21px; height: 21px; }
       .tyc-pixel-playing .game-stats {
         min-height: 42px;
-        margin-bottom: 8px;
         padding: 4px 7px;
       }
       .tyc-pixel-playing .gstat {
@@ -3772,14 +3870,15 @@ const TycoonStyles: React.FC = () => (
       }
       .tyc-pixel-playing .tyc-stage {
         display: grid;
+        height: 100%;
         min-height: 0;
         place-items: center;
         padding: 10px;
       }
       .tyc-pixel-playing .tyc-stage.is3d { padding: 12px; }
       .tyc-pixel-playing .tyc-board {
-        width: min(100%, calc(100dvh - 260px));
-        max-width: 760px;
+        width: min(100%, calc(100dvh - 200px));
+        max-width: 880px;
       }
       .tyc-pixel-playing .tyc-p {
         min-height: 0;
@@ -3791,11 +3890,7 @@ const TycoonStyles: React.FC = () => (
       .tyc-pixel-playing .tyc-money { font-size: 0.76rem; }
       .tyc-pixel-playing .tyc-props,
       .tyc-pixel-playing .tyc-accuracy { font-size: 0.58rem; }
-      .tyc-pixel-playing:fullscreen .tyc-arcade-banner {
-        min-height: 62px;
-        margin-bottom: 6px;
-      }
-      .tyc-pixel-playing:fullscreen .game-stats { margin-bottom: 6px; }
+      .tyc-pixel-playing:fullscreen .tyc-arcade-banner { min-height: 62px; }
       .tyc-pixel-playing:fullscreen .tyc-wrap { padding: 7px; }
     }
 
@@ -4267,7 +4362,8 @@ const TycoonStyles: React.FC = () => (
         padding: 8px;
       }
       .tyc-question-modal .tyc-q,
-      .tyc-question-modal .tyc-chance {
+      .tyc-question-modal .tyc-chance,
+      .tyc-question-modal .tyc-turn-card {
         max-height: calc(100dvh - 16px);
         padding: 14px 12px;
       }
@@ -4303,12 +4399,20 @@ const TycoonStyles: React.FC = () => (
       .tyc-arcade-banner::before { left: 8%; }
       .tyc-arcade-banner::after { right: 8%; }
       .tyc-pixel-playing .tyc-wrap {
+        grid-template-rows: auto auto;
+        align-content: start;
         padding: 8px;
         border-width: 3px;
         outline-width: 3px;
       }
-      .tyc-pixel-playing .tyc-stage { border-width: 3px; }
+      .tyc-pixel-playing .tyc-stage {
+        min-height: 0;
+        display: grid;
+        place-items: center;
+        border-width: 3px;
+      }
       .tyc-pixel-playing .tyc-board {
+        width: min(100%, 40dvh);
         border-width: 3px;
         outline-width: 3px;
         box-shadow: 0 0 0 5px #321264, 0 8px 0 #14072e;
@@ -4394,7 +4498,7 @@ const TycoonStyles: React.FC = () => (
       .tyc-rank div { grid-template-columns: auto 1fr auto; }
       .tyc-rank small { grid-column: 2 / -1; }
       .tyc-pixel-over {
-        padding: 4.6rem 8px 24px;
+        padding: 8px 8px 24px;
       }
       .tyc-pixel-game .tyc-win {
         width: calc(100% - 4px);
@@ -4470,18 +4574,36 @@ const TycoonStyles: React.FC = () => (
       .tyc-live-dice svg { width: 16px; height: 16px; }
       .tyc-live-dice strong { font-size: 0.88rem; }
       .tyc-live-dice span { font-size: 0.48rem; }
-      .tyc-center-roll { display: none; }
-      .tyc-external-roll { display: flex; }
-      .tyc-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-      .tyc-p { min-height: 66px; gap: 6px; padding: 7px; }
+      .tyc-center-roll {
+        display: inline-flex;
+        width: 43px;
+        height: 43px;
+        margin-top: 2px;
+        font-size: 0.56rem;
+      }
+      .tyc-center-roll svg { width: 15px; height: 15px; }
+      .tyc-external-roll { display: none; }
+      .tyc-side {
+        display: grid;
+        grid-template-columns: none;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(150px, 42vw);
+        max-height: 118px;
+        gap: 6px;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+      .tyc-p { min-height: 58px; gap: 6px; padding: 5px; }
       .tyc-p.active { transform: none; }
-      .tyc-p > .tyc-avatar { --avatar-size: 42px; }
+      .tyc-p > .tyc-avatar { --avatar-size: 36px; }
       .tyc-p-info b { overflow: hidden; font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
       .tyc-money { font-size: 0.7rem; }
       .tyc-props, .tyc-accuracy { font-size: 0.55rem; }
     }
     @media (max-width: 420px) {
-      .tyc-side { grid-template-columns: 1fr; }
+      .tyc-p { min-width: 0; padding: 5px; }
+      .tyc-p > .tyc-avatar { --avatar-size: 34px; }
+      .tyc-props { display: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       .tyc-player-reveal { display: none; }
