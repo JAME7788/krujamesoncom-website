@@ -261,4 +261,14 @@ export const gamesCatalog: GameInfo[] = [
     color: '#f59e0b',
     path: '/games/tycoon',
   },
+  {
+    id: 'digital-city-quest',
+    title: '🏙️ ภารกิจกู้มหานครอัจฉริยะ',
+    desc: 'เกมแข่งขันใหม่แยกจากเกมเศรษฐี อ่านสถานการณ์และตารางแบบ PISA ทำภารกิจเชื่อมโยง 3 ขั้น เปิดโครงการเมือง ช่วยเพื่อน และชิงคะแนนสมรรถนะ K/P/A เต็ม 100',
+    emoji: '🏙️',
+    level: 'ป.4-ม.3',
+    skill: 'การรู้เรื่องดิจิทัล + การคิดขั้นสูง',
+    color: '#0f766e',
+    path: '/games/digital-city-quest',
+  },
 ];

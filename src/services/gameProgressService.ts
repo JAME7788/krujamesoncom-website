@@ -48,7 +48,8 @@ export type GameProgressId =
   | 'tech-system'
   | 'search-smart'
   | 'ct-board'
-  | 'tycoon';
+  | 'tycoon'
+  | 'digital-city-quest';
 
 type StudentLike = {
   id: string;
@@ -184,7 +185,7 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
     return [isPrimary ? primaryDigitalUnit(classroom) : middleDesignUnit(classroom)];
   }
   // เกมเศรษฐีวิทยาการคำนวณ — บอร์ดเกมเศรษฐศาสตร์ + แนวคิดเชิงคำนวณ
-  if (normalizedGameId === 'tycoon') {
+  if (normalizedGameId === 'tycoon' || normalizedGameId === 'digital-city-quest') {
     return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
   // บอร์ดเกมแนวคิดเชิงคำนวณ — ครอบทั้ง 4 ทักษะ

@@ -10,6 +10,8 @@ import { db } from './firebase';
 export type TycoonRoomStatus = 'lobby' | 'playing' | 'finished';
 export type TycoonRoomSyncMode = 'connecting' | 'firebase' | 'local';
 export type TycoonGamePhase = 'roll' | 'question' | 'buy' | 'chance' | 'info' | 'over';
+export type TycoonGameVariant = 'classic' | 'digital-city';
+export type DigitalCitySupport = 'time' | 'shield' | 'encourage';
 
 export interface TycoonRoomPlayer {
   id: string;
@@ -18,6 +20,7 @@ export interface TycoonRoomPlayer {
   ready: boolean;
   joinedAt: number;
   lastSeenAt: number;
+  lastSupportSerial?: number;
 }
 
 export interface TycoonPlayerState {
@@ -32,6 +35,15 @@ export interface TycoonPlayerState {
   out: boolean;
   correct: number;
   answered: number;
+  mastery?: Record<string, number>;
+  missionProgress?: Record<string, number>;
+  evidenceScore?: number;
+  strategyScore?: number;
+  collaborationScore?: number;
+  efficiencyScore?: number;
+  advancedMissions?: number;
+  recoveryCount?: number;
+  shielded?: boolean;
 }
 
 export interface TycoonGameSnapshot {
@@ -54,6 +66,9 @@ export interface TycoonGameSnapshot {
   finishReason: string;
   endsAt: number;
   questionEndsAt: number;
+  variant?: TycoonGameVariant;
+  turnSerial?: number;
+  supportMessage?: string;
 }
 
 export interface TycoonRoom {
@@ -67,6 +82,7 @@ export interface TycoonRoom {
   game: TycoonGameSnapshot | null;
   createdAt: number;
   updatedAt: number;
+  variant?: TycoonGameVariant;
 }
 
 export interface TycoonRoomResult {
@@ -118,6 +134,7 @@ const normalizePlayer = (value: Partial<TycoonRoomPlayer>): TycoonRoomPlayer => 
   ready: Boolean(value.ready),
   joinedAt: Number(value.joinedAt) || Date.now(),
   lastSeenAt: Number(value.lastSeenAt) || Date.now(),
+  lastSupportSerial: value.lastSupportSerial == null ? -1 : Number(value.lastSupportSerial),
 });
 
 const normalizeGame = (value: unknown): TycoonGameSnapshot | null => {
@@ -149,6 +166,9 @@ const normalizeGame = (value: unknown): TycoonGameSnapshot | null => {
     finishReason: String(source.finishReason || ''),
     endsAt: Number(source.endsAt) || 0,
     questionEndsAt: Number(source.questionEndsAt) || 0,
+    variant: source.variant === 'digital-city' ? 'digital-city' : 'classic',
+    turnSerial: Number(source.turnSerial) || 0,
+    supportMessage: String(source.supportMessage || ''),
   };
 };
 
@@ -165,6 +185,7 @@ const normalizeRoom = (value: Partial<TycoonRoom>): TycoonRoom => ({
   game: normalizeGame(value.game),
   createdAt: Number(value.createdAt) || Date.now(),
   updatedAt: Number(value.updatedAt) || Date.now(),
+  variant: value.variant === 'digital-city' ? 'digital-city' : 'classic',
 });
 
 const hashText = async (value: string): Promise<string> => {
@@ -209,6 +230,7 @@ export const createTycoonRoom = async (input: {
   password: string;
   minutes: 5 | 10 | 15;
   host: Pick<TycoonRoomPlayer, 'id' | 'name' | 'characterId'>;
+  variant?: TycoonGameVariant;
 }): Promise<TycoonRoomResult> => {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const code = generateTycoonRoomCode();
@@ -229,6 +251,7 @@ export const createTycoonRoom = async (input: {
       game: null,
       createdAt: now,
       updatedAt: now,
+      variant: input.variant || 'classic',
     });
     try {
       await runTransaction(db, async (transaction) => {
@@ -251,6 +274,7 @@ export const joinTycoonRoom = async (
   code: string,
   password: string,
   player: Pick<TycoonRoomPlayer, 'id' | 'name' | 'characterId'>,
+  expectedVariant: TycoonGameVariant = 'classic',
 ): Promise<TycoonRoomResult> => {
   const cleanCode = code.replace(/\D/g, '').slice(0, 6);
   if (cleanCode.length !== 6) return { ok: false, error: 'กรุณาตรวจรหัสห้อง 6 หลัก' };
@@ -280,6 +304,7 @@ export const joinTycoonRoom = async (
       const snapshot = await transaction.get(ref);
       if (!snapshot.exists()) throw new Error('room-not-found');
       const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
+      if (room.variant !== expectedVariant) throw new Error('wrong-game');
       if (room.status !== 'lobby') throw new Error('room-started');
       if (room.passwordHash !== expectedPasswordHash) throw new Error('wrong-password');
       if (!room.players.some((member) => member.id === player.id) && room.players.length >= MAX_PLAYERS) {
@@ -301,6 +326,9 @@ export const joinTycoonRoom = async (
     }
     if (error instanceof Error && error.message === 'room-started') {
       return { ok: false, error: 'ห้องนี้เริ่มเล่นแล้ว' };
+    }
+    if (error instanceof Error && error.message === 'wrong-game') {
+      return { ok: false, error: 'รหัสนี้เป็นห้องของเกมอื่น กรุณาใช้รหัสจากหน้าเกมนี้' };
     }
     if (error instanceof Error && error.message === 'wrong-password') {
       return { ok: false, error: 'รหัสผ่านห้องไม่ถูกต้อง' };
@@ -447,6 +475,82 @@ export const publishTycoonGame = async (
     if (error instanceof Error && error.message === 'stale-version') return false;
     console.warn('Tycoon turn sync failed', error);
     return false;
+  }
+};
+
+export const supportDigitalCityTurn = async (
+  code: string,
+  actorId: string,
+  support: DigitalCitySupport,
+): Promise<TycoonRoomResult> => {
+  const cleanCode = code.replace(/\D/g, '').slice(0, 6);
+  const labels: Record<DigitalCitySupport, string> = {
+    time: 'ส่งเวลาเพิ่ม 5 วินาที',
+    shield: 'ส่งเกราะป้องกันงบ',
+    encourage: 'ส่งกำลังใจให้วางแผน',
+  };
+
+  try {
+    const next = await runTransaction(db, async (transaction) => {
+      const ref = doc(db, COLLECTION, cleanCode);
+      const snapshot = await transaction.get(ref);
+      if (!snapshot.exists()) throw new Error('room-not-found');
+      const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
+      if (room.variant !== 'digital-city' || room.status !== 'playing' || !room.game) {
+        throw new Error('support-unavailable');
+      }
+      const ordered = orderedTycoonRoomPlayers(room);
+      const actorSeat = ordered.findIndex((player) => player.id === actorId);
+      const actor = ordered[actorSeat];
+      const turnSerial = room.game.turnSerial || 0;
+      if (!actor || actorSeat === room.game.turn) throw new Error('support-unavailable');
+      if ((actor.lastSupportSerial ?? -1) === turnSerial) throw new Error('already-supported');
+      if (support === 'time' && room.game.phase !== 'question') throw new Error('support-unavailable');
+
+      const activeSeat = room.game.turn;
+      const players = room.game.players.map((player) => {
+        if (player.idx === actorSeat) {
+          return {
+            ...player,
+            collaborationScore: Math.min(10, (player.collaborationScore || 0) + (support === 'time' ? 3 : 2)),
+          };
+        }
+        if (player.idx !== activeSeat) return player;
+        if (support === 'shield') return { ...player, shielded: true };
+        if (support === 'encourage') {
+          return { ...player, strategyScore: Math.min(25, (player.strategyScore || 0) + 1) };
+        }
+        return player;
+      });
+      const updated = normalizeRoom({
+        ...room,
+        players: room.players.map((player) => (
+          player.id === actorId ? { ...player, lastSupportSerial: turnSerial } : player
+        )),
+        game: {
+          ...room.game,
+          players,
+          questionEndsAt: support === 'time'
+            ? room.game.questionEndsAt + 5_000
+            : room.game.questionEndsAt,
+          supportMessage: `${actor.name} ${labels[support]}`,
+          version: Math.max(Date.now(), room.game.version + 1),
+          updatedBy: actorId,
+        },
+        updatedAt: Date.now(),
+      });
+      transaction.set(ref, updated, { merge: false });
+      return updated;
+    });
+    return { ok: true, room: cacheRoom(next) };
+  } catch (error) {
+    if (error instanceof Error && error.message === 'already-supported') {
+      return { ok: false, error: 'คุณช่วยทีมในตานี้แล้ว รอตาถัดไป' };
+    }
+    if (error instanceof Error && error.message === 'room-not-found') {
+      return { ok: false, error: 'ไม่พบห้องแข่งขัน' };
+    }
+    return { ok: false, error: 'ใช้การช่วยนี้ไม่ได้ในช่วงนี้' };
   }
 };
 
