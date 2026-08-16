@@ -425,6 +425,7 @@
 }
 
 .dcq-game-header {
+  grid-row: 1;
   width: 100%;
   min-height: 72px;
   margin-bottom: 0;
@@ -437,6 +438,7 @@
 .dcq-header-score span { color: #e2e8f0 !important; font-size: .62rem !important; }
 
 .dcq-game-tools {
+  grid-row: 2;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -487,6 +489,7 @@
 }
 
 .dcq-board-shell {
+  grid-row: 3;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
   gap: 7px;
@@ -1136,6 +1139,9 @@
 
 @media (max-width: 960px) {
   .dcq-playing-page { display: block; height: auto; min-height: 100vh; overflow: auto; }
+  .dcq-playing-page .dcq-game-header,
+  .dcq-playing-page .dcq-game-tools,
+  .dcq-playing-page .dcq-board-shell { grid-row: auto; }
   .dcq-playing-page .dcq-game-header,
   .dcq-playing-page .dcq-game-tools { margin-bottom: 6px; }
   .dcq-board-shell { grid-template-columns: 1fr; height: auto; min-height: 0; }
