@@ -40,4 +40,12 @@ describe('บัตรเสี่ยงดวงเกมเศรษฐี', (
   it('เก็บเงินจากคนรวยที่สุดต้องไม่เก็บเกินเงินที่เขามี', () => {
     expect(source).toContain('Math.min(amount, Math.max(0, richest.money))');
   });
+
+  it('แสดงบัตรเสี่ยงดวงเป็น popup และมีทางไปตาถัดไปเสมอ', () => {
+    expect(source).toContain("import { createPortal } from 'react-dom'");
+    expect(source).toContain('className="tyc-question-modal tyc-chance-modal"');
+    expect(source).toContain('role="dialog" aria-modal="true" aria-label="บัตรเสี่ยงดวง"');
+    expect(source).toContain('aria-label="ปิดบัตรและไปตาถัดไป"');
+    expect(source).toContain('z-index: 2147482000');
+  });
 });

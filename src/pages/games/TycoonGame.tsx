@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import {
   Bed,
@@ -1541,6 +1542,10 @@ const TycoonGame: React.FC = () => {
   }
 
   // ---------- PLAYING ----------
+  const modalRoot = typeof document === 'undefined'
+    ? null
+    : (document.fullscreenElement || document.body);
+
   return (
     <div className="game-page tyc-pixel-game tyc-pixel-playing">
       <div className="game-topbar">
@@ -1868,18 +1873,31 @@ const TycoonGame: React.FC = () => {
         </div>
       )}
 
-      {phase === 'chance' && chance && (
-        <div className="binary-card tyc-chance">
-          <div className="tyc-chance-tag">🎴 บัตรเสี่ยงดวง</div>
-          <div className="tyc-chance-emoji">{chance.emoji}</div>
-          <p>{chance.text}</p>
-          <div className="puzzle-actions">
-            <button className="btn-game-start" onClick={() => next(ps)} disabled={!canTakeTurn}>ตาถัดไป →</button>
+      {phase === 'chance' && chance && modalRoot && createPortal(
+        <div className="tyc-question-modal tyc-chance-modal" role="dialog" aria-modal="true" aria-label="บัตรเสี่ยงดวง">
+          <div className="binary-card tyc-chance">
+            <button
+              type="button"
+              className="tyc-chance-close"
+              onClick={() => next(ps)}
+              disabled={!canTakeTurn}
+              aria-label="ปิดบัตรและไปตาถัดไป"
+              title="ตาถัดไป"
+            >
+              <X size={22} />
+            </button>
+            <div className="tyc-chance-tag">🎴 บัตรเสี่ยงดวง</div>
+            <div className="tyc-chance-emoji">{chance.emoji}</div>
+            <p>{chance.text}</p>
+            <div className="puzzle-actions">
+              <button className="btn-game-start" onClick={() => next(ps)} disabled={!canTakeTurn}>ตาถัดไป →</button>
+            </div>
           </div>
-        </div>
+        </div>,
+        modalRoot,
       )}
 
-      {phase === 'question' && q && (
+      {phase === 'question' && q && modalRoot && createPortal(
         <div className="tyc-question-modal" role="dialog" aria-modal="true" aria-label="คำถามประจำช่อง">
           <div className="binary-card tyc-q" style={{ borderTopColor: CT_PILLARS[q.pillar].color }}>
             <div className={`tyc-question-timer${questionTime <= 3 ? ' danger' : ''}`}>
@@ -1925,7 +1943,8 @@ const TycoonGame: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        modalRoot,
       )}
 
       <div className="game-tips">
@@ -2964,7 +2983,7 @@ const TycoonStyles: React.FC = () => (
     .tyc-question-modal {
       position: fixed;
       inset: 0;
-      z-index: 9500;
+      z-index: 2147482000;
       display: grid;
       place-items: center;
       padding: 18px;
@@ -2972,7 +2991,8 @@ const TycoonStyles: React.FC = () => (
       backdrop-filter: blur(5px);
       animation: tyc-question-backdrop-in 160ms ease-out;
     }
-    .tyc-question-modal .tyc-q {
+    .tyc-question-modal .tyc-q,
+    .tyc-question-modal .tyc-chance {
       width: min(680px, 100%);
       max-height: calc(100dvh - 36px);
       margin: 0;
@@ -2983,6 +3003,33 @@ const TycoonStyles: React.FC = () => (
       box-shadow: 0 0 0 5px #321264, 0 10px 0 #180a3e, 0 28px 70px rgba(0,0,0,0.48);
       animation: tyc-question-dialog-in 200ms cubic-bezier(.2,.85,.25,1.08);
     }
+    .tyc-question-modal .tyc-chance {
+      width: min(540px, 100%);
+      padding: 28px 24px 24px;
+      border-top-color: #f59e0b;
+      background: linear-gradient(180deg, #fffdf2 0%, #fff7d6 100%);
+      box-shadow: 0 0 0 5px #7c2d12, 0 10px 0 #451a03, 0 28px 70px rgba(0,0,0,0.5);
+    }
+    .tyc-chance-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 2;
+      display: inline-grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: 2px solid #fde68a;
+      border-radius: 6px;
+      background: #fff;
+      color: #7c2d12;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #d97706;
+    }
+    .tyc-chance-close:hover:not(:disabled) { background: #fffbeb; transform: translateY(-1px); }
+    .tyc-chance-close:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #d97706; }
+    .tyc-chance-close:disabled { cursor: not-allowed; opacity: 0.45; }
     .tyc-q, .tyc-chance { position: relative; max-width: 680px; margin-inline: auto; overflow: hidden; border-top: 6px solid #f59e0b; text-align: center; }
     .tyc-question-timer { position: relative; height: 27px; margin: -16px -16px 12px; background: #e2e8f0; }
     .tyc-question-timer > span { position: absolute; inset: 0 auto 0 0; background: #22c55e; transition: width 180ms linear; }
@@ -4219,7 +4266,8 @@ const TycoonStyles: React.FC = () => (
       .tyc-question-modal {
         padding: 8px;
       }
-      .tyc-question-modal .tyc-q {
+      .tyc-question-modal .tyc-q,
+      .tyc-question-modal .tyc-chance {
         max-height: calc(100dvh - 16px);
         padding: 14px 12px;
       }
