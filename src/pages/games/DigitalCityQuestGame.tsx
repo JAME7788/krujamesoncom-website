@@ -294,6 +294,7 @@ const DigitalCityQuestGame: React.FC = () => {
   const [onlineCharacter, setOnlineCharacter] = useState(TYCOON_CHARACTERS[0].id);
   const [roomBusy, setRoomBusy] = useState(false);
   const [roomError, setRoomError] = useState('');
+  const [modalRoot, setModalRoot] = useState<HTMLElement | null>(null);
 
   const appliedRemoteVersionRef = useRef(0);
   const applyingRemoteRef = useRef(false);
@@ -306,8 +307,6 @@ const DigitalCityQuestGame: React.FC = () => {
   const isOnlineGame = playMode === 'online' && Boolean(onlineRoomCode);
   const isRoomHost = onlineRoom?.hostId === multiplayerPlayerId;
   const canTakeTurn = !isOnlineGame || onlineSeat === turn;
-  const modalRoot = typeof document === 'undefined' ? null : (document.fullscreenElement || document.body);
-
   const rankedPlayers = useMemo(() => (
     [...players].sort((a, b) => scoreDigitalCityPlayer(b).total - scoreDigitalCityPlayer(a).total)
   ), [players]);
@@ -714,8 +713,12 @@ const DigitalCityQuestGame: React.FC = () => {
   };
 
   const toggleFullscreen = async () => {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else await document.querySelector<HTMLElement>('.dcq-page')?.requestFullscreen();
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await modalRoot?.requestFullscreen();
+    } catch {
+      setMessage('เบราว์เซอร์ไม่อนุญาตให้เปิดเต็มจอ กรุณาลองกดปุ่มอีกครั้ง');
+    }
   };
 
   const exportScores = () => {
@@ -877,7 +880,7 @@ const DigitalCityQuestGame: React.FC = () => {
 
   if (phase === 'setup') {
     return (
-      <main className="game-page dcq-page dcq-setup-page">
+      <main ref={setModalRoot} className="game-page dcq-page dcq-setup-page">
         <header className="dcq-topbar">
           <Link to="/games"><ChevronLeft size={19} /> เกมทั้งหมด</Link>
           <div><span>DIGITAL CITY LEAGUE</span><strong>ภารกิจกู้มหานครอัจฉริยะ</strong></div>
@@ -961,7 +964,7 @@ const DigitalCityQuestGame: React.FC = () => {
     const winner = rankedPlayers[0];
     const winnerScore = scoreDigitalCityPlayer(winner);
     return (
-      <main className="game-page dcq-page dcq-over-page">
+      <main ref={setModalRoot} className="game-page dcq-page dcq-over-page">
         <section className="dcq-results">
           <div className="dcq-result-hero">
             <div className="dcq-crown"><Avatar characterId={winner.characterId} size="large" active /><Crown /></div>
@@ -989,7 +992,7 @@ const DigitalCityQuestGame: React.FC = () => {
   }
 
   return (
-    <main className="game-page dcq-page dcq-playing-page">
+    <main ref={setModalRoot} className="game-page dcq-page dcq-playing-page">
       <header className="dcq-game-header">
         <Link to="/games"><ChevronLeft size={18} /> เกม</Link>
         <div><span>PIXEL TECH</span><strong>DIGITAL CITY QUEST</strong><small>ภารกิจกู้มหานครอัจฉริยะ</small></div>

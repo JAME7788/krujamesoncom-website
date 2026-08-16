@@ -12,6 +12,16 @@
     url('/media/games/tycoon-theme/pixel-tech-kingdom.webp') center / cover fixed;
 }
 
+.dcq-page:fullscreen {
+  width: 100%;
+  max-width: none;
+  padding-top: 10px;
+}
+
+.dcq-page:fullscreen .dcq-board-shell {
+  height: calc(100vh - 190px);
+}
+
 .dcq-page button,
 .dcq-page input,
 .dcq-page textarea {

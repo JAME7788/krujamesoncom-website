@@ -65,4 +65,11 @@ describe('Digital City Quest competition content', () => {
     expect(pageSource).toContain('Export K/P/A');
     expect(pageSource).toContain('สะท้อนคิดหลังภารกิจ');
   });
+
+  it('keeps every popup inside the game root in normal and fullscreen modes', () => {
+    expect(pageSource).toContain('const [modalRoot, setModalRoot] = useState<HTMLElement | null>(null)');
+    expect(pageSource).toContain('ref={setModalRoot} className="game-page dcq-page dcq-playing-page"');
+    expect(pageSource).toContain('modalRoot?.requestFullscreen()');
+    expect(pageSource).not.toContain('document.fullscreenElement || document.body');
+  });
 });
