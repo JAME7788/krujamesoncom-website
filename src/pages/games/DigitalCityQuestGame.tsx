@@ -6,6 +6,7 @@ import {
   BookOpen,
   Check,
   ChevronLeft,
+  ChevronRight,
   Clock3,
   Coins,
   Copy,
@@ -16,6 +17,7 @@ import {
   Gamepad2,
   HeartHandshake,
   KeyRound,
+  Lightbulb,
   LogIn,
   Maximize2,
   Minimize2,
@@ -79,6 +81,7 @@ type Phase = 'setup' | TycoonGamePhase;
 type Player = TycoonPlayerState;
 type PlayMode = 'shared' | 'online';
 type ImpactFxKind = 'earn' | 'pay' | 'build' | 'upgrade' | 'correct' | 'wrong' | 'event' | 'shield';
+type TutorialStepId = 'setup' | 'roll' | 'question' | 'economy' | 'project' | 'team' | 'victory';
 
 interface ImpactFx {
   id: number;
@@ -87,6 +90,15 @@ interface ImpactFx {
   title: string;
   detail: string;
   amount?: number;
+}
+
+interface TutorialStep {
+  id: TutorialStepId;
+  label: string;
+  title: string;
+  summary: string;
+  actions: string[];
+  example: string;
 }
 
 const START_BUDGET = 7_000;
@@ -98,6 +110,64 @@ const PLAYER_ID_KEY = 'kj_tycoon_player_id';
 const DOMAIN_KEYS = Object.keys(LITERACY_DOMAINS) as LiteracyDomain[];
 const FX_PARTICLES = Array.from({ length: 12 }, (_, index) => index);
 const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+const TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    id: 'setup',
+    label: 'เตรียมทีม',
+    title: 'เลือกโหมด ทีม และตัวละคร',
+    summary: 'เริ่มจากเลือกเล่นจอเดียวหรือหลายจอ ตั้งชื่อทีม แล้วเลือกตัวละครที่ยังไม่มีทีมอื่นใช้',
+    actions: ['เลือกโหมดให้ตรงกับจำนวนอุปกรณ์', 'กรอกชื่อทีมและเลือกตัวละคร', 'โหมดหลายจอให้ทุกคนกดเตรียมพร้อมก่อนเจ้าของห้องเริ่ม'],
+    example: 'ตัวอย่าง: ห้องมีคอมพิวเตอร์ 4 เครื่อง ให้ครูสร้างห้องหลายจอ แล้วนักเรียน 3 ทีมกรอกรหัสเดียวกัน',
+  },
+  {
+    id: 'roll',
+    label: 'ทอยและเดิน',
+    title: 'ทอยลูกเต๋าแล้วเดินตามจำนวนช่อง',
+    summary: 'เมื่อถึงตาของทีม ปุ่มทอยจะทำงาน ตัวละครเดินอัตโนมัติและหยุดทำกิจกรรมของช่องนั้น',
+    actions: ['ตรวจชื่อทีมที่กำลังเล่นบนแถบด้านบน', 'กดทอยลูกเต๋าเพียงหนึ่งครั้ง', 'รอให้ตัวละครเดินครบก่อนอ่านภารกิจ'],
+    example: 'ตัวอย่าง: ทอยได้ 4 ตัวละครเดิน 4 ช่อง และหยุดที่ช่องภารกิจหลักฐาน',
+  },
+  {
+    id: 'question',
+    label: 'ตอบภารกิจ',
+    title: 'อ่านหลักฐานก่อนเลือกคำตอบ',
+    summary: 'ภารกิจมีสถานการณ์ ตารางหรือข้อมูล และคำถาม 3 ตัวเลือก คำตอบที่ดีต้องอ้างอิงข้อมูลที่เห็นจริง',
+    actions: ['อ่านสถานการณ์และหัวตารางให้ครบ', 'ตัดตัวเลือกที่ขัดกับหลักฐานออก', 'เลือกคำตอบภายในเวลาและอ่านคำอธิบายผล'],
+    example: 'ตัวอย่าง: ข้อมูลบอกว่าแผง A ใช้ไฟน้อยที่สุด จึงเลือก A แทนการเดาจากชื่ออุปกรณ์',
+  },
+  {
+    id: 'economy',
+    label: 'รับ–จ่าย',
+    title: 'จัดการเครดิตอย่างมีเหตุผล',
+    summary: 'ทีมได้รับเครดิตจากภารกิจและรอบใหม่ ส่วนค่าบริการหรือการลงทุนจะหักจากงบพร้อมเอฟเฟกต์แจ้งผล',
+    actions: ['ดูยอดเครดิตก่อนตัดสินใจ', 'กันงบไว้สำหรับค่าบริการที่อาจเกิดขึ้น', 'เปรียบเทียบผลระยะยาวก่อนจ่าย'],
+    example: 'ตัวอย่าง: มี 2,000 เครดิต จ่ายค่าบริการ 600 เครดิต จึงเหลือ 1,400 เครดิต',
+  },
+  {
+    id: 'project',
+    label: 'สร้างเมือง',
+    title: 'เปิดและพัฒนาโครงการของทีม',
+    summary: 'ตอบภารกิจสำเร็จในช่องโครงการแล้วเลือกเปิดโครงการ จากนั้นกลับมาที่ช่องเดิมเพื่อพัฒนาได้ถึงขั้น 3',
+    actions: ['ตอบคำถามของช่องให้ถูกต้อง', 'ตรวจราคาแล้วเลือกเปิดโครงการ', 'สะสมโครงการหลายกลุ่มและพัฒนาอย่างสมดุล'],
+    example: 'ตัวอย่าง: เปิดศูนย์ข้อมูลขั้น 1 แล้วกลับมาอีกครั้งเพื่อพัฒนาเป็นขั้น 2 ซึ่งให้คะแนนกลยุทธ์เพิ่ม',
+  },
+  {
+    id: 'team',
+    label: 'ช่วยเพื่อน',
+    title: 'ผู้รอสามารถสนับสนุนทีมที่กำลังเล่น',
+    summary: 'โหมดหลายจอ ผู้เล่นที่รอไม่เห็นคำตอบ แต่ช่วยเพิ่มเวลา ส่งเกราะงบ หรือให้กำลังใจได้หนึ่งครั้งต่อตา',
+    actions: ['ดูสถานะผู้เล่นที่กำลังทำภารกิจ', 'เลือกความช่วยเหลือที่เหมาะกับสถานการณ์', 'แบ่งหน้าที่อ่าน คำนวณ และตรวจหลักฐาน'],
+    example: 'ตัวอย่าง: เพื่อนเหลือเวลา 4 วินาที ผู้รอกด +5 วินาที ทีมจึงมีเวลาอ่านตารางจนจบ',
+  },
+  {
+    id: 'victory',
+    label: 'ชนะอย่างมีคุณภาพ',
+    title: 'สะสมคะแนน K/P/A ให้ครบเกณฑ์',
+    summary: 'คะแนนรวมมาจากความรู้ การคิดปฏิบัติ และความร่วมมือ ผู้ชนะที่สมบูรณ์ต้องตอบแม่นอย่างน้อย 60% ครบ 3 ด้าน และผ่านภารกิจขั้นสูง',
+    actions: ['K เพิ่มจากการตอบโดยใช้หลักฐาน', 'P เพิ่มจากกลยุทธ์ การตัดสินใจ และพัฒนาโครงการ', 'A เพิ่มจากการช่วยเหลือและทำงานร่วมกัน'],
+    example: 'ตัวอย่าง: K 32 + P 43 + A 8 = 83 คะแนน และผ่านเงื่อนไขสมรรถนะครบ จึงเป็นแชมป์มหานคร',
+  },
+];
 
 const formatNumber = (value: number) => value.toLocaleString('th-TH');
 const formatClock = (seconds: number) => (
@@ -256,6 +326,83 @@ const CharacterPicker: React.FC<{
   </div>
 );
 
+const TutorialVisual: React.FC<{ step: TutorialStepId }> = ({ step }) => {
+  const firstCharacter = TYCOON_CHARACTERS[0].id;
+  const secondCharacter = TYCOON_CHARACTERS[1].id;
+
+  if (step === 'setup') {
+    return (
+      <div className="dcq-tutorial-scene is-setup">
+        <span className="dcq-tutorial-room">ห้อง 452731</span>
+        <div className="dcq-tutorial-team"><Avatar characterId={firstCharacter} size="large" active /><b>ทีมสิงโต</b><small>พร้อมแล้ว</small></div>
+        <div className="dcq-tutorial-team"><Avatar characterId={secondCharacter} size="large" /><b>ทีมโลมา</b><small>กำลังเตรียม</small></div>
+        <span className="dcq-tutorial-ready"><Check size={18} /> ทุกทีมพร้อม</span>
+      </div>
+    );
+  }
+
+  if (step === 'roll') {
+    return (
+      <div className="dcq-tutorial-scene is-roll">
+        <span className="dcq-tutorial-dice">⚃</span>
+        <div className="dcq-tutorial-track">
+          {['เริ่ม', 'ข้อมูล', 'ภารกิจ', 'พลังงาน', 'หลักฐาน'].map((label, index) => (
+            <span key={label} className={index === 4 ? 'target' : ''}>{index === 0 && <Avatar characterId={firstCharacter} size="token" />}{label}</span>
+          ))}
+        </div>
+        <span className="dcq-tutorial-move">เดิน 4 ช่อง <ChevronRight size={18} /></span>
+      </div>
+    );
+  }
+
+  if (step === 'question') {
+    return (
+      <div className="dcq-tutorial-scene is-question">
+        <div className="dcq-tutorial-evidence"><b>หลักฐานการใช้พลังงาน</b><span>อาคาร A <strong>40 หน่วย</strong></span><span>อาคาร B <strong>65 หน่วย</strong></span></div>
+        <div className="dcq-tutorial-answers"><b>อาคารใดใช้พลังงานน้อยกว่า?</b><span className="correct"><Check size={16} /> อาคาร A</span><span>อาคาร B</span><span>ข้อมูลไม่เพียงพอ</span></div>
+      </div>
+    );
+  }
+
+  if (step === 'economy') {
+    return (
+      <div className="dcq-tutorial-scene is-economy">
+        <div><Coins /><small>งบก่อนจ่าย</small><b>2,000</b></div>
+        <span className="dcq-tutorial-transaction">-600<small>ค่าบริการ</small></span>
+        <div><Coins /><small>งบคงเหลือ</small><b>1,400</b></div>
+      </div>
+    );
+  }
+
+  if (step === 'project') {
+    return (
+      <div className="dcq-tutorial-scene is-project">
+        {[1, 2, 3].map((level) => <div key={level} className={level === 2 ? 'active' : ''}><span>{level === 1 ? '🏗️' : level === 2 ? '🏢' : '🌆'}</span><b>ขั้น {level}</b><small>{level === 1 ? 'เปิดโครงการ' : level === 2 ? 'พัฒนาระบบ' : 'ต้นแบบเมือง'}</small></div>)}
+        <span className="dcq-tutorial-upgrade"><Sparkles size={17} /> พัฒนาทีละขั้น</span>
+      </div>
+    );
+  }
+
+  if (step === 'team') {
+    return (
+      <div className="dcq-tutorial-scene is-team">
+        <div className="dcq-tutorial-active-player"><Avatar characterId={firstCharacter} size="large" active /><b>กำลังตอบภารกิจ</b><span><Clock3 size={15} /> 4 วินาที</span></div>
+        <HeartHandshake className="dcq-tutorial-handshake" />
+        <div className="dcq-tutorial-support"><Avatar characterId={secondCharacter} size="large" /><b>ทีมผู้ช่วย</b><span>+5 วินาที</span><span><Shield size={15} /> เกราะงบ</span></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dcq-tutorial-scene is-victory">
+      <Crown className="dcq-tutorial-crown" />
+      <strong>83 / 100</strong>
+      <div className="dcq-tutorial-score"><span style={{ '--tutorial-score': '80%' } as React.CSSProperties}>K หลักฐาน <b>32/40</b></span><span style={{ '--tutorial-score': '86%' } as React.CSSProperties}>P ปฏิบัติคิด <b>43/50</b></span><span style={{ '--tutorial-score': '80%' } as React.CSSProperties}>A ร่วมมือ <b>8/10</b></span></div>
+      <small><Check size={15} /> ผ่านเกณฑ์แชมป์มหานคร</small>
+    </div>
+  );
+};
+
 const SpecialIcon: React.FC<{ kind: TileKind }> = ({ kind }) => {
   if (kind === 'start') return <Flag size={22} />;
   if (kind === 'chance') return <Sparkles size={22} />;
@@ -312,6 +459,8 @@ const DigitalCityQuestGame: React.FC = () => {
   const [roomBusy, setRoomBusy] = useState(false);
   const [roomError, setRoomError] = useState('');
   const [modalRoot, setModalRoot] = useState<HTMLElement | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
 
   const appliedRemoteVersionRef = useRef(0);
   const applyingRemoteRef = useRef(false);
@@ -958,6 +1107,57 @@ const DigitalCityQuestGame: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [canTakeTurn, phase, picked, question, questionEndsAt]);
 
+  useEffect(() => {
+    if (!showTutorial) return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowTutorial(false);
+      if (event.key === 'ArrowLeft') setTutorialStep((current) => Math.max(0, current - 1));
+      if (event.key === 'ArrowRight') setTutorialStep((current) => Math.min(TUTORIAL_STEPS.length - 1, current + 1));
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showTutorial]);
+
+  const openTutorial = () => {
+    setTutorialStep(0);
+    setShowTutorial(true);
+  };
+  const tutorial = TUTORIAL_STEPS[tutorialStep];
+  const tutorialModal = showTutorial && modalRoot ? createPortal((
+    <div className="dcq-modal dcq-tutorial-modal" role="dialog" aria-modal="true" aria-label={`คู่มือภาพ ${tutorial.title}`}>
+      <section className="dcq-tutorial-card">
+        <button type="button" className="dcq-modal-close" onClick={() => setShowTutorial(false)} aria-label="ปิดคู่มือ"><X /></button>
+        <header>
+          <span><BookOpen size={18} /> คู่มือภาพการเล่น</span>
+          <h2>{tutorialStep + 1}. {tutorial.title}</h2>
+          <p>{tutorial.summary}</p>
+          <div className="dcq-tutorial-progress" aria-label={`ขั้นที่ ${tutorialStep + 1} จาก ${TUTORIAL_STEPS.length}`}>
+            {TUTORIAL_STEPS.map((step, index) => <button key={step.id} type="button" className={index === tutorialStep ? 'active' : index < tutorialStep ? 'done' : ''} onClick={() => setTutorialStep(index)} aria-label={`ขั้น ${index + 1} ${step.label}`}><span>{index < tutorialStep ? <Check size={13} /> : index + 1}</span><b>{step.label}</b></button>)}
+          </div>
+        </header>
+        <div className="dcq-tutorial-body">
+          <figure>
+            <TutorialVisual step={tutorial.id} />
+            <figcaption>ภาพจำลองจากหน้าจอเกมจริง</figcaption>
+          </figure>
+          <article>
+            <span>ทำตามทีละขั้น</span>
+            <ol>{tutorial.actions.map((action) => <li key={action}>{action}</li>)}</ol>
+            <div className="dcq-tutorial-example"><Lightbulb size={20} /><p>{tutorial.example}</p></div>
+            <small>เคล็ดลับ: อ่านข้อมูลให้ครบก่อนกดทุกครั้ง คะแนน K/P/A จะเพิ่มจากวิธีคิดและการร่วมมือ ไม่ได้วัดแค่ความเร็ว</small>
+          </article>
+        </div>
+        <footer>
+          <button type="button" onClick={() => setTutorialStep((current) => Math.max(0, current - 1))} disabled={tutorialStep === 0}><ChevronLeft size={18} /> ก่อนหน้า</button>
+          <span>ขั้น {tutorialStep + 1} / {TUTORIAL_STEPS.length}</span>
+          {tutorialStep < TUTORIAL_STEPS.length - 1
+            ? <button type="button" className="next" onClick={() => setTutorialStep((current) => current + 1)}>ขั้นถัดไป <ChevronRight size={18} /></button>
+            : <button type="button" className="next" onClick={() => setShowTutorial(false)}><Check size={18} /> พร้อมเล่น</button>}
+        </footer>
+      </section>
+    </div>
+  ), modalRoot) : null;
+
   if (phase === 'setup') {
     return (
       <main ref={setModalRoot} className="game-page dcq-page dcq-setup-page">
@@ -967,6 +1167,10 @@ const DigitalCityQuestGame: React.FC = () => {
           <span className="dcq-new-badge">เกมแข่งขันใหม่</span>
         </header>
         <GameLearnCard gameKey="digital-city-quest" />
+        <div className="dcq-tutorial-launchbar">
+          <button type="button" onClick={openTutorial}><BookOpen size={19} /> คู่มือภาพ 7 ขั้น</button>
+          <span>ดูตัวอย่างการเลือกทีม ทอย ตอบคำถาม รับ–จ่ายเครดิต สร้างโครงการ และเก็บคะแนน</span>
+        </div>
         <section className="dcq-setup-panel">
           <div className="dcq-setup-hero">
             <div>
@@ -1036,6 +1240,7 @@ const DigitalCityQuestGame: React.FC = () => {
             </div>
           )}
         </section>
+        {tutorialModal}
       </main>
     );
   }
@@ -1110,6 +1315,7 @@ const DigitalCityQuestGame: React.FC = () => {
         <span><Avatar characterId={activePlayer.characterId} size="token" /><b>{activePlayer.name}</b></span>
         <span><Dices size={18} /><b>{dice || '-'}</b></span>
         <button type="button" onClick={() => setShowDashboard(true)}><BarChart3 size={18} /> คะแนน K/P/A</button>
+        <button type="button" onClick={openTutorial}><BookOpen size={18} /> วิธีเล่น</button>
         {isOnlineGame && onlineRoom && <span><Wifi size={17} /> ห้อง {onlineRoom.code}</span>}
         <button type="button" onClick={toggleFullscreen} aria-label={isFullscreen ? 'ออกจากเต็มจอ' : 'เต็มจอ'}>{isFullscreen ? <Minimize2 /> : <Maximize2 />}</button>
       </nav>
@@ -1170,6 +1376,7 @@ const DigitalCityQuestGame: React.FC = () => {
       {phase === 'chance' && eventCard && modalRoot && createPortal(<div className="dcq-modal" role="dialog" aria-modal="true" aria-label="เหตุการณ์ตัดสินใจ"><section className="dcq-event-card"><span>DECISION EVENT</span><div>{eventCard.emoji}</div><h2>{eventCard.text}</h2><p>{eventCard.prompt}</p>{canTakeTurn && picked === null ? <div className="dcq-event-choices">{eventCard.choices.map((choice, index) => <button key={choice.label} type="button" onClick={() => chooseEvent(index)}>{choice.label}<small>เลือกแล้วเห็นผลทันที</small></button>)}</div> : picked === null ? <div className="dcq-event-wait"><Clock3 /> {activePlayer.name} กำลังตัดสินใจ</div> : null}{picked !== null && <><div className="dcq-event-result"><Check /> {message}</div>{canTakeTurn ? <button type="button" className="dcq-primary" onClick={() => nextTurn(players)}>ตาถัดไป</button> : <div className="dcq-event-wait"><Clock3 /> รอผู้เล่นไปตาถัดไป</div>}</>}</section></div>, modalRoot)}
 
       {phase === 'info' && modalRoot && createPortal(<div className="dcq-modal" role="dialog" aria-modal="true" aria-label="ผลภารกิจ"><section className="dcq-info-card"><span>MISSION UPDATE</span><Avatar characterId={activePlayer.characterId} size="large" active /><h2>{activePlayer.name}</h2><p>{message}</p>{canTakeTurn ? <div>{upgradeTile !== null && activePlayer.owned.includes(upgradeTile) && (activePlayer.levels[upgradeTile] || 0) < 3 && <button type="button" onClick={upgradeProject}>พัฒนาต้นแบบขั้น {(activePlayer.levels[upgradeTile] || 0) + 1}</button>}<button type="button" className="dcq-primary" onClick={() => nextTurn(players)}>ตาถัดไป</button></div> : <div className="dcq-event-wait"><Clock3 /> รอ {activePlayer.name}</div>}</section></div>, modalRoot)}
+      {tutorialModal}
     </main>
   );
 };

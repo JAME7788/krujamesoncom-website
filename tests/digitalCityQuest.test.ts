@@ -144,4 +144,16 @@ describe('Digital City Quest competition content', () => {
     expect(pageSource).toContain('dcq-victory-rays');
     expect(pageCss).toContain('.dcq-playing-page > .dcq-impact-fx');
   });
+
+  it('includes a seven-step visual tutorial that can be reopened during play', () => {
+    expect(pageSource).toContain("type TutorialStepId = 'setup' | 'roll' | 'question' | 'economy' | 'project' | 'team' | 'victory'");
+    expect(pageSource).toContain('const TUTORIAL_STEPS: TutorialStep[]');
+    expect(pageSource).toContain('คู่มือภาพ 7 ขั้น');
+    expect(pageSource).toContain('<TutorialVisual step={tutorial.id} />');
+    expect(pageSource).toContain('ภาพจำลองจากหน้าจอเกมจริง');
+    expect(pageSource).toContain('ตัวอย่าง: ทอยได้ 4');
+    expect(pageSource).toContain('onClick={openTutorial}><BookOpen size={18} /> วิธีเล่น');
+    expect(pageCss).toContain('.dcq-tutorial-modal { z-index: 13000; }');
+    expect(pageCss).toContain("url('/media/games/tycoon-theme/pixel-tech-campus.webp')");
+  });
 });
