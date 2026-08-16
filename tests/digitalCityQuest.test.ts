@@ -13,6 +13,7 @@ const pageSource = readFileSync('src/pages/games/DigitalCityQuestGame.tsx', 'utf
 const appSource = readFileSync('src/App.tsx', 'utf8');
 const catalogSource = readFileSync('src/data/gamesCatalog.ts', 'utf8');
 const multiplayerSource = readFileSync('src/services/tycoonMultiplayerService.ts', 'utf8');
+const pageCss = readFileSync('src/pages/games/DigitalCityQuestGame.css', 'utf8');
 
 describe('Digital City Quest competition content', () => {
   it('contains 30 linked missions and 90 unique questions', () => {
@@ -106,6 +107,13 @@ describe('Digital City Quest competition content', () => {
     expect(pageSource).toContain('ref={setModalRoot} className="game-page dcq-page dcq-playing-page"');
     expect(pageSource).toContain('modalRoot?.requestFullscreen()');
     expect(pageSource).not.toContain('document.fullscreenElement || document.body');
+  });
+
+  it('fits the complete board into the remaining desktop viewport height', () => {
+    expect(pageCss).toContain('grid-template-rows: auto auto minmax(0, 1fr)');
+    expect(pageCss).toContain('height: 100dvh');
+    expect(pageCss).toContain('.dcq-page:fullscreen .dcq-board-shell');
+    expect(pageCss).not.toContain('height: calc(100vh - 260px)');
   });
 
   it('carries the arcade reveal, dice burst, movement, and active-player effects', () => {

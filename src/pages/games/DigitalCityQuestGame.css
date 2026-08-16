@@ -19,7 +19,7 @@
 }
 
 .dcq-page:fullscreen .dcq-board-shell {
-  height: calc(100vh - 190px);
+  height: auto;
 }
 
 .dcq-page button,
@@ -415,8 +415,11 @@
 .dcq-ready-row > span { align-self: center; color: #64748b; font-weight: 800; }
 
 .dcq-playing-page {
-  height: 100vh;
-  min-height: 720px;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 6px;
+  height: 100dvh;
+  min-height: 0;
   overflow: hidden;
   padding: 78px 10px 10px;
 }
@@ -424,7 +427,7 @@
 .dcq-game-header {
   width: 100%;
   min-height: 72px;
-  margin-bottom: 6px;
+  margin-bottom: 0;
 }
 
 .dcq-game-header > div:not(.dcq-header-score) { align-items: center; text-align: center; }
@@ -438,7 +441,7 @@
   align-items: center;
   gap: 7px;
   min-height: 48px;
-  margin-bottom: 6px;
+  margin-bottom: 0;
   padding: 5px 8px;
   color: #e0f2fe;
   background: #062c32;
@@ -487,8 +490,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
   gap: 7px;
-  height: calc(100vh - 260px);
-  min-height: 440px;
+  height: auto;
+  min-height: 0;
   padding: 8px;
   background: rgb(4 17 28 / 88%);
   border: 3px solid #22d3ee;
@@ -1132,7 +1135,9 @@
 .dcq-result-actions > *:nth-child(3) { background: #475569; border-color: #1e293b; box-shadow: 0 4px 0 #1e293b; }
 
 @media (max-width: 960px) {
-  .dcq-playing-page { height: auto; min-height: 100vh; overflow: auto; }
+  .dcq-playing-page { display: block; height: auto; min-height: 100vh; overflow: auto; }
+  .dcq-playing-page .dcq-game-header,
+  .dcq-playing-page .dcq-game-tools { margin-bottom: 6px; }
   .dcq-board-shell { grid-template-columns: 1fr; height: auto; min-height: 0; }
   .dcq-board { aspect-ratio: 1.15; }
   .dcq-player-rail { grid-template-columns: 1fr 1fr; }
