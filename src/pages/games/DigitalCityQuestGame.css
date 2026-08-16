@@ -901,6 +901,13 @@
   animation: dcq-player-reveal-shell 2.15s ease both;
 }
 
+/* Keep the opening sequence as an overlay even when shared game styles load later. */
+.dcq-playing-page > .dcq-player-reveal {
+  position: fixed;
+  z-index: 12000;
+  inset: 0;
+}
+
 .dcq-player-reveal-flare {
   position: absolute;
   top: 50%;

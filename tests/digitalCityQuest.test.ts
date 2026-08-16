@@ -131,5 +131,6 @@ describe('Digital City Quest competition content', () => {
     expect(pageSource).toContain("' current'");
     expect(pageSource).toContain('setShowPlayerReveal(false), 2_250');
     expect(pageSource).toContain('showPlayerReveal && <div className="dcq-player-reveal"');
+    expect(pageCss).toContain('.dcq-playing-page > .dcq-player-reveal');
   });
 });
