@@ -110,9 +110,9 @@ describe('Digital City Quest competition content', () => {
   });
 
   it('fits the complete board into the remaining desktop viewport height', () => {
-    expect(pageCss).toContain('grid-template-rows: auto auto minmax(0, 1fr)');
+    expect(pageCss).toContain('flex-direction: column');
     expect(pageCss).toContain('height: 100dvh');
-    expect(pageCss).toContain('grid-row: 3');
+    expect(pageCss).toContain('flex: 1 1 0');
     expect(pageCss).toContain('.dcq-page:fullscreen .dcq-board-shell');
     expect(pageCss).not.toContain('height: calc(100vh - 260px)');
   });
