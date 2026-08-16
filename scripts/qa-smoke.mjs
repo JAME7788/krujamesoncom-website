@@ -27,6 +27,20 @@ const ROUTES = [
   { path: '/homework', auth: 'student' }, { path: '/report-card', auth: 'student' },
   { path: '/world', auth: 'student', wait: 4000 },
   { path: '/admin', auth: 'admin' },
+  {
+    path: '/admin?tab=gradebook',
+    auth: 'admin',
+    mustInclude: 'สมุดเก็บคะแนน K/P/A',
+    mustExclude: 'กำลังดึงคะแนนจาก Firebase',
+  },
+  {
+    path: '/admin?tab=assessments',
+    auth: 'admin',
+    mustInclude: 'แบบประเมินและบันทึกหลังสอน',
+    mustExclude: 'กำลังดึงรายชื่อและผลประเมิน',
+  },
+  { path: '/admin?tab=p1-plan', auth: 'admin', wait: 4000, mustInclude: 'แผนพร้อมสอน' },
+  { path: '/admin?tab=research', auth: 'admin', mustInclude: 'สร้างเอกสารงานวิจัย' },
 ];
 
 /** เกมทุกเกมที่มีใน catalog — ดึงอัตโนมัติเพื่อไม่ต้องแก้ลิสต์เมื่อเพิ่มเกมใหม่ */
@@ -46,11 +60,14 @@ const run = async () => {
     ...ROUTES,
     ...(await gamePaths()).map((p) => ({ path: p, auth: 'student' })),
   ];
+  const selectedTargets = process.env.QA_ROUTE
+    ? targets.filter((target) => target.path === process.env.QA_ROUTE)
+    : targets;
 
   const failures = [];
   let passed = 0;
 
-  for (const target of targets) {
+  for (const target of selectedTargets) {
     const context = await browser.newContext({ viewport: { width: 1366, height: 850 } });
     if (target.auth) {
       await context.addInitScript((arg) => {
@@ -64,12 +81,29 @@ const run = async () => {
     try {
       await page.goto(baseUrl + target.path, { waitUntil: 'domcontentloaded', timeout: 25000 });
       await page.waitForTimeout(target.wait || 1500);
-      const mounted = await page.evaluate(() => {
+      const pageState = await page.evaluate(({ mustInclude, mustExclude }) => {
         const root = document.getElementById('root');
-        return !!root && root.childElementCount > 0;
+        const bodyText = document.body?.innerText || '';
+        return {
+          mounted: !!root && root.childElementCount > 0,
+          includesExpected: !mustInclude || bodyText.includes(mustInclude),
+          excludesBlockedState: !mustExclude || !bodyText.includes(mustExclude),
+          headings: Array.from(document.querySelectorAll('h1,h2,h3'))
+            .slice(0, 8)
+            .map((element) => element.textContent?.trim())
+            .filter(Boolean),
+        };
+      }, {
+        mustInclude: target.mustInclude || '',
+        mustExclude: target.mustExclude || '',
       });
-      if (mounted && errors.length === 0) passed += 1;
-      else failures.push({ path: target.path, mounted, errors });
+      if (
+        pageState.mounted
+        && pageState.includesExpected
+        && pageState.excludesBlockedState
+        && errors.length === 0
+      ) passed += 1;
+      else failures.push({ path: target.path, ...pageState, errors });
     } catch (e) {
       failures.push({ path: target.path, error: String(e).slice(0, 120) });
     }
@@ -78,7 +112,7 @@ const run = async () => {
 
   await browser.close();
 
-  console.log(`\nSmoke test: ${passed}/${targets.length} ผ่าน`);
+  console.log(`\nSmoke test: ${passed}/${selectedTargets.length} ผ่าน`);
   if (failures.length) {
     console.error('ไม่ผ่าน:', JSON.stringify(failures, null, 2));
     process.exit(1);

@@ -28,15 +28,21 @@ const programmingResources: LearningResource[] = [
   {
     id: 'pictoblox',
     title: 'PictoBlox',
-    desc: 'เขียนโปรแกรมแบบ block-based พร้อม AI/IoT — เหมือน Scratch แต่ทำ AI ได้',
-    url: 'https://thestempedia.com/product/pictoblox/',
+    desc: 'เขียนโปรแกรมแบบบล็อกพร้อม AI และหุ่นยนต์ — เปิดใช้บนเว็บได้เลย ไม่ต้องติดตั้ง',
+    // ต้องเป็น pictoblox.ai ซึ่งเป็นตัวโปรแกรมบนเว็บ
+    // ของเดิมชี้ไป thestempedia.com/product/pictoblox ซึ่งเป็นหน้าขายสินค้า กดแล้วเขียนโค้ดไม่ได้
+    url: 'https://pictoblox.ai/',
     emoji: '🤖',
     category: 'programming',
-    badge: 'แนะนำสำหรับ AI',
+    badge: 'เครื่องมือหลักที่ใช้สอน',
+    // ครูใช้ PictoBlox สอนเป็นหลักตั้งแต่ ป.1 ถึง ม.3
+    // เดิมตั้งไว้แค่ ป.4 ขึ้นไป ทำให้นักเรียน ป.1-3 ไม่เห็นเครื่องมือนี้ในหน้าเกมฝึกเลย
+    // (หน้า /games กรอง resource ตามชั้นของนักเรียนจาก targetUnits)
     targetUnits: [
+      { gradeId: 'p1', unitNo: 3 }, { gradeId: 'p2', unitNo: 2 }, { gradeId: 'p3', unitNo: 2 },
       { gradeId: 'p4', unitNo: 2 }, { gradeId: 'p5', unitNo: 2 }, { gradeId: 'p6', unitNo: 2 },
-      { gradeId: 'm1-cs', unitNo: 1 }, { gradeId: 'm2-cs', unitNo: 1 },
-      { gradeId: 'ai-p4-6', unitNo: 2 }, { gradeId: 'ai-m1-3', unitNo: 1 },
+      { gradeId: 'm1-cs', unitNo: 1 }, { gradeId: 'm2-cs', unitNo: 1 }, { gradeId: 'm3-cs', unitNo: 1 },
+      { gradeId: 'ai-p1-3', unitNo: 2 }, { gradeId: 'ai-p4-6', unitNo: 2 }, { gradeId: 'ai-m1-3', unitNo: 1 },
     ],
   },
   {

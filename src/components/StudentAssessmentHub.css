@@ -901,3 +901,56 @@
     border: 1px solid #aaa;
   }
 }
+
+/* ปุ่มเติมร่างบันทึกหลังสอน — ช่วยครูที่ต้องเขียนย้อนหลังหลายคาบหลายห้อง */
+.sah-draft-tools {
+  align-items: center;
+  border: 1px dashed #c7d2fe;
+  background: #f5f7ff;
+  border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+}
+
+.sah-draft-tools button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  color: #3730a3;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.84rem;
+  font-weight: 700;
+  gap: 6px;
+  padding: 8px 12px;
+}
+
+.sah-draft-tools button.bulk {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+}
+
+.sah-draft-tools button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sah-draft-tools small {
+  color: #55608a;
+  flex: 1 1 260px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.sah-spin {
+  animation: sah-spin-rotate 0.8s linear infinite;
+}
+
+@keyframes sah-spin-rotate {
+  to { transform: rotate(360deg); }
+}

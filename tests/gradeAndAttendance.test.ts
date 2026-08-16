@@ -94,7 +94,7 @@ beforeEach(() => {
 });
 
 describe('ระบบคำนวณเกรด K/P/A', () => {
-  it('คะแนนเต็มทุกตัวชี้วัด กลางภาค และปลายภาคต้องรวมได้ 100 และเกรด 4', () => {
+  it('ประถม: คะแนนเต็มทุกตัวชี้วัดและปลายภาคต้องรวมได้ 100 และเกรด 4', () => {
     const grade = makeStudentGrade();
     Object.values(grade.indicators).forEach((score) => {
       score.k = 15;
@@ -106,14 +106,24 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
       score.aScore = 10;
       score.aAssessed = true;
     });
-    grade.midtermExam = 15;
-    grade.finalExam = 15;
+    grade.finalExam = 30;
 
     const result = computeBreakdown(grade, 'ป.1');
     expect(result.collected).toBe(70);
     expect(result.exam).toBe(30);
+    expect(result.midterm).toBe(0);
+    expect(result.final).toBe(30);
     expect(result.total).toBe(100);
     expect(computeGrade(grade, 'ป.1')).toBe('4');
+  });
+
+  it('ประถม: ไม่ใช้คะแนนกลางภาค แม้มีข้อมูลเก่าค้างอยู่', () => {
+    const grade = makeStudentGrade();
+    grade.midtermExam = 15;
+
+    const result = computeBreakdown(grade, 'ป.1');
+    expect(result.midterm).toBe(0);
+    expect(result.exam).toBe(0);
   });
 
   it('ต้อง cap คะแนน K/P และคะแนนสอบ ไม่ให้คะแนนรวมเกิน 100', () => {
@@ -199,9 +209,9 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
     const grade = makeStudentGrade();
     const indicator = getIndicators('ป.1')[0];
     const linked = getLinkedUnits('ป.1').find((item) => item.indicator.id === indicator.id);
-    // ป.1 เรียนพฤหัสบดี 13:00-14:00 — 21 พ.ค. 2026 เป็นวันพฤหัสบดี
-    const inClassTimestamp = new Date(2026, 4, 21, 13, 30).getTime();
-    const outsideTimestamp = new Date(2026, 4, 21, 15, 0).getTime();
+    // ป.1 เรียนเทคโนโลยีวันพุธ 08:30-09:20 ตามตารางสอนจริง — 20 พ.ค. 2026 เป็นวันพุธ
+    const inClassTimestamp = new Date(2026, 4, 20, 8, 40).getTime();
+    const outsideTimestamp = new Date(2026, 4, 20, 10, 0).getTime();
     expect(linked?.units.length).toBeGreaterThan(0);
     const unit = linked!.units[0];
     grade.indicators[indicator.id] = {
@@ -244,9 +254,10 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
   // ข้อมูลเก่าส่วนใหญ่ไม่มี scoreEvidence (ป.1 มีแค่ 1 ใน 26 คน) จึงตกมาทางนี้
   // เดิมทางนี้เหมา ×0.4 ให้ทุกอย่าง ทำให้งานที่ทำในคาบถูกหักคะแนน 60% ทั้งที่มาเรียนจริง
   it.each([
-    { case: 'ทำในคาบทั้งหมด ต้องได้เต็ม', hours: [13, 13], expected: 6 },
-    { case: 'ทำนอกคาบทั้งหมด ต้องได้ 40%', hours: [15, 16], expected: 2.4 },
-    { case: 'ทำในคาบครึ่งหนึ่ง ต้องได้ตามสัดส่วน', hours: [13, 16], expected: 4.2 },
+    // คาบ ป.1 คือ 08:30-09:20 ดังนั้นชั่วโมง 8 = ในคาบ ส่วน 10 กับ 13 = นอกคาบ
+    { case: 'ทำในคาบทั้งหมด ต้องได้เต็ม', hours: [8, 8], expected: 6 },
+    { case: 'ทำนอกคาบทั้งหมด ต้องได้ 40%', hours: [10, 13], expected: 2.4 },
+    { case: 'ทำในคาบครึ่งหนึ่ง ต้องได้ตามสัดส่วน', hours: [8, 13], expected: 4.2 },
   ])('ข้อมูลเก่าที่ไม่มี scoreEvidence: $case', ({ hours, expected }) => {
     const grade = makeStudentGrade();
     const indicator = getIndicators('ป.1')[0];
@@ -261,13 +272,13 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
           scoreEvidence: [],
         }),
       },
-      // 21 พ.ค. 2026 = พฤหัสบดี, คาบ ป.1 คือ 13:00-14:00
+      // 20 พ.ค. 2026 = วันพุธ ตรงกับคาบเทคโนโลยีของ ป.1 ตามตารางสอนจริง
       activities: hours.map((hour, i) => ({
         type: 'fun' as const,
         gradeId: unit.gradeId,
         unitNo: unit.unitNo,
         detail: `เกมที่ ${i + 1}`,
-        timestamp: new Date(2026, 4, 21, hour, 30).getTime(),
+        timestamp: new Date(2026, 4, 20, hour, 40).getTime(),
       })),
       attempts: [],
       daysActive: [],

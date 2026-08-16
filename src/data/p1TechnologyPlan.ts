@@ -596,13 +596,13 @@ export const getP1HourlySessions = (plan: P1LessonPlan): P1HourlySession[] => [{
 
 export const p1ScoringPlan = {
   collected: 70,
-  midterm: 15,
-  final: 15,
+  midterm: 0,
+  final: 30,
   indicatorWeight: 14,
   indicatorK: 8.4,
   indicatorP: 3.5,
   indicatorA: 2.1,
-  note: 'คะแนนเก็บ 70 คะแนน หารเท่ากัน 5 ตัวชี้วัด ตัวชี้วัดละ 14 คะแนน ภายในแต่ละตัวชี้วัดคิด K 60%, P 25%, A 15% แล้วรวมสอบกลางภาค 15 และปลายภาค 15 เป็น 100 คะแนน ออกผลการเรียน 1 ปี 1 เกรด',
+  note: 'คะแนนเก็บ 70 คะแนน หารเท่ากัน 5 ตัวชี้วัด ตัวชี้วัดละ 14 คะแนน ภายในแต่ละตัวชี้วัดคิด K 60%, P 25%, A 15% แล้วรวมสอบปลายภาคของเทอม 30 คะแนน เป็น 100 คะแนน โดยประถมไม่มีช่องสอบกลางภาคในสมุดคะแนน',
 };
 
 export const p1ResearchProtocol = [

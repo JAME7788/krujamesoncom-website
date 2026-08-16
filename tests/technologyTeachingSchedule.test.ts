@@ -18,13 +18,14 @@ describe('primary technology teaching schedules', () => {
     });
   });
 
-  it('divides the year into two semesters of 20 periods', () => {
+  it('divides the year into two semesters and keeps primary exam policy correct', () => {
     PRIMARY_TECHNOLOGY_GRADE_IDS.forEach((gradeId) => {
       const rows = buildTechnologyTeachingSchedule(gradeId).rows;
       expect(rows.filter((row) => row.semester === 1)).toHaveLength(20);
       expect(rows.filter((row) => row.semester === 2)).toHaveLength(20);
-      expect(rows[19].assessment).toContain('กลางปี 15 คะแนน');
-      expect(rows[39].assessment).toContain('ปลายปี 15 คะแนน');
+      expect(rows[19].assessment).toContain('ประเมินระหว่างเรียน');
+      expect(rows[19].assessment).toContain('ไม่แยกเป็นคะแนนสอบกลางภาค');
+      expect(rows[39].assessment).toContain('สอบปลายภาคของเทอม 30 คะแนน');
     });
   });
 

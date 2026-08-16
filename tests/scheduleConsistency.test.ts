@@ -4,7 +4,7 @@
 // ผลคือกิจกรรมทั้งห้องถูกนับเป็น "นอกคาบ" 100% → P เหลือ 40% และ A ขาด 4 คะแนน
 // ซ้ำร้ายตารางถูกเก็บไว้ 2 ที่ที่ไม่รู้จักกัน แก้ที่เดียวอีกที่จึงเพี้ยนเงียบ ๆ
 import { describe, expect, it } from 'vitest';
-import { defaultSchedule, minutesOf } from '../src/data/schedule';
+import { defaultSchedule, gradedSlotOf, minutesOf } from '../src/data/schedule';
 import {
   PRIMARY_TECHNOLOGY_GRADE_IDS,
   primaryTechnologyTeachingSchedules,
@@ -39,7 +39,8 @@ describe('ตารางสอนต้องตรงกันทุกที�
       expect(parsed.day, `อ่านชื่อวันจาก "${printed!.weeklySlot}" ไม่ออก`)
         .toBeGreaterThanOrEqual(0);
 
-      const scoringSlot = defaultSchedule.find((s) => s.classroom === classroom);
+      // ต้องเทียบกับคาบที่นับคะแนนเท่านั้น เพราะห้องหนึ่งมีทั้งคาบเทคโนโลยีและกิจกรรมตามความสนใจ
+      const scoringSlot = gradedSlotOf(classroom);
       expect(scoringSlot, `defaultSchedule ไม่มี ${classroom}`).toBeTruthy();
 
       // วันต้องตรงกัน ไม่งั้นคะแนนกับเอกสารจะเล่าคนละเรื่อง
@@ -61,7 +62,8 @@ describe('ตารางสอนต้องตรงกันทุกที�
     'วันที่ตามแผนของ %s ต้องตรงกับวันเรียนในตารางคิดคะแนน',
     (gradeId) => {
       const classroom = classroomOf(gradeId);
-      const scoringSlot = defaultSchedule.find((s) => s.classroom === classroom);
+      // ต้องเทียบกับคาบที่นับคะแนนเท่านั้น เพราะห้องหนึ่งมีทั้งคาบเทคโนโลยีและกิจกรรมตามความสนใจ
+      const scoringSlot = gradedSlotOf(classroom);
       expect(scoringSlot, `defaultSchedule ไม่มี ${classroom}`).toBeTruthy();
 
       const sessions = buildDefaultTeachingSessions(gradeId);

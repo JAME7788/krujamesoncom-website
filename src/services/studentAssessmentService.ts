@@ -32,6 +32,8 @@ export interface ClassroomAssessment {
   /** รหัสคาบกลางสำหรับเชื่อมกับตารางสอน เช็กชื่อ และบันทึกหลังสอน */
   sessionId?: string;
   archived?: boolean;
+  provisional?: boolean;
+  confirmedByTeacher?: boolean;
   kind: StudentAssessmentKind;
   classroom: string;
   academicYear: string;
@@ -105,19 +107,25 @@ export const loadClassroomAssessment = async (
   contextKey = 'main',
 ): Promise<ClassroomAssessment | null> => {
   const id = makeClassroomAssessmentId(classroom, academicYear, term, kind, contextKey);
-  if (firebaseAvailable()) {
-    try {
-      const snapshot = await getDoc(doc(db, COLLECTION, id));
-      if (snapshot.exists()) {
-        const assessment = snapshot.data() as ClassroomAssessment;
-        writeLocalAssessment(assessment);
-        return assessment;
-      }
-    } catch (error) {
-      console.warn('load student assessment from Firebase failed', error);
-    }
-  }
+  // Local-first keeps the form usable when Firestore is offline or over quota.
+  // The teacher can explicitly request the latest cloud copy from the UI.
   return readLocalAssessment(id);
+};
+
+export const fetchClassroomAssessmentFromFirebase = async (
+  classroom: string,
+  academicYear: string,
+  term: string,
+  kind: StudentAssessmentKind,
+  contextKey = 'main',
+): Promise<ClassroomAssessment | null> => {
+  if (!firebaseAvailable()) return null;
+  const id = makeClassroomAssessmentId(classroom, academicYear, term, kind, contextKey);
+  const snapshot = await getDoc(doc(db, COLLECTION, id));
+  if (!snapshot.exists()) return null;
+  const assessment = snapshot.data() as ClassroomAssessment;
+  writeLocalAssessment(assessment);
+  return assessment;
 };
 
 export const saveClassroomAssessment = async (

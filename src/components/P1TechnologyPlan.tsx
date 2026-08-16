@@ -707,14 +707,16 @@ const P1TechnologyPlan: React.FC = () => {
             <div>
               <span>คะแนนเก็บ</span><strong>{p1ScoringPlan.collected}</strong><small>K/P/A จาก 5 ตัวชี้วัด</small>
             </div>
-            <div>
-              <span>กลางภาค</span><strong>{p1ScoringPlan.midterm}</strong><small>ความรู้และสถานการณ์</small>
-            </div>
+            {p1ScoringPlan.midterm > 0 && (
+              <div>
+                <span>กลางภาค</span><strong>{p1ScoringPlan.midterm}</strong><small>ความรู้และสถานการณ์</small>
+              </div>
+            )}
             <div>
               <span>ปลายภาค</span><strong>{p1ScoringPlan.final}</strong><small>ความรู้และการประยุกต์</small>
             </div>
             <div>
-              <span>รวมทั้งปี</span><strong>100</strong><small>ออก 1 ปี 1 เกรด</small>
+              <span>รวมต่อเทอม</span><strong>100</strong><small>ประถมใช้ปลายภาค 30 คะแนน</small>
             </div>
           </section>
 

@@ -63,7 +63,7 @@ export const TECHNOLOGY_GRADE_IDS: TechnologyGradeId[] = [
 // หมายเหตุ: ตารางชุดนี้ใช้พิมพ์ลงหัวแผนการสอน ต้องตรงกับ src/data/schedule.ts เสมอ
 // (คนละชุดกัน ถ้าแก้ที่เดียวจะทำให้เอกสารที่พิมพ์ออกมาไม่ตรงกับที่ระบบใช้คิดคะแนน)
 const WEEKLY_SLOTS: Record<TechnologyGradeId, string> = {
-  p1: 'วันพฤหัสบดี 13:00-14:00 น.',
+  p1: 'วันพุธ 08:30-09:20 น.',
   p2: 'วันจันทร์ 13:50-14:40 น.',
   p3: 'วันศุกร์ 11:00-11:50 น.',
   p4: 'วันพุธ 09:20-10:10 น.',
@@ -156,17 +156,17 @@ const addExamEvidence = (
   if (row.period === 20) {
     return {
       ...row,
-      lessonTitle: `${row.lessonTitle} และประเมินกลางปี`,
-      evidence: `${row.evidence}; แบบประเมินกลางปี`,
-      assessment: `${row.assessment}; สอบกลางปี 15 คะแนน`,
+      lessonTitle: `${row.lessonTitle} และทบทวนกลางภาคเรียน`,
+      evidence: `${row.evidence}; หลักฐานทบทวนและประเมินระหว่างเรียน`,
+      assessment: `${row.assessment}; ประเมินระหว่างเรียน ไม่แยกเป็นคะแนนสอบกลางภาค`,
     };
   }
   if (row.period === 40) {
     return {
       ...row,
-      lessonTitle: `${row.lessonTitle} และประเมินปลายปี`,
-      evidence: `${row.evidence}; แบบประเมินปลายปีและแฟ้มสะสมงาน`,
-      assessment: `${row.assessment}; สอบปลายปี 15 คะแนน`,
+      lessonTitle: `${row.lessonTitle} และประเมินปลายภาคเรียน`,
+      evidence: `${row.evidence}; แบบประเมินปลายภาคเรียนและแฟ้มสะสมงาน`,
+      assessment: `${row.assessment}; สอบปลายภาคของเทอม 30 คะแนน`,
     };
   }
   return row;

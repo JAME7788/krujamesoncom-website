@@ -6,6 +6,8 @@ import {
   ClipboardCheck,
   FileDown,
   Info,
+  ListChecks,
+  Loader2,
   RefreshCw,
   Save,
   Search,
@@ -20,19 +22,21 @@ import {
 } from '../data/studentAssessmentTemplates';
 import type { StudentInfo } from '../data/students2569';
 import type { TechnologyGradeId } from '../data/technologyTeachingSchedule';
-import { COURSE_TEACHER_NAME } from '../services/gradeService';
+import { COURSE_TEACHER_NAME, applyPostLessonAssessmentToGrades } from '../services/gradeService';
 import { fetchRostersFromFirebase, loadAllRosters } from '../services/rosterService';
 import {
   fetchTeachingSessions,
   type TeachingSession,
 } from '../services/teachingSessionService';
 import {
+  fetchClassroomAssessmentFromFirebase,
   loadClassroomAssessment,
   makeClassroomAssessmentId,
   saveClassroomAssessment,
   type ClassroomAssessment,
   type StudentAssessmentEntry,
 } from '../services/studentAssessmentService';
+import { buildLessonRecordDraft } from '../services/lessonRecordDraftGenerator';
 import { useToast } from './Toast';
 import './StudentAssessmentHub.css';
 
@@ -90,6 +94,7 @@ const emptyAssessment = (
     planNo: contextKey.split('__')[1]?.replace('plan-', '') || '1',
     status: 'draft',
   } : {},
+  ...(kind === 'post-lesson' ? { provisional: true, confirmedByTeacher: false } : {}),
   updatedAt: Date.now(),
   updatedBy: COURSE_TEACHER_NAME,
 });
@@ -110,6 +115,8 @@ const StudentAssessmentHub: React.FC = () => {
   const [search, setSearch] = useState('');
   const [showGuidance, setShowGuidance] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [cloudLoading, setCloudLoading] = useState(false);
   const [bulkCategory, setBulkCategory] = useState('knowledge');
   const [bulkScore, setBulkScore] = useState(3);
   const [teachingSessions, setTeachingSessions] = useState<TeachingSession[]>([]);
@@ -124,11 +131,10 @@ const StudentAssessmentHub: React.FC = () => {
   const roster = useMemo(() => rosters[classroom] || [], [classroom, rosters]);
   const postLessonPlans = useMemo(() => teachingSessions.filter((session) => {
     const inSelectedTerm = term === 'ทั้งปี' || String(session.semester) === term;
-    const hasReachedClass = session.plannedDate <= todayKey()
-      || session.status === 'completed'
+    const hasStartedClass = session.status === 'completed'
       || session.status === 'in_progress'
       || session.status === 'makeup';
-    return inSelectedTerm && hasReachedClass;
+    return inSelectedTerm && hasStartedClass;
   }), [teachingSessions, term]);
   const selectedPostSession = useMemo(
     () => postLessonPlans.find((item) => String(item.period) === lessonNo),
@@ -213,18 +219,156 @@ const StudentAssessmentHub: React.FC = () => {
   const persist = useCallback(async (value: ClassroomAssessment, silent = false) => {
     setSaveState('saving');
     try {
-      const saved = await saveClassroomAssessment(value);
-      setAssessment((current) => current?.id === saved.id ? { ...current, updatedAt: saved.updatedAt } : current);
+      const shouldConfirmPostLesson = value.kind === 'post-lesson' && value.meta.status === 'complete';
+      const prepared: ClassroomAssessment = value.kind === 'post-lesson'
+        ? {
+          ...value,
+          confirmedByTeacher: shouldConfirmPostLesson,
+          provisional: !shouldConfirmPostLesson,
+        }
+        : value;
+      const saved = await saveClassroomAssessment(prepared);
+      const gradeSync = shouldConfirmPostLesson
+        ? applyPostLessonAssessmentToGrades(saved, selectedPostSession)
+        : null;
+      setAssessment((current) => current?.id === saved.id ? { ...current, ...saved } : current);
       dirtyRef.current = false;
       setSaveState('saved');
-      if (!silent) showToast('บันทึกแบบประเมินลง Firebase แล้ว', 'success');
+      if (!silent) {
+        const suffix = gradeSync && gradeSync.studentsUpdated > 0
+          ? ` และเพิ่มคะแนนเก็บให้ ${gradeSync.studentsUpdated} คน`
+          : '';
+        showToast(`บันทึกแบบประเมินลง Firebase แล้ว${suffix}`, 'success');
+      }
     } catch (error) {
       setSaveState('error');
       if (!silent) {
         showToast(`บันทึกออนไลน์ไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`, 'error');
       }
     }
-  }, [showToast]);
+  }, [selectedPostSession, showToast]);
+
+  /** เติมร่างของคาบที่เลือกอยู่ ลงในฟอร์มให้ครูอ่านแล้วแก้ ยังไม่บันทึกจนกว่าครูจะกดบันทึก */
+  const fillDraftForCurrent = () => {
+    if (!assessment || !selectedPostSession) return;
+    const draft = buildLessonRecordDraft({
+      gradeId: gradeIdFromClassroom(classroom) || 'p1',
+      unitTitle: selectedPostSession.unitTitle,
+      lessonTitle: selectedPostSession.lessonTitle,
+      teachingDate: lessonDate,
+      planNo: selectedPostSession.period,
+      week: selectedPostSession.week,
+      totalStudents: roster.length,
+    });
+    changeAssessment((current) => ({
+      ...current,
+      meta: { ...current.meta, ...draft },
+    }));
+    showToast('เติมร่างจากหัวข้อแผนแล้ว — ครูแก้ให้ตรงกับที่สอนจริงก่อนบันทึก', 'info');
+  };
+
+  /**
+   * เติมร่างให้ทุกคาบที่สอนไปแล้วของห้องนี้ในครั้งเดียว
+   * ข้ามคาบที่ครูเขียนไว้แล้ว เพื่อไม่ให้ทับงานที่ครูทำเอง
+   */
+  const fillDraftForAllTaught = async () => {
+    const gradeId = gradeIdFromClassroom(classroom);
+    if (!gradeId || postLessonPlans.length === 0) return;
+    setBulkBusy(true);
+    let created = 0;
+    let skipped = 0;
+    try {
+      for (const session of postLessonPlans) {
+        const date = session.teachingDate || session.plannedDate;
+        const key = `${date}__plan-${session.period}`;
+        const stored = await loadClassroomAssessment(classroom, academicYear, term, kind, key);
+        // มีของเดิมที่ครูเขียนไว้แล้ว ไม่ทับ
+        if (stored?.meta?.strengths) { skipped += 1; continue; }
+        const base = stored
+          || emptyAssessment(classroom, academicYear, term, kind, key, roster);
+        await saveClassroomAssessment({
+          ...base,
+          meta: {
+            ...base.meta,
+            ...buildLessonRecordDraft({
+              gradeId,
+              unitTitle: session.unitTitle,
+              lessonTitle: session.lessonTitle,
+              teachingDate: date,
+              planNo: session.period,
+              week: session.week,
+              totalStudents: roster.length,
+            }),
+          },
+          updatedAt: Date.now(),
+        });
+        created += 1;
+      }
+      showToast(
+        `เติมร่าง ${created} คาบของ ${classroom} แล้ว${skipped ? ` (ข้าม ${skipped} คาบที่ครูเขียนไว้แล้ว)` : ''}`,
+        'success',
+      );
+    } catch (error) {
+      showToast(`เติมร่างไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`, 'error');
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const handleFetchFromFirebase = async () => {
+    setCloudLoading(true);
+    try {
+      const stored = await fetchClassroomAssessmentFromFirebase(
+        classroom,
+        academicYear,
+        term,
+        kind,
+        contextKey,
+      );
+      if (!stored) {
+        showToast('ไม่พบแบบประเมินฉบับออนไลน์สำหรับรายการนี้', 'info');
+        return;
+      }
+      const next: ClassroomAssessment = {
+        ...stored,
+        id: makeClassroomAssessmentId(classroom, academicYear, term, kind, contextKey),
+        classroom,
+        academicYear,
+        term,
+        kind,
+        contextKey,
+        ...(kind === 'post-lesson' && selectedPostSession
+          ? { sessionId: selectedPostSession.id, archived: false }
+          : {}),
+        entries: mergeRosterEntries(roster, stored.entries),
+        meta: {
+          ...stored.meta,
+          ...(kind === 'post-lesson' ? {
+            teachingDate: lessonDate,
+            planNo: lessonNo,
+            unitName: selectedPostSession?.unitTitle || stored.meta.unitName,
+            lessonTitle: selectedPostSession?.lessonTitle || stored.meta.lessonTitle,
+          } : {}),
+        },
+      };
+      dirtyRef.current = false;
+      setAssessment(next);
+      setSelectedCode((current) => (
+        roster.some((student) => student.studentCode === current)
+          ? current
+          : roster[0]?.studentCode || ''
+      ));
+      setSaveState('saved');
+      showToast('ดึงแบบประเมินฉบับล่าสุดจาก Firebase แล้ว', 'success');
+    } catch (error) {
+      showToast(
+        `ดึงข้อมูลออนไลน์ไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
+    } finally {
+      setCloudLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!assessment || !dirtyRef.current) return;
@@ -389,7 +533,7 @@ const StudentAssessmentHub: React.FC = () => {
         </label>
         {kind === 'post-lesson' && (
           <>
-            <label>แผนหลังสอน ({postLessonPlans.length} คาบที่ถึงกำหนด)
+            <label>แผนหลังสอน ({postLessonPlans.length} คาบที่เริ่มสอนแล้ว)
               <select value={lessonNo} onChange={(event) => {
                 const selected = postLessonPlans.find((item) => String(item.period) === event.target.value);
                 setAssessment(null);
@@ -414,6 +558,15 @@ const StudentAssessmentHub: React.FC = () => {
             </label>
           </>
         )}
+        <button
+          type="button"
+          className="sah-button subtle"
+          disabled={cloudLoading}
+          onClick={() => void handleFetchFromFirebase()}
+        >
+          <RefreshCw size={16} className={cloudLoading ? 'spin' : ''} />
+          {cloudLoading ? 'กำลังดึง...' : 'ดึงจาก Firebase'}
+        </button>
         <button type="button" className="sah-button subtle" onClick={() => window.print()}>
           <FileDown size={16} /> พิมพ์/บันทึก PDF
         </button>
@@ -654,15 +807,42 @@ const StudentAssessmentHub: React.FC = () => {
             <label>สถานะ
               <select
                 value={assessment.meta.status || 'draft'}
-                onChange={(event) => changeAssessment((current) => ({
-                  ...current,
-                  meta: { ...current.meta, status: event.target.value as 'draft' | 'complete' },
-                }))}
+                onChange={(event) => {
+                  const status = event.target.value as 'draft' | 'complete';
+                  changeAssessment((current) => ({
+                    ...current,
+                    confirmedByTeacher: status === 'complete',
+                    provisional: status !== 'complete',
+                    meta: { ...current.meta, status },
+                  }));
+                }}
               >
                 <option value="draft">ฉบับร่าง</option>
                 <option value="complete">บันทึกสมบูรณ์</option>
               </select>
             </label>
+          </div>
+
+          <div className="sah-draft-tools">
+            <button type="button" onClick={fillDraftForCurrent} disabled={!selectedPostSession}>
+              <Sparkles size={15} /> เติมร่างคาบนี้จากหัวข้อแผน
+            </button>
+            <button
+              type="button"
+              className="bulk"
+              onClick={() => void fillDraftForAllTaught()}
+              disabled={bulkBusy || postLessonPlans.length === 0}
+            >
+              {bulkBusy ? <Loader2 size={15} className="sah-spin" /> : <ListChecks size={15} />}
+              {bulkBusy
+                ? 'กำลังเติม...'
+                : `เติมร่างทุกคาบที่สอนแล้วของ ${classroom} (${postLessonPlans.length} คาบ)`}
+            </button>
+            <small>
+              ร่างสร้างจากหัวข้อของแผน ไม่ใช่สิ่งที่เกิดขึ้นจริงในห้อง
+              ครูต้องอ่านทวนและแก้ก่อนเปลี่ยนสถานะเป็นฉบับสมบูรณ์ ·
+              ระบบจะข้ามคาบที่ครูเขียนไว้แล้ว ไม่ทับของเดิม
+            </small>
           </div>
           <div className="sah-post-fields">
             {[

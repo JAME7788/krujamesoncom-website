@@ -1471,6 +1471,43 @@
 }
 .gb-summary strong { color: #6d28d9; }
 
+.gb-exam-health {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  color: #78350f;
+}
+.gb-exam-health > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.gb-exam-health strong { font-size: 0.95rem; }
+.gb-exam-health span {
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(146, 64, 14, 0.1);
+  font-weight: 800;
+}
+.gb-exam-health p,
+.gb-exam-health small {
+  margin: 0;
+  line-height: 1.5;
+}
+.gb-exam-health small { color: #92400e; }
+.gb-exam-health.complete {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #14532d;
+}
+.gb-exam-health.complete span { background: rgba(22, 101, 52, 0.12); }
+.gb-exam-health.complete small { color: #166534; }
+
 .gb-help {
   padding: 1rem 1.25rem;
   background: #f0f9ff;
@@ -1940,6 +1977,7 @@
   .gradebook.print-mode .gb-help-banner,
   .gradebook.print-mode .gb-linkage,
   .gradebook.print-mode .gb-manual,
+  .gradebook.print-mode .gb-exam-health,
   .gradebook.print-mode .subject-tabs,
   .gradebook.print-mode .score-structure {
     display: none !important;

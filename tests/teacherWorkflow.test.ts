@@ -41,7 +41,9 @@ describe('teacher hourly workflow', () => {
 
   it('starts the 2569 teaching schedule from the school opening date', () => {
     expect(TERM_1_START_DATE).toBe('2026-05-05');
-    expect(buildDefaultTeachingSessions('p1')[0].plannedDate).toBe('2026-05-07');
+    // ป.1 เรียนเทคโนโลยีวันพุธตามตารางสอนจริง — วันพุธแรกหลังเปิดเทอมคือ 6 พ.ค.
+    // (ค่าเดิม 2026-05-07 มาจากช่วงที่ตารางลง ป.1 ผิดเป็นวันพฤหัสบดี)
+    expect(buildDefaultTeachingSessions('p1')[0].plannedDate).toBe('2026-05-06');
     expect(buildDefaultTeachingSessions('p2')[0].plannedDate).toBe('2026-05-11');
     expect(buildDefaultTeachingSessions('p3')[0].plannedDate).toBe('2026-05-08');
     expect(buildDefaultTeachingSessions('p4')[0].plannedDate).toBe('2026-05-06');

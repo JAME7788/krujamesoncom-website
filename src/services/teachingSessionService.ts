@@ -57,10 +57,10 @@ const toIsoDate = (date: Date) => {
 };
 
 // ต้องตรงกับ defaultSchedule ใน src/data/schedule.ts เสมอ — มีเทสต์กันไว้ใน scheduleConsistency.test.ts
-// ป.1 เคยลงเป็น 3 (พุธ) ทำให้วันที่ "ตามแผน" ของทั้ง 40 คาบเลื่อนผิดวันทั้งหมด
 // นี่คือสำเนาตารางสอนชุดที่ 3 ของระบบ (อีกสองชุดคือ schedule.ts และ WEEKLY_SLOTS)
+// ค่าทั้งหมดยึดตามตารางสอนจริงของโรงเรียน ไม่ใช่การอนุมานจาก log การใช้งาน
 const weekdayByGrade: Record<TechnologyGradeId, number> = {
-  p1: 4,
+  p1: 3,
   p2: 1,
   p3: 5,
   p4: 3,

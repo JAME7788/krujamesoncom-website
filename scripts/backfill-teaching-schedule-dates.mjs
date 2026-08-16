@@ -18,7 +18,7 @@ const TERM_START = {
   2: '2026-11-02',
 };
 const GRADES = [
-  { gradeId: 'p1', classroom: 'ป.1', weekday: 4 },
+  { gradeId: 'p1', classroom: 'ป.1', weekday: 3 },
   { gradeId: 'p2', classroom: 'ป.2', weekday: 1 },
   { gradeId: 'p3', classroom: 'ป.3', weekday: 5 },
   { gradeId: 'p4', classroom: 'ป.4', weekday: 3 },
@@ -28,9 +28,9 @@ const GRADES = [
 const P1_LIVE_SLOT = {
   id: 's-wed-1',
   classroom: 'ป.1',
-  day: 4,
-  start: '13:00',
-  end: '14:00',
+  day: 3,
+  start: '08:30',
+  end: '09:20',
   subject: 'เทคโนโลยี',
 };
 
@@ -159,7 +159,7 @@ const main = async () => {
         slots: nextSlots,
         updatedAt: Date.now(),
       }, { merge: true });
-      console.log('Corrected the live P1 slot to Thursday 13:00-14:00.');
+      console.log('Corrected the live P1 slot to Wednesday 08:30-09:20.');
     }
     await setDoc(doc(db, 'settings', 'teachingScheduleBackfill'), {
       academicYear: ACADEMIC_YEAR,
@@ -204,7 +204,9 @@ const main = async () => {
   }
 };
 
-main().catch((error) => {
+main().then(() => {
+  process.exit(0);
+}).catch((error) => {
   console.error(error);
-  process.exitCode = 1;
+  process.exit(1);
 });

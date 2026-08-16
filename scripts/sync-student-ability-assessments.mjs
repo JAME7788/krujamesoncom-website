@@ -9,6 +9,7 @@ const ACADEMIC_YEAR = '2569';
 const TERM = '1';
 const NOW = Date.now();
 const UPDATED_BY = 'teacher-ability-profile-2026-08-03';
+const MIN_PASS_PERCENT = 50;
 
 const parseEnv = (source) => Object.fromEntries(
   source
@@ -182,7 +183,13 @@ const main = async () => {
         if (!entry?.scores) throw new Error(`${classroom} เลขที่ ${student.no} ไม่มีโปรไฟล์ฐาน`);
         classroomProfiles.set(
           student.studentCode,
-          ability.scorePercent(entry.scores, templates.getStudentAssessmentTemplate('learner-analysis').categories.length),
+          Math.max(
+            MIN_PASS_PERCENT,
+            ability.scorePercent(
+              entry.scores,
+              templates.getStudentAssessmentTemplate('learner-analysis').categories.length,
+            ),
+          ),
         );
       });
       profiles.set(classroom, classroomProfiles);
@@ -432,6 +439,10 @@ const main = async () => {
       mode: APPLY ? 'apply' : 'dry-run',
       classrooms: classrooms.length,
       students: classrooms.reduce((sum, classroom) => sum + rosters[classroom].length, 0),
+      minimumPassPercent: MIN_PASS_PERCENT,
+      studentsAtMinimum: classrooms.reduce((sum, classroom) => (
+        sum + [...profiles.get(classroom).values()].filter((percent) => percent === MIN_PASS_PERCENT).length
+      ), 0),
       standardAbilityAssessments: classrooms.length * standardKinds.length,
       completedSessionCounts,
       attendanceMatchedCounts,

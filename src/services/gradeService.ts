@@ -10,6 +10,13 @@ import { db } from './firebase';
 import { doc, setDoc, getDoc, runTransaction } from 'firebase/firestore';
 import { allClassrooms2569 } from '../data/students2569';
 import { writeAuditLog } from './auditLogService';
+import {
+  applyPostLessonAssessmentsToGradeRows,
+  subjectFromClassroom,
+  type PostLessonAssessmentLike,
+  type PostLessonGradeEvidence,
+  type PostLessonSessionLike,
+} from './postLessonGradeSync';
 
 const cleanForFirestore = <T,>(value: T): T => (
   JSON.parse(JSON.stringify(value)) as T
@@ -60,6 +67,7 @@ export interface IndicatorScore {
     quizAttempts: number;
     completedUnits: number;
   };
+  postLessonEvidence?: PostLessonGradeEvidence;
   pAssessed?: boolean;
   aAssessed?: boolean;
   note?: string;    // บันทึกเพิ่ม
@@ -73,22 +81,25 @@ export interface StudentGrade {
   name: string;
   emoji: string;
   indicators: Record<string, IndicatorScore>;  // key = indicator id เช่น 'cs_p1_1'
-  midtermExam?: number;      // คะแนนสอบกลางภาค (เต็ม 15)
-  finalExam?: number;        // คะแนนสอบปลายภาค (เต็ม 15)
+  midtermExam?: number;      // คะแนนสอบกลางภาค (มัธยมเต็ม 15; ประถมไม่ใช้ช่องนี้)
+  finalExam?: number;        // คะแนนสอบปลายภาค (ประถมเต็ม 30; มัธยมเต็ม 15)
   comment?: string;
   updatedAt: number;
 }
 
 /** คะแนนเต็มของสอบ */
 export const examMaxScores = (classroom: string): { midterm: number; final: number } => {
-  if (classroom.startsWith('ป.') || classroom.startsWith('ม.')) {
+  if (classroom.startsWith('ป.')) {
+    return { midterm: 0, final: 30 };
+  }
+  if (classroom.startsWith('ม.')) {
     return { midterm: 15, final: 15 };
   }
   return { midterm: 0, final: 0 };
 };
 
 export const getGradingPeriodLabel = (classroom: string): string => {
-  if (classroom.startsWith('ป.')) return `ปีการศึกษา ${ACADEMIC_YEAR} (ประถม: 1 ปี 1 เกรด)`;
+  if (classroom.startsWith('ป.')) return `ปีการศึกษา ${ACADEMIC_YEAR} (ประถม: ใช้ปลายภาคของแต่ละเทอม ไม่มีกลางภาค)`;
   if (classroom.startsWith('ม.')) return `ภาคเรียนที่ 1 ปีการศึกษา ${ACADEMIC_YEAR} (มัธยม: 1 เทอม 1 เกรด)`;
   return `ปีการศึกษา ${ACADEMIC_YEAR}`;
 };
@@ -96,7 +107,7 @@ export const getGradingPeriodLabel = (classroom: string): string => {
 export const getExamPolicyLabel = (classroom: string): string => {
   const exam = examMaxScores(classroom);
   if (classroom.startsWith('ป.')) {
-    return `ประถมออก 1 ปี 1 เกรด: กลางภาค ${exam.midterm} คะแนน + ปลายภาค ${exam.final} คะแนน`;
+    return `ประถม: ไม่มีสอบกลางภาคในสมุดคะแนน ใช้คะแนนสอบปลายภาคของเทอม ${exam.final} คะแนน`;
   }
   if (classroom.startsWith('ม.')) {
     return `มัธยมออก 1 เทอม 1 เกรด: กลางภาค ${exam.midterm} คะแนน + ปลายภาค ${exam.final} คะแนน`;
@@ -893,6 +904,29 @@ export const applyManualAssessmentsToGrades = (
   return { studentsUpdated, indicatorsUpdated, assessmentsUsed: assessments.length };
 };
 
+export const applyPostLessonAssessmentToGrades = (
+  assessment: PostLessonAssessmentLike,
+  session?: PostLessonSessionLike | null,
+  options: { includeDrafts?: boolean } = {},
+): ReturnType<typeof applyPostLessonAssessmentsToGradeRows>['summary'] & { subject: Subject } => {
+  const subject = (session?.subject || subjectFromClassroom(assessment.classroom)) as Subject;
+  const grades = loadGrades(assessment.classroom, subject);
+  const result = applyPostLessonAssessmentsToGradeRows({
+    grades,
+    indicators: getIndicators(assessment.classroom, subject),
+    sessions: session ? [session] : [],
+    assessments: [assessment],
+    options,
+  });
+
+  if (result.summary.studentsUpdated > 0) {
+    cacheGradesLocally(assessment.classroom, result.grades as StudentGrade[], subject);
+    void mergeClassroomGradesToFirebase(assessment.classroom, result.grades as StudentGrade[], subject)
+      .catch((error) => console.warn('post-lesson grade upsert failed', error));
+  }
+  return { ...result.summary, subject };
+};
+
 // ---------- Initialization (จาก roster 2569) ----------
 
 import { loadRoster } from './rosterService';
@@ -1190,24 +1224,74 @@ export const fetchClassroomFromFirebase = async (
 
 const skillRank: Record<Skill, number> = { 'พอใช้': 1, 'ปานกลาง': 2, 'ดี': 3 };
 
+/**
+ * รวมข้อมูลระดับนักเรียน (คะแนนสอบและหมายเหตุ)
+ *
+ * เดิมเขียนว่า remote?.midtermExam ?? incoming.midtermExam ซึ่งแปลว่า
+ * "ถ้าเคยมีค่าอยู่แล้วให้ใช้ค่าเดิมเสมอ" ครูจึงแก้คะแนนสอบที่กรอกไปแล้วไม่ได้เลย
+ * ตอนนี้ยึดค่าที่ใหม่กว่า แต่ยังกันไม่ให้การ sync ที่ไม่ได้ส่งคะแนนสอบมาไปล้างของเดิม
+ */
+export const mergeStudentGradeForTest = (
+  remote: StudentGrade | undefined,
+  incoming: StudentGrade,
+): StudentGrade => {
+  if (!remote) return { ...incoming, updatedAt: Date.now() };
+  const incomingIsNewer = (incoming.updatedAt || 0) >= (remote.updatedAt || 0);
+  const pick = <T,>(a: T | undefined, b: T | undefined): T | undefined => {
+    const [newer, older] = incomingIsNewer ? [a, b] : [b, a];
+    return newer !== undefined ? newer : older;
+  };
+  return {
+    ...remote,
+    ...incoming,
+    midtermExam: pick(incoming.midtermExam, remote.midtermExam),
+    finalExam: pick(incoming.finalExam, remote.finalExam),
+    comment: pick(incoming.comment, remote.comment),
+    indicators: incoming.indicators,
+    updatedAt: Date.now(),
+  };
+};
+
+/**
+ * รวมคะแนนของตัวชี้วัดเดียวระหว่างค่าที่อยู่บน Firebase กับค่าที่กำลังจะเขียน
+ *
+ * เดิมใช้ Math.max กับ "ทุกช่อง" ทำให้คะแนนขึ้นได้อย่างเดียว ลดไม่ได้
+ * ครูที่แก้ K จาก 15 เป็น 12 จะโดนระบบเอา 15 กลับมาทุกครั้งที่ sync
+ * (อาการที่ครูเจอคือ "ขึ้นเลขค้าง 15" และ "กด F5 แล้วข้อมูลหาย")
+ *
+ * แยกการปฏิบัติเป็นสองกลุ่ม:
+ *   - ช่องที่ครูกรอกเอง (teacherK, teacherPScore, teacherA, manualK, manualPScore)
+ *     ยึดค่าที่ใหม่กว่าตาม updatedAt ครูจึงลดหรือลบคะแนนได้
+ *   - ช่องที่ระบบคิดจากกิจกรรมนักเรียน (webK, webPScore, webAScore)
+ *     ยังใช้ค่าที่มากที่สุด เพราะเป็น "ผลงานที่ดีที่สุดที่เคยทำได้"
+ */
 const mergeIndicatorForStudent = (
   remote: IndicatorScore | undefined,
   incoming: IndicatorScore,
 ): IndicatorScore => {
   if (!remote) return incoming;
+  // ค่าที่ครูกรอกเองยึด "อันที่ใหม่กว่า" เพื่อให้ลดหรือลบคะแนนได้จริง
+  const incomingIsNewer = (incoming.updatedAt || 0) >= (remote.updatedAt || 0);
+  const newer = incomingIsNewer ? incoming : remote;
+  const older = incomingIsNewer ? remote : incoming;
+  const byRecency = <T,>(get: (s: IndicatorScore) => T | undefined): T | undefined => (
+    get(newer) !== undefined ? get(newer) : get(older)
+  );
+
   const p = skillRank[incoming.p] >= skillRank[remote.p] ? incoming.p : remote.p;
+  // คะแนนอัตโนมัติจากกิจกรรมนักเรียนยังใช้ค่าที่ดีที่สุด เพราะเป็นผลงานที่เคยทำได้จริง
   const webPScore = Math.max(remote.webPScore || 0, incoming.webPScore || 0);
-  const manualPScore = Math.max(remote.manualPScore || 0, incoming.manualPScore || 0);
-  const teacherPScore = Math.max(remote.teacherPScore || 0, incoming.teacherPScore || 0);
+  const manualPScore = byRecency((s) => s.manualPScore) || 0;
+  const teacherPScore = byRecency((s) => s.teacherPScore) || 0;
   const pScore = Math.max(
     teacherPScore,
     Math.min(PRACTICE_MAX_SCORE, webPScore + manualPScore),
   );
   const webK = Math.max(remote.webK || 0, incoming.webK || 0);
-  const manualK = Math.max(remote.manualK || 0, incoming.manualK || 0);
-  const teacherK = Math.max(remote.teacherK || 0, incoming.teacherK || 0);
+  const manualK = byRecency((s) => s.manualK) || 0;
+  const teacherK = byRecency((s) => s.teacherK) || 0;
   const maxK = Math.max(remote.maxK || 0, incoming.maxK || 0, 15);
-  const teacherA = incoming.teacherA ?? remote.teacherA;
+  const teacherA = byRecency((s) => s.teacherA);
   const webAScore = Math.max(remote.webAScore || 0, incoming.webAScore || 0);
   const aScore = teacherA === undefined
     ? webAScore
@@ -1238,6 +1322,9 @@ const mergeIndicatorForStudent = (
     updatedAt: Math.max(remote.updatedAt || 0, incoming.updatedAt || 0),
   };
 };
+
+/** export ไว้ให้เทสต์เรียก — เป็นตรรกะที่เคยทำให้คะแนนครูหาย จึงต้องมีเทสต์คุมถาวร */
+export const mergeIndicatorForTest = mergeIndicatorForStudent;
 
 const mergeManualIndicatorForStudent = (
   remote: IndicatorScore | undefined,
@@ -1410,15 +1497,10 @@ export const upsertStudentGradeToFirebase = async (
     Object.entries(incoming.indicators || {}).forEach(([indicatorId, score]) => {
       mergedIndicators[indicatorId] = mergeIndicatorForStudent(mergedIndicators[indicatorId], score);
     });
-    const merged: StudentGrade = {
-      ...remote,
+    const merged = mergeStudentGradeForTest(remote, {
       ...incoming,
-      midtermExam: remote?.midtermExam ?? incoming.midtermExam,
-      finalExam: remote?.finalExam ?? incoming.finalExam,
-      comment: remote?.comment ?? incoming.comment,
       indicators: mergedIndicators,
-      updatedAt: Date.now(),
-    };
+    });
     const students = [...current];
     if (index >= 0) students[index] = merged;
     else students.push(merged);

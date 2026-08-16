@@ -147,52 +147,17 @@ const GradeBook: React.FC = () => {
   };
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadLocalThenRefresh = async () => {
-      // ให้ครูใช้ตารางจากเครื่องได้ทันที ไม่บล็อกทั้งหน้าระหว่างรอเครือข่าย
+    // Open from the local cache immediately. Cloud reads are teacher-triggered
+    // because Firestore retries quota errors for a long time and can otherwise
+    // keep issuing requests after the page has already timed out.
+    const timer = window.setTimeout(() => {
       if (loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
         initClassroom(classroom, subject);
       }
-      if (cancelled) return;
       setLoadedGradebookKey(gradebookKey);
       setReloadKey((key) => key + 1);
-
-      try {
-        const remote = await withTimeout(
-          fetchClassroomFromFirebase(classroom, subject),
-          6000,
-          'การดึงสมุดคะแนนจาก Firebase',
-        );
-        if (cancelled) return;
-
-        if (remote && remote.length > 0) {
-          cacheGradesLocally(classroom, remote, subject);
-          setReloadKey((key) => key + 1);
-        }
-
-        // อัปเดตกิจกรรมเบื้องหลัง แต่ไม่ปล่อยให้คำขอเครือข่ายค้างหน้าเว็บ
-        try {
-          await withTimeout(
-            syncAllFromProgressAsync(classroom, subject),
-            8000,
-            'การดึงกิจกรรมของนักเรียน',
-          );
-        } catch (syncError) {
-          console.debug('Auto progress sync skipped', syncError);
-        }
-        if (cancelled) return;
-
-        setReloadKey((k) => k + 1);
-      } catch (error) {
-        console.debug('Background grade refresh skipped', error);
-      }
-    };
-
-    void loadLocalThenRefresh();
-    return () => {
-      cancelled = true;
-    };
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [classroom, gradebookKey, students2569, subject]);
 
   const handleTeacherK = (studentCode: string, indicatorId: string, value: string) => {
@@ -307,15 +272,37 @@ const GradeBook: React.FC = () => {
   };
 
   const examMax = useMemo(() => examMaxScores(classroom), [classroom]);
+  const gradeStats = useMemo(() => {
+    const breakdowns = grades.map((grade) => computeBreakdown(grade, classroom, subject));
+    const studentCount = grades.length || 1;
+    const midtermEntered = grades.filter((grade) => (
+      grade.midtermExam !== undefined && grade.midtermExam !== null
+    )).length;
+    const finalEntered = grades.filter((grade) => (
+      grade.finalExam !== undefined && grade.finalExam !== null
+    )).length;
+
+    return {
+      averageTotal: breakdowns.reduce((sum, breakdown) => sum + breakdown.total, 0) / studentCount,
+      averageGrade: grades.reduce((sum, grade) => sum + parseFloat(computeGrade(grade, classroom, subject)), 0) / studentCount,
+      passCount: breakdowns.filter((breakdown) => breakdown.total >= 50).length,
+      midtermEntered,
+      midtermMissing: Math.max(0, grades.length - midtermEntered),
+      finalEntered,
+      finalMissing: Math.max(0, grades.length - finalEntered),
+    };
+  }, [classroom, grades, subject]);
 
   const handleFinal = (studentCode: string, value: string) => {
-    const v = Math.max(0, Math.min(examMax.final, parseInt(value) || 0));
+    if (value.trim() === '') return;
+    const v = Math.max(0, Math.min(examMax.final, Number(value) || 0));
     updateFinalExam(classroom, studentCode, v, subject);
     reload();
   };
 
   const handleMidterm = (studentCode: string, value: string) => {
-    const v = Math.max(0, Math.min(examMax.midterm, parseInt(value) || 0));
+    if (value.trim() === '') return;
+    const v = Math.max(0, Math.min(examMax.midterm, Number(value) || 0));
     updateMidtermExam(classroom, studentCode, v, subject);
     reload();
   };
@@ -816,6 +803,21 @@ const GradeBook: React.FC = () => {
             </div>
           </div>
 
+          {examMax.midterm > 0 && (
+            <div className={`gb-exam-health ${gradeStats.midtermMissing === 0 ? 'complete' : 'warning'}`}>
+              <div>
+                <strong>สถานะคะแนนครึ่งเทอม 1 / กลางภาค</strong>
+                <span>{gradeStats.midtermEntered}/{grades.length} คน</span>
+              </div>
+              <p>
+                {gradeStats.midtermMissing === 0
+                  ? `ห้อง/วิชานี้กรอกคะแนนกลางภาคครบแล้ว เฉลี่ยรวมตอนนี้ ${gradeStats.averageTotal.toFixed(1)}/100`
+                  : `ยังขาดคะแนนกลางภาค ${gradeStats.midtermMissing} คน คะแนนรวมตอนนี้จึงยังต่ำกว่าความจริง`}
+              </p>
+              <small>ช่องว่าง = ยังไม่กรอกคะแนน, เลข 0 = ครูตั้งใจให้คะแนน 0 จริง</small>
+            </div>
+          )}
+
           {/* Table */}
           <div className="gb-table-wrap">
             <table className="gb-table">
@@ -926,9 +928,10 @@ const GradeBook: React.FC = () => {
                           <input
                             type="number"
                             className="k-input"
-                            value={g.midtermExam || 0}
+                            value={g.midtermExam ?? ''}
                             min={0}
                             max={examMax.midterm}
+                            placeholder="-"
                             onChange={(e) => handleMidterm(g.studentCode, e.target.value)}
                           />
                         </td>
@@ -937,9 +940,10 @@ const GradeBook: React.FC = () => {
                         <input
                           type="number"
                           className="k-input"
-                          value={g.finalExam || 0}
+                          value={g.finalExam ?? ''}
                           min={0}
                           max={examMax.final}
+                          placeholder="-"
                           onChange={(e) => handleFinal(g.studentCode, e.target.value)}
                         />
                       </td>
@@ -959,17 +963,26 @@ const GradeBook: React.FC = () => {
             <div>
               <strong>นักเรียนทั้งหมด:</strong> {grades.length} คน
             </div>
+            {examMax.midterm > 0 && (
+              <div>
+                <strong>กลางภาค:</strong> {gradeStats.midtermEntered} / {grades.length} คน
+                {gradeStats.midtermMissing > 0 ? ` (ขาด ${gradeStats.midtermMissing})` : ' (ครบแล้ว)'}
+              </div>
+            )}
+            {examMax.final > 0 && (
+              <div>
+                <strong>ปลายภาค:</strong> {gradeStats.finalEntered} / {grades.length} คน
+                {gradeStats.finalMissing > 0 ? ` (ขาด ${gradeStats.finalMissing})` : ' (ครบแล้ว)'}
+              </div>
+            )}
             <div>
-              <strong>คะแนนเฉลี่ย:</strong>{' '}
-              {(grades.reduce((s, g) => s + computeBreakdown(g, classroom, subject).total, 0) / grades.length).toFixed(1)} / 100
+              <strong>คะแนนเฉลี่ย:</strong> {gradeStats.averageTotal.toFixed(1)} / 100
             </div>
             <div>
-              <strong>เกรดเฉลี่ย:</strong>{' '}
-              {(grades.reduce((s, g) => s + parseFloat(computeGrade(g, classroom, subject)), 0) / grades.length).toFixed(2)}
+              <strong>เกรดเฉลี่ย:</strong> {gradeStats.averageGrade.toFixed(2)}
             </div>
             <div>
-              <strong>ผ่านเกณฑ์ (≥ 50/100):</strong>{' '}
-              {grades.filter((g) => parseFloat(computeGrade(g, classroom, subject)) >= 1).length} / {grades.length}
+              <strong>ผ่านเกณฑ์ (≥ 50/100):</strong> {gradeStats.passCount} / {grades.length}
             </div>
           </div>
 
