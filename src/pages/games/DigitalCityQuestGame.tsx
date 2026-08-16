@@ -284,6 +284,7 @@ const DigitalCityQuestGame: React.FC = () => {
   const [gameEndsAt, setGameEndsAt] = useState(0);
   const [finishReason, setFinishReason] = useState('');
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showPlayerReveal, setShowPlayerReveal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [reflection, setReflection] = useState({ strategy: '', evidence: '', transfer: '' });
   const [reflectionSaved, setReflectionSaved] = useState(false);
@@ -303,6 +304,7 @@ const DigitalCityQuestGame: React.FC = () => {
   const appliedRemoteVersionRef = useRef(0);
   const applyingRemoteRef = useRef(false);
   const lastSignatureRef = useRef('');
+  const revealedOnlineGameRef = useRef(0);
 
   const activePlayer = players[turn];
   const onlineMembers = onlineRoom ? orderedTycoonRoomPlayers(onlineRoom) : [];
@@ -382,6 +384,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setTimeLeft(minutes * 60);
     setGameEndsAt(endsAt);
     setFinishReason('');
+    setShowPlayerReveal(true);
     setReflectionSaved(false);
     resetTurnUi();
     setMessage(`เริ่มภารกิจ ทุกทีมได้รับงบพัฒนา ${formatNumber(START_BUDGET)} เครดิต`);
@@ -637,6 +640,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setSession(ACTIVE_ROOM_KEY, '');
     setOnlineRoomCode('');
     setOnlineRoom(null);
+    revealedOnlineGameRef.current = 0;
     setPhase('setup');
   };
 
@@ -702,6 +706,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setGameEndsAt(endsAt);
     setTimeLeft(onlineRoom.minutes * 60);
     setMessage(base.message);
+    setShowPlayerReveal(true);
   };
 
   const sendSupport = async (support: DigitalCitySupport) => {
@@ -752,6 +757,7 @@ const DigitalCityQuestGame: React.FC = () => {
     if (onlineRoomCode) leaveRoom();
     setPhase('setup');
     setPlayers([]);
+    setShowPlayerReveal(false);
     setUsedQuestionIds([]);
     setReflection({ strategy: '', evidence: '', transfer: '' });
     setReflectionSaved(false);
@@ -776,9 +782,19 @@ const DigitalCityQuestGame: React.FC = () => {
   }, [phase]);
 
   useEffect(() => {
+    if (!showPlayerReveal) return undefined;
+    const timer = window.setTimeout(() => setShowPlayerReveal(false), 2_250);
+    return () => window.clearTimeout(timer);
+  }, [showPlayerReveal]);
+
+  useEffect(() => {
     if (playMode !== 'online' || !onlineRoomCode) return undefined;
     return subscribeTycoonRoom(onlineRoomCode, (room) => {
       setOnlineRoom(room);
+      if (room?.game?.variant === 'digital-city' && revealedOnlineGameRef.current === 0) {
+        revealedOnlineGameRef.current = room.game.version;
+        setShowPlayerReveal(true);
+      }
       const member = room?.players.find((item) => item.id === multiplayerPlayerId);
       if (member) {
         setOnlineName(member.name);
@@ -1002,7 +1018,7 @@ const DigitalCityQuestGame: React.FC = () => {
         <div><span>PIXEL TECH</span><strong>DIGITAL CITY QUEST</strong><small>ภารกิจกู้มหานครอัจฉริยะ</small></div>
         <div className="dcq-header-score"><Coins size={20} /><b>{formatNumber(activePlayer?.money || 0)}</b><span>เครดิต</span></div>
       </header>
-      <div className="dcq-player-reveal" aria-hidden="true">
+      {showPlayerReveal && <div className="dcq-player-reveal" aria-hidden="true">
         <div className="dcq-player-reveal-flare" />
         <div className="dcq-player-reveal-title"><span>ภารกิจเริ่มแล้ว</span><strong>ทีมกู้มหานคร</strong></div>
         <div className="dcq-player-reveal-cast">
@@ -1016,7 +1032,7 @@ const DigitalCityQuestGame: React.FC = () => {
         <div className="dcq-player-reveal-confetti">
           {FX_PARTICLES.map((particle) => <i key={particle} style={{ '--fx-i': particle } as React.CSSProperties} />)}
         </div>
-      </div>
+      </div>}
       <nav className="dcq-game-tools">
         <span><Clock3 size={17} /><b>{formatClock(timeLeft)}</b></span>
         <span><Avatar characterId={activePlayer.characterId} size="token" /><b>{activePlayer.name}</b></span>

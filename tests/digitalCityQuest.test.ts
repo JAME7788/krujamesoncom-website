@@ -123,5 +123,7 @@ describe('Digital City Quest competition content', () => {
     expect(pageSource).toContain('dcq-flying-dice');
     expect(pageSource).toContain('dcq-step-fx');
     expect(pageSource).toContain("' current'");
+    expect(pageSource).toContain('setShowPlayerReveal(false), 2_250');
+    expect(pageSource).toContain('showPlayerReveal && <div className="dcq-player-reveal"');
   });
 });
