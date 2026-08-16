@@ -16,6 +16,12 @@ const multiplayerSource = readFileSync('src/services/tycoonMultiplayerService.ts
 const pageCss = readFileSync('src/pages/games/DigitalCityQuestGame.css', 'utf8');
 
 describe('Digital City Quest competition content', () => {
+  it('keeps character names in a separate column from the avatar', () => {
+    expect(pageCss).toContain('grid-template-columns: 72px minmax(0, 1fr)');
+    expect(pageCss).toContain('grid-column: 2');
+    expect(pageCss).toContain('box-sizing: border-box');
+  });
+
   it('contains 30 linked missions and 90 unique questions', () => {
     const missionIds = [...new Set(DIGITAL_CITY_QUESTIONS.map((question) => question.missionId))];
     expect(missionIds).toHaveLength(30);
