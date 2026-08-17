@@ -1213,6 +1213,19 @@
   backdrop-filter: blur(5px);
 }
 
+/* Portals are direct children of the flex game page. Keep every dialog out of
+   that flex calculation even if a shared game rule changes modal positioning. */
+.dcq-playing-page > .dcq-modal {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  flex: none;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  margin: 0;
+}
+
 .dcq-page:not(:fullscreen) .dcq-modal {
   padding-top: 88px;
 }

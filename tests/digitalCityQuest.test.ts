@@ -113,6 +113,8 @@ describe('Digital City Quest competition content', () => {
     expect(pageSource).toContain('ref={setModalRoot} className="game-page dcq-page dcq-playing-page"');
     expect(pageSource).toContain('modalRoot?.requestFullscreen()');
     expect(pageSource).not.toContain('document.fullscreenElement || document.body');
+    expect(pageCss).toContain('.dcq-playing-page > .dcq-modal');
+    expect(pageCss).toMatch(/\.dcq-playing-page > \.dcq-modal\s*\{[^}]*position:\s*fixed;[^}]*flex:\s*none;/s);
   });
 
   it('fits the complete board into the remaining desktop viewport height', () => {
