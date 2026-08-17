@@ -125,6 +125,13 @@ describe('Digital City Quest competition content', () => {
     expect(pageCss).not.toContain('height: calc(100vh - 260px)');
   });
 
+  it('keeps the center map frame inside its grid area instead of covering perimeter tiles', () => {
+    expect(pageCss).toMatch(/\.dcq-tile\s*\{[^}]*z-index:\s*2;/s);
+    expect(pageCss).toMatch(/\.dcq-board-center\s*\{[^}]*z-index:\s*1;[^}]*isolation:\s*isolate;/s);
+    expect(pageCss).toMatch(/\.dcq-board-center\s*\{\s*border:\s*5px solid #fff;\s*outline:\s*0;/s);
+    expect(pageCss).toContain('box-shadow: inset 0 0 0 5px #321264, inset 0 0 0 10px #16d9f1');
+  });
+
   it('carries the arcade reveal, dice burst, movement, and active-player effects', () => {
     expect(pageSource).toContain('dcq-player-reveal');
     expect(pageSource).toContain('dcq-roll-fx');

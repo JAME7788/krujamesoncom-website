@@ -561,6 +561,7 @@
 
 .dcq-tile {
   position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -595,8 +596,10 @@
 
 .dcq-board-center {
   position: relative;
+  z-index: 1;
   grid-row: 2 / 8;
   grid-column: 2 / 8;
+  isolation: isolate;
   overflow: hidden;
   background: #042f3b;
   border: 5px solid #67e8f9;
@@ -776,8 +779,8 @@
 
 .dcq-board-center {
   border: 5px solid #fff;
-  outline: 5px solid #321264;
-  box-shadow: 0 0 0 8px #16d9f1, inset 0 0 35px #0b1535, 0 0 28px rgb(255 72 162 / 38%);
+  outline: 0;
+  box-shadow: inset 0 0 0 5px #321264, inset 0 0 0 10px #16d9f1, inset 0 0 35px #0b1535;
 }
 
 .dcq-board-center::before {
