@@ -105,6 +105,9 @@ const START_BUDGET = 7_000;
 const ROUND_GRANT = 900;
 const QUESTION_SECONDS = 35;
 const BOARD_SIZE = DIGITAL_CITY_BOARD.length;
+const ROLL_START_DELAY_MS = 360;
+const MOVE_STEP_DELAY_MS = 170;
+const LANDING_SETTLE_MS = 650;
 const ACTIVE_ROOM_KEY = 'kj_digital_city_active_room';
 const PLAYER_ID_KEY = 'kj_tycoon_player_id';
 const DOMAIN_KEYS = Object.keys(LITERACY_DOMAINS) as LiteracyDomain[];
@@ -672,7 +675,7 @@ const DigitalCityQuestGame: React.FC = () => {
       moving = moving.map((player) => player.idx === activePlayer.idx ? { ...player, pos: position } : player);
       setPlayers(moving);
       if (step < value) {
-        window.setTimeout(() => move(step + 1), 170);
+        window.setTimeout(() => move(step + 1), MOVE_STEP_DELAY_MS);
         return;
       }
       const funded = moving.map((player) => (
@@ -681,11 +684,14 @@ const DigitalCityQuestGame: React.FC = () => {
           : player
       ));
       setPlayers(funded);
-      setIsRolling(false);
-      if (passed) queueImpact('earn', '🏙️', 'ผ่านรอบมหานคร', `${activePlayer.name} รับทุนพัฒนารอบใหม่`, ROUND_GRANT);
-      land(funded, position);
+      setMessage(`${activePlayer.name} เดินครบ ${value} ช่องแล้ว กำลังหยุดที่จุดหมาย`);
+      window.setTimeout(() => {
+        setIsRolling(false);
+        if (passed) queueImpact('earn', '🏙️', 'ผ่านรอบมหานคร', `${activePlayer.name} รับทุนพัฒนารอบใหม่`, ROUND_GRANT);
+        land(funded, position);
+      }, LANDING_SETTLE_MS);
     };
-    window.setTimeout(() => move(1), 360);
+    window.setTimeout(() => move(1), ROLL_START_DELAY_MS);
   };
 
   const answerQuestion = (choice: number) => {

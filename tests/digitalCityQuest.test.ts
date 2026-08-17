@@ -143,6 +143,12 @@ describe('Digital City Quest competition content', () => {
     expect(pageCss).toContain('.dcq-playing-page > .dcq-player-reveal');
   });
 
+  it('finishes movement and shows the destination before opening a popup', () => {
+    expect(pageSource).toContain('const LANDING_SETTLE_MS = 650');
+    expect(pageSource).toContain('เดินครบ ${value} ช่องแล้ว กำลังหยุดที่จุดหมาย');
+    expect(pageSource).toMatch(/setPlayers\(funded\);[\s\S]*window\.setTimeout\(\(\) => \{[\s\S]*setIsRolling\(false\);[\s\S]*land\(funded, position\);[\s\S]*\}, LANDING_SETTLE_MS\);/);
+  });
+
   it('shows queued effects for economy, learning, building, dice, map, and victory events', () => {
     expect(pageSource).toContain("queueImpact('pay'");
     expect(pageSource).toContain("queueImpact('earn'");
