@@ -54,10 +54,12 @@ import {
 import type { TileKind } from '../../data/tycoonGame';
 import { useGameProgress } from '../../hooks/useGameProgress';
 import {
+  cancelTycoonRoom,
   canStartTycoonRoom,
   createTycoonRoom,
   joinTycoonRoom,
   leaveTycoonRoom,
+  mergeDigitalCitySupportPlayers,
   orderedTycoonRoomPlayers,
   publishTycoonGame,
   startTycoonMultiplayerRoom,
@@ -477,6 +479,13 @@ const DigitalCityQuestGame: React.FC = () => {
   const isOnlineGame = playMode === 'online' && Boolean(onlineRoomCode);
   const isRoomHost = onlineRoom?.hostId === multiplayerPlayerId;
   const canTakeTurn = !isOnlineGame || onlineSeat === turn;
+  const authoritativeGameEndsAt = isOnlineGame && onlineRoom?.game?.endsAt
+    ? onlineRoom.game.endsAt
+    : gameEndsAt;
+  const canSendSupport = phase === 'question'
+    && Boolean(question)
+    && picked === null
+    && onlineMember?.lastSupportSerial !== turnSerial;
   const rankedPlayers = useMemo(() => (
     [...players].sort((a, b) => scoreDigitalCityPlayer(b).total - scoreDigitalCityPlayer(a).total)
   ), [players]);
@@ -819,6 +828,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setRoomBusy(false);
     if (!result.ok || !result.room) return setRoomError(result.error || 'สร้างห้องไม่สำเร็จ');
     setOnlineRoom(result.room);
+    setMinutes(result.room.minutes);
     setOnlineRoomCode(result.room.code);
     setJoinCode(result.room.code);
     setSession(ACTIVE_ROOM_KEY, result.room.code);
@@ -838,6 +848,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setRoomBusy(false);
     if (!result.ok || !result.room) return setRoomError(result.error || 'เข้าห้องไม่สำเร็จ');
     setOnlineRoom(result.room);
+    setMinutes(result.room.minutes);
     setOnlineRoomCode(result.room.code);
     setSession(ACTIVE_ROOM_KEY, result.room.code);
   };
@@ -849,6 +860,27 @@ const DigitalCityQuestGame: React.FC = () => {
     setOnlineRoom(null);
     revealedOnlineGameRef.current = 0;
     setPhase('setup');
+  };
+
+  const cancelOrLeaveOnlineGame = async () => {
+    if (!onlineRoomCode) return;
+    if (!isRoomHost) {
+      if (window.confirm('ออกจากห้องแข่งขันนี้ใช่หรือไม่?')) leaveRoom();
+      return;
+    }
+    if (!window.confirm('ยกเลิกการแข่งขันสำหรับผู้เล่นทุกคนใช่หรือไม่?')) return;
+    setRoomBusy(true);
+    setRoomError('');
+    const result = await cancelTycoonRoom(onlineRoomCode, multiplayerPlayerId);
+    setRoomBusy(false);
+    if (!result.ok || !result.room?.game) {
+      setRoomError(result.error || 'ยกเลิกเกมไม่สำเร็จ');
+      return;
+    }
+    setOnlineRoom(result.room);
+    setPlayers(result.room.game.players);
+    setFinishReason(result.room.game.finishReason);
+    setPhase('over');
   };
 
   const changeOnlineCharacter = async (characterId: string) => {
@@ -903,6 +935,10 @@ const DigitalCityQuestGame: React.FC = () => {
     const result = await startTycoonMultiplayerRoom(onlineRoom.code, multiplayerPlayerId, snapshot);
     setRoomBusy(false);
     if (!result.ok) return setRoomError(result.error || 'เริ่มเกมไม่สำเร็จ');
+    const authoritativeRoom = result.room || onlineRoom;
+    const authoritativeEndsAt = authoritativeRoom.game?.endsAt || endsAt;
+    setOnlineRoom(authoritativeRoom);
+    setMinutes(authoritativeRoom.minutes);
     appliedRemoteVersionRef.current = snapshot.version;
     lastSignatureRef.current = gameSignature(base);
     setPlayers(list);
@@ -910,8 +946,8 @@ const DigitalCityQuestGame: React.FC = () => {
     setTurnSerial(0);
     setUsedQuestionIds([]);
     setPhase('roll');
-    setGameEndsAt(endsAt);
-    setTimeLeft(onlineRoom.minutes * 60);
+    setGameEndsAt(authoritativeEndsAt);
+    setTimeLeft(Math.max(0, Math.ceil((authoritativeEndsAt - Date.now()) / 1000)));
     setMessage(base.message);
     setShowPlayerReveal(true);
   };
@@ -1007,6 +1043,11 @@ const DigitalCityQuestGame: React.FC = () => {
     if (playMode !== 'online' || !onlineRoomCode) return undefined;
     return subscribeTycoonRoom(onlineRoomCode, (room) => {
       setOnlineRoom(room);
+      if (room) setMinutes(room.minutes);
+      if (room?.game?.endsAt) {
+        setGameEndsAt(room.game.endsAt);
+        setTimeLeft(Math.max(0, Math.ceil((room.game.endsAt - Date.now()) / 1000)));
+      }
       if (room?.game?.variant === 'digital-city' && revealedOnlineGameRef.current === 0) {
         revealedOnlineGameRef.current = room.game.version;
         setShowPlayerReveal(true);
@@ -1021,40 +1062,83 @@ const DigitalCityQuestGame: React.FC = () => {
 
   useEffect(() => {
     const remote = onlineRoom?.game;
-    if (!remote || remote.variant !== 'digital-city' || remote.version <= appliedRemoteVersionRef.current) return;
-    applyingRemoteRef.current = true;
-    appliedRemoteVersionRef.current = remote.version;
-    const remoteQuestion = isDigitalCityQuestion(remote.question) ? remote.question : null;
-    const remoteEvent = isDigitalCityEvent(remote.chance) ? remote.chance : null;
-    const base: Omit<TycoonGameSnapshot, 'version' | 'updatedBy'> = {
-      ...remote,
-      question: remoteQuestion,
-      chance: remoteEvent,
-    };
-    delete (base as Partial<TycoonGameSnapshot>).version;
-    delete (base as Partial<TycoonGameSnapshot>).updatedBy;
-    lastSignatureRef.current = gameSignature(base);
-    setPlayers(remote.players);
-    setTurn(remote.turn);
-    setTurnSerial(remote.turnSerial || 0);
-    setPhase(remote.phase);
-    setDice(remote.dice);
-    setIsRolling(remote.isRolling);
-    setQuestion(remoteQuestion);
-    setPicked(remote.picked);
-    setEventCard(remoteEvent);
-    setMessage(remote.message);
-    setSupportMessage(remote.supportMessage || '');
-    setUsedQuestionIds(remote.usedQuestionIds || []);
-    setBuyTile(remote.buyTile);
-    setUpgradeTile(remote.upgradeTile);
-    setFinishReason(remote.finishReason);
-    setGameEndsAt(remote.endsAt);
-    setQuestionEndsAt(remote.questionEndsAt);
-    setTimeLeft(Math.max(0, Math.ceil((remote.endsAt - Date.now()) / 1000)));
-    setQuestionTime(remote.questionEndsAt ? Math.max(0, Math.ceil((remote.questionEndsAt - Date.now()) / 1000)) : QUESTION_SECONDS);
-    window.setTimeout(() => { applyingRemoteRef.current = false; }, 90);
-  }, [onlineRoom?.game]);
+    if (!remote || remote.variant !== 'digital-city' || remote.version <= appliedRemoteVersionRef.current) return undefined;
+    const applyRemoteTimer = window.setTimeout(() => {
+      if (remote.version <= appliedRemoteVersionRef.current) return;
+      const remoteActiveMember = onlineRoom
+        ? orderedTycoonRoomPlayers(onlineRoom)[remote.turn]
+        : null;
+      const supportOnlyUpdate = Boolean(
+        remote.phase === 'question'
+        && remote.picked === null
+        && remote.question
+        && remoteActiveMember
+        && remote.updatedBy
+        && remote.updatedBy !== remoteActiveMember.id,
+      );
+      applyingRemoteRef.current = true;
+      appliedRemoteVersionRef.current = remote.version;
+      const ownActiveAcknowledgement = remote.updatedBy === multiplayerPlayerId
+        && remoteActiveMember?.id === multiplayerPlayerId
+        && phase !== 'setup'
+        && players.length > 0;
+      if (ownActiveAcknowledgement) {
+        setPlayers((current) => mergeDigitalCitySupportPlayers(current, remote.players, remote.turn));
+        setSupportMessage(remote.supportMessage || '');
+        if (phase === 'question' && picked === null) {
+          setQuestionEndsAt((current) => Math.max(current, remote.questionEndsAt));
+          setQuestionTime((current) => Math.max(
+            current,
+            Math.max(0, Math.ceil((remote.questionEndsAt - Date.now()) / 1000)),
+          ));
+        }
+        window.setTimeout(() => { applyingRemoteRef.current = false; }, 90);
+        return;
+      }
+      if (supportOnlyUpdate && remoteActiveMember?.id === multiplayerPlayerId) {
+        setPlayers((current) => mergeDigitalCitySupportPlayers(current, remote.players, remote.turn));
+        setSupportMessage(remote.supportMessage || '');
+        setQuestionEndsAt((current) => Math.max(current, remote.questionEndsAt));
+        setQuestionTime((current) => Math.max(
+          current,
+          Math.max(0, Math.ceil((remote.questionEndsAt - Date.now()) / 1000)),
+        ));
+        window.setTimeout(() => { applyingRemoteRef.current = false; }, 90);
+        return;
+      }
+      const remoteQuestion = isDigitalCityQuestion(remote.question) ? remote.question : null;
+      const remoteEvent = isDigitalCityEvent(remote.chance) ? remote.chance : null;
+      const base: Omit<TycoonGameSnapshot, 'version' | 'updatedBy'> = {
+        ...remote,
+        question: remoteQuestion,
+        chance: remoteEvent,
+      };
+      delete (base as Partial<TycoonGameSnapshot>).version;
+      delete (base as Partial<TycoonGameSnapshot>).updatedBy;
+      lastSignatureRef.current = gameSignature(base);
+      setPlayers(remote.players);
+      setTurn(remote.turn);
+      setTurnSerial(remote.turnSerial || 0);
+      setPhase(remote.phase);
+      setDice(remote.dice);
+      setIsRolling(remote.isRolling);
+      setQuestion(remoteQuestion);
+      setPicked(remote.picked);
+      setEventCard(remoteEvent);
+      setMessage(remote.message);
+      setSupportMessage(remote.supportMessage || '');
+      setUsedQuestionIds(remote.usedQuestionIds || []);
+      setBuyTile(remote.buyTile);
+      setUpgradeTile(remote.upgradeTile);
+      setFinishReason(remote.finishReason);
+      setGameEndsAt(remote.endsAt);
+      setQuestionEndsAt(remote.questionEndsAt);
+      setTimeLeft(Math.max(0, Math.ceil((remote.endsAt - Date.now()) / 1000)));
+      setQuestionTime(remote.questionEndsAt ? Math.max(0, Math.ceil((remote.questionEndsAt - Date.now()) / 1000)) : QUESTION_SECONDS);
+      window.setTimeout(() => { applyingRemoteRef.current = false; }, 90);
+    }, 0);
+    return () => window.clearTimeout(applyRemoteTimer);
+  }, [multiplayerPlayerId, onlineRoom, phase, picked, players.length]);
 
   useEffect(() => {
     if (!isOnlineGame || !onlineRoom || phase === 'setup' || players.length === 0 || applyingRemoteRef.current) return undefined;
@@ -1078,7 +1162,7 @@ const DigitalCityQuestGame: React.FC = () => {
       pendingRent: 0,
       upgradeTile,
       finishReason,
-      endsAt: gameEndsAt,
+      endsAt: authoritativeGameEndsAt,
       questionEndsAt,
     };
     const signature = gameSignature(base);
@@ -1090,19 +1174,19 @@ const DigitalCityQuestGame: React.FC = () => {
       void publishTycoonGame(onlineRoom.code, multiplayerPlayerId, { ...base, version, updatedBy: multiplayerPlayerId });
     }, 130);
     return () => window.clearTimeout(timer);
-  }, [buyTile, dice, eventCard, finishReason, gameEndsAt, isOnlineGame, isRolling, message, multiplayerPlayerId, onlineRoom, phase, picked, players, question, questionEndsAt, supportMessage, turn, turnSerial, upgradeTile, usedQuestionIds]);
+  }, [authoritativeGameEndsAt, buyTile, dice, eventCard, finishReason, isOnlineGame, isRolling, message, multiplayerPlayerId, onlineRoom, phase, picked, players, question, questionEndsAt, supportMessage, turn, turnSerial, upgradeTile, usedQuestionIds]);
 
   useEffect(() => {
     if (phase === 'setup' || phase === 'over') return undefined;
     const timer = window.setTimeout(() => {
-      const remaining = Math.max(0, Math.ceil((gameEndsAt - Date.now()) / 1000));
+      const remaining = Math.max(0, Math.ceil((authoritativeGameEndsAt - Date.now()) / 1000));
       setTimeLeft(remaining);
       if (remaining === 0 && (!isOnlineGame || isRoomHost)) {
         finishActionRef.current(players, 'หมดเวลา ภารกิจกู้เมืองเสร็จสิ้น');
       }
     }, 1000);
     return () => window.clearTimeout(timer);
-  }, [gameEndsAt, isOnlineGame, isRoomHost, phase, players]);
+  }, [authoritativeGameEndsAt, isOnlineGame, isRoomHost, phase, players]);
 
   useEffect(() => {
     if (phase !== 'question' || picked !== null || !question) return undefined;
@@ -1238,7 +1322,7 @@ const DigitalCityQuestGame: React.FC = () => {
                 </>
               ) : (
                 <div className="dcq-lobby">
-                  <header><div><span className={`sync-${syncMode}`}><Wifi size={15} /> {syncMode === 'firebase' ? 'เชื่อมต่อหลายจอแล้ว' : 'กำลังเชื่อมต่อ'}</span><h2>{onlineRoom.name}</h2><button type="button" onClick={() => navigator.clipboard?.writeText(onlineRoom.code)}>ห้อง {onlineRoom.code} <Copy size={15} /></button></div><button type="button" onClick={leaveRoom} aria-label="ออกจากห้อง"><X /></button></header>
+                  <header><div><span className={`sync-${syncMode}`}><Wifi size={15} /> {syncMode === 'firebase' ? 'เชื่อมต่อหลายจอแล้ว' : 'กำลังเชื่อมต่อ'}</span><h2>{onlineRoom.name}</h2><button type="button" onClick={() => navigator.clipboard?.writeText(onlineRoom.code)}>ห้อง {onlineRoom.code} <Copy size={15} /></button><strong className="dcq-room-duration"><Clock3 size={15} /> เวลาแข่งขัน {onlineRoom.minutes} นาที กำหนดโดยเจ้าของห้อง</strong></div><button type="button" onClick={leaveRoom} aria-label="ออกจากห้อง"><X /></button></header>
                   <div className="dcq-member-grid">{onlineMembers.map((member) => <article key={member.id} className={member.ready ? 'ready' : ''}><Avatar characterId={member.characterId} size="large" active={member.ready} /><b>{member.name}</b><span>{member.id === onlineRoom.hostId ? 'เจ้าของห้อง' : 'สมาชิก'}</span><strong>{member.ready ? 'พร้อม' : 'กำลังเตรียม'}</strong></article>)}</div>
                   {onlineMember && <><CharacterPicker selected={onlineMember.characterId} taken={onlineMembers.filter((member) => member.id !== multiplayerPlayerId).map((member) => member.characterId)} onSelect={changeOnlineCharacter} disabled={roomBusy || onlineMember.ready} /><div className="dcq-ready-row"><button type="button" className={onlineMember.ready ? 'ready' : ''} onClick={toggleReady}><Check size={18} /> {onlineMember.ready ? 'พร้อมแล้ว' : 'กดเตรียมพร้อม'}</button>{isRoomHost ? <button type="button" onClick={startOnline} disabled={!canStartTycoonRoom(onlineRoom)}><Gamepad2 size={18} /> เริ่มแข่งขัน</button> : <span>รอเจ้าของห้องเริ่ม</span>}</div></>}
                 </div>
@@ -1376,13 +1460,14 @@ const DigitalCityQuestGame: React.FC = () => {
 
       {showDashboard && modalRoot && createPortal(<div className="dcq-modal" role="dialog" aria-modal="true" aria-label="คะแนนสมรรถนะ"><section className="dcq-dashboard"><button type="button" className="dcq-modal-close" onClick={() => setShowDashboard(false)} aria-label="ปิดหน้าคะแนน"><X /></button><header><BarChart3 size={28} /><div><span>REAL-TIME ASSESSMENT</span><h2>คะแนนสมรรถนะ K/P/A</h2></div><button type="button" onClick={exportScores}><Download size={17} /> CSV</button></header><div className="dcq-dashboard-grid">{rankedPlayers.map((player, index) => { const score = scoreDigitalCityPlayer(player); return <article key={player.idx}><div className="dcq-dash-player"><b>#{index + 1}</b><Avatar characterId={player.characterId} /><div><strong>{player.name}</strong><small>แม่นยำ {Math.round(score.accuracy * 100)}%</small></div><em>{score.total}</em></div><div className="dcq-score-bars"><span style={{ '--value': `${score.knowledge / 40 * 100}%` } as React.CSSProperties}>K หลักฐาน <b>{score.knowledge}/40</b></span><span style={{ '--value': `${(score.strategy + score.advanced + score.efficiency) / 50 * 100}%` } as React.CSSProperties}>P ปฏิบัติคิด <b>{score.strategy + score.advanced + score.efficiency}/50</b></span><span style={{ '--value': `${score.collaboration / 10 * 100}%` } as React.CSSProperties}>A ร่วมมือ <b>{score.collaboration}/10</b></span></div><div className="dcq-domain-badges">{DOMAIN_KEYS.map((domain) => <span key={domain} className={(player.mastery?.[domain] || 0) > 0 ? 'mastered' : ''}>{LITERACY_DOMAINS[domain].emoji} {LITERACY_DOMAINS[domain].short}</span>)}</div><small className={score.qualified ? 'qualified' : ''}>{score.qualified ? 'ผ่านเกณฑ์แชมป์แล้ว' : 'ต้องแม่นยำ 60% • ครบ 3 ด้าน • ภารกิจขั้นสูง 1 ภารกิจ'}</small></article>; })}</div></section></div>, modalRoot)}
 
-      {isOnlineGame && !canTakeTurn && (phase === 'roll' || phase === 'question') && activePlayer && modalRoot && createPortal(<div className="dcq-modal dcq-wait-modal" role="status"><section className="dcq-wait-card"><div className="dcq-wait-spinner"><Clock3 /></div><span>กำลังรอผู้เล่น</span><Avatar characterId={activePlayer.characterId} size="large" active /><h2>{activePlayer.name} กำลังเล่น</h2><p>{phase === 'question' ? 'กำลังวิเคราะห์ภารกิจจากหลักฐาน' : isRolling ? 'กำลังเดินตามผลการทอย' : 'กำลังเตรียมทอยลูกเต๋า'}</p><div className="dcq-wait-facts"><b><Dices /> ผลทอย {dice || '-'}</b><b><Clock3 /> {phase === 'question' ? `${questionTime} วินาที` : formatClock(timeLeft)}</b></div><div className="dcq-support-actions"><span>ช่วยเพื่อนได้ 1 ครั้งในตานี้</span><button type="button" onClick={() => sendSupport('time')} disabled={roomBusy || phase !== 'question' || onlineMember?.lastSupportSerial === turnSerial}>+5 วินาที</button><button type="button" onClick={() => sendSupport('shield')} disabled={roomBusy || onlineMember?.lastSupportSerial === turnSerial}>ส่งเกราะงบ</button><button type="button" onClick={() => sendSupport('encourage')} disabled={roomBusy || onlineMember?.lastSupportSerial === turnSerial}>กำลังใจ +กลยุทธ์</button></div>{roomError && <small className="dcq-error">{roomError}</small>}</section></div>, modalRoot)}
+      {isOnlineGame && !canTakeTurn && (phase === 'roll' || phase === 'question') && activePlayer && modalRoot && createPortal(<div className="dcq-modal dcq-wait-modal" role="status"><section className="dcq-wait-card"><div className="dcq-wait-spinner"><Clock3 /></div><span>กำลังรอผู้เล่น</span><Avatar characterId={activePlayer.characterId} size="large" active /><h2>{activePlayer.name} กำลังเล่น</h2><p>{phase === 'question' ? 'กำลังวิเคราะห์ภารกิจจากหลักฐาน' : isRolling ? 'กำลังเดินตามผลการทอย' : 'กำลังเตรียมทอยลูกเต๋า'}</p><div className="dcq-wait-facts"><b><Dices /> ผลทอย {dice || '-'}</b><b><Clock3 /> {phase === 'question' ? `${questionTime} วินาที` : formatClock(timeLeft)}</b></div><div className="dcq-support-actions"><span>{canSendSupport ? 'ช่วยเพื่อนได้ 1 ครั้งในตานี้' : 'ปุ่มช่วยเหลือจะเปิดเมื่อเพื่อนเริ่มตอบภารกิจ'}</span><button type="button" onClick={() => sendSupport('time')} disabled={roomBusy || !canSendSupport}>+5 วินาที</button><button type="button" onClick={() => sendSupport('shield')} disabled={roomBusy || !canSendSupport}>ส่งเกราะงบ</button><button type="button" onClick={() => sendSupport('encourage')} disabled={roomBusy || !canSendSupport}>กำลังใจ +กลยุทธ์</button></div>{roomError && <small className="dcq-error">{roomError}</small>}</section></div>, modalRoot)}
 
       {phase === 'question' && question && canTakeTurn && modalRoot && createPortal(<div className="dcq-modal" role="dialog" aria-modal="true" aria-label="ภารกิจวิเคราะห์"><section className="dcq-question-card" style={{ '--domain': LITERACY_DOMAINS[question.domain].color } as React.CSSProperties}><header><span>{LITERACY_DOMAINS[question.domain].emoji} {LITERACY_DOMAINS[question.domain].name}</span><b>ภารกิจ {question.stage}/3</b><strong><Clock3 size={16} /> {picked === null ? `${questionTime} วิ` : 'ตอบแล้ว'}</strong></header><div className="dcq-question-body"><aside><small>สถานการณ์</small><h2>{question.missionTitle}</h2><p>{question.stimulus}</p>{question.table && <div className="dcq-evidence-table"><table><thead><tr>{question.table.headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{question.table.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>)}</tbody></table></div>}<em>ทักษะ: {question.competency}</em></aside><main><span>คำถามเชื่อมโยงขั้นที่ {question.stage}</span><h3>{question.q}</h3><div>{question.choices.map((choice, index) => <button key={choice} type="button" className={picked === null ? '' : index === question.answer ? 'correct' : picked === index ? 'wrong' : 'dim'} onClick={() => answerQuestion(index)} disabled={picked !== null}><b>{String.fromCharCode(65 + index)}</b>{choice}</button>)}</div>{picked !== null && <p className="dcq-feedback">{message}</p>}{picked !== null && <footer>{buyTile !== null && picked === question.answer ? <><button type="button" onClick={() => buyProject(true)}>เปิดโครงการ {DIGITAL_CITY_BOARD[buyTile].property?.name}</button><button type="button" onClick={() => buyProject(false)}>ข้าม</button></> : <button type="button" onClick={() => nextTurn(players)}>ตาถัดไป</button>}</footer>}</main></div></section></div>, modalRoot)}
 
       {phase === 'chance' && eventCard && modalRoot && createPortal(<div className="dcq-modal" role="dialog" aria-modal="true" aria-label="เหตุการณ์ตัดสินใจ"><section className="dcq-event-card"><span>DECISION EVENT</span><div>{eventCard.emoji}</div><h2>{eventCard.text}</h2><p>{eventCard.prompt}</p>{canTakeTurn && picked === null ? <div className="dcq-event-choices">{eventCard.choices.map((choice, index) => <button key={choice.label} type="button" onClick={() => chooseEvent(index)}>{choice.label}<small>เลือกแล้วเห็นผลทันที</small></button>)}</div> : picked === null ? <div className="dcq-event-wait"><Clock3 /> {activePlayer.name} กำลังตัดสินใจ</div> : null}{picked !== null && <><div className="dcq-event-result"><Check /> {message}</div>{canTakeTurn ? <button type="button" className="dcq-primary" onClick={() => nextTurn(players)}>ตาถัดไป</button> : <div className="dcq-event-wait"><Clock3 /> รอผู้เล่นไปตาถัดไป</div>}</>}</section></div>, modalRoot)}
 
       {phase === 'info' && modalRoot && createPortal(<div className="dcq-modal" role="dialog" aria-modal="true" aria-label="ผลภารกิจ"><section className="dcq-info-card"><span>MISSION UPDATE</span><Avatar characterId={activePlayer.characterId} size="large" active /><h2>{activePlayer.name}</h2><p>{message}</p>{canTakeTurn ? <div>{upgradeTile !== null && activePlayer.owned.includes(upgradeTile) && (activePlayer.levels[upgradeTile] || 0) < 3 && <button type="button" onClick={upgradeProject}>พัฒนาต้นแบบขั้น {(activePlayer.levels[upgradeTile] || 0) + 1}</button>}<button type="button" className="dcq-primary" onClick={() => nextTurn(players)}>ตาถัดไป</button></div> : <div className="dcq-event-wait"><Clock3 /> รอ {activePlayer.name}</div>}</section></div>, modalRoot)}
+      {isOnlineGame && modalRoot && createPortal(<button type="button" className="dcq-emergency-exit" onClick={cancelOrLeaveOnlineGame} disabled={roomBusy}><X size={17} /> {isRoomHost ? 'ยกเลิกเกม' : 'ออกจากห้อง'}</button>, modalRoot)}
       {tutorialModal}
     </main>
   );

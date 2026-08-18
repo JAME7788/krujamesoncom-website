@@ -178,4 +178,22 @@ describe('Digital City Quest competition content', () => {
     expect(pageSource).toContain('aria-label="ปิดหน้าคะแนน"');
     expect(pageSource).toContain('กลับมาที่ช่องเดิมเพื่อพัฒนาได้ถึงขั้น 3');
   });
+
+  it('uses the host room duration on every device', () => {
+    expect(pageSource.match(/setMinutes\(result\.room\.minutes\)/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(pageSource).toContain('const authoritativeGameEndsAt');
+    expect(pageSource).toContain('endsAt: authoritativeGameEndsAt');
+    expect(pageSource).toContain('เวลาแข่งขัน {onlineRoom.minutes} นาที กำหนดโดยเจ้าของห้อง');
+  });
+
+  it('keeps teammate support from replacing the active question and offers an emergency exit', () => {
+    expect(pageSource).toContain('mergeDigitalCitySupportPlayers(current, remote.players, remote.turn)');
+    expect(pageSource).toContain('const ownActiveAcknowledgement');
+    expect(pageSource).toContain("&& phase !== 'setup'");
+    expect(pageSource).toContain("remote.phase === 'question'");
+    expect(pageSource).toContain('disabled={roomBusy || !canSendSupport}');
+    expect(pageSource).toContain('className="dcq-emergency-exit"');
+    expect(pageSource).toContain("isRoomHost ? 'ยกเลิกเกม' : 'ออกจากห้อง'");
+    expect(pageCss).toMatch(/\.dcq-emergency-exit\s*\{[^}]*z-index:\s*15000;/s);
+  });
 });

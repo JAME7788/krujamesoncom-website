@@ -445,6 +445,7 @@
 .dcq-lobby > header h2 { margin: 4px 0; }
 .dcq-lobby > header button { padding: 7px 10px; color: inherit; font-weight: 800; background: rgb(255 255 255 / 12%); border: 1px solid rgb(255 255 255 / 35%); border-radius: 5px; cursor: pointer; }
 .dcq-lobby > header span { display: inline-flex; align-items: center; gap: 5px; color: #99f6e4; font-size: .78rem; font-weight: 800; }
+.dcq-lobby > header .dcq-room-duration { display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; padding: 6px 8px; color: #422006; font-size: .78rem; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px; }
 
 .dcq-member-grid {
   display: grid;
@@ -1249,6 +1250,29 @@
 
 .dcq-modal-close { position: absolute; z-index: 3; top: 10px; right: 10px; display: grid; place-items: center; width: 42px; height: 42px; color: #fff; background: #0f172a; border: 2px solid #94a3b8; border-radius: 6px; cursor: pointer; }
 
+.dcq-emergency-exit {
+  position: fixed;
+  z-index: 15000;
+  top: 96px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 11px;
+  color: #fff;
+  font-weight: 900;
+  background: #b91c1c;
+  border: 2px solid #fff;
+  border-radius: 5px;
+  box-shadow: 0 4px 0 #450a0a, 0 8px 24px rgb(0 0 0 / 35%);
+  cursor: pointer;
+}
+
+.dcq-emergency-exit:hover { background: #dc2626; }
+.dcq-emergency-exit:disabled { opacity: .55; cursor: wait; }
+.dcq-page:fullscreen .dcq-emergency-exit { top: 14px; }
+
 .dcq-tutorial-modal { z-index: 13000; }
 .dcq-tutorial-card { display: flex; flex-direction: column; width: min(980px, 100%) !important; overflow: hidden !important; border-color: #fbbf24 !important; }
 .dcq-tutorial-card > header,
@@ -1551,6 +1575,7 @@
   .dcq-event-choices,
   .dcq-support-actions { grid-template-columns: 1fr; }
   .dcq-support-actions > span { grid-column: 1; }
+  .dcq-emergency-exit { top: auto; right: 10px; bottom: 10px; }
   .dcq-result-table article { grid-template-columns: 34px auto 1fr 48px; }
   .dcq-result-table article > span { display: none; }
   .dcq-reflection { grid-template-columns: 1fr; }

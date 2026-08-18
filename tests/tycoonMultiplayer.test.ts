@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   canStartTycoonRoom,
   generateTycoonRoomCode,
+  mergeDigitalCitySupportPlayers,
+  mergeDigitalCitySupportSnapshot,
   orderedTycoonRoomPlayers,
+  type TycoonGameSnapshot,
+  type TycoonPlayerState,
   type TycoonRoom,
 } from '../src/services/tycoonMultiplayerService';
 
@@ -15,19 +19,62 @@ const room = (ready: boolean[]): TycoonRoom => ({
   passwordHash: 'hash',
   hostId: 'player-1',
   minutes: 10,
-  maxPlayers: 4,
   status: 'lobby',
   players: ready.map((isReady, index) => ({
     id: `player-${index + 1}`,
     name: `ผู้เล่น ${index + 1}`,
     characterId: `character-${index + 1}`,
-    colorIndex: index,
     ready: isReady,
     joinedAt: 100 + index,
+    lastSeenAt: 100 + index,
   })),
   game: null,
   createdAt: 100,
   updatedAt: 100,
+});
+
+const gamePlayer = (idx: number, overrides: Partial<TycoonPlayerState> = {}): TycoonPlayerState => ({
+  idx,
+  name: `ทีม ${idx + 1}`,
+  characterId: `character-${idx + 1}`,
+  pos: 8 + idx,
+  money: 7_000,
+  owned: [],
+  levels: {},
+  skip: 0,
+  out: false,
+  correct: 0,
+  answered: 0,
+  collaborationScore: 0,
+  strategyScore: 0,
+  shielded: false,
+  ...overrides,
+});
+
+const gameSnapshot = (overrides: Partial<TycoonGameSnapshot> = {}): TycoonGameSnapshot => ({
+  version: 100,
+  updatedBy: 'player-1',
+  variant: 'digital-city',
+  turnSerial: 3,
+  phase: 'question',
+  players: [gamePlayer(0), gamePlayer(1)],
+  turn: 0,
+  dice: 4,
+  isRolling: false,
+  question: null,
+  picked: null,
+  chance: null,
+  message: 'กำลังตอบคำถาม',
+  buyTile: null,
+  rentTile: null,
+  rentOwner: null,
+  pendingRent: 0,
+  upgradeTile: null,
+  finishReason: '',
+  endsAt: 10_000,
+  questionEndsAt: 5_000,
+  usedQuestionIds: ['q-1'],
+  ...overrides,
 });
 
 describe('tycoon multiplayer room rules', () => {
@@ -66,5 +113,50 @@ describe('tycoon multiplayer room rules', () => {
     expect(serviceSource).toContain('removeLocalRoom(cleanCode)');
     expect(serviceSource).toContain("onSyncMode?.('firebase')");
     expect(serviceSource).not.toContain('onChange(readLocalRoom(cleanCode));\n        return;');
+  });
+
+  it('merges support without replacing the active player position or economy state', () => {
+    const local = [gamePlayer(0, { pos: 12, money: 5_400 }), gamePlayer(1)];
+    const support = [
+      gamePlayer(0, { pos: 2, money: 100, strategyScore: 4, shielded: true }),
+      gamePlayer(1, { collaborationScore: 3 }),
+    ];
+
+    const merged = mergeDigitalCitySupportPlayers(local, support, 0);
+    expect(merged[0]).toMatchObject({ pos: 12, money: 5_400, strategyScore: 4, shielded: true });
+    expect(merged[1].collaborationScore).toBe(3);
+  });
+
+  it('keeps the active question state while applying support time and scores', () => {
+    const active = gameSnapshot({ version: 200, questionEndsAt: 8_000 });
+    const support = gameSnapshot({
+      version: 201,
+      updatedBy: 'player-2',
+      questionEndsAt: 13_000,
+      players: [gamePlayer(0, { strategyScore: 1 }), gamePlayer(1, { collaborationScore: 2 })],
+      message: 'ข้อความเก่าจากผู้ช่วย',
+      supportMessage: 'ทีม 2 ส่งเวลาเพิ่ม 5 วินาที',
+    });
+
+    const merged = mergeDigitalCitySupportSnapshot(active, support);
+    expect(merged.questionEndsAt).toBe(13_000);
+    expect(merged.message).toBe('กำลังตอบคำถาม');
+    expect(merged.supportMessage).toBe('ทีม 2 ส่งเวลาเพิ่ม 5 วินาที');
+    expect(merged.players[1].collaborationScore).toBe(2);
+
+    const alreadyAnswered = mergeDigitalCitySupportSnapshot(
+      gameSnapshot({ picked: 1, questionEndsAt: 8_000 }),
+      support,
+    );
+    expect(alreadyAnswered.picked).toBe(1);
+    expect(alreadyAnswered.questionEndsAt).toBe(8_000);
+  });
+
+  it('limits support to a live unanswered question and provides host cancellation', () => {
+    expect(serviceSource).toContain("room.game.phase !== 'question'");
+    expect(serviceSource).toContain('room.game.picked !== null');
+    expect(serviceSource).toContain('room.game.questionEndsAt <= Date.now()');
+    expect(serviceSource).toContain('export const cancelTycoonRoom');
+    expect(serviceSource).toContain("finishReason: 'เจ้าของห้องยกเลิกการแข่งขัน'");
   });
 });

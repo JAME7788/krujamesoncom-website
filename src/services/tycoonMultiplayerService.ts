@@ -219,6 +219,46 @@ const cacheRoom = (room: TycoonRoom) => {
   return room;
 };
 
+export const mergeDigitalCitySupportPlayers = (
+  localPlayers: TycoonPlayerState[],
+  supportPlayers: TycoonPlayerState[],
+  activeSeat: number,
+): TycoonPlayerState[] => {
+  const supportBySeat = new Map(supportPlayers.map((player) => [player.idx, player]));
+  return localPlayers.map((player) => {
+    const supportPlayer = supportBySeat.get(player.idx);
+    if (!supportPlayer) return player;
+    return {
+      ...player,
+      collaborationScore: Math.max(
+        player.collaborationScore || 0,
+        supportPlayer.collaborationScore || 0,
+      ),
+      ...(player.idx === activeSeat ? {
+        strategyScore: Math.max(player.strategyScore || 0, supportPlayer.strategyScore || 0),
+        shielded: Boolean(player.shielded || supportPlayer.shielded),
+      } : {}),
+    };
+  });
+};
+
+export const mergeDigitalCitySupportSnapshot = (
+  activeSnapshot: TycoonGameSnapshot,
+  supportSnapshot: TycoonGameSnapshot,
+): TycoonGameSnapshot => ({
+  ...activeSnapshot,
+  players: mergeDigitalCitySupportPlayers(
+    activeSnapshot.players,
+    supportSnapshot.players,
+    supportSnapshot.turn,
+  ),
+  supportMessage: supportSnapshot.supportMessage || activeSnapshot.supportMessage || '',
+  questionEndsAt: activeSnapshot.phase === 'question' && activeSnapshot.picked === null
+    ? Math.max(activeSnapshot.questionEndsAt, supportSnapshot.questionEndsAt)
+    : activeSnapshot.questionEndsAt,
+  version: Math.max(activeSnapshot.version, supportSnapshot.version + 1),
+});
+
 export const generateTycoonRoomCode = () => (
   Math.floor(100000 + Math.random() * 900000).toString()
 );
@@ -471,15 +511,33 @@ export const publishTycoonGame = async (
       if (!snapshot.exists()) throw new Error('room-not-found');
       const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
       if (!room.players.some((player) => player.id === actorId)) throw new Error('player-not-found');
+      let supportUpdateCanMerge = false;
       if (room.variant === 'digital-city' && room.game && game.phase !== 'over') {
         const activeMember = orderedTycoonRoomPlayers(room)[room.game.turn];
         if (!activeMember || activeMember.id !== actorId) throw new Error('turn-owner-only');
+        supportUpdateCanMerge = Boolean(
+          room.game.phase === 'question'
+          && room.game.picked === null
+          && room.game.updatedBy
+          && room.game.updatedBy !== activeMember.id
+          && (room.game.turnSerial || 0) === (game.turnSerial || 0),
+        );
       }
-      if (room.game && room.game.version >= game.version) throw new Error('stale-version');
+      if (room.game && room.game.version >= game.version && !supportUpdateCanMerge) {
+        throw new Error('stale-version');
+      }
+      const mergedGame = room.game && supportUpdateCanMerge
+        ? mergeDigitalCitySupportSnapshot(game, room.game)
+        : game;
+      const authoritativeGame = {
+        ...mergedGame,
+        version: Math.max(Date.now(), mergedGame.version, (room.game?.version || 0) + 1),
+        updatedBy: actorId,
+      };
       const updated = normalizeRoom({
         ...room,
-        status: game.phase === 'over' ? 'finished' : 'playing',
-        game,
+        status: authoritativeGame.phase === 'over' ? 'finished' : 'playing',
+        game: authoritativeGame,
         updatedAt: Date.now(),
       });
       transaction.set(ref, updated, { merge: false });
@@ -491,6 +549,56 @@ export const publishTycoonGame = async (
     if (error instanceof Error && error.message === 'stale-version') return false;
     console.warn('Tycoon turn sync failed', error);
     return false;
+  }
+};
+
+export const cancelTycoonRoom = async (
+  code: string,
+  hostId: string,
+): Promise<TycoonRoomResult> => {
+  const cleanCode = code.replace(/\D/g, '').slice(0, 6);
+  try {
+    const next = await runTransaction(db, async (transaction) => {
+      const ref = doc(db, COLLECTION, cleanCode);
+      const snapshot = await transaction.get(ref);
+      if (!snapshot.exists()) throw new Error('room-not-found');
+      const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
+      if (room.hostId !== hostId) throw new Error('host-only');
+      if (!room.game) throw new Error('game-not-started');
+      const updated = normalizeRoom({
+        ...room,
+        status: 'finished',
+        game: {
+          ...room.game,
+          phase: 'over',
+          isRolling: false,
+          question: null,
+          picked: null,
+          chance: null,
+          questionEndsAt: 0,
+          finishReason: 'เจ้าของห้องยกเลิกการแข่งขัน',
+          message: 'การแข่งขันถูกยกเลิกโดยเจ้าของห้อง',
+          version: Math.max(Date.now(), room.game.version + 1),
+          updatedBy: hostId,
+        },
+        updatedAt: Date.now(),
+      });
+      transaction.set(ref, updated, { merge: false });
+      return updated;
+    });
+    return { ok: true, room: cacheRoom(next) };
+  } catch (error) {
+    if (error instanceof Error && error.message === 'room-not-found') {
+      return { ok: false, error: 'ไม่พบห้องแข่งขัน' };
+    }
+    if (error instanceof Error && error.message === 'host-only') {
+      return { ok: false, error: 'เฉพาะเจ้าของห้องเท่านั้นที่ยกเลิกเกมได้' };
+    }
+    if (error instanceof Error && error.message === 'game-not-started') {
+      return { ok: false, error: 'เกมยังไม่เริ่ม' };
+    }
+    console.warn('Tycoon room cancellation failed', error);
+    return { ok: false, error: ONLINE_CONNECTION_ERROR };
   }
 };
 
@@ -521,7 +629,12 @@ export const supportDigitalCityTurn = async (
       const turnSerial = room.game.turnSerial || 0;
       if (!actor || actorSeat === room.game.turn) throw new Error('support-unavailable');
       if ((actor.lastSupportSerial ?? -1) === turnSerial) throw new Error('already-supported');
-      if (support === 'time' && room.game.phase !== 'question') throw new Error('support-unavailable');
+      if (
+        room.game.phase !== 'question'
+        || !room.game.question
+        || room.game.picked !== null
+        || room.game.questionEndsAt <= Date.now()
+      ) throw new Error('support-unavailable');
 
       const activeSeat = room.game.turn;
       const players = room.game.players.map((player) => {
