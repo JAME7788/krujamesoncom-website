@@ -6,12 +6,15 @@ import {
   mergeDigitalCitySupportPlayers,
   mergeDigitalCitySupportSnapshot,
   orderedTycoonRoomPlayers,
+  deserializeTycoonGameQuestion,
+  serializeTycoonGameQuestion,
   type TycoonGameSnapshot,
   type TycoonPlayerState,
   type TycoonRoom,
 } from '../src/services/tycoonMultiplayerService';
 
 const serviceSource = readFileSync('src/services/tycoonMultiplayerService.ts', 'utf8');
+const digitalCitySource = readFileSync('src/pages/games/DigitalCityQuestGame.tsx', 'utf8');
 
 const room = (ready: boolean[]): TycoonRoom => ({
   code: '123456',
@@ -107,6 +110,26 @@ describe('tycoon multiplayer room rules', () => {
     expect(serviceSource.match(/runTransaction\(db/g)?.length).toBeGreaterThanOrEqual(6);
   });
 
+  it('serializes evidence table rows without Firestore nested arrays', () => {
+    const question = {
+      missionTitle: 'อ่านตาราง',
+      table: {
+        headers: ['อุปกรณ์', 'คะแนน'],
+        rows: [['A', '8'], ['B', '5']],
+      },
+    };
+    const serialized = serializeTycoonGameQuestion(question) as typeof question & {
+      table: { rows: Array<{ cells: string[] }> };
+    };
+
+    expect(serialized.table.rows).toEqual([
+      { cells: ['A', '8'] },
+      { cells: ['B', '5'] },
+    ]);
+    expect(deserializeTycoonGameQuestion(serialized)).toEqual(question);
+    expect(serviceSource).toContain('transaction.set(ref, serializeRoomForFirestore(');
+  });
+
   it('rejects out-of-turn Digital City state writes and clears deleted room caches', () => {
     expect(serviceSource).toContain("throw new Error('turn-owner-only')");
     expect(serviceSource).toContain("if (room.variant === 'digital-city' && room.game && game.phase !== 'over')");
@@ -158,5 +181,21 @@ describe('tycoon multiplayer room rules', () => {
     expect(serviceSource).toContain('room.game.questionEndsAt <= Date.now()');
     expect(serviceSource).toContain('export const cancelTycoonRoom');
     expect(serviceSource).toContain("finishReason: 'เจ้าของห้องยกเลิกการแข่งขัน'");
+  });
+
+  it('does not cancel the final landing-state publish when a rolling snapshot returns', () => {
+    const publishEffect = digitalCitySource.slice(
+      digitalCitySource.indexOf('!isOnlineGame || !onlineRoomCode'),
+      digitalCitySource.indexOf('if (phase === \'setup\' || phase === \'over\')'),
+    );
+    expect(digitalCitySource).toContain('!isOnlineGame || !onlineRoomCode');
+    expect(digitalCitySource).toContain('publishTycoonGame(\n        onlineRoomCode,');
+    expect(digitalCitySource).toContain('if (attempt < 2)');
+    expect(digitalCitySource).toContain('if (published) {');
+    expect(digitalCitySource).toContain('onlineMembers[onlineRoom.game.turn]?.id');
+    expect(publishEffect).toContain('!canPublishTurn');
+    expect(publishEffect).not.toContain('!canTakeTurn');
+    expect(publishEffect).not.toContain('applyingRemoteRef.current) return undefined');
+    expect(publishEffect).not.toContain('multiplayerPlayerId, onlineRoom, phase, picked');
   });
 });

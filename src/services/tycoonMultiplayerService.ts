@@ -146,6 +146,48 @@ const normalizePlayer = (value: Partial<TycoonRoomPlayer>): TycoonRoomPlayer => 
   lastSupportSerial: value.lastSupportSerial == null ? -1 : Number(value.lastSupportSerial),
 });
 
+export const serializeTycoonGameQuestion = (value: unknown): unknown => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  const question = value as Record<string, unknown>;
+  const table = question.table;
+  if (!table || typeof table !== 'object' || Array.isArray(table)) return value;
+  const tableRecord = table as Record<string, unknown>;
+  if (!Array.isArray(tableRecord.rows)) return value;
+  return {
+    ...question,
+    table: {
+      ...tableRecord,
+      rows: tableRecord.rows.map((row) => (
+        Array.isArray(row) ? { cells: row } : row
+      )),
+    },
+  };
+};
+
+export const deserializeTycoonGameQuestion = (value: unknown): TycoonGameSnapshot['question'] => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return (value || null) as TycoonGameSnapshot['question'];
+  }
+  const question = value as Record<string, unknown>;
+  const table = question.table;
+  if (!table || typeof table !== 'object' || Array.isArray(table)) {
+    return value as TycoonGameSnapshot['question'];
+  }
+  const tableRecord = table as Record<string, unknown>;
+  if (!Array.isArray(tableRecord.rows)) return value as TycoonGameSnapshot['question'];
+  return {
+    ...question,
+    table: {
+      ...tableRecord,
+      rows: tableRecord.rows.map((row) => {
+        if (!row || typeof row !== 'object' || Array.isArray(row)) return row;
+        const cells = (row as Record<string, unknown>).cells;
+        return Array.isArray(cells) ? cells : row;
+      }),
+    },
+  } as unknown as TycoonGameSnapshot['question'];
+};
+
 const normalizeGame = (value: unknown): TycoonGameSnapshot | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const source = value as Partial<TycoonGameSnapshot>;
@@ -163,7 +205,7 @@ const normalizeGame = (value: unknown): TycoonGameSnapshot | null => {
     turn: Number(source.turn) || 0,
     dice: source.dice == null ? null : Number(source.dice),
     isRolling: Boolean(source.isRolling),
-    question: source.question || null,
+    question: deserializeTycoonGameQuestion(source.question),
     picked: source.picked == null ? null : Number(source.picked),
     chance: source.chance || null,
     message: String(source.message || ''),
@@ -199,6 +241,18 @@ const normalizeRoom = (value: Partial<TycoonRoom>): TycoonRoom => ({
   updatedAt: Number(value.updatedAt) || Date.now(),
   variant: value.variant === 'digital-city' ? 'digital-city' : 'classic',
 });
+
+const serializeRoomForFirestore = (room: TycoonRoom) => (
+  room.game
+    ? {
+      ...room,
+      game: {
+        ...room.game,
+        question: serializeTycoonGameQuestion(room.game.question),
+      },
+    }
+    : room
+);
 
 const hashText = async (value: string): Promise<string> => {
   const bytes = new TextEncoder().encode(value.trim());
@@ -310,7 +364,7 @@ export const createTycoonRoom = async (input: {
         const ref = doc(db, COLLECTION, code);
         const snapshot = await transaction.get(ref);
         if (snapshot.exists()) throw new Error('room-code-collision');
-        transaction.set(ref, room, { merge: false });
+        transaction.set(ref, serializeRoomForFirestore(room), { merge: false });
       });
       return { ok: true, room: cacheRoom(room) };
     } catch (error) {
@@ -368,7 +422,7 @@ export const joinTycoonRoom = async (
         throw new Error('character-taken');
       }
       const updated = addPlayer(room);
-      transaction.set(ref, updated, { merge: false });
+      transaction.set(ref, serializeRoomForFirestore(updated), { merge: false });
       return updated;
     });
     return { ok: true, room: cacheRoom(next) };
@@ -437,7 +491,7 @@ export const updateTycoonRoomPlayer = async (
       if (!room.players.some((member) => member.id === playerId)) throw new Error('player-not-found');
       const updated = applyPatch(room);
       if (!updated) throw new Error('character-taken');
-      transaction.set(ref, updated, { merge: false });
+      transaction.set(ref, serializeRoomForFirestore(updated), { merge: false });
       return updated;
     });
     return { ok: true, room: cacheRoom(next) };
@@ -479,7 +533,7 @@ export const startTycoonMultiplayerRoom = async (
         game,
         updatedAt: Date.now(),
       });
-      transaction.set(ref, updated, { merge: false });
+      transaction.set(ref, serializeRoomForFirestore(updated), { merge: false });
       return updated;
     });
     return { ok: true, room: cacheRoom(next) };
@@ -540,13 +594,16 @@ export const publishTycoonGame = async (
         game: authoritativeGame,
         updatedAt: Date.now(),
       });
-      transaction.set(ref, updated, { merge: false });
+      transaction.set(ref, serializeRoomForFirestore(updated), { merge: false });
       return updated;
     });
     cacheRoom(next);
     return true;
   } catch (error) {
-    if (error instanceof Error && error.message === 'stale-version') return false;
+    if (
+      error instanceof Error
+      && (error.message === 'stale-version' || error.message === 'turn-owner-only')
+    ) return false;
     console.warn('Tycoon turn sync failed', error);
     return false;
   }
@@ -583,7 +640,7 @@ export const cancelTycoonRoom = async (
         },
         updatedAt: Date.now(),
       });
-      transaction.set(ref, updated, { merge: false });
+      transaction.set(ref, serializeRoomForFirestore(updated), { merge: false });
       return updated;
     });
     return { ok: true, room: cacheRoom(next) };
@@ -621,20 +678,20 @@ export const supportDigitalCityTurn = async (
       if (!snapshot.exists()) throw new Error('room-not-found');
       const room = normalizeRoom(snapshot.data() as Partial<TycoonRoom>);
       if (room.variant !== 'digital-city' || room.status !== 'playing' || !room.game) {
-        throw new Error('support-unavailable');
+        throw new Error('support-room-unavailable');
       }
       const ordered = orderedTycoonRoomPlayers(room);
       const actorSeat = ordered.findIndex((player) => player.id === actorId);
       const actor = ordered[actorSeat];
       const turnSerial = room.game.turnSerial || 0;
-      if (!actor || actorSeat === room.game.turn) throw new Error('support-unavailable');
+      if (!actor || actorSeat === room.game.turn) throw new Error('support-actor-unavailable');
       if ((actor.lastSupportSerial ?? -1) === turnSerial) throw new Error('already-supported');
       if (
         room.game.phase !== 'question'
         || !room.game.question
         || room.game.picked !== null
         || room.game.questionEndsAt <= Date.now()
-      ) throw new Error('support-unavailable');
+      ) throw new Error('support-question-unavailable');
 
       const activeSeat = room.game.turn;
       const players = room.game.players.map((player) => {
@@ -668,7 +725,7 @@ export const supportDigitalCityTurn = async (
         },
         updatedAt: Date.now(),
       });
-      transaction.set(ref, updated, { merge: false });
+      transaction.set(ref, serializeRoomForFirestore(updated), { merge: false });
       return updated;
     });
     return { ok: true, room: cacheRoom(next) };
@@ -704,7 +761,7 @@ export const leaveTycoonRoom = async (code: string, playerId: string): Promise<v
         players,
         updatedAt: Date.now(),
       });
-      transaction.set(ref, updated, { merge: false });
+      transaction.set(ref, serializeRoomForFirestore(updated), { merge: false });
       return updated;
     });
 

@@ -479,6 +479,10 @@ const DigitalCityQuestGame: React.FC = () => {
   const isOnlineGame = playMode === 'online' && Boolean(onlineRoomCode);
   const isRoomHost = onlineRoom?.hostId === multiplayerPlayerId;
   const canTakeTurn = !isOnlineGame || onlineSeat === turn;
+  const onlineTurnOwnerId = onlineRoom?.game
+    ? onlineMembers[onlineRoom.game.turn]?.id
+    : null;
+  const canPublishTurn = !isOnlineGame || onlineTurnOwnerId === multiplayerPlayerId;
   const authoritativeGameEndsAt = isOnlineGame && onlineRoom?.game?.endsAt
     ? onlineRoom.game.endsAt
     : gameEndsAt;
@@ -1141,7 +1145,7 @@ const DigitalCityQuestGame: React.FC = () => {
   }, [multiplayerPlayerId, onlineRoom, phase, picked, players.length]);
 
   useEffect(() => {
-    if (!isOnlineGame || !onlineRoom || phase === 'setup' || players.length === 0 || applyingRemoteRef.current) return undefined;
+    if (!isOnlineGame || !onlineRoomCode || !canPublishTurn || phase === 'setup' || players.length === 0) return undefined;
     const base: Omit<TycoonGameSnapshot, 'version' | 'updatedBy'> = {
       variant: 'digital-city',
       turnSerial,
@@ -1167,14 +1171,34 @@ const DigitalCityQuestGame: React.FC = () => {
     };
     const signature = gameSignature(base);
     if (signature === lastSignatureRef.current) return undefined;
-    const timer = window.setTimeout(() => {
+    let cancelled = false;
+    let retryTimer: number | undefined;
+    const publish = async (attempt: number) => {
       const version = Math.max(Date.now(), appliedRemoteVersionRef.current + 1);
-      lastSignatureRef.current = signature;
-      appliedRemoteVersionRef.current = version;
-      void publishTycoonGame(onlineRoom.code, multiplayerPlayerId, { ...base, version, updatedBy: multiplayerPlayerId });
+      const published = await publishTycoonGame(
+        onlineRoomCode,
+        multiplayerPlayerId,
+        { ...base, version, updatedBy: multiplayerPlayerId },
+      );
+      if (cancelled) return;
+      if (published) {
+        lastSignatureRef.current = signature;
+        appliedRemoteVersionRef.current = Math.max(appliedRemoteVersionRef.current, version);
+        return;
+      }
+      if (attempt < 2) {
+        retryTimer = window.setTimeout(() => { void publish(attempt + 1); }, 220 * (attempt + 1));
+      }
+    };
+    const timer = window.setTimeout(() => {
+      void publish(0);
     }, 130);
-    return () => window.clearTimeout(timer);
-  }, [authoritativeGameEndsAt, buyTile, dice, eventCard, finishReason, isOnlineGame, isRolling, message, multiplayerPlayerId, onlineRoom, phase, picked, players, question, questionEndsAt, supportMessage, turn, turnSerial, upgradeTile, usedQuestionIds]);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+    };
+  }, [authoritativeGameEndsAt, buyTile, canPublishTurn, dice, eventCard, finishReason, isOnlineGame, isRolling, message, multiplayerPlayerId, onlineRoomCode, phase, picked, players, question, questionEndsAt, supportMessage, turn, turnSerial, upgradeTile, usedQuestionIds]);
 
   useEffect(() => {
     if (phase === 'setup' || phase === 'over') return undefined;
