@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>รายงานผลการปฏิบัติงานตามข้อตกลงในการพัฒนางาน (PA) ด้านที่ ๑ ด้านการจัดการเรียนรู้ - ครูอนันตชัย เพ็ชรรี่</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1e3a8a;
+    --primary-dark: #0f172a;
+    --accent: #c9a227;
+    --crimson: #8F1D2C;
+    --crimson-light: #fbf0f2;
+    --bg-page: #f1f5f9;
+    --bg-card: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #475569;
+    --border: #cbd5e1;
+    --border-light: #e2e8f0;
+    --success: #15803d;
+    --success-bg: #f0fdf4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg-page);
+    color: var(--text-main);
+    line-height: 1.65;
+    padding: 20px 14px;
+    font-size: 15px;
+  }
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  /* Control & Action Bar (Screen Only) */
+  .action-bar {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  }
+  .view-modes {
+    display: flex;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 10px;
+    gap: 4px;
+  }
+  .mode-btn {
+    font-family: 'Prompt', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #475569;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mode-btn.active {
+    background: #ffffff;
+    color: var(--primary);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .btn-group-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .btn-action {
+    font-family: 'Prompt', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    color: var(--text-main);
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+  .btn-action:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+  }
+  .btn-print-main {
+    background: var(--crimson);
+    color: #ffffff;
+    border-color: var(--crimson);
+  }
+  .btn-print-main:hover {
+    background: #731723;
+  }
+  .btn-copy-all-main {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+  }
+  .btn-copy-all-main:hover {
+    background: #172554;
+  }
+
+  /* Formal Paper Document (Ready for Reporting) */
+  .paper-doc {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    padding: 40px 48px;
+    margin-bottom: 24px;
+  }
+  .formal-header {
+    text-align: center;
+    border-bottom: 2.5px solid var(--crimson);
+    padding-bottom: 24px;
+    margin-bottom: 26px;
+    position: relative;
+  }
+  .garuda-seal {
+    width: 68px;
+    height: auto;
+    margin: 0 auto 12px auto;
+    display: block;
+  }
+  .doc-type-badge {
+    display: inline-block;
+    background: var(--crimson-light);
+    color: var(--crimson);
+    border: 1px solid #f2c7ce;
+    font-family: 'Prompt', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+  }
+  .formal-title {
+    font-family: 'Prompt', sans-serif;
+    font-size: 23px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    line-height: 1.35;
+    margin-bottom: 6px;
+  }
+  .formal-subtitle {
+    font-size: 16px;
+    color: #334155;
+    font-weight: 500;
+  }
+  .formal-sub-desc {
+    font-size: 14px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+
+  /* Info Summary Box */
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 26px;
+    font-size: 14.5px;
+  }
+  .meta-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .meta-label {
+    font-family: 'Prompt', sans-serif;
+    font-weight: 600;
+    color: var(--primary-dark);
+    min-width: 145px;
+    flex-shrink: 0;
+  }
+  .meta-value {
+    color: #1e293b;
+  }
+
+  /* Overview Highlight Cards */
+  .overview-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 30px;
+  }
+  .ov-card {
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: #fafafa;
+    text-align: center;
+    border-top: 3.5px solid var(--primary);
+  }
+  .ov-card.gold { border-top-color: var(--accent); }
+  .ov-card.green { border-top-color: var(--success); }
+  .ov-card.crimson { border-top-color: var(--crimson); }
+  .ov-num {
+    font-family: 'Prompt', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    line-height: 1.2;
+    margin-bottom: 3px;
+  }
+  .ov-txt {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  /* Section Title */
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-left: 5px solid var(--crimson);
+    padding-left: 12px;
+    margin: 28px 0 16px 0;
+  }
+  .section-head h2 {
+    font-family: 'Prompt', sans-serif;
+    font-size: 18.5px;
+    font-weight: 700;
+    color: var(--primary-dark);
+  }
+  .section-head span {
+    font-size: 13px;
+    color: #64748b;
+  }
+
+  /* Official Table Format */
+  .report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 28px;
+    font-size: 13.5px;
+    background: #ffffff;
+  }
+  .report-table th {
+    background: #f1f5f9;
+    color: var(--primary-dark);
+    font-family: 'Prompt', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+    vertical-align: middle;
+  }
+  .report-table td {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.55;
+    color: #1e293b;
+  }
+  .report-table tr:nth-child(even) {
+    background: #fcfcfd;
+  }
+  .col-num {
+    width: 8%;
+    text-align: center;
+    font-family: 'Prompt', sans-serif;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .col-title {
+    width: 24%;
+    font-family: 'Prompt', sans-serif;
+    font-weight: 600;
+    color: var(--primary-dark);
+  }
+  .col-answer {
+    width: 44%;
+  }
+  .col-result {
+    width: 24%;
+    font-size: 12.8px;
+    background: #fbfbfb;
+  }
+
+  .tbl-badge-level {
+    display: inline-block;
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .tbl-answer-p {
+    font-size: 13.5px;
+    color: #0f172a;
+    line-height: 1.6;
+    text-indent: 16px;
+    margin-bottom: 6px;
+  }
+  .tbl-evidence-tags {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--border-light);
+    font-size: 12px;
+    color: #475569;
+  }
+
+  /* Deep Section per Indicator */
+  .ind-detailed-block {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: #ffffff;
+    page-break-inside: avoid;
+  }
+  .ind-detailed-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+  .ind-detailed-title {
+    font-family: 'Prompt', sans-serif;
+    font-size: 16.5px;
+    font-weight: 600;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ind-number-tag {
+    background: var(--primary);
+    color: #ffffff;
+    font-family: 'Prompt', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 3px 9px;
+    border-radius: 6px;
+  }
+  .ind-ans-quote {
+    background: #fcfaf6;
+    border-left: 4px solid var(--crimson);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: #0f172a;
+    margin-bottom: 14px;
+    text-indent: 20px;
+  }
+  .ind-sub-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    font-size: 13.5px;
+  }
+  .ind-sub-box {
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .ind-sub-box b {
+    display: block;
+    font-family: 'Prompt', sans-serif;
+    font-size: 12.5px;
+    color: var(--primary-dark);
+    margin-bottom: 4px;
+  }
+  .ind-sub-box p {
+    color: #334155;
+    line-height: 1.5;
+  }
+
+  /* Challenge Summary in Dan 1 */
+  .challenge-box {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-left: 6px solid var(--accent);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 28px 0;
+    page-break-inside: avoid;
+  }
+  .challenge-box h3 {
+    font-family: 'Prompt', sans-serif;
+    font-size: 17px;
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+  }
+  .challenge-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 13px;
+    background: #fff;
+  }
+  .challenge-table th, .challenge-table td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .challenge-table th { background: #eff6ff; color: var(--primary-dark); }
+
+  /* Signatures Block */
+  .signatures-section {
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 2px solid #e2e8f0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    page-break-inside: avoid;
+  }
+  .sig-block {
+    text-align: center;
+    padding: 16px;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    background: #fafafa;
+  }
+  .sig-role {
+    font-family: 'Prompt', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin-bottom: 50px;
+  }
+  .sig-line {
+    font-size: 14px;
+    color: #1e293b;
+    margin-bottom: 4px;
+  }
+  .sig-pos {
+    font-size: 13px;
+    color: #64748b;
+  }
+
+  /* Filter & Copy Cards Mode */
+  #cards-view {
+    display: none;
+  }
+  .card-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .filter-tab {
+    font-family: 'Prompt', sans-serif;
+    font-size: 12.5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    cursor: pointer;
+    color: #475569;
+  }
+  .filter-tab.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .card-item {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  }
+  .card-item-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .btn-copy-card {
+    font-family: 'Prompt', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .btn-copy-card:hover {
+    background: #1d4ed8;
+    color: #ffffff;
+  }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #0f172a;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-family: 'Prompt', sans-serif;
+    font-size: 14px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    display: none;
+    z-index: 9999;
+  }
+  .toast.show {
+    display: block;
+    animation: fadeIn 0.3s;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Print Media Styles (A4 Formal Report) */
+  @media print {
+    body {
+      background: #ffffff !important;
+      padding: 0 !important;
+      font-size: 13pt;
+      color: #000000;
+    }
+    .action-bar, .card-filter-bar, .toast, .btn-copy-card, .btn-action, #cards-view-toggle {
+      display: none !important;
+    }
+    #report-view {
+      display: block !important;
+    }
+    #cards-view {
+      display: none !important;
+    }
+    .paper-doc {
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .formal-header {
+      border-bottom: 2px solid #000 !important;
+    }
+    .meta-grid {
+      border: 1px solid #999 !important;
+      background: #fafafa !important;
+    }
+    .overview-bar {
+      display: none !important;
+    }
+    .report-table th, .report-table td, .challenge-table th, .challenge-table td {
+      border: 1px solid #333 !important;
+      color: #000 !important;
+    }
+    .report-table th {
+      background: #f0f0f0 !important;
+    }
+    .ind-detailed-block {
+      border: 1px solid #ccc !important;
+      page-break-inside: avoid;
+    }
+    .ind-ans-quote {
+      border-left: 3px solid #333 !important;
+      background: #f9f9f9 !important;
+    }
+    .sig-block {
+      border: 1px solid #999 !important;
+      background: transparent !important;
+    }
+    @page {
+      size: A4 portrait;
+      margin: 1.8cm 1.5cm 1.8cm 1.5cm;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .paper-doc { padding: 22px 18px; }
+    .meta-grid, .overview-bar, .signatures-section, .ind-sub-grid { grid-template-columns: 1fr; }
+    .action-bar { flex-direction: column; align-items: stretch; }
+    .btn-group-right { justify-content: stretch; }
+    .btn-action { flex: 1; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Control & Action Bar -->
+  <div class="action-bar">
+    <div class="view-modes">
+      <button class="mode-btn active" id="btn-mode-report" onclick="switchMode('report')">
+        📄 เล่มรายงานทางการ
+      </button>
+      <button class="mode-btn" id="btn-mode-cards" onclick="switchMode('cards')">
+        📑 บัตรคำตอบรายข้อ
+      </button>
+    </div>
+    <div class="btn-group-right">
+      <button class="btn-action btn-copy-all-main" onclick="copyAllAnswers()">
+        📋 คัดลอกข้อความทั้ง ๘ ข้อ
+      </button>
+      <button class="btn-action btn-print-main" onclick="window.print()">
+        🖨️ พิมพ์รายงาน / บันทึก PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 1: OFFICIAL REPORT (เล่มรายงานทางการ) -->
+  <div id="report-view">
+    <div class="paper-doc">
+      
+      <!-- Official Header -->
+      <div class="formal-header">
+        <span class="doc-type-badge">เอกสารทางการประกอบการประเมิน ว.PA</span>
+        <h1 class="formal-title">แบบรายงานผลการปฏิบัติงานตามข้อตกลงในการพัฒนางาน (PA)</h1>
+        <div class="formal-subtitle">ด้านที่ ๑ : ด้านการจัดการเรียนรู้ (๘ ตัวชี้วัดตามมาตรฐานตำแหน่ง)</div>
+        <div class="formal-sub-desc">สำหรับข้าราชการครูและบุคลากรทางการศึกษา ตำแหน่งครู ยังไม่มีวิทยฐานะ (ครู อันดับ คศ.๑) | รอบปีงบประมาณ พ.ศ. ๒๕๖๙</div>
+      </div>
+
+      <!-- General Info Meta Grid -->
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">ผู้ขอรับการประเมิน :</span>
+          <span class="meta-value"><strong>นายอนันตชัย เพ็ชรรี่</strong> (ตำแหน่ง ครู อันดับ คศ.๑)</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">เลขที่ตำแหน่ง :</span>
+          <span class="meta-value">๔๕๙๕</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">สถานศึกษา :</span>
+          <span class="meta-value">โรงเรียนบ้านคลองมดแดง ต.โป่งน้ำร้อน อ.คลองลาน จ.กำแพงเพชร</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">สังกัด :</span>
+          <span class="meta-value">สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต ๒</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">กลุ่มสาระการเรียนรู้ :</span>
+          <span class="meta-value">วิทยาศาสตร์และเทคโนโลยี และสาระการงานอาชีพ</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">ภาระงานสอนจริง :</span>
+          <span class="meta-value">๒๓ คาบ/สัปดาห์ (ระดับชั้น ป.๑ ถึง ม.๓ รวม ๑๐ รายวิชา)</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">รอบการประเมิน :</span>
+          <span class="meta-value">๑ ตุลาคม ๒๕๖๘ ถึง ๓๐ กันยายน ๒๕๖๙</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">ผู้ประเมิน :</span>
+          <span class="meta-value">นายปรัชญา ปรางค์ชัยภูมิ (ผู้อำนวยการโรงเรียนบ้านคลองมดแดง)</span>
+        </div>
+      </div>
+
+      <!-- Quick Summary Overview Bar -->
+      <div class="overview-bar">
+        <div class="ov-card">
+          <div class="ov-num">๘ / ๘</div>
+          <div class="ov-txt">ตัวชี้วัดครบถ้วน</div>
+        </div>
+        <div class="ov-card gold">
+          <div class="ov-num">ระดับ ๔</div>
+          <div class="ov-txt">ปรับประยุกต์ (Adapting)</div>
+        </div>
+        <div class="ov-card green">
+          <div class="ov-num">๑๐๐%</div>
+          <div class="ov-txt">บรรลุเป้าหมายตัวชี้วัด</div>
+        </div>
+        <div class="ov-card crimson">
+          <div class="ov-num">๒๓ คาบ</div>
+          <div class="ov-txt">ภาระงานสอนต่อสัปดาห์</div>
+        </div>
+      </div>
+
+      <!-- Section Title -->
+      <div class="section-head">
+        <h2>ตารางสรุปรายงานผลการปฏิบัติงาน ๘ ตัวชี้วัด (ด้านที่ ๑)</h2>
+        <span>ระดับคุณภาพที่คาดหวัง: ระดับ ๔ (ปรับประยุกต์)</span>
+      </div>
+
+      <!-- Official Table -->
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th class="col-num">ข้อ</th>
+            <th class="col-title">ตัวชี้วัดตามมาตรฐานตำแหน่ง</th>
+            <th class="col-answer">สรุปผลการปฏิบัติงานจริงและข้อความรายงาน</th>
+            <th class="col-result">ผลลัพธ์และหลักฐานเชิงประจักษ์</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 1.1 -->
+          <tr>
+            <td class="col-num">๑.๑</td>
+            <td class="col-title">
+              การสร้างและหรือพัฒนาหลักสูตร
+              <div><span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span></div>
+            </td>
+            <td class="col-answer">
+              <p class="tbl-answer-p">วิเคราะห์หลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน พ.ศ. ๒๕๕๑ (ฉบับปรับปรุง พ.ศ. ๒๕๖๐) สาระที่ ๔ เทคโนโลยี (วิทยาการคำนวณ) มาตรฐาน ว ๔.๒ และสาระการงานอาชีพ ตลอดจนหลักสูตรสถานศึกษาโรงเรียนบ้านคลองมดแดง จัดทำโครงสร้างรายวิชา คำอธิบายรายวิชา และหน่วยการเรียนรู้ที่สอดคล้องกับมาตรฐานการเรียนรู้และตัวชี้วัด โดยมีการปรับประยุกต์ให้สอดคล้องกับบริบทของสถานศึกษา ชุมชน และความแตกต่างของผู้เรียน มีหน่วยการเรียนรู้บูรณาการทักษะอาชีพและเศรษฐกิจพอเพียง นำหลักสูตรและหน่วยการเรียนรู้ไปใช้จัดการเรียนรู้จริงกับผู้เรียนระดับชั้น ป.๑ ถึง ม.๓ ครบถ้วน ๑๐๐% และบริหารจัดการโครงสร้างรายวิชาผ่านระบบวิชาการดิจิทัล Kru James Soncom อย่างเป็นรูปธรรม</p>
+            </td>
+            <td class="col-result">
+              <strong>เชิงปริมาณ:</strong> จัดทำหลักสูตรและโครงสร้าง ๓ กลุ่มวิชาครบ ๑๐๐% (ภาระสอน ๒๓ คาบ/สัปดาห์)<br>
+              <strong>เชิงคุณภาพ:</strong> หลักสูตรทันสมัย เน้น Hands-on ทักษะดิจิทัลแห่งศตวรรษที่ ๒๑<br>
+              <div class="tbl-evidence-tags">📂 หลักฐาน: เล่มหลักสูตรสถานศึกษา, แผนผังโครงสร้างรายวิชา, curriculum.ts</div>
+            </td>
+          </tr>
+
+          <!-- 1.2 -->
+          <tr>
+            <td class="col-num">๑.๒</td>
+            <td class="col-title">
+              การออกแบบการจัดการเรียนรู้
+              <div><span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span></div>
+            </td>
+            <td class="col-answer">
+              <p class="tbl-answer-p">ออกแบบหน่วยการเรียนรู้และแผนการจัดการเรียนรู้โดยเน้นผู้เรียนเป็นสำคัญตามแนวทาง Active Learning กำหนดจุดประสงค์การเรียนรู้ครบถ้วนทั้งพุทธิพิสัย (K) ทักษะพิสัย (P) และจิตพิสัย (A) ออกแบบกิจกรรมการเรียนรู้ที่มีวิธีการปฏิบัติที่หลากหลาย สอดคล้องกับธรรมชาติของสาระวิทยาการคำนวณและเทคโนโลยี โดยพัฒนากิจกรรมการเรียนรู้ที่ใช้นวัตกรรมเกมมิฟิเคชัน (Gamification) ในแผนประเด็นท้าทาย ชั้น ป.๑ (แผนที่ ๕–๘ รวม ๒๐๐ นาที) อำนวยความสะดวกในการเรียนรู้ มีการจัดลำดับเนื้อหาจากง่ายไปยาก เพื่อให้ผู้เรียนได้ลงมือปฏิบัติจริง ฝึกซ้ำ และพัฒนาสมรรถนะสำคัญเต็มตามศักยภาพ</p>
+            </td>
+            <td class="col-result">
+              <strong>เชิงปริมาณ:</strong> แผน Active Learning กว่า ๒๕ แผน พร้อมแผนประเด็นท้าทาย ๔ แผน (๒๐๐ นาที)<br>
+              <strong>เชิงคุณภาพ:</strong> ผู้เรียนมีส่วนร่วมเกิน ๙๐% มีเจตคติเชิงบวกต่อวิชาเทคโนโลยี<br>
+              <div class="tbl-evidence-tags">📂 หลักฐาน: เล่มแผน Active Learning, แผนประเด็นท้าทาย ป.๑, สไลด์ Canva</div>
+            </td>
+          </tr>
+
+          <!-- 1.3 -->
+          <tr>
+            <td class="col-num">๑.๓</td>
+            <td class="col-title">
+              การจัดกิจกรรมการเรียนรู้
+              <div><span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span></div>
+            </td>
+            <td class="col-answer">
+              <p class="tbl-answer-p">ดำเนินการวิเคราะห์ผู้เรียนรายบุคคลก่อนจัดกิจกรรม และจัดการเรียนรู้เชิงรุก (Active Learning) ในห้องปฏิบัติการคอมพิวเตอร์แบบ ๑ คนต่อ ๑ เครื่อง โดยครูทำหน้าที่เป็นผู้อำนวยความสะดวก (Facilitator) และโค้ช ใช้รูปแบบการเรียนรู้โดยใช้เกมเป็นฐาน (Game-Based Learning) และเทคนิคเพื่อนช่วยเพื่อน (Peer Tutoring) เพื่อช่วยเหลือผู้เรียนที่มีความแตกต่างระหว่างบุคคล มีแผนการจัดการเรียนรู้ที่มีองค์ประกอบครบถ้วนนำไปปฏิบัติได้จริง และมีบันทึกหลังการสอนทุกคาบเพื่อประเมินผล K-P-A พร้อมนำผลการจัดกิจกรรม ปัญหา และข้อเสนอแนะมาปรับปรุงพัฒนาแผนการจัดการเรียนรู้และวิธีการสอนในคาบถัดไปอย่างต่อเนื่อง</p>
+            </td>
+            <td class="col-result">
+              <strong>เชิงปริมาณ:</strong> จัดกิจกรรมครบ ๑๐๐% ตามตารางสอน ๒๓ คาบ/สัปดาห์ ผู้เรียนเข้าเรียนครบ ๑๐๐%<br>
+              <strong>เชิงคุณภาพ:</strong> ผู้เรียนมีทักษะปฏิบัติจริง กล้าซักถาม กล้าทดลองแก้ปัญหาด้วยตนเอง<br>
+              <div class="tbl-evidence-tags">📂 หลักฐาน: ภาพถ่ายห้องคอมฯ (๑๐ ก.ย. ๖๙), บันทึกหลังสอนดิจิทัล, QuickAttendance</div>
+            </td>
+          </tr>
+
+          <!-- 1.4 -->
+          <tr>
+            <td class="col-num">๑.๔</td>
+            <td class="col-title">
+              การสร้างและพัฒนาสื่อ นวัตกรรม
+              <div><span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span></div>
+            </td>
+            <td class="col-answer">
+              <p class="tbl-answer-p">สร้างและพัฒนาสื่อนวัตกรรม เทคโนโลยีทางการศึกษา และแหล่งเรียนรู้รวมกว่า ๖๒ รายการ ประกอบด้วย สื่อบัตรคำศัพท์คอมพิวเตอร์, สื่อบล็อกโค้ดดิ้ง, เกมฝึกทักษะเมาส์, ชุดคำถาม Quizizz, แบบจำลองอุปกรณ์คอมพิวเตอร์ และสื่อความปลอดภัยไซเบอร์ ตลอดจนพัฒนาระบบเว็บไซต์ห้องเรียนดิจิทัล Kru James Soncom (krujamesoncom-website.vercel.app) เป็นแหล่งเรียนรู้ออนไลน์ และประยุกต์ใช้แพลตฟอร์มระดับสากล เช่น Code.org, Poki Games, Canva Games และมีการเผยแพร่สื่อ นวัตกรรม และแหล่งเรียนรู้สู่สาธารณะผ่านเว็บไซต์โรงเรียนบ้านคลองมดแดง, TikTok (@kmdschool198), YouTube (@KMDSchool) และเพจ Facebook โรงเรียน</p>
+            </td>
+            <td class="col-result">
+              <strong>เชิงปริมาณ:</strong> สื่อการสอน ๖๒ รายการ, เว็บแอป ๑ ระบบ, คลังข้อสอบ Interactive ๕๕๐ ข้อ<br>
+              <strong>เชิงคุณภาพ:</strong> สื่อดึงดูดความสนใจ เข้าใจบทเรียนนามธรรมได้ง่าย ฝึกปฏิบัติได้รวดเร็ว<br>
+              <div class="tbl-evidence-tags">📂 หลักฐาน: ทะเบียนสื่อ ๖๒ ชิ้น, บัญชี Code.org/Quizizz, ช่องทางเผยแพร่ Facebook/TikTok</div>
+            </td>
+          </tr>
+
+          <!-- 1.5 -->
+          <tr>
+            <td class="col-num">๑.๕</td>
+            <td class="col-title">
+              การวัดและประเมินผลการเรียนรู้
+              <div><span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span></div>
+            </td>
+            <td class="col-answer">
+              <p class="tbl-answer-p">กำหนดและออกแบบเครื่องมือวัดและประเมินผลการเรียนรู้ที่สอดคล้องกับมาตรฐานการเรียนรู้และตัวชี้วัดตามสภาพจริง (Authentic Assessment) โดยใช้เครื่องมือวัดผลที่หลากหลาย ได้แก่ แบบทดสอบก่อนเรียน-หลังเรียน (Pre-test / Post-test), เกณฑ์การประเมินรูบริกส์ (Rubrics) ทักษะปฏิบัติ ๔ ด้าน, แบบสังเกตพฤติกรรมการเรียนรู้และการทำงานกลุ่ม, การตรวจชิ้นงานภารกิจในเกม และสมุดคะแนนดิจิทัล GradeBook K/P/A มีเกณฑ์การวัดและตัดสินผลที่ชัดเจน โปร่งใส และนำผลการประเมินมาสะท้อนกลับ (Feedback) ให้ผู้เรียนทราบจุดเด่นจุดพัฒนาเพื่อปรับปรุงตนเองทันที</p>
+            </td>
+            <td class="col-result">
+              <strong>เชิงปริมาณ:</strong> มีเครื่องมือวัดผลครบ ๑๐๐% ทุกแผน ครอบคลุมการประเมินผู้เรียน ๑๐๐%<br>
+              <strong>เชิงคุณภาพ:</strong> ผลประเมินเที่ยงตรง โปร่งใส นำข้อมูลมาซ่อมเสริมพัฒนาผู้เรียนได้ตรงจุด<br>
+              <div class="tbl-evidence-tags">📂 หลักฐาน: Pre/Post-test เมาส์ ป.๑, รูบริกส์ ๔ ด้าน, ปพ.๕ ดิจิทัล, สถิติ Quizizz</div>
+            </td>
+          </tr>
+
+          <!-- 1.6 -->
+          <tr>
+            <td class="col-num">๑.๖</td>
+            <td class="col-title">
+              การศึกษา วิเคราะห์ เพื่อแก้ปัญหา/พัฒนา
+              <div><span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span></div>
+            </td>
+            <td class="col-answer">
+              <p class="tbl-answer-p">ศึกษา วิเคราะห์ สภาพปัญหาการเรียนรู้ของผู้เรียนชั้นประถมศึกษาปีที่ ๑ ด้านทักษะการใช้เมาส์ ซึ่งพบปัญหาความแข็งแรงของกล้ามเนื้อมัดเล็กและการประสานสัมพันธ์ระหว่างสายตากับมือ จึงได้ออกแบบและดำเนินการแก้ปัญหาตามวงจร ADDIE Model ร่วมกับแนวคิด Active Learning และ Gamification จัดทำวิจัยในชั้นเรียน เรื่อง 'การพัฒนาทักษะปฏิบัติการใช้เมาส์ด้วยเกมมิฟิเคชันร่วมกับ Active Learning วิชาวิทยาการคำนวณ ชั้นประถมศึกษาปีที่ ๑ (๑๑ คน)' และสรุปผลการแก้ปัญหาอย่างเป็นรูปธรรมด้วยสถิติทดสอบ Paired t-test พบว่าคะแนนเฉลี่ยหลังเรียน (๑๗.๕๕) สูงกว่าก่อนเรียน (๘.๐๙) อย่างมีนัยสำคัญทางสถิติที่ระดับ .๐๑ (t = ๓๘.๒๓*, df = ๑๐, p < .๐๐๑) และผู้เรียนผ่านเกณฑ์ร้อยละ ๖๐ ครบทั้ง ๑๑ คน (๑๐๐%)</p>
+            </td>
+            <td class="col-result">
+              <strong>เชิงปริมาณ:</strong> รายงานวิจัยชั้นเรียน ๕ บท ๑ เล่ม, นร. ป.๑ ผ่านเกณฑ์ ๑๑ คน (๑๐๐%) (ดีเยี่ยม ๙, ดี ๒)<br>
+              <strong>เชิงคุณภาพ:</strong> แก้ปัญหาตรงจุด นร. เคลื่อนไหวประสานสายตามือคล่องแคล่วและมั่นใจ<br>
+              <div class="tbl-evidence-tags">📂 หลักฐาน: เล่มวิจัยชั้นเรียน ๕ บท, รายงานประเด็นท้าทาย ว.PA, ผลทดสอบ t-test, PLC</div>
+            </td>
+          </tr>
+
+          <!-- 1.7 -->
+          <tr>
+            <td class="col-num">๑.๗</td>
+            <td class="col-title">
+              การจัดบรรยากาศที่ส่งเสริมและพัฒนา
+              <div><span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span></div>
+            </td>
+            <td class="col-answer">
+              <p class="tbl-answer-p">จัดบรรยากาศในชั้นเรียนและแหล่งเรียนรู้ที่ส่งเสริมและพัฒนาผู้เรียนให้เกิดกระบวนการคิด ทักษะชีวิต ทักษะการทำงาน และทักษะด้านสารสนเทศสื่อและเทคโนโลยี เกินกว่า ๗ กิจกรรม พร้อมหลักฐานเชิงประจักษ์ครบถ้วน ได้แก่ ๑) การบริหารจัดการห้องปฏิบัติการคอมพิวเตอร์ให้สะอาด ปลอดภัย เดินสายไฟและสาย LAN ลงรางเรียบร้อย ๑๐๐% คอมพิวเตอร์พร้อมใช้งาน ๑ คนต่อ ๑ เครื่อง ๒) ติดตั้งจอ Smart TV ขนาดใหญ่เพื่อสาธิตบทเรียนและให้นักเรียนนำเสนอผลงาน ๓) ป้ายนิเทศและสื่อแขวนข้อตกลงการใช้ห้องเรียน ๔) การใช้เกมการศึกษา (Gamification) สร้างบรรยากาศผ่อนคลาย สนุกสนาน ๕) กิจกรรมชุมนุมเทคโนโลยีและคอมพิวเตอร์ ๖) การจัดพื้นที่แปลงเกษตรเศรษฐกิจพอเพียงฝึกทักษะชีวิต ๗) การจัดกิจกรรมทัศนศึกษาแหล่งเรียนรู้นอกห้องเรียน (อุทยานแห่งชาติน้ำตกคลองลาน) และ ๘) ระบบคลังผลงานดิจิทัลและกระดานแสดงผลงานออนไลน์</p>
+            </td>
+            <td class="col-result">
+              <strong>เชิงปริมาณ:</strong> จัดบรรยากาศส่งเสริมการเรียนรู้รวม ๘ กิจกรรม (เกินเกณฑ์ระดับ ๔ ที่กำหนด ๗ กิจกรรม)<br>
+              <strong>เชิงคุณภาพ:</strong> นร. รู้สึกปลอดภัย มีสมาธิ กล้าลงมือปฏิบัติ มีระเบียบวินัยต่ออุปกรณ์ส่วนรวม<br>
+              <div class="tbl-evidence-tags">📂 หลักฐาน: ภาพถ่ายห้องคอมฯ ๑ คน/เครื่อง, ป้ายข้อตกลง, ภาพทัศนศึกษา, แปลงเกษตร</div>
+            </td>
+          </tr>
+
+          <!-- 1.8 -->
+          <tr>
+            <td class="col-num">๑.๘</td>
+            <td class="col-title">
+              การอบรมและพัฒนาคุณลักษณะที่ดี
+              <div><span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span></div>
+            </td>
+            <td class="col-answer">
+              <p class="tbl-answer-p">ดำเนินกิจกรรมอบรมบ่มนิสัยให้ผู้เรียนมีคุณธรรม จริยธรรม คุณลักษณะอันพึงประสงค์ และค่านิยมความเป็นไทยที่ดีงาม เกินกว่า ๕ กิจกรรมขึ้นไป อย่างต่อเนื่องและสม่ำเสมอ ได้แก่ ๑) กิจกรรมสวดมนต์ไหว้พระประจำสัปดาห์และวันสำคัญทางศาสนา ๒) การปลูกฝังความซื่อสัตย์สุจริตและวินัยความรับผิดชอบผ่านหลักสูตรโรงเรียนสุจริต ๓) กิจกรรมลูกเสือ-เนตรนารี ปลูกฝังวินัย ความอดทน และความเสียสละ ๔) กิจกรรมแนะแนวและโฮมรูมดูแลสุขภาวะและพัฒนาการ ๕) กิจกรรมจิตอาสาเพื่อสังคมและสาธารณประโยชน์ (Big Cleaning Day และการคัดแยกขยะ) ๖) เป็นหัวหน้าผู้รับผิดชอบโครงการจัดกิจกรรมวันไหว้ครู ๒๕๖๙ ปลูกฝังความกตัญญูกตเวทิตา และ ๗) การสอดแทรกวินัยการใช้อุปกรณ์ส่วนรวม มารยาทพลเมืองดิจิทัล (Digital Citizenship) และความปลอดภัยไซเบอร์ในทุกคาบเรียน</p>
+            </td>
+            <td class="col-result">
+              <strong>เชิงปริมาณ:</strong> อบรมบ่มนิสัยรวม ๗ กิจกรรม (เกินเกณฑ์ระดับ ๔ ที่กำหนด ๕ กิจกรรม) นร. ผ่านเกณฑ์ ๑๐๐%<br>
+              <strong>เชิงคุณภาพ:</strong> นร. มีวินัย มารยาท กตัญญู มีจิตสาธารณะ ใช้เทคโนโลยีอย่างมีจริยธรรม<br>
+              <div class="tbl-evidence-tags">📂 หลักฐาน: แบบประเมินคุณลักษณะ, คำสั่ง รร. ๑๕๗/๒๕๖๙ (วันไหว้ครู), บันทึกข้อความ ศธ</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Challenge Issue Summary Link to Dan 1 -->
+      <div class="challenge-box">
+        <h3>🎯 ผลลัพธ์เชิงประจักษ์ประเด็นท้าทายเชื่อมโยงด้านที่ ๑ (การจัดการเรียนรู้)</h3>
+        <p><strong>หัวข้อ:</strong> การพัฒนาทักษะการใช้เมาส์ ๔ ด้าน ของนักเรียนชั้นประถมศึกษาปีที่ ๑ (๑๑ คน) โดยใช้ Active Learning ร่วมกับ Gamification บนระบบ Kru James Soncom</p>
+        <table class="challenge-table">
+          <thead>
+            <tr>
+              <th>ตัวชี้วัดความสำเร็จ</th>
+              <th>ก่อนเรียน (Pre-test)</th>
+              <th>หลังเรียน (Post-test)</th>
+              <th>ความก้าวหน้า (Gain)</th>
+              <th>ผลทดสอบทางสถิติ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>คะแนนเฉลี่ยรวม (๒๐ คะแนน)</strong></td>
+              <td>๘.๐๙ คะแนน (๔๐.๔๕%)</td>
+              <td>๑๗.๕๕ คะแนน (๘๗.๗๓%)</td>
+              <td>+๙.๔๕ คะแนน (+๔๗.๒๗%)</td>
+              <td>คะแนนเพิ่มขึ้นอย่างก้าวกระโดด</td>
+            </tr>
+            <tr>
+              <td><strong>ร้อยละผู้ผ่านเกณฑ์ (&gt;= ๖๐%)</strong></td>
+              <td>๐ คน (๐.๐๐%)</td>
+              <td>๑๑ คน (๑๐๐.๐๐%)</td>
+              <td>เพิ่มขึ้น ๑๐๐.๐๐%</td>
+              <td>บรรลุตามข้อตกลง PA ๑๐๐%</td>
+            </tr>
+            <tr>
+              <td><strong>ระดับคุณภาพดีเยี่ยม (๑๖-๒๐)</strong></td>
+              <td>๐ คน (๐.๐๐%)</td>
+              <td>๙ คน (๘๑.๘๒%)</td>
+              <td>เพิ่มขึ้น ๘๑.๘๒%</td>
+              <td>ปฏิบัติได้คล่องแคล่วด้วยตนเอง</td>
+            </tr>
+            <tr>
+              <td><strong>สถิติทดสอบ (Paired t-test)</strong></td>
+              <td colspan="4"><strong>t = ๓๘.๒๓*, df = ๑๐, p &lt; .๐๐๑</strong> (หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .๐๑)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Formal Signatures Block -->
+      <div class="signatures-section">
+        <div class="sig-block">
+          <div class="sig-role">ขอรับรองว่าเป็นรายงานผลการปฏิบัติงานจริง</div>
+          <div class="sig-line">ลงชื่อ ............................................................................</div>
+          <div class="sig-line"><strong>(นายอนันตชัย เพ็ชรรี่)</strong></div>
+          <div class="sig-pos">ตำแหน่ง ครู อันดับ คศ.๑ โรงเรียนบ้านคลองมดแดง</div>
+          <div class="sig-pos" style="margin-top: 4px;">ผู้รายงาน / ผู้ขอรับการประเมิน</div>
+        </div>
+        <div class="sig-block">
+          <div class="sig-role">ความเห็นชอบและการรับรองของผู้บริหารสถานศึกษา</div>
+          <div class="sig-line">ลงชื่อ ............................................................................</div>
+          <div class="sig-line"><strong>(นายปรัชญา ปรางค์ชัยภูมิ)</strong></div>
+          <div class="sig-pos">ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+          <div class="sig-pos" style="margin-top: 4px;">ผู้บังคับบัญชา / ผู้ประเมิน</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- VIEW 2: CARDS VIEW (บัตรคำตอบรายข้อ) -->
+  <div id="cards-view">
+    <div class="card-filter-bar">
+      <button class="filter-tab active" onclick="filterCards('all', this)">แสดงทั้งหมด (๘ ข้อ)</button>
+      <button class="filter-tab" onclick="filterCards('1.1', this)">๑.๑ หลักสูตร</button>
+      <button class="filter-tab" onclick="filterCards('1.2', this)">๑.๒ ออกแบบ</button>
+      <button class="filter-tab" onclick="filterCards('1.3', this)">๑.๓ กิจกรรม</button>
+      <button class="filter-tab" onclick="filterCards('1.4', this)">๑.๔ สื่อ/นวัตกรรม</button>
+      <button class="filter-tab" onclick="filterCards('1.5', this)">๑.๕ วัดผล</button>
+      <button class="filter-tab" onclick="filterCards('1.6', this)">๑.๖ วิจัยแก้ปัญหา</button>
+      <button class="filter-tab" onclick="filterCards('1.7', this)">๑.๗ บรรยากาศ</button>
+      <button class="filter-tab" onclick="filterCards('1.8', this)">๑.๘ อบรมคุณลักษณะ</button>
+    </div>
+
+    <!-- Card 1.1 -->
+    <div class="card-item" data-ind="1.1">
+      <div class="card-item-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="ind-number-tag">๑.๑</span>
+          <strong style="font-family:'Prompt';font-size:16px;">การสร้างและหรือพัฒนาหลักสูตร</strong>
+          <span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span>
+        </div>
+        <button class="btn-copy-card" onclick="copySingleAnswer('ans-c1.1', '๑.๑ หลักสูตร')">📋 คัดลอกคำตอบ</button>
+      </div>
+      <div class="ind-ans-quote" id="ans-c1.1">
+        วิเคราะห์หลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน พ.ศ. ๒๕๕๑ (ฉบับปรับปรุง พ.ศ. ๒๕๖๐) สาระที่ ๔ เทคโนโลยี (วิทยาการคำนวณ) มาตรฐาน ว ๔.๒ และสาระการงานอาชีพ ตลอดจนหลักสูตรสถานศึกษาโรงเรียนบ้านคลองมดแดง จัดทำโครงสร้างรายวิชา คำอธิบายรายวิชา และหน่วยการเรียนรู้ที่สอดคล้องกับมาตรฐานการเรียนรู้และตัวชี้วัด โดยมีการปรับประยุกต์ให้สอดคล้องกับบริบทของสถานศึกษา ชุมชน และความแตกต่างของผู้เรียน มีหน่วยการเรียนรู้บูรณาการทักษะอาชีพและเศรษฐกิจพอเพียง นำหลักสูตรและหน่วยการเรียนรู้ไปใช้จัดการเรียนรู้จริงกับผู้เรียนระดับชั้น ป.๑ ถึง ม.๓ ครบถ้วน ๑๐๐% และบริหารจัดการโครงสร้างรายวิชาผ่านระบบวิชาการดิจิทัล Kru James Soncom อย่างเป็นรูปธรรม
+      </div>
+      <div class="ind-sub-grid">
+        <div class="ind-sub-box">
+          <b>📈 ผลลัพธ์เชิงปริมาณ</b>
+          <p>จัดทำหลักสูตรกลุ่มสาระฯ และโครงสร้างรายวิชาครบทั้ง ๓ กลุ่มวิชา คิดเป็นร้อยละ ๑๐๐ ครอบคลุมภาระงานสอน ๒๓ คาบ/สัปดาห์</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⭐ ผลลัพธ์เชิงคุณภาพ</b>
+          <p>หลักสูตรมีความยืดหยุ่น ทันสมัย เน้นการลงมือปฏิบัติจริง (Hands-on) พัฒนาทักษะการคิดเชิงคำนวณและทักษะดิจิทัลแห่งศตวรรษที่ ๒๑</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⚙️ การปฏิบัติงานจริง</b>
+          <p>วิเคราะห์มาตรฐาน ว ๔.๒ จัดทำโครงสร้าง ๓ กลุ่มสาระ (วิทยาการคำนวณ วิทยาศาสตร์ การงานอาชีพ) และออกแบบหน่วยการเรียนรู้บูรณาการบริบทท้องถิ่น</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>📂 ร่องรอยหลักฐาน</b>
+          <p>เล่มหลักสูตรสถานศึกษา, แผนผังโครงสร้างรายวิชา, คำอธิบายรายวิชา, ระบบบริหารหลักสูตร Kru James Soncom (curriculum.ts)</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 1.2 -->
+    <div class="card-item" data-ind="1.2">
+      <div class="card-item-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="ind-number-tag">๑.๒</span>
+          <strong style="font-family:'Prompt';font-size:16px;">การออกแบบการจัดการเรียนรู้</strong>
+          <span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span>
+        </div>
+        <button class="btn-copy-card" onclick="copySingleAnswer('ans-c1.2', '๑.๒ ออกแบบการเรียนรู้')">📋 คัดลอกคำตอบ</button>
+      </div>
+      <div class="ind-ans-quote" id="ans-c1.2">
+        ออกแบบหน่วยการเรียนรู้และแผนการจัดการเรียนรู้โดยเน้นผู้เรียนเป็นสำคัญตามแนวทาง Active Learning กำหนดจุดประสงค์การเรียนรู้ครบถ้วนทั้งพุทธิพิสัย (K) ทักษะพิสัย (P) และจิตพิสัย (A) ออกแบบกิจกรรมการเรียนรู้ที่มีวิธีการปฏิบัติที่หลากหลาย สอดคล้องกับธรรมชาติของสาระวิทยาการคำนวณและเทคโนโลยี โดยพัฒนากิจกรรมการเรียนรู้ที่ใช้นวัตกรรมเกมมิฟิเคชัน (Gamification) ในแผนประเด็นท้าทาย ชั้น ป.๑ (แผนที่ ๕–๘ รวม ๒๐๐ นาที) อำนวยความสะดวกในการเรียนรู้ มีการจัดลำดับเนื้อหาจากง่ายไปยาก เพื่อให้ผู้เรียนได้ลงมือปฏิบัติจริง ฝึกซ้ำ และพัฒนาสมรรถนะสำคัญเต็มตามศักยภาพ
+      </div>
+      <div class="ind-sub-grid">
+        <div class="ind-sub-box">
+          <b>📈 ผลลัพธ์เชิงปริมาณ</b>
+          <p>จัดทำแผนการจัดการเรียนรู้ Active Learning ครบทุกรายวิชาที่สอน จำนวนกว่า ๒๕ แผน พร้อมแผนประเด็นท้าทาย ๔ แผน (๒๐๐ นาที)</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⭐ ผลลัพธ์เชิงคุณภาพ</b>
+          <p>ผู้เรียนมีความกระตือรือร้น มีส่วนร่วมในกิจกรรมการเรียนรู้เกินกว่าร้อยละ ๙๐ มีเจตคติที่ดีและสนุกสนานต่อการเรียนเทคโนโลยี</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⚙️ การปฏิบัติงานจริง</b>
+          <p>ออกแบบแผน Active Learning กว่า ๒๕ แผน บูรณาการเกมมิฟิเคชัน สื่อดิจิทัล และภารกิจแก้ปัญหา เพื่อให้ผู้เรียนสร้างองค์ความรู้ด้วยตนเอง</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>📂 ร่องรอยหลักฐาน</b>
+          <p>เล่มแผนการจัดการเรียนรู้ Active Learning, แผนประเด็นท้าทาย ป.๑, สไลด์การสอนดิจิทัล Canva, บันทึกท้ายแผน</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 1.3 -->
+    <div class="card-item" data-ind="1.3">
+      <div class="card-item-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="ind-number-tag">๑.๓</span>
+          <strong style="font-family:'Prompt';font-size:16px;">การจัดกิจกรรมการเรียนรู้</strong>
+          <span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span>
+        </div>
+        <button class="btn-copy-card" onclick="copySingleAnswer('ans-c1.3', '๑.๓ จัดกิจกรรม')">📋 คัดลอกคำตอบ</button>
+      </div>
+      <div class="ind-ans-quote" id="ans-c1.3">
+        ดำเนินการวิเคราะห์ผู้เรียนรายบุคคลก่อนจัดกิจกรรม และจัดการเรียนรู้เชิงรุก (Active Learning) ในห้องปฏิบัติการคอมพิวเตอร์แบบ ๑ คนต่อ ๑ เครื่อง โดยครูทำหน้าที่เป็นผู้อำนวยความสะดวก (Facilitator) และโค้ช ใช้รูปแบบการเรียนรู้โดยใช้เกมเป็นฐาน (Game-Based Learning) และเทคนิคเพื่อนช่วยเพื่อน (Peer Tutoring) เพื่อช่วยเหลือผู้เรียนที่มีความแตกต่างระหว่างบุคคล มีแผนการจัดการเรียนรู้ที่มีองค์ประกอบครบถ้วนนำไปปฏิบัติได้จริง และมีบันทึกหลังการสอนทุกคาบเพื่อประเมินผล K-P-A พร้อมนำผลการจัดกิจกรรม ปัญหา และข้อเสนอแนะมาปรับปรุงพัฒนาแผนการจัดการเรียนรู้และวิธีการสอนในคาบถัดไปอย่างต่อเนื่อง
+      </div>
+      <div class="ind-sub-grid">
+        <div class="ind-sub-box">
+          <b>📈 ผลลัพธ์เชิงปริมาณ</b>
+          <p>จัดกิจกรรมการเรียนรู้ครบ ๑๐๐% ตามตารางสอน ผู้เรียนเข้าเรียนและร่วมกิจกรรมครบ ๑๐๐% ตลอดปีการศึกษา</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⭐ ผลลัพธ์เชิงคุณภาพ</b>
+          <p>ผู้เรียนมีทักษะปฏิบัติจริง กล้าซักถาม กล้าทดลองแก้ปัญหา และมีปฏิสัมพันธ์เชิงบวกในการทำงานร่วมกับผู้อื่น</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⚙️ การปฏิบัติงานจริง</b>
+          <p>จัดกิจกรรมในห้องคอมพิวเตอร์ ๒๓ คาบ/สัปดาห์ ครูโค้ชรายบุคคล บันทึกผลหลังสอน K-P-A ทุกคาบ และเช็กชื่อ Real-time</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>📂 ร่องรอยหลักฐาน</b>
+          <p>ภาพถ่ายการจัดการเรียนรู้จริงห้องคอมพิวเตอร์ (๑๐ ก.ย. ๒๕๖๙), บันทึกหลังแผนการจัดการเรียนรู้, ระบบเช็กชื่อและบันทึกหลังสอนดิจิทัล</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 1.4 -->
+    <div class="card-item" data-ind="1.4">
+      <div class="card-item-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="ind-number-tag">๑.๔</span>
+          <strong style="font-family:'Prompt';font-size:16px;">การสร้างและหรือพัฒนาสื่อ นวัตกรรม เทคโนโลยี และแหล่งเรียนรู้</strong>
+          <span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span>
+        </div>
+        <button class="btn-copy-card" onclick="copySingleAnswer('ans-c1.4', '๑.๔ สื่อ/นวัตกรรม')">📋 คัดลอกคำตอบ</button>
+      </div>
+      <div class="ind-ans-quote" id="ans-c1.4">
+        สร้างและพัฒนาสื่อนวัตกรรม เทคโนโลยีทางการศึกษา และแหล่งเรียนรู้รวมกว่า ๖๒ รายการ ประกอบด้วย สื่อบัตรคำศัพท์คอมพิวเตอร์, สื่อบล็อกโค้ดดิ้ง, เกมฝึกทักษะเมาส์, ชุดคำถาม Quizizz, แบบจำลองอุปกรณ์คอมพิวเตอร์ และสื่อความปลอดภัยไซเบอร์ ตลอดจนพัฒนาระบบเว็บไซต์ห้องเรียนดิจิทัล Kru James Soncom (krujamesoncom-website.vercel.app) เป็นแหล่งเรียนรู้ออนไลน์ และประยุกต์ใช้แพลตฟอร์มระดับสากล เช่น Code.org, Poki Games, Canva Games และมีการเผยแพร่สื่อ นวัตกรรม และแหล่งเรียนรู้สู่สาธารณะผ่านเว็บไซต์โรงเรียนบ้านคลองมดแดง, TikTok (@kmdschool198), YouTube (@KMDSchool) และเพจ Facebook โรงเรียน
+      </div>
+      <div class="ind-sub-grid">
+        <div class="ind-sub-box">
+          <b>📈 ผลลัพธ์เชิงปริมาณ</b>
+          <p>พัฒนาสื่อการสอน ๖๒ รายการ, ระบบเว็บแอป ๑ ระบบ, คลังข้อสอบ Interactive ๕๕๐ ข้อ ครอบคลุม ๕๕ ตัวชี้วัด</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⭐ ผลลัพธ์เชิงคุณภาพ</b>
+          <p>สื่อมีความทันสมัย เหมาะสมกับพัฒนาการตามวัย ดึงดูดความสนใจ ช่วยให้ผู้เรียนเข้าใจบทเรียนที่เป็นนามธรรมและฝึกปฏิบัติได้รวดเร็ว</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⚙️ การปฏิบัติงานจริง</b>
+          <p>สร้างสื่อ ๖๒ ชิ้น พัฒนาเว็บแอปพลิเคชันห้องเรียนครูเจมส์ คลังข้อสอบ Interactive ๕๕๐ ข้อ และเผยแพร่ออนไลน์สู่สาธารณะ</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>📂 ร่องรอยหลักฐาน</b>
+          <p>ทะเบียนคลังสื่อนวัตกรรม ๖๒ ชิ้นใน SAR, หน้าจอระบบ Kru James Soncom, บัญชีผู้ใช้ Code.org/Quizizz, ลิงก์ช่องทางเผยแพร่สื่อออนไลน์</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 1.5 -->
+    <div class="card-item" data-ind="1.5">
+      <div class="card-item-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="ind-number-tag">๑.๕</span>
+          <strong style="font-family:'Prompt';font-size:16px;">การวัดและประเมินผลการเรียนรู้</strong>
+          <span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span>
+        </div>
+        <button class="btn-copy-card" onclick="copySingleAnswer('ans-c1.5', '๑.๕ วัดผล')">📋 คัดลอกคำตอบ</button>
+      </div>
+      <div class="ind-ans-quote" id="ans-c1.5">
+        กำหนดและออกแบบเครื่องมือวัดและประเมินผลการเรียนรู้ที่สอดคล้องกับมาตรฐานการเรียนรู้และตัวชี้วัดตามสภาพจริง (Authentic Assessment) โดยใช้เครื่องมือวัดผลที่หลากหลาย ได้แก่ แบบทดสอบก่อนเรียน-หลังเรียน (Pre-test / Post-test), เกณฑ์การประเมินรูบริกส์ (Rubrics) ทักษะปฏิบัติ ๔ ด้าน, แบบสังเกตพฤติกรรมการเรียนรู้และการทำงานกลุ่ม, การตรวจชิ้นงานภารกิจในเกม และสมุดคะแนนดิจิทัล GradeBook K/P/A มีเกณฑ์การวัดและตัดสินผลที่ชัดเจน โปร่งใส และนำผลการประเมินมาสะท้อนกลับ (Feedback) ให้ผู้เรียนทราบจุดเด่นจุดพัฒนาเพื่อปรับปรุงตนเองทันที
+      </div>
+      <div class="ind-sub-grid">
+        <div class="ind-sub-box">
+          <b>📈 ผลลัพธ์เชิงปริมาณ</b>
+          <p>มีเครื่องมือวัดและประเมินผลครบ ๑๐๐% ทุกแผนการสอน ครอบคลุมการประเมินผู้เรียนทุกระดับชั้น ๑๐๐%</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⭐ ผลลัพธ์เชิงคุณภาพ</b>
+          <p>ผลการประเมินมีความเที่ยงตรง เป็นธรรม สะท้อนความสามารถแท้จริง และนำข้อมูลมาซ่อมเสริมพัฒนาผู้เรียนได้ตรงจุด</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⚙️ การปฏิบัติงานจริง</b>
+          <p>ออกแบบเครื่องมือวัดผล K-P-A ครบทุกแผน ใช้แบบทดสอบ Pre/Post-test, Rubrics ทักษะเมาส์, สมุดคะแนนดิจิทัล GradeBook</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>📂 ร่องรอยหลักฐาน</b>
+          <p>แบบทดสอบ Pre/Post-test ทักษะเมาส์ ป.๑, เกณฑ์รูบริกส์ ๔ ด้าน, สมุดคะแนน ปพ.๕ ดิจิทัล, รายงานสถิติคะแนน Quizizz</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 1.6 -->
+    <div class="card-item" data-ind="1.6">
+      <div class="card-item-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="ind-number-tag">๑.๖</span>
+          <strong style="font-family:'Prompt';font-size:16px;">การศึกษา วิเคราะห์ สังเคราะห์ เพื่อแก้ปัญหาหรือพัฒนาการเรียนรู้</strong>
+          <span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span>
+        </div>
+        <button class="btn-copy-card" onclick="copySingleAnswer('ans-c1.6', '๑.๖ วิจัยชั้นเรียน')">📋 คัดลอกคำตอบ</button>
+      </div>
+      <div class="ind-ans-quote" id="ans-c1.6">
+        ศึกษา วิเคราะห์ สภาพปัญหาการเรียนรู้ของผู้เรียนชั้นประถมศึกษาปีที่ ๑ ด้านทักษะการใช้เมาส์ ซึ่งพบปัญหาความแข็งแรงของกล้ามเนื้อมัดเล็กและการประสานสัมพันธ์ระหว่างสายตากับมือ จึงได้ออกแบบและดำเนินการแก้ปัญหาตามวงจร ADDIE Model ร่วมกับแนวคิด Active Learning และ Gamification จัดทำวิจัยในชั้นเรียน เรื่อง 'การพัฒนาทักษะปฏิบัติการใช้เมาส์ด้วยเกมมิฟิเคชันร่วมกับ Active Learning วิชาวิทยาการคำนวณ ชั้นประถมศึกษาปีที่ ๑ (๑๑ คน)' และสรุปผลการแก้ปัญหาอย่างเป็นรูปธรรมด้วยสถิติทดสอบ Paired t-test พบว่าคะแนนเฉลี่ยหลังเรียน (๑๗.๕๕) สูงกว่าก่อนเรียน (๘.๐๙) อย่างมีนัยสำคัญทางสถิติที่ระดับ .๐๑ (t = ๓๘.๒๓*, df = ๑๐, p < .๐๐๑) และผู้เรียนผ่านเกณฑ์ร้อยละ ๖๐ ครบทั้ง ๑๑ คน (๑๐๐%)
+      </div>
+      <div class="ind-sub-grid">
+        <div class="ind-sub-box">
+          <b>📈 ผลลัพธ์เชิงปริมาณ</b>
+          <p>เล่มรายงานวิจัยในชั้นเรียน ๑ เล่ม, ผู้เรียน ป.๑ จำนวน ๑๑ คน ผ่านเกณฑ์ ๑๐๐% (ดีเยี่ยม ๙ คน, ดี ๒ คน), คะแนนเพิ่มขึ้น +๙.๔๕ คะแนน (+๔๗.๒๗%)</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⭐ ผลลัพธ์เชิงคุณภาพ</b>
+          <p>ได้นวัตกรรมที่แก้ปัญหาได้ตรงจุด ผู้เรียนมีพัฒนาการกล้ามเนื้อมือและสายตาสูงขึ้น ควบคุมเมาส์ได้คล่องแคล่วและมั่นใจ</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⚙️ การปฏิบัติงานจริง</b>
+          <p>ทำวิจัยชั้นเรียน ป.๑ ครบ ๕ บท ออกแบบภารกิจเกม ๔ ทักษะ (คลิก, ดับเบิลคลิก, ลากวาง, ลูกกลิ้ง) วิเคราะห์ t-test ชัดเจน</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>📂 ร่องรอยหลักฐาน</b>
+          <p>เล่มรายงานวิจัยในชั้นเรียน ๕ บท, รายงานประเด็นท้าทาย ว.PA ฉบับสมบูรณ์, ตารางคะแนนและสถิติ Paired t-test, บันทึก PLC</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 1.7 -->
+    <div class="card-item" data-ind="1.7">
+      <div class="card-item-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="ind-number-tag">๑.๗</span>
+          <strong style="font-family:'Prompt';font-size:16px;">การจัดบรรยากาศที่ส่งเสริมและพัฒนาผู้เรียน</strong>
+          <span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span>
+        </div>
+        <button class="btn-copy-card" onclick="copySingleAnswer('ans-c1.7', '๑.๗ บรรยากาศ')">📋 คัดลอกคำตอบ</button>
+      </div>
+      <div class="ind-ans-quote" id="ans-c1.7">
+        จัดบรรยากาศในชั้นเรียนและแหล่งเรียนรู้ที่ส่งเสริมและพัฒนาผู้เรียนให้เกิดกระบวนการคิด ทักษะชีวิต ทักษะการทำงาน และทักษะด้านสารสนเทศสื่อและเทคโนโลยี เกินกว่า ๗ กิจกรรม พร้อมหลักฐานเชิงประจักษ์ครบถ้วน ได้แก่ ๑) การบริหารจัดการห้องปฏิบัติการคอมพิวเตอร์ให้สะอาด ปลอดภัย เดินสายไฟและสาย LAN ลงรางเรียบร้อย ๑๐๐% คอมพิวเตอร์พร้อมใช้งาน ๑ คนต่อ ๑ เครื่อง ๒) ติดตั้งจอ Smart TV ขนาดใหญ่เพื่อสาธิตบทเรียนและให้นักเรียนนำเสนอผลงาน ๓) ป้ายนิเทศและสื่อแขวนข้อตกลงการใช้ห้องเรียน ๔) การใช้เกมการศึกษา (Gamification) สร้างบรรยากาศผ่อนคลาย สนุกสนาน ๕) กิจกรรมชุมนุมเทคโนโลยีและคอมพิวเตอร์ ๖) การจัดพื้นที่แปลงเกษตรเศรษฐกิจพอเพียงฝึกทักษะชีวิต ๗) การจัดกิจกรรมทัศนศึกษาแหล่งเรียนรู้นอกห้องเรียน (อุทยานแห่งชาติน้ำตกคลองลาน) และ ๘) ระบบคลังผลงานดิจิทัลและกระดานแสดงผลงานออนไลน์
+      </div>
+      <div class="ind-sub-grid">
+        <div class="ind-sub-box">
+          <b>📈 ผลลัพธ์เชิงปริมาณ</b>
+          <p>มีกิจกรรมจัดบรรยากาศส่งเสริมการเรียนรู้รวม ๘ กิจกรรม (เกินเกณฑ์ระดับ ๔ ที่กำหนด ๗ กิจกรรมขึ้นไป)</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⭐ ผลลัพธ์เชิงคุณภาพ</b>
+          <p>ผู้เรียนรู้สึกปลอดภัย อบอุ่น มีสมาธิในการเรียนรู้ กล้าลงมือปฏิบัติ มีความมั่นใจ และมีระเบียบวินัยในการใช้อุปกรณ์ส่วนรวม</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⚙️ การปฏิบัติงานจริง</b>
+          <p>ปรับปรุงสภาพแวดล้อมห้องคอมฯ ปลอดภัย ๑๐๐%, มี Smart TV, จัดกิจกรรมบรรยากาศเชิงบวกและทักษะชีวิตรวม ๘ กิจกรรม</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>📂 ร่องรอยหลักฐาน</b>
+          <p>ภาพถ่ายห้องปฏิบัติการคอมพิวเตอร์, ป้ายระเบียบห้องคอมฯ, แผนผังห้องเรียน, ภาพกิจกรรมทัศนศึกษาและสวนเกษตร</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 1.8 -->
+    <div class="card-item" data-ind="1.8">
+      <div class="card-item-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="ind-number-tag">๑.๘</span>
+          <strong style="font-family:'Prompt';font-size:16px;">การอบรมและพัฒนาคุณลักษณะที่ดีของผู้เรียน</strong>
+          <span class="tbl-badge-level">ระดับ ๔ : ปรับประยุกต์</span>
+        </div>
+        <button class="btn-copy-card" onclick="copySingleAnswer('ans-c1.8', '๑.๘ คุณลักษณะ')">📋 คัดลอกคำตอบ</button>
+      </div>
+      <div class="ind-ans-quote" id="ans-c1.8">
+        ดำเนินกิจกรรมอบรมบ่มนิสัยให้ผู้เรียนมีคุณธรรม จริยธรรม คุณลักษณะอันพึงประสงค์ และค่านิยมความเป็นไทยที่ดีงาม เกินกว่า ๕ กิจกรรมขึ้นไป อย่างต่อเนื่องและสม่ำเสมอ ได้แก่ ๑) กิจกรรมสวดมนต์ไหว้พระประจำสัปดาห์และวันสำคัญทางศาสนา ๒) การปลูกฝังความซื่อสัตย์สุจริตและวินัยความรับผิดชอบผ่านหลักสูตรโรงเรียนสุจริต ๓) กิจกรรมลูกเสือ-เนตรนารี ปลูกฝังวินัย ความอดทน และความเสียสละ ๔) กิจกรรมแนะแนวและโฮมรูมดูแลสุขภาวะและพัฒนาการ ๕) กิจกรรมจิตอาสาเพื่อสังคมและสาธารณประโยชน์ (Big Cleaning Day และการคัดแยกขยะ) ๖) เป็นหัวหน้าผู้รับผิดชอบโครงการจัดกิจกรรมวันไหว้ครู ๒๕๖๙ ปลูกฝังความกตัญญูกตเวทิตา และ ๗) การสอดแทรกวินัยการใช้อุปกรณ์ส่วนรวม มารยาทพลเมืองดิจิทัล (Digital Citizenship) และความปลอดภัยไซเบอร์ในทุกคาบเรียน
+      </div>
+      <div class="ind-sub-grid">
+        <div class="ind-sub-box">
+          <b>📈 ผลลัพธ์เชิงปริมาณ</b>
+          <p>มีกิจกรรมอบรมบ่มนิสัยรวม ๗ กิจกรรม (เกินเกณฑ์ระดับ ๔ ที่กำหนด ๕ กิจกรรมขึ้นไป) ผู้เรียนผ่านเกณฑ์คุณลักษณะอันพึงประสงค์ ๑๐๐%</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⭐ ผลลัพธ์เชิงคุณภาพ</b>
+          <p>ผู้เรียนมีวินัย มีมารยาท มีความกตัญญู มีจิตสาธารณะ รักษาของส่วนรวม และใช้เทคโนโลยีอย่างมีจริยธรรม</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>⚙️ การปฏิบัติงานจริง</b>
+          <p>อบรมบ่มนิสัยคุณธรรม วินัย พลเมืองดิจิทัล กิจกรรมพัฒนาผู้เรียน และรับผิดชอบโครงการวันไหว้ครู ๒๕๖๙</p>
+        </div>
+        <div class="ind-sub-box">
+          <b>📂 ร่องรอยหลักฐาน</b>
+          <p>แบบประเมินคุณลักษณะอันพึงประสงค์, คำสั่งโรงเรียนที่ ๑๕๗/๒๕๖๙ (จัดงานวันไหว้ครู), บันทึกข้อความ ศธ ๐๔๐๒๔.๑๓๗/กง๐๖๐, ภาพกิจกรรมจิตอาสาและศาสนา</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast">📋 คัดลอกข้อความคำตอบเรียบร้อยแล้ว!</div>
+
+<script>
+  function switchMode(mode) {
+    const reportView = document.getElementById('report-view');
+    const cardsView = document.getElementById('cards-view');
+    const btnReport = document.getElementById('btn-mode-report');
+    const btnCards = document.getElementById('btn-mode-cards');
+
+    if (mode === 'report') {
+      reportView.style.display = 'block';
+      cardsView.style.display = 'none';
+      btnReport.classList.add('active');
+      btnCards.classList.remove('active');
+    } else {
+      reportView.style.display = 'none';
+      cardsView.style.display = 'block';
+      btnCards.classList.add('active');
+      btnReport.classList.remove('active');
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg || '📋 คัดลอกข้อความคำตอบเรียบร้อยแล้ว!';
+    t.classList.add('show');
+    setTimeout(() => {
+      t.classList.remove('show');
+    }, 2200);
+  }
+
+  function copySingleAnswer(id, title) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const text = el.innerText.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(`✓ คัดลอกคำตอบข้อ ${title} แล้ว!`);
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  }
+
+  function copyAllAnswers() {
+    const items = [
+      { num: '๑.๑', title: 'การสร้างและหรือพัฒนาหลักสูตร', id: 'ans-c1.1' },
+      { num: '๑.๒', title: 'การออกแบบการจัดการเรียนรู้', id: 'ans-c1.2' },
+      { num: '๑.๓', title: 'การจัดกิจกรรมการเรียนรู้', id: 'ans-c1.3' },
+      { num: '๑.๔', title: 'การสร้างและหรือพัฒนาสื่อ นวัตกรรม เทคโนโลยี และแหล่งเรียนรู้', id: 'ans-c1.4' },
+      { num: '๑.๕', title: 'การวัดและประเมินผลการเรียนรู้', id: 'ans-c1.5' },
+      { num: '๑.๖', title: 'การศึกษา วิเคราะห์ สังเคราะห์ เพื่อแก้ปัญหาหรือพัฒนาการเรียนรู้', id: 'ans-c1.6' },
+      { num: '๑.๗', title: 'การจัดบรรยากาศที่ส่งเสริมและพัฒนาผู้เรียน', id: 'ans-c1.7' },
+      { num: '๑.๘', title: 'การอบรมและพัฒนาคุณลักษณะที่ดีของผู้เรียน', id: 'ans-c1.8' }
+    ];
+
+    let fullText = '=== แบบรายงานผลการปฏิบัติงานตามข้อตกลงในการพัฒนางาน (PA) ด้านที่ ๑ ด้านการจัดการเรียนรู้ (๘ ตัวชี้วัด) ===\n';
+    fullText += 'ผู้ขอรับการประเมิน: นายอนันตชัย เพ็ชรรี่ ตำแหน่ง ครู อันดับ คศ.๑ โรงเรียนบ้านคลองมดแดง\n';
+    fullText += 'รอบปีงบประมาณ พ.ศ. ๒๕๖๙ (๑ ตุลาคม ๒๕๖๘ – ๓๐ กันยายน ๒๕๖๙)\n\n';
+
+    items.forEach(item => {
+      const el = document.getElementById(item.id);
+      if (el) {
+        fullText += `【ตัวชี้วัดที่ ${item.num} ${item.title}】 (ระดับ ๔ : ปรับประยุกต์)\n`;
+        fullText += el.innerText.trim() + '\n\n';
+      }
+    });
+
+    navigator.clipboard.writeText(fullText).then(() => {
+      showToast('✓ คัดลอกรายงานทั้ง ๘ ตัวชี้วัดเรียบร้อยแล้ว!');
+    }).catch(() => {
+      fallbackCopy(fullText);
+    });
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✓ คัดลอกข้อความแล้ว!');
+  }
+
+  function filterCards(type, btn) {
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const cards = document.querySelectorAll('.card-item');
+    cards.forEach(card => {
+      if (type === 'all' || card.dataset.ind === type) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+</script>
+</body>
+</html>
