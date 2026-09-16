@@ -26,6 +26,8 @@ import GamificationCard from '../components/GamificationCard';
 import AchievementShowcase from '../components/AchievementShowcase';
 import DailyQuestionWidget from '../components/DailyQuestionWidget';
 import SatisfactionSurvey from '../components/SatisfactionSurvey';
+import ExitTicketModal from '../components/ExitTicketModal';
+import { getTodayDateString, loadLocalExitTickets, type ExitTicket } from '../services/exitTicketService';
 import { fetchEventsFromFirebase, getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
 import type { CalendarEvent } from '../services/calendarService';
 import { loadSchedule, dayNames, minutesOf, fetchScheduleFromFirebase } from '../data/schedule';
@@ -36,6 +38,7 @@ import {
   isExternalVisitor,
   isScoreEligibleUser,
 } from '../services/userAccessService';
+import { getCourseIdsForClassroom } from '../services/courseAccessService';
 
 const activityIcon: Record<ActivityType, React.ReactNode> = {
   slide: <FileText size={16} />,
@@ -70,11 +73,17 @@ const timeAgo = (ts: number): string => {
 const Dashboard: React.FC = () => {
   const { user, partner, persistStudent } = useAuth();
   const [summary, setSummary] = useState(() =>
-    user ? getSummary(user.id) : null
+    user ? getSummary(user.id, user.classroom) : null
   );
   const [now, setNow] = useState(new Date());
   const [schedule, setSchedule] = useState<ClassSlot[]>(() => loadSchedule());
   const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
+  const [showExitTicketModal, setShowExitTicketModal] = useState(false);
+  const [todayExitTicket, setTodayExitTicket] = useState<ExitTicket | null>(() => {
+    if (!user) return null;
+    const tickets = loadLocalExitTickets();
+    return tickets.find((t) => t.studentId === user.id && t.date === getTodayDateString()) || null;
+  });
   const scoreEligible = isScoreEligibleUser(user);
 
   useEffect(() => {
@@ -95,7 +104,7 @@ const Dashboard: React.FC = () => {
         if (partner) {
           await fetchStudentProgress(partner.id);
         }
-        setSummary(getSummary(user.id));
+        setSummary(getSummary(user.id, user.classroom));
         const remoteSlots = await fetchScheduleFromFirebase();
         if (remoteSlots) {
           setSchedule(remoteSlots);
@@ -109,11 +118,11 @@ const Dashboard: React.FC = () => {
     syncData();
 
     setTimeout(() => {
-      if (user) setSummary(getSummary(user.id));
+      if (user) setSummary(getSummary(user.id, user.classroom));
     }, 0);
     // refresh ทุก 15 วิ เผื่อมี activity ใหม่จากแท็บอื่น (ลดจาก 5 → 15 — เร็วพอ + ลด CPU)
     const id = setInterval(() => {
-      if (user) setSummary(getSummary(user.id));
+      if (user) setSummary(getSummary(user.id, user.classroom));
     }, 15000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -146,11 +155,18 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  const allowedCourseIds = user?.classroom ? getCourseIdsForClassroom(user.classroom).map((c) => c.toLowerCase()) : [];
+  const displayUnits = summary.units.filter((u) => {
+    if (allowedCourseIds.length === 0) return true;
+    const [gradeId] = u.key.split('_');
+    return allowedCourseIds.includes(gradeId.toLowerCase());
+  });
+
   const stats = [
     {
       label: 'คะแนนเฉลี่ย',
       value: `${summary.averageScore}%`,
-      sub: `จาก ${summary.units.filter((u) => u.bestQuizMax > 0).length} แบบทดสอบ`,
+      sub: `จาก ${displayUnits.filter((u) => u.bestQuizMax > 0).length} แบบทดสอบ`,
       icon: <TrendingUp />,
       color: '#22c55e',
     },
@@ -361,6 +377,88 @@ const Dashboard: React.FC = () => {
       {/* แบบสอบถามความพึงพอใจ (ตอบครั้งเดียว) */}
       <SatisfactionSurvey studentId={user.id} classroom={user.classroom} />
 
+      {/* Exit Ticket — ตั๋วบอกลาคาบเรียน สะท้อนคิดรับคะแนน A */}
+      {scoreEligible && (
+        <div
+          className="exit-ticket-student-card glass"
+          style={{
+            padding: '1.25rem 1.5rem',
+            borderRadius: 18,
+            marginBottom: 16,
+            background: todayExitTicket
+              ? 'linear-gradient(135deg, rgba(236,253,245,0.95) 0%, rgba(240,253,250,0.85) 100%)'
+              : 'linear-gradient(135deg, rgba(238,242,255,0.95) 0%, rgba(245,243,255,0.85) 100%)',
+            border: todayExitTicket ? '1.5px solid #10b981' : '1.5px solid #6366f1',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div
+              style={{
+                fontSize: '1.8rem',
+                width: 46,
+                height: 46,
+                borderRadius: 14,
+                background: todayExitTicket ? '#d1fae5' : '#e0e7ff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {todayExitTicket ? '🎫' : '📝'}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <strong style={{ fontSize: '1rem', color: '#1e293b' }}>
+                  {todayExitTicket ? 'ส่งตั๋วบอกลาคาบเรียนวันนี้แล้ว' : 'ตั๋วบอกลาคาบเรียน (Exit Ticket)'}
+                </strong>
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: 9999,
+                    background: todayExitTicket ? '#10b981' : '#6366f1',
+                    color: '#ffffff',
+                  }}
+                >
+                  {todayExitTicket ? `+${todayExitTicket.earnedScoreA} คะแนนจิตพิสัย (A)` : 'รับคะแนน A 1-3 คะแนน'}
+                </span>
+              </div>
+              <p style={{ margin: '3px 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                {todayExitTicket
+                  ? `เข้าใจ: "${todayExitTicket.learnedKeyword}" • สมาธิ ${todayExitTicket.selfScore}/5 ดาว • บันทึกลงสมุดคะแนนเรียบร้อย`
+                  : 'สะท้อนคิด 1 นาที ก่อนหมดคาบ เพื่อบันทึกผลการเรียนรู้และรับคะแนนจิตพิสัย'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowExitTicketModal(true)}
+            style={{
+              padding: '9px 18px',
+              borderRadius: 12,
+              background: todayExitTicket ? '#ffffff' : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+              color: todayExitTicket ? '#047857' : '#ffffff',
+              fontWeight: 700,
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              boxShadow: todayExitTicket ? '0 2px 4px rgba(0,0,0,0.05)' : '0 4px 12px rgba(79,70,229,0.3)',
+              border: todayExitTicket ? '1.5px solid #10b981' : 'none',
+              transition: 'transform 0.15s ease',
+            }}
+          >
+            {todayExitTicket ? '✏️ ส่งซ้ำ / ปรับปรุง' : '✨ เขียนตั๋วบอกลาคาบเรียน'}
+          </button>
+        </div>
+      )}
+
       {/* XP / Level / Streak — Gamification */}
       <GamificationCard studentId={user.id} />
 
@@ -410,7 +508,7 @@ const Dashboard: React.FC = () => {
               </h3>
               <Link to="/courses">ดูทั้งหมด</Link>
             </div>
-            {summary.units.length === 0 ? (
+            {displayUnits.length === 0 ? (
               <div className="empty-state">
                 <p>ยังไม่มีข้อมูลการเรียน เริ่มเรียนหน่วยแรกเลย!</p>
                 <Link to="/courses" className="btn-primary">
@@ -419,7 +517,7 @@ const Dashboard: React.FC = () => {
               </div>
             ) : (
               <div className="unit-progress-list">
-                {summary.units
+                {displayUnits
                   .sort((a, b) => b.updatedAt - a.updatedAt)
                   .slice(0, 8)
                   .map((u) => {
@@ -642,6 +740,20 @@ const Dashboard: React.FC = () => {
           </section>
         </div>
       </div>
+
+      {showExitTicketModal && user && (
+        <ExitTicketModal
+          isOpen={showExitTicketModal}
+          onClose={() => setShowExitTicketModal(false)}
+          student={{
+            id: user.id,
+            name: user.name || '',
+            classroom: user.classroom,
+            studentNumber: user.studentNumber || '0',
+          }}
+          onSuccess={(ticket) => setTodayExitTicket(ticket)}
+        />
+      )}
     </div>
   );
 };

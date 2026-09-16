@@ -20,6 +20,10 @@ const TTSButton: React.FC<Props> = ({ text, label, className }) => {
     return () => { clearInterval(i); stop(); };
   }, []);
 
+  useEffect(() => {
+    stop();
+  }, [text]);
+
   if (!isTTSSupported()) return null;
 
   const handle = () => {
@@ -44,6 +48,7 @@ const TTSButton: React.FC<Props> = ({ text, label, className }) => {
   return (
     <div className={`tts-controls ${className || ''}`} style={{ display: 'inline-flex', gap: 4 }}>
       <button
+        type="button"
         onClick={handle}
         title={!speaking ? 'อ่านให้ฟัง' : paused ? 'เล่นต่อ' : 'หยุดชั่วคราว'}
         style={{
@@ -66,6 +71,7 @@ const TTSButton: React.FC<Props> = ({ text, label, className }) => {
       </button>
       {speaking && (
         <button
+          type="button"
           onClick={handleStop}
           title="หยุดทั้งหมด"
           style={{

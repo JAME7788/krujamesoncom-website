@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { createGameRoundGuard } from '../../utils/gameRoundGuard';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
@@ -209,6 +210,7 @@ const shuffle = <T,>(arr: T[]): T[] => {
 };
 
 const AlgorithmSorter: React.FC = () => {
+  const [roundGuard] = useState(createGameRoundGuard);
   const [puzzleIdx, setPuzzleIdx] = useState(0);
   const [items, setItems] = useState<string[]>(() => shuffle(puzzles[0].steps));
   const [checked, setChecked] = useState(false);
@@ -231,23 +233,22 @@ const AlgorithmSorter: React.FC = () => {
   };
 
   const check = () => {
-    if (isCorrect) return;
+    if (done || isCorrect) return;
     setChecked(true);
     const correct = items.every((it, i) => it === puzzle.steps[i]);
     if (correct) {
+      if (!roundGuard.claim(`answer-${puzzleIdx}`)) return;
       const nextScore = score + 50;
       setScore(nextScore);
       setSolvedCount((c) => c + 1);
-      // บันทึกเมื่อเรียงถูกเท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
-      recordGame(nextScore);
     }
   };
 
   const next = () => {
-    if (!isCorrect) return;
+    if (done || !isCorrect || !roundGuard.claim(`next-${puzzleIdx}`)) return;
     if (puzzleIdx + 1 >= puzzles.length) {
       setDone(true);
-      void recordGame(score);
+      void recordGame(score, undefined, puzzles.length * 50);
       return;
     }
     const nextIndex = puzzleIdx + 1;
@@ -263,6 +264,7 @@ const AlgorithmSorter: React.FC = () => {
   };
 
   const restartGame = () => {
+    roundGuard.reset();
     setPuzzleIdx(0);
     setItems(shuffle(puzzles[0].steps));
     setChecked(false);

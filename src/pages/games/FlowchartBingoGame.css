@@ -1,0 +1,273 @@
+/* FlowchartBingoGame.css */
+
+.fcb-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+  color: #fff;
+  user-select: none;
+  font-family: 'Kanit', system-ui, -apple-system, sans-serif;
+}
+
+.fcb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.fcb-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.fcb-back-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.fcb-title-wrap {
+  text-align: center;
+}
+
+.fcb-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fcb-subtitle {
+  font-size: 0.84rem;
+  color: #94a3b8;
+  margin: 4px 0 0 0;
+}
+
+/* Caller Panel */
+.fcb-caller-box {
+  width: 100%;
+  max-width: 720px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 2px solid rgba(59, 130, 246, 0.35);
+  border-radius: 20px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.fcb-caller-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(59, 130, 246, 0.18);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #60a5fa;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.fcb-caller-prompt {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.5;
+  margin: 0 0 8px 0;
+}
+
+.fcb-caller-hint {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0 0 16px 0;
+}
+
+.fcb-draw-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  transition: all 0.15s ease;
+}
+
+.fcb-draw-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+}
+
+.fcb-draw-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Bingo Board */
+.fcb-board-wrap {
+  width: 100%;
+  max-width: 680px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+.fcb-lines-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fcb-lines-count {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fcb-grid-4x4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.fcb-tile {
+  aspect-ratio: 1;
+  background: rgba(30, 41, 59, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.fcb-tile:hover:not(.marked) {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  transform: translateY(-2px);
+}
+
+.fcb-tile-icon {
+  font-size: 1.8rem;
+  margin-bottom: 6px;
+}
+
+.fcb-tile-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.25;
+}
+
+.fcb-tile-en {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.fcb-tile.marked {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.45) 100%);
+  border-color: #10b981;
+  color: #fff;
+  transform: scale(0.97);
+}
+
+.fcb-tile.in-bingo {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.45) 0%, rgba(217, 119, 6, 0.6) 100%) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.6);
+  animation: pulseTile 1.2s infinite alternate;
+}
+
+@keyframes pulseTile {
+  from { transform: scale(0.97); }
+  to { transform: scale(1.03); }
+}
+
+.fcb-stamp {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: #10b981;
+  font-size: 1rem;
+}
+
+/* Win Overlay */
+.fcb-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.fcb-win-card {
+  background: #0f172a;
+  border: 2px solid #38bdf8;
+  border-radius: 24px;
+  padding: 32px 24px;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(56, 189, 248, 0.3);
+}
+
+@media (max-width: 600px) {
+  .fcb-grid-4x4 {
+    gap: 8px;
+  }
+  .fcb-tile-icon {
+    font-size: 1.4rem;
+  }
+  .fcb-tile-name {
+    font-size: 0.72rem;
+  }
+  .fcb-tile-en {
+    display: none;
+  }
+}

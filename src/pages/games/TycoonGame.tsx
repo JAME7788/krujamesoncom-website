@@ -34,6 +34,7 @@ import {
   X,
 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { getFinishedPlayerResult } from '../../utils/gameResultOwnership';
 import { useAuth } from '../../context/AuthContext';
 import GameLearnCard from '../../components/GameLearnCard';
 import CharacterShop from '../../components/CharacterShop';
@@ -308,12 +309,15 @@ const TycoonGame: React.FC = () => {
 
   useEffect(() => {
     if (!msg || phase !== 'roll') {
-      setShowMessageToast(false);
-      return undefined;
+      const timer = window.setTimeout(() => setShowMessageToast(false), 0);
+      return () => window.clearTimeout(timer);
     }
-    setShowMessageToast(true);
-    const timer = window.setTimeout(() => setShowMessageToast(false), 2400);
-    return () => window.clearTimeout(timer);
+    const showTimer = window.setTimeout(() => setShowMessageToast(true), 0);
+    const hideTimer = window.setTimeout(() => setShowMessageToast(false), 2400);
+    return () => {
+      window.clearTimeout(showTimer);
+      window.clearTimeout(hideTimer);
+    };
   }, [msg, phase]);
 
   const [multiplayerPlayerId] = useState(getMultiplayerPlayerId);
@@ -331,6 +335,14 @@ const TycoonGame: React.FC = () => {
   const onlineSeat = onlinePlayers.findIndex((player) => player.id === multiplayerPlayerId);
   const onlineMember = onlinePlayers.find((player) => player.id === multiplayerPlayerId);
   const isOnlineGame = playMode === 'online' && Boolean(onlineRoomCode);
+  useEffect(() => {
+    if (!isOnlineGame) return;
+    const ownResult = getFinishedPlayerResult(onlineRoom?.game, onlineSeat);
+    if (ownResult) {
+      const score = ownResult.answered > 0 ? Math.round(ownResult.correct / ownResult.answered * 100) : 0;
+      void recordGame(score, undefined, 100);
+    }
+  }, [isOnlineGame, onlineRoom?.game, onlineSeat, recordGame]);
   const isRoomHost = onlineRoom?.hostId === multiplayerPlayerId;
   const canTakeTurn = !isOnlineGame || onlineSeat === turn;
   const worth = (p: P) => p.money + p.owned.reduce((sum, tileIndex) => {
@@ -422,7 +434,7 @@ const TycoonGame: React.FC = () => {
     setFinishReason(reason);
     setPhase('over');
     celebrateVictory(); // 🎆 พลุ + ริบบิ้นทอง + แฟนแฟร์ชัยชนะ
-    void recordGame(winner ? Math.max(10, learningScore) : 10);
+    if (!isOnlineGame) void recordGame(winner ? learningScore : 0, undefined, 100);
   };
 
   /** ไปตาถัดไป (ข้ามคนที่ล้มละลาย/ต้องหยุดพัก) */

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { RichSlide } from '../data/richSlides';
+import TTSButton from './TTSButton';
 
 const themeColors: Record<string, { bg: string; accent: string; text: string }> = {
   blue:   { bg: 'linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)', accent: '#3b82f6', text: '#1e3a8a' },
@@ -44,6 +45,18 @@ const formatMarkdownInline = (text: string | undefined): { __html: string } => {
 
 const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
   const theme = themeColors[slide.theme || 'blue'];
+  const [quickChoiceState, setQuickChoiceState] = useState<{ slide: number; choice: number } | null>(null);
+  const [showTeacherGuide, setShowTeacherGuide] = useState(false);
+  const selectedQuickChoice = quickChoiceState?.slide === current ? quickChoiceState.choice : null;
+  const displayTitle = slide.emoji && slide.title.trim().startsWith(slide.emoji)
+    ? slide.title.trim().slice(slide.emoji.length).trim()
+    : slide.title;
+  const speechText = useMemo(() => [
+    displayTitle,
+    slide.body,
+    ...(slide.bullets || []).flatMap((bullet) => [bullet.text, bullet.sub]),
+    slide.callout?.text,
+  ].filter(Boolean).join('. '), [displayTitle, slide]);
 
   return (
     <motion.div
@@ -52,23 +65,47 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
-      className="rich-slide"
+      className={`rich-slide ${slide.lessonArt ? 'has-lesson-art' : ''} ${slide.quickCheck ? 'has-quick-check' : ''}`}
       style={{ background: theme.bg, color: theme.text }}
     >
-      <div className="rs-counter">{current + 1} / {total}</div>
+      <div className="rs-slide-toolbar">
+        <div className="rs-toolbar-actions">
+          <TTSButton text={speechText} label="ฟังหน้านี้" className="rs-tts-button" />
+          {slide.teachingNote && (
+            <button
+              type="button"
+              className={`rs-guide-toggle-btn ${showTeacherGuide ? 'active' : ''}`}
+              onClick={() => setShowTeacherGuide((v) => !v)}
+              title="แนวทางการสอนและคำถามชวนคิดสำหรับครูผู้สอน"
+            >
+              <span className="rs-guide-icon">📖</span>
+              <span>{showTeacherGuide ? 'ปิดคู่มือครู' : 'คู่มือครู'}</span>
+            </button>
+          )}
+        </div>
+        <div className="rs-counter">{current + 1} / {total}</div>
+      </div>
+
+      {slide.lessonArt && !slide.image && (
+        <div className="rs-lesson-art" aria-hidden="true">
+          <img src={slide.lessonArt} alt="" loading="lazy" />
+        </div>
+      )}
 
       {/* COVER LAYOUT */}
       {slide.layout === 'cover' && (
-        <div className="rs-cover">
-          {slide.emoji && <div className="rs-emoji-huge">{slide.emoji}</div>}
-          <h1 className="rs-title-huge">{slide.title}</h1>
-          {slide.body && <p className="rs-body-large" dangerouslySetInnerHTML={formatMarkdownInline(slide.body)} />}
+        <div className={`rs-cover ${slide.image ? 'has-image' : ''}`}>
           {slide.image && (
             <div className="rs-image-cover">
-              <img src={slide.image} alt={slide.imageCaption || slide.title} loading="lazy" />
+              <img src={slide.image} alt={slide.imageCaption || displayTitle} loading="eager" />
               {slide.imageCaption && <div className="rs-caption">{slide.imageCaption}</div>}
             </div>
           )}
+          <div className="rs-cover-copy">
+            {slide.emoji && <div className="rs-emoji-huge">{slide.emoji}</div>}
+            <h1 className="rs-title-huge">{displayTitle}</h1>
+            {slide.body && <p className="rs-body-large" dangerouslySetInnerHTML={formatMarkdownInline(slide.body)} />}
+          </div>
         </div>
       )}
 
@@ -76,7 +113,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
       {slide.layout === 'split' && (
         <div className="rs-split">
           <div className="rs-split-text">
-            <h2 className="rs-title">{slide.emoji && <span>{slide.emoji} </span>}{slide.title}</h2>
+            <h2 className="rs-title">{slide.emoji && <span>{slide.emoji} </span>}{displayTitle}</h2>
             {slide.body && <p className="rs-body" dangerouslySetInnerHTML={formatMarkdownInline(slide.body)} />}
             {slide.bullets && (
               <ul className="rs-bullets">
@@ -94,7 +131,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
           </div>
           {slide.image && (
             <div className="rs-split-image">
-              <img src={slide.image} alt={slide.imageCaption || slide.title} loading="lazy" />
+              <img src={slide.image} alt={slide.imageCaption || displayTitle} loading="lazy" />
               {slide.imageCaption && <div className="rs-caption">{slide.imageCaption}</div>}
             </div>
           )}
@@ -104,7 +141,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
       {/* COMPARISON LAYOUT (vs) */}
       {slide.layout === 'comparison' && slide.compareLeft && slide.compareRight && (
         <div className="rs-comparison-wrap">
-          <h2 className="rs-title">{slide.emoji && <span>{slide.emoji} </span>}{slide.title}</h2>
+          <h2 className="rs-title">{slide.emoji && <span>{slide.emoji} </span>}{displayTitle}</h2>
           <div className="rs-comparison">
             <div className="rs-compare-card" style={{ borderTopColor: slide.compareLeft.color }}>
               <div className="rs-compare-emoji">{slide.compareLeft.emoji}</div>
@@ -139,10 +176,10 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
         <div className="rs-standard">
           <h2 className="rs-title">
             {slide.emoji && <span className="rs-title-emoji">{slide.emoji}</span>}
-            {slide.title}
+            {displayTitle}
           </h2>
           {slide.body && <p className="rs-body" dangerouslySetInnerHTML={formatMarkdownInline(slide.body)} />}
-          <div className="rs-content-row">
+          <div className={`rs-content-row ${slide.image ? 'has-image' : 'no-image'}`}>
             <div className="rs-content-text">
               {slide.bullets && (
                 <ul className="rs-bullets">
@@ -165,7 +202,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
             </div>
             {slide.image && (
               <div className="rs-image-side">
-                <img src={slide.image} alt={slide.imageCaption || slide.title} loading="lazy" />
+                <img src={slide.image} alt={slide.imageCaption || displayTitle} loading="lazy" />
                 {slide.imageCaption && <div className="rs-caption">{slide.imageCaption}</div>}
               </div>
             )}
@@ -189,8 +226,11 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
         </div>
       )}
 
-      {slide.teachingNote && (
+      {slide.teachingNote && showTeacherGuide && (
         <div className="rs-teaching-guide">
+          <div className="rs-teaching-guide-header">
+            <span>📖 แนวทางการจัดกิจกรรมสำหรับครูผู้สอน</span>
+          </div>
           <div className="rs-teaching-guide-main">
             <span className="rs-guide-label">อธิบายให้เข้าใจ</span>
             <p>{slide.teachingNote.explain}</p>
@@ -205,6 +245,60 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
               <p>{slide.teachingNote.prompt}</p>
             </div>
           </div>
+          {slide.teachingNote.steps && slide.teachingNote.steps.length > 0 && (
+            <div className="rs-guide-steps">
+              <span className="rs-guide-label">ลงมือทำทีละขั้น</span>
+              <ol>
+                {slide.teachingNote.steps.map((step, index) => <li key={index}>{step}</li>)}
+              </ol>
+            </div>
+          )}
+          {slide.teachingNote.check && (
+            <div className="rs-guide-check">
+              <span className="rs-guide-check-icon">✓</span>
+              <div>
+                <span className="rs-guide-label">เช็กความเข้าใจ</span>
+                <p>{slide.teachingNote.check}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {slide.quickCheck && (
+        <div className="rs-quick-check">
+          <div className="rs-quick-check-heading">
+            <span>กิจกรรมสั้น</span>
+            <strong>{slide.quickCheck.question}</strong>
+          </div>
+          <div className="rs-quick-choices">
+            {slide.quickCheck.choices.map((choice, index) => {
+              const isSelected = selectedQuickChoice === index;
+              const isCorrect = index === slide.quickCheck!.answer;
+              const stateClass = isSelected ? (isCorrect ? 'correct' : 'wrong') : '';
+              return (
+                <button
+                  type="button"
+                  className={stateClass}
+                  key={`${choice}-${index}`}
+                onClick={() => setQuickChoiceState({ slide: current, choice: index })}
+                >
+                  <span>{String.fromCharCode(65 + index)}</span>
+                  {choice}
+                </button>
+              );
+            })}
+          </div>
+          {selectedQuickChoice !== null && (
+            <div
+              className={`rs-quick-feedback ${selectedQuickChoice === slide.quickCheck.answer ? 'correct' : 'wrong'}`}
+              aria-live="polite"
+            >
+              {selectedQuickChoice === slide.quickCheck.answer
+                ? slide.quickCheck.feedback
+                : 'ลองอีกครั้ง มองหาคำตอบที่มีเหตุผลและตรวจสอบผลได้'}
+            </div>
+          )}
         </div>
       )}
     </motion.div>

@@ -10,6 +10,7 @@ import AchievementsBadge from './AchievementsBadge';
 import DarkModeToggle from './DarkModeToggle';
 import AITutor from './AITutor';
 import { fetchScheduleFromFirebase } from '../data/schedule';
+import { isPortalNavActive } from '../data/portalDirectory';
 import {
   isAdminPortalUser,
   isExternalVisitor,
@@ -58,8 +59,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Lock body scroll เมื่อเปิดเมนู
   useEffect(() => {
-    document.body.style.overflow = isMenuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (!isMenuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMenuOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
   }, [isMenuOpen]);
 
   const navLinks: { name: string; path: string; icon: React.ReactNode }[] = [
@@ -74,9 +84,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     navLinks.push({ name: 'การบ้าน', path: '/homework', icon: <Award size={18} /> });
     navLinks.push({ name: 'แดชบอร์ด', path: '/dashboard', icon: <LayoutDashboard size={18} /> });
   }
+  if (adminUser) navLinks.push({ name: 'พื้นที่ครู', path: '/admin', icon: <LayoutDashboard size={18} /> });
 
   return (
     <div className="app-container">
+      <a className="portal-skip-link" href="#portal-main">ข้ามไปเนื้อหา</a>
       {!isImmersive && <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container nav-content">
           {/* Logo */}
@@ -91,7 +103,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`nav-item ${location.pathname === link.path ? 'active' : ''}`}
+                className={`nav-item ${isPortalNavActive(location.pathname, link.path) ? 'active' : ''}`}
+                aria-current={isPortalNavActive(location.pathname, link.path) ? 'page' : undefined}
               >
                 {link.icon}
                 <span>{link.name}</span>
@@ -140,7 +153,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             )}
 
             {/* Mobile menu toggle */}
-            <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Menu">
+            <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="เมนูหลัก" aria-expanded={isMenuOpen} aria-controls={isMenuOpen ? 'portal-mobile-menu' : undefined}>
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
@@ -151,13 +164,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {!isImmersive && isMenuOpen && (
         <>
           <div className="mobile-menu-backdrop" onClick={() => setIsMenuOpen(false)} />
-          <aside className="mobile-menu">
+          <aside className="mobile-menu" id="portal-mobile-menu" aria-label="เมนูหลัก">
             <div className="mobile-menu-header">
               <Link to="/" className="logo" onClick={() => setIsMenuOpen(false)}>
                 <span className="logo-icon">KJ</span>
                 <span className="logo-text">Kru James<span>.com</span></span>
               </Link>
-              <button onClick={() => setIsMenuOpen(false)} className="icon-btn">
+              <button onClick={() => setIsMenuOpen(false)} className="icon-btn" aria-label="ปิดเมนู">
                 <X size={20} />
               </button>
             </div>
@@ -182,7 +195,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`mobile-nav-item ${location.pathname === link.path ? 'active' : ''}`}
+                  className={`mobile-nav-item ${isPortalNavActive(location.pathname, link.path) ? 'active' : ''}`}
+                  aria-current={isPortalNavActive(location.pathname, link.path) ? 'page' : undefined}
                 >
                   {link.icon}
                   <span>{link.name}</span>
@@ -212,7 +226,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </>
       )}
 
-      <main>{children}</main>
+      <main id="portal-main" tabIndex={-1}>{children}</main>
 
       {/* Floating AI Tutor (เฉพาะ login แล้ว) */}
       {user && !isImmersive && <AITutor />}

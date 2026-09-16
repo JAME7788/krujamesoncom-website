@@ -49,7 +49,18 @@ export type GameProgressId =
   | 'search-smart'
   | 'ct-board'
   | 'tycoon'
-  | 'digital-city-quest';
+  | 'digital-city-quest'
+  | 'cyber-shield'
+  | 'sorting-dash'
+  | 'bomb-collector'
+  | 'obstacle-dodge'
+  | 'situation-reaction'
+  | 'pc-builder'
+  | 'stroop-color'
+  | 'space-treasure'
+  | 'cyber-cop'
+  | 'krucom-arcade'
+  | 'flowchart-bingo';
 
 type StudentLike = {
   id: string;
@@ -122,6 +133,9 @@ const normalizeGameId = (gameId: GameProgressId): GameProgressId => {
 };
 
 export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): TargetUnit[] => {
+  const classroomMatch = classroom.trim().match(/^(ป\.[1-6]|ม\.[1-3])(?:\/[1-9]\d*)?$/);
+  if (!classroomMatch) return [];
+  classroom = classroomMatch[1];
   const normalizedGameId = normalizeGameId(gameId);
   const isPrimary = classroom.startsWith('ป.');
   const isMiddle = classroom.startsWith('ม.');
@@ -196,6 +210,50 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
   if (normalizedGameId === 'search-smart') {
     return [isPrimary ? primaryDigitalUnit(classroom) : middleCodingUnit(classroom)];
   }
+  // Cyber Shield: ป้อมปราการไซเบอร์ — ความปลอดภัยไซเบอร์และเครือข่าย
+  if (normalizedGameId === 'cyber-shield') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  // คัดแยกด่วน: การจำแนกประเภทข้อมูล
+  if (normalizedGameId === 'sorting-dash') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  // เก็บชิปหลบระเบิด: การควบคุมตัวแปรและอัลกอริทึม
+  if (normalizedGameId === 'bomb-collector') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  // หลบสิ่งกีดขวาง: อัลกอริทึมการเคลื่อนที่
+  if (normalizedGameId === 'obstacle-dodge') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  // ไหวพริบตัดสินใจ: จิตสำนึกดิจิทัลและความปลอดภัย
+  if (normalizedGameId === 'situation-reaction') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleCodingUnit(classroom)];
+  }
+  // ประกอบคอมพิวเตอร์: ฮาร์ดแวร์และระบบคอมพิวเตอร์
+  if (normalizedGameId === 'pc-builder') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleDesignUnit(classroom)];
+  }
+  // สีลวงสมอง: การประมวลผลข้อมูลและสมาธิ
+  if (normalizedGameId === 'stroop-color') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  // ล่าสมบัติอวกาศ: การเขียนโค้ดและผังงานตรรกะ
+  if (normalizedGameId === 'space-treasure') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleCodingUnit(classroom)];
+  }
+  // สายลับไอที: ความปลอดภัยไซเบอร์และ พ.ร.บ.คอมพิวเตอร์
+  if (normalizedGameId === 'cyber-cop') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleCodingUnit(classroom)];
+  }
+  // อาร์เคดภารกิจครูคอม 100+ ด่าน
+  if (normalizedGameId === 'krucom-arcade') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleCodingUnit(classroom)];
+  }
+  // บิงโกสัญลักษณ์ผังงาน
+  if (normalizedGameId === 'flowchart-bingo') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
 
   if (normalizedGameId === 'quick-answer') {
     if (isPrimary) {
@@ -250,14 +308,15 @@ export const syncStudentGradesFromProgress = async (
       emoji: rosterStudent?.emoji || '👤',
     }, subject);
 
-    const result = syncFromProgress(
+    syncFromProgress(
       student.classroom,
       grade.studentCode,
       student.id,
       subject,
       'local',
     );
-    if (result.changed === 0) return;
+    // A previous attempt may have updated the local grade but failed remotely.
+    // Always confirm the student row on retry, even when local values match.
 
     const updated = loadGrades(student.classroom, subject).find((entry) => (
       entry.studentCode === grade.studentCode
@@ -274,8 +333,16 @@ export const recordGameProgress = async (
   students: Array<StudentLike | null | undefined>,
   score?: number,
   activityKey?: string,
+  maxScore?: number,
 ) => {
+  if (score !== undefined && (!Number.isFinite(score) || score < 0)) {
+    throw new RangeError('Invalid game score');
+  }
+  if (maxScore !== undefined && (!Number.isFinite(maxScore) || maxScore <= 0 || score === undefined || score > maxScore)) {
+    throw new RangeError('Invalid game maximum');
+  }
   let saved = 0;
+  let savedStudents = 0;
   const seen = new Set<string>();
   const activeStudents: StudentLike[] = [];
   const courseAccessSettings = await fetchCourseAccessSettings().catch(() => getCourseAccessSettings());
@@ -292,6 +359,7 @@ export const recordGameProgress = async (
       getGameTargetUnits(gameId, student.classroom),
       courseAccessSettings,
     );
+    if (targets.length === 0) continue;
     for (const target of targets) {
       const scoreText = typeof score === 'number' ? ` score=${score}` : '';
       const normalizedActivityKey = activityKey?.trim().replace(/\s+/g, '-').slice(0, 120);
@@ -317,6 +385,8 @@ export const recordGameProgress = async (
           .find((entry) => entry.units.some((unit) => (
             unit.gradeId === target.gradeId && unit.unitNo === target.unitNo
           )))?.indicator;
+        if (!linkedIndicator) continue;
+        const evidenceKey = `${normalizeGameId(gameId)}-${subject}-${target.gradeId}-${target.unitNo}-${normalizedActivityKey || 'complete'}`;
         const evidenceBase = {
           studentId: student.id,
           studentCode: loadRoster(student.classroom).find((entry) => (
@@ -331,7 +401,7 @@ export const recordGameProgress = async (
           title: gameTitle,
           detail: `เกม ${gameTitle} หน่วย ${target.unitNo}${typeof score === 'number' ? ` คะแนน ${score}` : ''}`,
           score,
-          maxScore: typeof score === 'number' ? 100 : undefined,
+          maxScore,
           inClass,
           occurredAt: Date.now(),
         };
@@ -339,19 +409,20 @@ export const recordGameProgress = async (
           recordLearningEvidence({
             ...evidenceBase,
             domain: 'K',
-            dedupKey: `${gameId}-${activityKey || 'complete'}-k`,
+            dedupKey: `${evidenceKey}-k`,
           }),
           recordLearningEvidence({
             ...evidenceBase,
             domain: 'P',
-            dedupKey: `${gameId}-${activityKey || 'complete'}-p`,
+            dedupKey: `${evidenceKey}-p`,
           }),
         ]);
       }
       saved += 1;
     }
     await syncStudentGradesFromProgress(student, courseAccessSettings);
+    savedStudents += 1;
   }
 
-  return { saved, students: activeStudents.length };
+  return { saved, students: savedStudents };
 };

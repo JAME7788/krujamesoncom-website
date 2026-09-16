@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { useGameTimers } from '../../hooks/useGameTimers';
 import './GameStyles.css';
 
 interface Task { title: string; emoji: string; steps: { emoji: string; text: string }[] }
@@ -88,6 +89,7 @@ const shuffle = <T,>(arr: T[]): T[] => {
 };
 
 const StepSort: React.FC = () => {
+  const timers = useGameTimers();
   const recordGame = useGameProgress('step-sort', 'เรียงขั้นตอนด้วยรูป');
   const [taskIdx, setTaskIdx] = useState(0);
   const [score, setScore] = useState(0);
@@ -101,6 +103,7 @@ const StepSort: React.FC = () => {
   const expectedNext = placed.length; // ต้องวาง index เท่ากับจำนวนที่วางแล้ว (0,1,2,3)
 
   const clickStep = (stepIndex: number) => {
+    if (done || !pool.includes(stepIndex) || placed.length >= task.steps.length) return;
     if (stepIndex === expectedNext) {
       setPlaced((p) => [...p, stepIndex]);
       setPool((p) => p.filter((x) => x !== stepIndex));
@@ -108,18 +111,19 @@ const StepSort: React.FC = () => {
       if (placed.length + 1 === task.steps.length) {
         // จบ task นี้
         setScore((s) => s + 1);
-        setTimeout(() => nextTask(), 800);
+        timers.schedule(() => nextTask(), 800);
       }
     } else {
       setWrong(stepIndex);
-      setTimeout(() => setWrong(null), 500);
+      timers.schedule(() => setWrong(null), 500);
     }
   };
 
   const nextTask = () => {
+    timers.clear();
     if (taskIdx + 1 >= TASKS.length) {
       setDone(true);
-      recordGame(score + 1);
+      recordGame(score + 1, undefined, TASKS.length);
       return;
     }
     const ni = taskIdx + 1;
@@ -130,6 +134,7 @@ const StepSort: React.FC = () => {
   };
 
   const restart = () => {
+    timers.clear();
     setTaskIdx(0); setScore(0); setDone(false);
     setPool(shuffle(TASKS[0].steps.map((_, i) => i))); setPlaced([]); setWrong(null);
   };

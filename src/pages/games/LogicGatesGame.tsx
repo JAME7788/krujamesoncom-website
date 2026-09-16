@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, Lightbulb, Power } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { createGameRoundGuard } from '../../utils/gameRoundGuard';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
@@ -53,7 +55,8 @@ const LogicGatesGame: React.FC = () => {
   const [streak, setStreak] = useState(0);
   const [roundNumber, setRoundNumber] = useState(1);
   const [done, setDone] = useState(false);
-  const [best, setBest] = useState(() => parseInt(localStorage.getItem('kj_logic_best') || '0', 10));
+  const [roundGuard] = useState(createGameRoundGuard);
+  const [best, setBest] = useState(() => readGameRecord('kj_logic_best'));
   const recordGame = useGameProgress('logic-gates', 'ประตูตรรกะ');
 
   const info = GATE_INFO[round.gate];
@@ -67,9 +70,10 @@ const LogicGatesGame: React.FC = () => {
   };
 
   const next = () => {
+    if (done || checked !== 'correct' || !roundGuard.claim(`next-${roundNumber}`)) return;
     if (roundNumber >= SESSION_ROUNDS) {
       setDone(true);
-      void recordGame(score);
+      void recordGame(score, undefined, SESSION_ROUNDS * 10);
       return;
     }
     setRound(makeRound(streak));
@@ -78,6 +82,7 @@ const LogicGatesGame: React.FC = () => {
   };
 
   const restart = () => {
+    roundGuard.reset();
     setRound(makeRound(0));
     setChecked(null);
     setScore(0);
@@ -87,13 +92,15 @@ const LogicGatesGame: React.FC = () => {
   };
 
   const check = () => {
+    if (done || checked === 'correct') return;
     if (output === round.target) {
+      if (!roundGuard.claim(`answer-${roundNumber}`)) return;
       setChecked('correct');
       const nextScore = score + 10;
       setScore(nextScore);
-      // บันทึกเมื่อ "ตอบถูก" เท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
-      recordGame(nextScore);
-      setStreak((st) => { const ns = st + 1; if (ns > best) { setBest(ns); localStorage.setItem('kj_logic_best', String(ns)); } return ns; });
+      const ns = streak + 1;
+      setStreak(ns);
+      if (ns > best) { setBest(ns); writeGameRecord('kj_logic_best', ns); }
     } else {
       setChecked('wrong');
       setStreak(0);

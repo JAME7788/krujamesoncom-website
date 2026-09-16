@@ -2,6 +2,7 @@ import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Play, Trophy, Heart, Clock } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { useGameTimers } from '../../hooks/useGameTimers';
 import './GameStyles.css';
 import './BugCatcher.css';
 
@@ -14,6 +15,9 @@ interface Bug {
 }
 
 const BugCatcher: React.FC = () => {
+  const timers = useGameTimers();
+  const activeBugs = useRef(new Set<number>());
+  const livesRef = useRef(3);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [time, setTime] = useState(0);
@@ -35,6 +39,11 @@ const BugCatcher: React.FC = () => {
   }, [score]);
 
   const start = () => {
+    timers.clear();
+    activeBugs.current.clear();
+    livesRef.current = 3;
+    scoreRef.current = 0;
+    runningRef.current = true;
     setScore(0);
     setLives(3);
     setTime(0);
@@ -46,17 +55,28 @@ const BugCatcher: React.FC = () => {
   };
 
   const endGame = useCallback(() => {
+    if (!runningRef.current) return;
+    runningRef.current = false;
+    timers.clear();
+    activeBugs.current.clear();
     setRunning(false);
     const finalScore = scoreRef.current;
     setBestScore((currentBest) => {
       if (finalScore > currentBest) {
-        localStorage.setItem('kj_bug_best', String(finalScore));
+        try { localStorage.setItem('kj_bug_best', String(finalScore)); } catch { /* Storage may be unavailable. */ }
         return finalScore;
       }
       return currentBest;
     });
     if (finalScore > 0) void recordGame(finalScore);
-  }, [recordGame]);
+  }, [recordGame, timers]);
+
+  const loseLife = useCallback(() => {
+    livesRef.current = Math.max(0, livesRef.current - 1);
+    setLives(livesRef.current);
+    setCombo(0);
+    if (livesRef.current === 0) endGame();
+  }, [endGame]);
 
   // Time + game over check
   useEffect(() => {
@@ -86,31 +106,19 @@ const BugCatcher: React.FC = () => {
         type,
         born: Date.now(),
       };
+      activeBugs.current.add(bug.id);
       setBugs((prev) => [...prev, bug]);
 
       // Auto remove
       const lifetime = type === 'fast' ? 800 : type === 'big' ? 1200 : type === 'good' ? 1500 : 1500;
-      setTimeout(() => {
-        if (!runningRef.current) return;
-        setBugs((prev) => {
-          const exists = prev.find((b) => b.id === bug.id);
-          if (exists && exists.type !== 'good') {
-            // bug หนีไป — เสียชีวิต
-            setLives((l) => {
-              const next = Math.max(0, l - 1);
-              if (next <= 0) {
-                endGame();
-              }
-              return next;
-            });
-            setCombo(0);
-          }
-          return prev.filter((b) => b.id !== bug.id);
-        });
+      timers.schedule(() => {
+        if (!runningRef.current || !activeBugs.current.delete(bug.id)) return;
+        setBugs((prev) => prev.filter((b) => b.id !== bug.id));
+        if (bug.type !== 'good') loseLife();
       }, lifetime);
     }, spawnInterval);
     return () => clearInterval(spawn);
-  }, [endGame, running, time]);
+  }, [loseLife, running, time, timers]);
 
   // Cleanup particles
   useEffect(() => {
@@ -124,26 +132,18 @@ const BugCatcher: React.FC = () => {
 
   const hit = (bug: Bug, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!runningRef.current || !activeBugs.current.delete(bug.id)) return;
     if (bug.type === 'good') {
       // ตีผีเสื้อ — เสียคะแนน
-      setLives((l) => {
-        const next = Math.max(0, l - 1);
-        if (next <= 0) {
-          endGame();
-        }
-        return next;
-      });
-      setCombo(0);
+      loseLife();
       setParticles((p) => [...p, { id: Date.now(), x: bug.x, y: bug.y, emoji: '💔', ts: Date.now() }]);
     } else {
       const points = bug.type === 'fast' ? 20 : bug.type === 'big' ? 15 : 10;
       const bonusPoints = points + combo;
-      setScore((s) => s + bonusPoints);
-      setCombo((c) => {
-        const next = c + 1;
-        setMaxCombo((m) => Math.max(m, next));
-        return next;
-      });
+      scoreRef.current += bonusPoints;
+      setScore(scoreRef.current);
+      setCombo(combo + 1);
+      setMaxCombo((m) => Math.max(m, combo + 1));
       setParticles((p) => [...p, { id: Date.now(), x: bug.x, y: bug.y, emoji: `+${bonusPoints}`, ts: Date.now() }]);
     }
     setBugs((prev) => prev.filter((b) => b.id !== bug.id));

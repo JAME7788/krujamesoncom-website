@@ -53,6 +53,7 @@ import {
 } from '../../data/tycoonGame';
 import type { TileKind } from '../../data/tycoonGame';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { getFinishedPlayerResult } from '../../utils/gameResultOwnership';
 import {
   cancelTycoonRoom,
   canStartTycoonRoom,
@@ -493,6 +494,11 @@ const DigitalCityQuestGame: React.FC = () => {
   const rankedPlayers = useMemo(() => (
     [...players].sort((a, b) => scoreDigitalCityPlayer(b).total - scoreDigitalCityPlayer(a).total)
   ), [players]);
+  useEffect(() => {
+    if (!isOnlineGame) return;
+    const ownResult = getFinishedPlayerResult(onlineRoom?.game, onlineSeat);
+    if (ownResult) void recordGame(scoreDigitalCityPlayer(ownResult).total, 'digital-city-competition', 100);
+  }, [isOnlineGame, onlineRoom?.game, onlineSeat, recordGame]);
   const impactFx = impactQueue[0] || null;
 
   const queueImpact = (kind: ImpactFxKind, icon: string, title: string, detail: string, amount?: number) => {
@@ -543,7 +549,7 @@ const DigitalCityQuestGame: React.FC = () => {
     setShowDashboard(false);
     const winner = [...list].sort((a, b) => scoreDigitalCityPlayer(b).total - scoreDigitalCityPlayer(a).total)[0];
     celebrateVictory();
-    void recordGame(Math.max(10, scoreDigitalCityPlayer(winner).total), 'digital-city-competition');
+    if (!isOnlineGame && winner) void recordGame(scoreDigitalCityPlayer(winner).total, 'digital-city-competition', 100);
   };
 
   const nextTurn = (list: Player[]) => {

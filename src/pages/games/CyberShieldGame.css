@@ -1,0 +1,557 @@
+/* 🛡️ Cyber Shield: ป้อมปราการไซเบอร์ (Network & Firewall Defender) Styles */
+
+.cyber-shield-wrap {
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 20%, #0d1b2a 0%, #060b14 100%);
+  color: #e2e8f0;
+  font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+}
+
+.cyber-shield-container {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Header & Mission Bar */
+.cyber-top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(13, 148, 136, 0.3);
+  border-radius: 14px;
+  padding: 0.75rem 1.25rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.cyber-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cyber-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s;
+}
+
+.cyber-back-btn:hover {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.cyber-mission-info h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cyber-mission-info p {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: #14b8a6;
+}
+
+.cyber-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.cyber-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(13, 148, 136, 0.15);
+  border: 1px solid rgba(13, 148, 136, 0.4);
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+}
+
+.cyber-stat-pill.server-health {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.cyber-stat-pill.bandwidth {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.cyber-stat-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.cyber-stat-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+/* Map & Battlefield */
+.cyber-battlefield-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 520px;
+  background: #080e1a;
+  border-radius: 16px;
+  border: 2px solid rgba(20, 184, 166, 0.35);
+  box-shadow: 0 0 30px rgba(13, 148, 136, 0.15), inset 0 0 60px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.cyber-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(20, 184, 166, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 184, 166, 0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.cyber-svg-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Network Path & Terminals */
+.network-cable-bg {
+  stroke: rgba(30, 58, 138, 0.4);
+  stroke-width: 18;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.network-cable-core {
+  stroke: #0284c7;
+  stroke-width: 6;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 8px #38bdf8);
+}
+
+.network-pulse {
+  stroke: #38bdf8;
+  stroke-width: 8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 20 80;
+  animation: cablePulse 2.5s linear infinite;
+}
+
+@keyframes cablePulse {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+/* Node Socket */
+.cyber-node-socket {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cyber-node-socket:hover circle.socket-base {
+  fill: rgba(56, 189, 248, 0.25);
+  stroke: #38bdf8;
+}
+
+/* Threats */
+.threat-icon {
+  font-size: 1.4rem;
+  filter: drop-shadow(0 0 6px currentColor);
+  transform: translate(-50%, -50%);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Lower Toolbar */
+.cyber-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(13, 148, 136, 0.3);
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.cyber-towers-deck {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cyber-tower-card {
+  flex: 1;
+  min-width: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.65rem 0.5rem;
+  background: rgba(30, 41, 59, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #cbd5e1;
+}
+
+.cyber-tower-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #14b8a6;
+  background: rgba(20, 184, 166, 0.15);
+}
+
+.cyber-tower-card.active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.2);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+}
+
+.cyber-tower-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.cyber-card-emoji {
+  font-size: 1.6rem;
+}
+
+.cyber-card-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  text-align: center;
+}
+
+.cyber-card-cost {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fbbf24;
+}
+
+/* Action Controls */
+.cyber-action-controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.6rem;
+  min-width: 180px;
+}
+
+.cyber-start-wave-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #0d9488, #059669);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.25rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(13, 148, 136, 0.4);
+  transition: all 0.2s;
+}
+
+.cyber-start-wave-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(13, 148, 136, 0.6);
+  background: linear-gradient(135deg, #14b8a6, #10b981);
+}
+
+.cyber-start-wave-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cyber-speed-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #cbd5e1;
+  padding: 0.45rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cyber-speed-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #38bdf8;
+}
+
+/* Selected Tower Inspector */
+.cyber-inspector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(2, 6, 23, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  font-size: 0.85rem;
+}
+
+.cyber-inspector-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cyber-inspector-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cyber-btn-upgrade {
+  background: #0284c7;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cyber-btn-upgrade:hover:not(:disabled) {
+  background: #0ea5e9;
+}
+
+.cyber-btn-upgrade:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cyber-btn-sell {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cyber-btn-sell:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+/* Modals */
+.cyber-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.cyber-modal-card {
+  background: #0f172a;
+  border: 2px solid #0d9488;
+  box-shadow: 0 0 40px rgba(13, 148, 136, 0.35);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 580px;
+  padding: 1.75rem;
+  color: #f1f5f9;
+  animation: cyberModalPop 0.25s ease-out;
+}
+
+@keyframes cyberModalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.cyber-briefing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(13, 148, 136, 0.2);
+  border: 1px solid #14b8a6;
+  color: #2dd4bf;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.cyber-briefing-q {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.5rem 0 1rem;
+  line-height: 1.5;
+  color: #f8fafc;
+}
+
+.cyber-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.cyber-option-btn {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: #e2e8f0;
+  text-align: left;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cyber-option-btn:hover:not(:disabled) {
+  background: rgba(13, 148, 136, 0.2);
+  border-color: #14b8a6;
+}
+
+.cyber-option-btn.correct {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #10b981;
+  color: #a7f3d0;
+}
+
+.cyber-option-btn.wrong {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #fecaca;
+}
+
+.cyber-explanation-box {
+  background: rgba(15, 23, 42, 0.6);
+  border-left: 4px solid #14b8a6;
+  padding: 0.75rem 1rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  margin-bottom: 1.25rem;
+}
+
+.cyber-modal-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #0d9488, #0284c7);
+  color: white;
+  border: none;
+  padding: 0.85rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3);
+  transition: all 0.2s;
+}
+
+.cyber-modal-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* Victory Screen */
+.cyber-victory-header {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.cyber-victory-header .stars {
+  font-size: 2.2rem;
+  margin-bottom: 0.4rem;
+}
+
+.cyber-victory-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.cyber-stat-box {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.cyber-stat-box small {
+  display: block;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-bottom: 0.25rem;
+}
+
+.cyber-stat-box strong {
+  font-size: 1.2rem;
+  color: #f8fafc;
+}
+
+@media (max-width: 768px) {
+  .cyber-toolbar {
+    grid-template-columns: 1fr;
+  }
+  .cyber-stats-bar {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .cyber-top-nav {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .cyber-stat-pill {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}

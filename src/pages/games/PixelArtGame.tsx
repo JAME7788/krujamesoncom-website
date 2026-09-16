@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, Lightbulb, Eraser } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { createGameRoundGuard } from '../../utils/gameRoundGuard';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
@@ -47,7 +49,8 @@ const PixelArtGame: React.FC = () => {
   const [showBits, setShowBits] = useState(true);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
-  const [best, setBest] = useState(() => parseInt(localStorage.getItem('kj_pixel_best') || '0', 10));
+  const [roundGuard] = useState(createGameRoundGuard);
+  const [best, setBest] = useState(() => readGameRecord('kj_pixel_best'));
   const recordGame = useGameProgress('pixel-art', 'วาดภาพจากเลขฐานสอง');
 
   const target = useMemo(() => pic.rows.map((r) => r.split('').map((c) => Number(c))), [pic]);
@@ -59,9 +62,10 @@ const PixelArtGame: React.FC = () => {
   };
 
   const nextPic = () => {
+    if (done || checked !== 'correct' || !roundGuard.claim(`next-${picPosition}`)) return;
     if (picPosition + 1 >= picOrder.length) {
       setDone(true);
-      void recordGame(score);
+      void recordGame(score, undefined, picOrder.length * 10);
       return;
     }
     const nextPosition = picPosition + 1;
@@ -72,6 +76,7 @@ const PixelArtGame: React.FC = () => {
   };
 
   const restart = () => {
+    roundGuard.reset();
     const nextOrder = makePicOrder();
     setPicOrder(nextOrder);
     setPicPosition(0);
@@ -83,18 +88,16 @@ const PixelArtGame: React.FC = () => {
   };
 
   const check = () => {
+    if (done || checked === 'correct') return;
     const win = grid.every((row, r) => row.every((v, c) => v === target[r][c]));
     if (win) {
+      if (!roundGuard.claim(`answer-${picPosition}`)) return;
       setChecked('correct');
       const nextScore = score + 10;
       setScore(nextScore);
-      // บันทึกเมื่อทำถูกเท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
-      recordGame(nextScore);
-      setStreak((st) => {
-        const ns = st + 1;
-        if (ns > best) { setBest(ns); localStorage.setItem('kj_pixel_best', String(ns)); }
-        return ns;
-      });
+      const ns = streak + 1;
+      setStreak(ns);
+      if (ns > best) { setBest(ns); writeGameRecord('kj_pixel_best', ns); }
     } else {
       setChecked('wrong');
       setStreak(0);

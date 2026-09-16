@@ -12,10 +12,11 @@
 
 import { db } from './firebase';
 import {
-  doc, setDoc, getDoc, getDocs, collection, serverTimestamp,
+  doc, setDoc, getDoc, getDocs, collection, serverTimestamp, runTransaction,
 } from 'firebase/firestore';
 import { loadSchedule, isInClassTime } from '../data/schedule';
 import { isNonScoringUserId } from './userAccessService';
+import { getCourseIdsForClassroom } from './courseAccessService';
 
 // ---------- Types ----------
 
@@ -406,6 +407,17 @@ const parseClassroomFromStudentId = (studentId: string): string | null => {
   return m ? m[1] : null;
 };
 
+export const isCourseAllowedForStudent = (
+  studentId: string,
+  gradeId: string,
+  classroom?: string
+): boolean => {
+  const cls = classroom || parseClassroomFromStudentId(studentId);
+  if (!cls) return true;
+  const allowed = getCourseIdsForClassroom(cls).map((c) => c.toLowerCase());
+  return allowed.length === 0 || allowed.includes(gradeId.toLowerCase());
+};
+
 const recordInClassDayIfApplicable = (studentId: string, u: UnitProgress) => {
   const classroom = parseClassroomFromStudentId(studentId);
   if (!classroom) return;
@@ -567,6 +579,7 @@ export const trackSlideView = async (
   totalSlides: number
 ): Promise<boolean> => {
   if (!studentId) return false;
+  if (!isCourseAllowedForStudent(studentId, gradeId)) return false;
   let data = cache.get(studentId);
   if (!data) data = await fetchStudentProgress(studentId);
   const k = unitKey(gradeId, unitNo);
@@ -599,15 +612,57 @@ export const trackMediaClick = async (
   dedupKey?: string,
 ): Promise<boolean> => {
   if (!studentId) return false;
+  if (!isCourseAllowedForStudent(studentId, gradeId)) return false;
+  if (isNonScoringUserId(studentId)) return false;
+  // A game completion is acknowledged only from server-confirmed data. Reading
+  // and adding the activity atomically also protects simultaneous completions.
+  if (fbAvailable()) {
+    try {
+      const confirmed = await runTransaction(db, async (transaction) => {
+        const ref = docRef(studentId);
+        const snap = await transaction.get(ref);
+        const data = normalizeProgressData(studentId, snap.exists() ? snap.data() : {});
+        const k = unitKey(gradeId, unitNo);
+        const u = data.units[k] || emptyUnit();
+        const list = type === 'video' ? u.videosClicked : type === 'fun' ? u.funClicked : u.articlesClicked;
+        const key = dedupKey ?? detail;
+        if (!list.includes(key)) {
+          list.push(key);
+          recordScoreEvidence(studentId, u, type, key);
+          recordInClassDayIfApplicable(studentId, u);
+          recordDailyActivity(data);
+          recordGlobalInClassDayIfApplicable(data);
+          u.updatedAt = Date.now();
+          recomputeUnit(u);
+          data.units[k] = u;
+          data.activities.unshift({ type, gradeId, unitNo, detail, timestamp: Date.now() });
+          data.activities = data.activities.slice(0, ACTIVITY_LIMIT);
+          recomputeTotals(data);
+          transaction.set(ref, {
+            ...data,
+            attempts: data.attempts.slice(0, 20),
+            activities: data.activities.slice(0, 30),
+            syncedAt: serverTimestamp(),
+          }, { merge: true });
+        }
+        return data;
+      });
+      setCached(confirmed);
+      return true;
+    } catch (error) {
+      console.warn('[progress] media transaction failed', error);
+      throw error;
+    }
+  }
   let data = cache.get(studentId);
   if (!data) data = await fetchStudentProgress(studentId);
   const k = unitKey(gradeId, unitNo);
   const u = data.units[k] || emptyUnit();
   const list = type === 'video' ? u.videosClicked : type === 'fun' ? u.funClicked : u.articlesClicked;
   const key = dedupKey ?? detail;
-  // รายการเดิมยังถือว่าบันทึกสำเร็จ แต่ไม่เขียน Firebase/เพิ่ม activity ซ้ำ
-  // ช่วยกันการกดซ้ำเพื่อปั๊ม XP และลดจำนวน write ในห้องเรียนจริง
-  if (list.includes(key)) return true;
+  // Without Firebase, keep the activity for this session but never report
+  // a cached duplicate as remotely saved.
+  if (list.includes(key)) return persist(data);
   list.push(key);
   recordScoreEvidence(studentId, u, type, key);
   recordInClassDayIfApplicable(studentId, u);
@@ -654,6 +709,9 @@ export const trackWorldMissionEvidence = async (
 ): Promise<TrackMissionEvidenceResult> => {
   const normalizedEventId = input.eventId.replace(/\s+/g, '-').trim().slice(0, 120);
   if (!input.studentId || !input.gradeId || !normalizedEventId) {
+    return { saved: false, awarded: false, reason: 'invalid', unit: emptyUnit() };
+  }
+  if (!isCourseAllowedForStudent(input.studentId, input.gradeId)) {
     return { saved: false, awarded: false, reason: 'invalid', unit: emptyUnit() };
   }
   let data = cache.get(input.studentId);
@@ -732,6 +790,7 @@ export const trackPracticeCompletion = async (
   detail: string,
 ): Promise<boolean> => {
   if (!studentId || !detail.trim()) return false;
+  if (!isCourseAllowedForStudent(studentId, gradeId)) return false;
   let data = cache.get(studentId);
   if (!data) data = await fetchStudentProgress(studentId);
   const k = unitKey(gradeId, unitNo);
@@ -778,6 +837,7 @@ export const saveQuizAttempt = async (
   };
   if (!studentId) return attempt;
   if (maxScore <= 0) return attempt;
+  if (!isCourseAllowedForStudent(studentId, gradeId)) return attempt;
 
   let data = cache.get(studentId);
   if (!data) data = await fetchStudentProgress(studentId);
@@ -815,26 +875,66 @@ export const getUnitProgress = (
 };
 
 /** สรุปข้อมูลสำหรับ Dashboard */
-export const getSummary = (studentId: string) => {
+export const getSummary = (studentId: string, classroom?: string) => {
   const data = getCached(studentId);
-  const unitsStarted = Object.keys(data.units).length;
-  const unitsCompleted = Object.values(data.units).filter((u) => u.completionPct >= 80).length;
-  const recentAttempts = data.attempts.slice(0, 10);
-  const recentActivities = data.activities.slice(0, 10);
+  const targetClassroom = classroom || parseClassroomFromStudentId(studentId);
+  const allowed = targetClassroom ? getCourseIdsForClassroom(targetClassroom).map((c) => c.toLowerCase()) : [];
+
+  const unitEntries = Object.entries(data.units).filter(([k]) => {
+    if (!allowed.length) return true;
+    const gradeId = k.split('_')[0].toLowerCase();
+    return allowed.includes(gradeId);
+  });
+
+  const unitsStarted = unitEntries.length;
+  const unitsCompleted = unitEntries.filter(([, u]) => u.completionPct >= 80).length;
+
+  const filteredAttempts = allowed.length
+    ? data.attempts.filter((a) => allowed.includes(a.gradeId.toLowerCase()))
+    : data.attempts;
+
+  const filteredActivities = allowed.length
+    ? data.activities.filter((a) => !a.gradeId || a.gradeId === 'login' || allowed.includes(a.gradeId.toLowerCase()))
+    : data.activities;
+
+  const recentAttempts = filteredAttempts.slice(0, 10);
+  const recentActivities = filteredActivities.slice(0, 10);
+
   const averageScore =
-    data.attempts.length > 0
-      ? Math.round(data.attempts.reduce((sum, a) => sum + a.percentage, 0) / data.attempts.length)
+    filteredAttempts.length > 0
+      ? Math.round(filteredAttempts.reduce((sum, a) => sum + a.percentage, 0) / filteredAttempts.length)
       : 0;
+
+  const totalSlidesViewed = allowed.length
+    ? unitEntries.reduce((sum, [, u]) => sum + (u.slidesViewed?.length || 0), 0)
+    : data.totalSlidesViewed;
+
+  const totalActivities = allowed.length
+    ? unitEntries.reduce(
+        (sum, [, u]) =>
+          sum +
+          (u.videosClicked?.length || 0) +
+          (u.funClicked?.length || 0) +
+          (u.articlesClicked?.length || 0) +
+          (u.practiceCompleted?.length || 0),
+        0
+      )
+    : data.totalActivities;
+
+  const totalPoints = allowed.length
+    ? unitEntries.reduce((sum, [, u]) => sum + (u.bestQuizScore || 0), 0)
+    : data.totalPoints;
+
   return {
-    units: Object.entries(data.units).map(([k, u]) => ({
+    units: unitEntries.map(([k, u]) => ({
       key: k,
       gradeId: k.split('_')[0],
       unitNo: parseInt(k.split('_')[1], 10),
       ...u,
     })),
-    totalSlidesViewed: data.totalSlidesViewed,
-    totalActivities: data.totalActivities,
-    totalPoints: data.totalPoints,
+    totalSlidesViewed,
+    totalActivities,
+    totalPoints,
     unitsStarted,
     unitsCompleted,
     recentAttempts,

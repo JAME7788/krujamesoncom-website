@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffectEvent, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChevronLeft, Clock, Lightbulb, Pause, Play, RotateCcw, Trophy, Zap,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { useGameTimers } from '../../hooks/useGameTimers';
 import './GameStyles.css';
 import './QuickAnswerComputing.css';
 
@@ -173,6 +174,10 @@ const saveResult = (result: QuickResult) => {
 const QuickAnswerComputing: React.FC = () => {
   const { user } = useAuth();
   const [phase, setPhase] = useState<GamePhase>('setup');
+  const timers = useGameTimers(phase);
+  const finishedRef = useRef(false);
+  const answerLock = useRef(false);
+  const [transitioning, setTransitioning] = useState(false);
   const [levelKey, setLevelKey] = useState(quickLevels[0].key);
   const [minutes, setMinutes] = useState(5);
   const [seconds, setSeconds] = useState(0);
@@ -215,26 +220,11 @@ const QuickAnswerComputing: React.FC = () => {
     classroom: user?.classroom,
   }), [remaining, selectedLevel.name, skipped, totalSeconds, user?.classroom, user?.id, user?.name, wrong]);
 
-  React.useEffect(() => {
-    if (phase !== 'playing' || paused) return undefined;
-    const timer = window.setInterval(() => {
-      setRemaining((current) => {
-        if (current <= 1) {
-          window.clearInterval(timer);
-          const finalResult = buildResult(score, totalSeconds);
-           setResult(finalResult);
-           saveResult(finalResult);
-           setPhase('finished');
-           if (score > 0) void recordGame(score);
-           return 0;
-        }
-        return current - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [buildResult, paused, phase, recordGame, score, totalSeconds]);
-
   const startGame = () => {
+    timers.clear();
+    finishedRef.current = false;
+    answerLock.current = false;
+    setTransitioning(false);
     const duration = Math.max(1, minutes * 60 + Math.min(59, seconds));
     const nextQuestions = shuffleQuestions ? shuffle(selectedLevel.questions) : [...selectedLevel.questions];
     setQuestions(nextQuestions);
@@ -254,8 +244,11 @@ const QuickAnswerComputing: React.FC = () => {
     setPhase('playing');
   };
 
-  const finishWithScore = (finalScore: number) => {
-    const finalResult = buildResult(finalScore);
+  const finishWithScore = (finalScore: number, usedSeconds?: number) => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    timers.clear();
+    const finalResult = buildResult(finalScore, usedSeconds);
     setResult(finalResult);
     saveResult(finalResult);
     setPhase('finished');
@@ -263,8 +256,22 @@ const QuickAnswerComputing: React.FC = () => {
     if (finalScore > 0) void recordGame(finalScore);
   };
 
+  const tick = useEffectEvent(() => {
+    if (finishedRef.current) return;
+    setRemaining(Math.max(0, remaining - 1));
+    if (remaining <= 1) finishWithScore(score, totalSeconds);
+  });
+
+  React.useEffect(() => {
+    if (phase !== 'playing' || paused) return undefined;
+    const timer = window.setInterval(() => tick(), 1000);
+    return () => window.clearInterval(timer);
+  }, [paused, phase]);
+
   const answer = (choice: string) => {
-    if (phase !== 'playing' || paused || !currentQuestion || usedAnswers.includes(choice)) return;
+    if (phase !== 'playing' || paused || answerLock.current || !currentQuestion || usedAnswers.includes(choice)) return;
+    answerLock.current = true;
+    setTransitioning(true);
     if (choice === currentQuestion.answer) {
       const nextScore = score + 1;
       setScore(nextScore);
@@ -272,11 +279,13 @@ const QuickAnswerComputing: React.FC = () => {
       setFeedback('+1 ถูกต้อง');
       if (showFacts) setFact(currentQuestion.note);
       if (nextScore >= TOTAL_QUESTIONS) {
-        window.setTimeout(() => finishWithScore(nextScore), 420);
+        timers.schedule(() => finishWithScore(nextScore), 420);
       } else {
-        window.setTimeout(() => {
+        timers.schedule(() => {
           setCurrentIndex((current) => current + 1);
           setFeedback('');
+          answerLock.current = false;
+          setTransitioning(false);
         }, 420);
       }
       return;
@@ -285,11 +294,15 @@ const QuickAnswerComputing: React.FC = () => {
     setWrong((current) => current + 1);
     setWrongAnswer(choice);
     setFeedback('ยังไม่ถูก ลองเลือกใหม่');
-    window.setTimeout(() => setWrongAnswer(null), 360);
+    timers.schedule(() => {
+      setWrongAnswer(null);
+      answerLock.current = false;
+      setTransitioning(false);
+    }, 360);
   };
 
   const skipQuestion = () => {
-    if (phase !== 'playing' || paused || questions.length - currentIndex <= 1) return;
+    if (phase !== 'playing' || paused || answerLock.current || questions.length - currentIndex <= 1) return;
     setQuestions((current) => {
       const next = [...current];
       const [skippedQuestion] = next.splice(currentIndex, 1);
@@ -394,7 +407,7 @@ const QuickAnswerComputing: React.FC = () => {
             <div className={`quick-score-pill ${remaining <= 30 && phase === 'playing' ? 'danger' : ''}`}><Clock size={18} /> เวลา <strong>{formatTime(remaining)}</strong></div>
             <div className="quick-score-pill">ผิด <strong>{wrong}</strong></div>
             <div className="quick-score-pill">ข้าม <strong>{skipped}</strong></div>
-            <button className="quick-icon-btn" type="button" onClick={() => setPaused((current) => !current)}>
+            <button className="quick-icon-btn" type="button" disabled={transitioning} onClick={() => setPaused((current) => !current)}>
               {paused ? <Play size={16} /> : <Pause size={16} />}
               {paused ? 'เล่นต่อ' : 'พัก'}
             </button>
@@ -416,7 +429,7 @@ const QuickAnswerComputing: React.FC = () => {
                   <button
                     key={choice}
                     type="button"
-                    disabled={used || phase !== 'playing' || paused}
+                    disabled={used || phase !== 'playing' || paused || transitioning}
                     className={`quick-answer-card ${used ? 'used' : ''} ${isWrong ? 'wrong' : ''}`}
                     onClick={() => answer(choice)}
                   >
@@ -433,7 +446,7 @@ const QuickAnswerComputing: React.FC = () => {
                 <h3>{currentQuestion ? currentQuestion.question : 'ตอบครบแล้ว'}</h3>
                 {feedback && <p className={feedback.startsWith('+') ? 'good' : ''}>{feedback}</p>}
               </div>
-              <button type="button" onClick={skipQuestion} disabled={phase !== 'playing' || paused}>ข้าม</button>
+              <button type="button" onClick={skipQuestion} disabled={phase !== 'playing' || paused || transitioning || questions.length - currentIndex <= 1}>ข้าม</button>
             </div>
           </section>
 

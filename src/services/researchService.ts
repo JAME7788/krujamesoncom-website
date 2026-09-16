@@ -20,6 +20,31 @@ export interface ResearchMeta {
   satisfactionMean?: number; // ครูกรอกเองถ้ามีแบบสอบถาม (1-5)
 }
 
+export interface ResearchPreset {
+  id: string;
+  name: string;
+  title: string;
+  classroom: string;
+  classroomLabel: string;
+}
+
+export const RESEARCH_PRESETS: ResearchPreset[] = [
+  {
+    id: 'mouse-p1-pa',
+    name: '🎯 วิจัย & ว.PA ทักษะเมาส์ ป.1 (11 คน) [ทำทีเดียวจบ 2 งาน]',
+    title: 'การพัฒนาทักษะปฏิบัติการใช้เมาส์ด้วยเกมมิฟิเคชัน (Gamification) ร่วมกับ Active Learning วิชาวิทยาการคำนวณและเทคโนโลยี ชั้นประถมศึกษาปีที่ ๑ (๑๑ คน)',
+    classroom: 'ป.1',
+    classroomLabel: 'ชั้นประถมศึกษาปีที่ ๑ (๑๑ คน)',
+  },
+  {
+    id: 'wbi-all',
+    name: '🌐 วิจัยระบบการสอนผ่านเว็บ WBI + Gamification (ทุกชั้น ป.1-ม.3)',
+    title: 'การพัฒนาการเรียนการสอนผ่านเว็บเทคโนโลยีร่วมกับเกมมิฟิเคชันในรายวิชาวิทยาการคำนวณ',
+    classroom: 'all',
+    classroomLabel: 'ทุกชั้น (ป.1-ม.3)',
+  },
+];
+
 export interface ResearchData {
   n: number;                    // จำนวนนักเรียนที่มีคะแนน (ไม่ซ้ำคน)
   populationSize: number;       // จำนวนนักเรียนทั้งหมดตามบัญชีรายชื่อ

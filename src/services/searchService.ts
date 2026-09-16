@@ -2,6 +2,7 @@
 import { grades } from '../data/curriculum';
 import { allResources } from '../data/learningResources';
 import { unitExtras } from '../data/unitExtras';
+import { gamesCatalog } from '../data/gamesCatalog';
 
 export interface SearchResult {
   type: 'unit' | 'indicator' | 'resource' | 'topic' | 'lesson' | 'game';
@@ -13,18 +14,6 @@ export interface SearchResult {
   score: number;
 }
 
-const games = [
-  { id: 'mouse-practice', title: 'ภารกิจเมาส์แม่นยำ', emoji: '🖱️' },
-  { id: 'keyboard-practice', title: 'นักสำรวจคีย์บอร์ด', emoji: '⌨️' },
-  { id: 'algorithm-sorter', title: 'จัดอัลกอริทึม', emoji: '🧩' },
-  { id: 'binary', title: 'แปลงเลขฐานสอง', emoji: '🔢' },
-  { id: 'memory', title: 'จับคู่ความจำ', emoji: '🃏' },
-  { id: 'pattern', title: 'หาแพทเทิร์น', emoji: '🔍' },
-  { id: 'coding-maze', title: 'Coding Maze', emoji: '🤖' },
-  { id: 'snake', title: 'งูกินผลไม้', emoji: '🐍' },
-  { id: 'bug-catcher', title: 'จับบั๊ก', emoji: '🐞' },
-];
-
 const score = (text: string, query: string): number => {
   const t = text.toLowerCase();
   const q = query.toLowerCase();
@@ -35,6 +24,7 @@ const score = (text: string, query: string): number => {
 };
 
 export const search = (query: string, limit = 30): SearchResult[] => {
+  query = query.trim();
   if (!query.trim() || query.trim().length < 2) return [];
   const results: SearchResult[] = [];
 
@@ -102,13 +92,14 @@ export const search = (query: string, limit = 30): SearchResult[] => {
   });
 
   // 3) Games
-  games.forEach((g) => {
-    const gs = score(g.title, query);
+  gamesCatalog.forEach((g) => {
+    const gs = Math.max(score(g.title, query), score(g.skill, query) * 0.8, score(g.desc, query) * 0.6);
     if (gs > 0) {
       results.push({
         type: 'game', title: g.title, emoji: g.emoji,
-        url: `/games/${g.id}`,
-        context: 'เกมฝึก',
+        url: g.path,
+        desc: g.desc,
+        context: `${g.level} · ${g.skill}`,
         score: gs,
       });
     }

@@ -1,0 +1,771 @@
+/* KruComArcadeGame.css - 100+ Missions Arcade */
+
+.kca-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 16px;
+  color: #fff;
+  user-select: none;
+  font-family: 'Kanit', system-ui, -apple-system, sans-serif;
+}
+
+/* Header */
+.kca-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.kca-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.kca-back-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.kca-title-wrap {
+  text-align: center;
+}
+
+.kca-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.kca-subtitle {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 2px 0 0 0;
+}
+
+/* Stats HUD */
+.kca-stats-hud {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.kca-stat-card {
+  min-width: 0;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kca-stat-icon {
+  font-size: 2rem;
+}
+
+.kca-stat-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  display: flex;
+  flex-direction: column;
+}
+
+.kca-stat-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.kca-stat-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+/* Search & Filter Section */
+.kca-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.kca-search-input {
+  width: 100%;
+  padding: 12px 18px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.kca-search-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.3);
+}
+
+.kca-chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.kca-chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.kca-chip {
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.kca-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.kca-chip.active {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+}
+
+/* Missions Grid */
+.kca-missions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.kca-mission-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.kca-mission-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(245, 158, 11, 0.15);
+}
+
+.kca-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.kca-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.kca-type-badge.sorting {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.kca-type-badge.matching {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.kca-type-badge.sequence {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.kca-type-badge.quiz {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.kca-card-level {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.kca-card-body h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: #f8fafc;
+  line-height: 1.4;
+}
+
+.kca-card-folder {
+  font-size: 0.75rem;
+  color: #a78bfa;
+  margin-bottom: 6px;
+}
+
+.kca-card-desc {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+
+.kca-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.kca-play-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.kca-play-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+}
+
+.kca-pdf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.82rem;
+  transition: all 0.15s;
+}
+
+.kca-pdf-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Gameplay Screen Wrapper */
+.kca-play-arena {
+  width: 100%;
+  max-width: 820px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Sorting Mode */
+.kca-sorting-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.kca-target-card {
+  width: 100%;
+  max-width: 480px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  padding: 28px 20px;
+  text-align: center;
+  margin: 18px 0 28px 0;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+
+.kca-target-emoji {
+  font-size: 3rem;
+  margin-bottom: 8px;
+}
+
+.kca-target-text {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.kca-bins-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.kca-bin-btn {
+  padding: 16px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.kca-bin-btn:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  transform: translateY(-2px);
+}
+
+/* Matching Mode */
+.kca-matching-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+  margin: 18px 0;
+}
+
+.kca-matching-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kca-match-card {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.kca-match-card:hover {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: #c084fc;
+}
+
+.kca-match-card.selected {
+  background: rgba(245, 158, 11, 0.3) !important;
+  border-color: #f59e0b !important;
+  color: #fff;
+}
+
+.kca-match-card.matched {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: #10b981 !important;
+  color: #a7f3d0 !important;
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Sequence Mode */
+.kca-sequence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin: 18px 0;
+}
+
+.kca-sequence-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: #f8fafc;
+  font-size: 0.92rem;
+}
+
+.kca-sequence-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.kca-seq-btn {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.kca-seq-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Quiz Mode */
+.kca-quiz-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 16px 0;
+}
+
+.kca-quiz-q {
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  color: #f8fafc;
+  line-height: 1.5;
+  margin-bottom: 24px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 20px 24px;
+  width: 100%;
+}
+
+.kca-quiz-choices {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .kca-quiz-choices {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.kca-quiz-btn {
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kca-quiz-btn:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  transform: translateY(-2px);
+}
+
+.kca-quiz-btn.correct {
+  background: rgba(16, 185, 129, 0.3) !important;
+  border-color: #10b981 !important;
+  color: #6ee7b7 !important;
+}
+
+.kca-quiz-btn.wrong {
+  background: rgba(239, 68, 68, 0.3) !important;
+  border-color: #ef4444 !important;
+  color: #fca5a5 !important;
+}
+
+.kca-quiz-feedback {
+  margin-top: 20px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  width: 100%;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kca-quiz-feedback.correct {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #a7f3d0;
+}
+
+.kca-quiz-feedback.wrong {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fecaca;
+}
+
+/* Arena Top HUD */
+.kca-arena-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.kca-arena-info h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0;
+  color: #f8fafc;
+}
+
+.kca-arena-meta {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 4px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.kca-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kca-score-pill {
+  padding: 6px 14px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 20px;
+  color: #fbbf24;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.kca-exit-btn {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.kca-exit-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Progress bar inside arena */
+.kca-progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.kca-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #10b981);
+  transition: width 0.3s ease;
+}
+
+/* Action Controls (Check answer, next, reset) */
+.kca-action-bar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 24px;
+}
+
+.kca-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+  transition: all 0.15s;
+}
+
+.kca-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.5);
+}
+
+.kca-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.kca-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+/* Completion Modal / Overlay */
+.kca-complete-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.kca-complete-card {
+  background: #0f172a;
+  border: 2px solid #f59e0b;
+  border-radius: 24px;
+  padding: 32px 24px;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(245, 158, 11, 0.3);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.kca-stars-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 2.4rem;
+  margin: 16px 0;
+}
+
+.kca-star {
+  color: #475569;
+  transition: transform 0.2s ease;
+}
+
+.kca-star.earned {
+  color: #fbbf24;
+  text-shadow: 0 0 16px rgba(251, 191, 36, 0.6);
+  transform: scale(1.15);
+}
+
+.kca-complete-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 8px 0;
+}
+
+.kca-complete-desc {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  margin-bottom: 24px;
+}
+
+.kca-modal-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .kca-stats-hud {
+    gap: 8px;
+  }
+  .kca-stat-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 8px;
+    gap: 4px;
+  }
+}

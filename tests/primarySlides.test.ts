@@ -10,6 +10,8 @@ import { richSlides } from '../src/data/richSlides';
 import { primaryRichSlides } from '../src/data/richSlidesPrimary';
 import { secondaryRichSlides } from '../src/data/richSlidesSecondary';
 import { electiveRichSlides } from '../src/data/richSlidesElective';
+import { getUnitSlideImages, hasUnitSlideImages, unitSlideImages } from '../src/data/slideImages';
+import { buildOfficialLessonNotes } from '../src/data/officialSources';
 
 const PRIMARY = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] as const;
 const SECONDARY = ['m1-cs', 'm1-design', 'm2-cs', 'm2-design', 'm3-cs', 'm3-design'] as const;
@@ -128,5 +130,27 @@ describe('คุณภาพของสไลด์แต่ละหน่ว�
       const last = deck[deck.length - 1];
       expect(last.title, `${key} แผ่นสุดท้ายไม่ใช่การตรวจความเข้าใจ`).toMatch(/ตรวจ|สรุป|ทบทวน/);
     });
+  });
+});
+
+describe('ระบบสไลด์ภาพและเนื้อหาที่เด็กเข้าใจง่าย', () => {
+  it('สไลด์ทุกหน่วยใช้ชุด Rich Slides ที่เขียนขึ้นเองอย่างถูกลิขสิทธิ์', () => {
+    // ป้องกันการละเมิดลิขสิทธิ์: ไม่มีการนำไฟล์สไลด์สำนักพิมพ์ภายนอกมาโฮสต์
+    const totalImageCount = Object.values(unitSlideImages)
+      .flatMap((units) => Object.values(units))
+      .reduce((acc, list) => acc + list.length, 0);
+    expect(totalImageCount).toBe(0);
+  });
+
+  it('ระดับประถม (ป.1 - ป.6) ต้องไม่มีข้อความทางการของคู่มือครู/ตัวชี้วัดปนในบทเรียน', () => {
+    const primaryGrades = grades.filter((g) => /^p[1-6]$/.test(g.id));
+    for (const g of primaryGrades) {
+      for (const u of g.units || []) {
+        const notes = buildOfficialLessonNotes(g, u);
+        const allText = JSON.stringify(notes);
+        expect(allText).not.toContain('คู่มือครู และแบบประเมิน');
+        expect(allText).not.toContain('หลักฐานการเรียนรู้');
+      }
+    }
   });
 });

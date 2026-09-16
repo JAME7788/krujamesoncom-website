@@ -6,6 +6,10 @@
 export type LessonTheme =
   | 'ai' | 'data' | 'coding' | 'safety' | 'file' | 'internet' | 'problem' | 'default';
 
+export const isArduinoLessonText = (text: string): boolean => (
+  /\bArduino\b|ไมโครคอนโทรลเลอร์|บอร์ด\s*(?:Arduino|ไมโครคอนโทรลเลอร์)|เซนเซอร์|PWM|Serial Monitor|บูตโหลดเดอร์/i.test(text)
+);
+
 /**
  * ลำดับการตรวจสำคัญมาก เพราะเจอรูปแบบไหนก่อนจะคืนค่าทันที
  *

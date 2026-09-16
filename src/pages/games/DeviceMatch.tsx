@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { useGameTimers } from '../../hooks/useGameTimers';
 import './GameStyles.css';
 
 interface Device { emoji: string; name: string; use: string }
@@ -28,6 +29,7 @@ const DEVICES: Device[] = [
 const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
 
 const DeviceMatch: React.FC = () => {
+  const timers = useGameTimers();
   const recordGame = useGameProgress('device-match', 'จับคู่อุปกรณ์คอมพิวเตอร์');
   const [order, setOrder] = useState<Device[]>(() => shuffle(DEVICES));
   const [idx, setIdx] = useState(0);
@@ -46,10 +48,10 @@ const DeviceMatch: React.FC = () => {
     setPicked(name);
     const correct = name === current.name;
     if (correct) setScore((s) => s + 1);
-    setTimeout(() => {
+    timers.schedule(() => {
       if (idx + 1 >= order.length) {
         setDone(true);
-        recordGame(score + (correct ? 1 : 0));
+        recordGame(score + (correct ? 1 : 0), undefined, order.length);
       } else {
         setIdx((i) => i + 1);
         setPicked(null);
@@ -58,6 +60,7 @@ const DeviceMatch: React.FC = () => {
   };
 
   const restart = () => {
+    timers.clear();
     setOrder(shuffle(DEVICES)); setIdx(0); setScore(0); setPicked(null); setDone(false);
   };
 

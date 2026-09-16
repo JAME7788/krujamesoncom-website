@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import {
   BookOpen,
   Box,
   BrickWall,
+  Calendar,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -18,8 +19,13 @@ import {
   Gamepad2,
   Hammer,
   Hand,
+  Home,
+  LayoutDashboard,
+  Library,
   LockKeyhole,
+  LogOut,
   Maximize2,
+  Menu,
   MonitorPlay,
   MoveDown,
   MoveLeft,
@@ -31,6 +37,7 @@ import {
   Play,
   Presentation,
   Radio,
+  RotateCcw,
   ScanFace,
   Settings2,
   ShieldCheck,
@@ -61,7 +68,10 @@ import { fetchCustomSlides } from '../services/slideService';
 import {
   addWorldBlock,
   cleanupVirtualQaRoom,
+  clearWorldBlocks,
   defaultVirtualRoomState,
+  getWeekDisplayLabel,
+  getWorldWeekKey,
   MAX_WORLD_BLOCKS,
   recordWorldActivityEvent,
   removeWorldBlock,
@@ -126,7 +136,7 @@ const initialGraphicsQuality = (): GraphicsQuality => {
 
 const lessonEmoji = (title: string, topics: string[], index: number) => {
   const text = `${title} ${topics.join(' ')}`;
-  if (/AI|ปัญญาประดิษฐ์|หุ่นยนต์/i.test(text)) return '🤖';
+  if (/\bAI\b|ปัญญาประดิษฐ์|หุ่นยนต์/i.test(text)) return '🤖';
   if (/ปลอดภัย|กฎหมาย|ภัย|สิทธิ|ดิจิทัล/i.test(text)) return '🛡️';
   if (/ข้อมูล|สารสนเทศ|ประมวลผล|ตาราง/i.test(text)) return '📊';
   if (/โปรแกรม|อัลกอริทึม|ขั้นตอน|ผังงาน|โค้ด/i.test(text)) return '🧩';
@@ -426,6 +436,12 @@ const VirtualClassroom: React.FC = () => {
   const [customSlides, setCustomSlides] = useState<Record<number, RichSlide[]>>({});
   const [status, setStatus] = useState('');
   const [pointerLocked, setPointerLocked] = useState(false);
+  const navigate = useNavigate();
+  const [exitModalOpen, setExitModalOpen] = useState(false);
+  const [quickMenuOpen, setQuickMenuOpen] = useState(false);
+  const [confirmRemapOpen, setConfirmRemapOpen] = useState(false);
+  const currentWeekKey = useMemo(() => getWorldWeekKey(), []);
+  const weekDisplayLabel = useMemo(() => getWeekDisplayLabel(currentWeekKey), [currentWeekKey]);
 
   const activeClassroom = isTeacher ? teacherRoom : (user?.classroom || 'ป.1');
   const partyMap = new URLSearchParams(window.location.search).get('map') === 'camouflage';
@@ -1595,6 +1611,17 @@ const VirtualClassroom: React.FC = () => {
         setStatus(`สร้างได้สูงสุด ${BUILD_MAX_HEIGHT} ชั้น`);
         return;
       }
+      const playerFeet = playerPosition.y - 1.7;
+      const playerHead = playerPosition.y + 0.1;
+      const blockMinY = y - 0.5;
+      const blockMaxY = y + 0.5;
+      const inPlayerCellX = Math.abs(x - playerPosition.x) < 0.65;
+      const inPlayerCellZ = Math.abs(z - playerPosition.z) < 0.65;
+      const inPlayerHeight = blockMaxY > playerFeet + 0.1 && blockMinY < playerHead;
+      if (inPlayerCellX && inPlayerCellZ && inPlayerHeight) {
+        setStatus('ไม่สามารถวางบล็อกทับตัวเราได้ ถอยหลังออกมานิดนึงนะ');
+        return;
+      }
       const block: WorldBlock = {
         id: `${playerId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         x, y, z,
@@ -1769,28 +1796,81 @@ const VirtualClassroom: React.FC = () => {
       const speed = keys.has('ShiftLeft') ? 8.5 : 5.2;
       const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
       const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-      const previousX = playerPosition.x;
-      const previousZ = playerPosition.z;
-      playerPosition.addScaledVector(forward, forwardAmount * speed * delta);
-      playerPosition.addScaledVector(right, sideAmount * speed * delta);
-      if (partyMap && camouflageColliders.some((box) => (
-        playerPosition.x >= box.min.x
-        && playerPosition.x <= box.max.x
-        && playerPosition.z >= box.min.z
-        && playerPosition.z <= box.max.z
-      ))) {
-        playerPosition.x = previousX;
-        playerPosition.z = previousZ;
+      const PLAYER_RADIUS = 0.34;
+      const currentFeetY = playerPosition.y - 1.7;
+
+      // ตรวจสอบการชนในแนวราบ AABB กับบล็อก โต๊ะ และสิ่งกีดขวาง
+      const collidesAt = (testX: number, testZ: number, feetYLevel: number): boolean => {
+        // 1. ตรวจสอบก้อนบล็อกที่วาง (กรองเฉพาะบล็อกใกล้ตัวในระยะ 1.6 เมตรเพื่อความเร็ว 60fps)
+        for (const block of blockData.values()) {
+          if (Math.abs(block.x - testX) > 1.6 || Math.abs(block.z - testZ) > 1.6) continue;
+          const blockBottom = block.y - 0.5;
+          const blockTop = block.y + 0.5;
+          // ถ้าบล็อกอยู่ต่ำกว่าระดับก้าวขึ้นได้ หรืออยู่เหนือศีรษะ -> ไม่ขวางแนวระนาบ
+          if (blockTop <= feetYLevel + 0.35 || blockBottom >= feetYLevel + 1.7) continue;
+          if (
+            testX + PLAYER_RADIUS > block.x - 0.5
+            && testX - PLAYER_RADIUS < block.x + 0.5
+            && testZ + PLAYER_RADIUS > block.z - 0.5
+            && testZ - PLAYER_RADIUS < block.z + 0.5
+          ) {
+            return true;
+          }
+        }
+        // 2. ตรวจสอบโต๊ะเรียน (platforms)
+        for (const pf of platforms) {
+          if (pf.top <= feetYLevel + 0.35) continue;
+          if (
+            testX + PLAYER_RADIUS > pf.minX
+            && testX - PLAYER_RADIUS < pf.maxX
+            && testZ + PLAYER_RADIUS > pf.minZ
+            && testZ - PLAYER_RADIUS < pf.maxZ
+          ) {
+            return true;
+          }
+        }
+        // 3. ตรวจสอบสิ่งกีดขวางในแผนที่พรางตัว (party map)
+        if (partyMap) {
+          for (const box of camouflageColliders) {
+            if (box.max.y <= feetYLevel + 0.35 || box.min.y >= feetYLevel + 1.7) continue;
+            if (
+              testX + PLAYER_RADIUS > box.min.x
+              && testX - PLAYER_RADIUS < box.max.x
+              && testZ + PLAYER_RADIUS > box.min.z
+              && testZ - PLAYER_RADIUS < box.max.z
+            ) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      // คำนวณระยะการขยับตามทิศทาง
+      const dispX = forward.x * forwardAmount * speed * delta + right.x * sideAmount * speed * delta;
+      const dispZ = forward.z * forwardAmount * speed * delta + right.z * sideAmount * speed * delta;
+
+      // เลื่อนไถลตามแนวกำแพงแบบแยกแกน (Axis-Separated Sliding)
+      if (dispX !== 0) {
+        const nextX = THREE.MathUtils.clamp(playerPosition.x + dispX, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
+        if (!collidesAt(nextX, playerPosition.z, currentFeetY)) {
+          playerPosition.x = nextX;
+        }
       }
+      if (dispZ !== 0) {
+        const nextZ = THREE.MathUtils.clamp(playerPosition.z + dispZ, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
+        if (!collidesAt(playerPosition.x, nextZ, currentFeetY)) {
+          playerPosition.z = nextZ;
+        }
+      }
+
       verticalVelocity -= 20 * delta;
       playerPosition.y += verticalVelocity * delta;
       // ยืนบนพื้น (0) หรือบนบล็อกที่วางไว้ในช่องนี้ — Minecraft: กระโดดขึ้นไปเหยียบบล็อกได้
-      const feetCellX = Math.floor(playerPosition.x) + 0.5;
-      const feetCellZ = Math.floor(playerPosition.z) + 0.5;
       const feetY = playerPosition.y - 1.7;
       let floorTop = 0;
       blockData.forEach((b) => {
-        if (b.x !== feetCellX || b.z !== feetCellZ) return;
+        if (Math.abs(b.x - playerPosition.x) >= 0.72 || Math.abs(b.z - playerPosition.z) >= 0.72) return;
         const top = b.y + 0.5;
         if (top > floorTop && top <= feetY + 0.35) floorTop = top;
       });
@@ -1972,27 +2052,75 @@ const VirtualClassroom: React.FC = () => {
     <div className="virtual-classroom">
       <div ref={mountRef} className="virtual-classroom-canvas" />
 
-      <div className="world-room-label">
-        {partyMap ? (
-          <strong><Paintbrush size={17} /> สนามพรางสีรวมทุกชั้น</strong>
-        ) : isTeacher ? (
-          <label className="world-room-picker">
-            <Crown size={16} />
-            <select value={teacherRoom} onChange={(event) => setTeacherRoom(event.target.value)} aria-label="เลือกห้องเรียนที่ครูจะเข้าร่วม">
-              {CLASSROOMS.map((room) => <option key={room} value={room}>ห้อง {room}</option>)}
-            </select>
-          </label>
-        ) : <strong>ห้อง {activeClassroom} 3D</strong>}
-        <span><Users size={15} /> {Math.max(1, onlinePlayers.length)}</span>
-        <Link
-          className="world-map-switch"
-          to={partyMap ? '/world' : '/world?map=camouflage'}
-          title={partyMap ? 'กลับห้องเรียนประจำชั้น' : 'เข้าสนามพรางสีรวมทุกชั้น'}
+      <header className="world-top-nav">
+        <button
+          className="world-nav-btn world-exit-btn"
+          onClick={() => {
+            if (document.pointerLockElement) document.exitPointerLock();
+            setExitModalOpen(true);
+          }}
+          title="ออกจากห้องเรียน 3D เพื่อกลับหน้าหลักหรือบทเรียน"
         >
-          {partyMap ? <BookOpen size={15} /> : <Paintbrush size={15} />}
-          {partyMap ? 'ห้องเรียน' : 'พรางสี'}
-        </Link>
-      </div>
+          <LogOut size={16} />
+          <span>ออกจากห้อง 3D</span>
+        </button>
+
+        <button
+          className="world-nav-btn world-menu-btn"
+          onClick={() => {
+            if (document.pointerLockElement) document.exitPointerLock();
+            setQuickMenuOpen(true);
+          }}
+          title="เปิดเมนูเว็บไซต์ KruJames.com"
+        >
+          <Menu size={16} />
+          <span>เมนู</span>
+        </button>
+
+        <div className="world-room-label">
+          {partyMap ? (
+            <strong><Paintbrush size={17} /> สนามพรางสีรวมทุกชั้น</strong>
+          ) : isTeacher ? (
+            <label className="world-room-picker">
+              <Crown size={16} />
+              <select value={teacherRoom} onChange={(event) => setTeacherRoom(event.target.value)} aria-label="เลือกห้องเรียนที่ครูจะเข้าร่วม">
+                {CLASSROOMS.map((room) => <option key={room} value={room}>ห้อง {room}</option>)}
+              </select>
+            </label>
+          ) : <strong>ห้อง {activeClassroom} 3D</strong>}
+          <span><Users size={15} /> {Math.max(1, onlinePlayers.length)}</span>
+          <span className="world-week-chip" title="แผนที่ประจำสัปดาห์นี้ รีเซ็ตอัตโนมัติทุกวันจันทร์">
+            <Calendar size={13} /> {weekDisplayLabel}
+          </span>
+          <Link
+            className="world-map-switch"
+            to={partyMap ? '/world' : '/world?map=camouflage'}
+            title={partyMap ? 'กลับห้องเรียนประจำชั้น' : 'เข้าสนามพรางสีรวมทุกชั้น'}
+          >
+            {partyMap ? <BookOpen size={15} /> : <Paintbrush size={15} />}
+            {partyMap ? 'ห้องเรียน' : 'พรางสี'}
+          </Link>
+          {isTeacher && (
+            <button
+              className="world-remap-btn"
+              onClick={() => {
+                if (document.pointerLockElement) document.exitPointerLock();
+                setConfirmRemapOpen(true);
+              }}
+              title="ล้างบล็อกทั้งหมดในแผนที่สัปดาห์นี้"
+            >
+              <RotateCcw size={13} /> รีแมพ
+            </button>
+          )}
+        </div>
+      </header>
+
+      {pointerLocked && (
+        <div className="world-pointer-tip">
+          <span>💡 กดแป้น <strong>[Esc]</strong> เพื่อแสดงเมาส์ หรือคลิก <strong>🚪 ออกจากห้อง 3D</strong> ด้านบนซ้าย</span>
+        </div>
+      )}
+
 
       <button className="world-avatar-badge" onClick={() => setAvatarPanelOpen((open) => !open)} aria-label="ปรับตัวละครและดูผู้เล่นในห้อง">
         <span className="world-avatar-face" style={{ '--avatar': avatarColor } as React.CSSProperties}><ScanFace size={22} /></span>
@@ -2645,6 +2773,264 @@ const VirtualClassroom: React.FC = () => {
               <Gamepad2 size={20} /> เริ่มเล่นเกม
             </Link>
           </section>
+        </div>
+      )}
+
+      {/* หน้าต่างยืนยันการออกจากห้อง 3D เข้าใจง่ายสำหรับเด็ก */}
+      {exitModalOpen && (
+        <div
+          className="world-modal-backdrop"
+          onClick={() => setExitModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="world-exit-title"
+        >
+          <div className="world-modal-card" onClick={(event) => event.stopPropagation()}>
+            <div className="world-modal-header">
+              <div className="world-modal-title">
+                <DoorOpen size={24} style={{ color: '#059669' }} />
+                <h3 id="world-exit-title">ต้องการออกจากห้องเรียน 3D ใช่ไหม?</h3>
+              </div>
+              <button
+                className="world-modal-close-btn"
+                onClick={() => setExitModalOpen(false)}
+                aria-label="ปิด"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <p className="world-modal-desc">
+              น้อง ๆ สามารถเลือกหน้าที่ต้องการไปต่อได้เลยครับ หรือกดเล่นต่อเพื่อสร้างบล็อกในห้องเรียน 3D
+            </p>
+            <div className="world-exit-options">
+              <button
+                type="button"
+                className="world-exit-card card-home"
+                onClick={() => {
+                  if (document.pointerLockElement) document.exitPointerLock();
+                  navigate('/');
+                }}
+              >
+                <div className="world-exit-card-icon">🏠</div>
+                <div className="world-exit-card-body">
+                  <strong>กลับหน้าแรก</strong>
+                  <small>ไปหน้าแรกของ krujames.com</small>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className="world-exit-card card-curriculum"
+                onClick={() => {
+                  if (document.pointerLockElement) document.exitPointerLock();
+                  navigate(gradeId ? `/curriculum/${gradeId}/unit/1` : '/courses');
+                }}
+              >
+                <div className="world-exit-card-icon">📚</div>
+                <div className="world-exit-card-body">
+                  <strong>กลับหน้าบทเรียน</strong>
+                  <small>ไปเรียนเนื้อหาสไลด์และตัวชี้วัด</small>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className="world-exit-card card-games"
+                onClick={() => {
+                  if (document.pointerLockElement) document.exitPointerLock();
+                  navigate('/games');
+                }}
+              >
+                <div className="world-exit-card-icon">🎮</div>
+                <div className="world-exit-card-body">
+                  <strong>ไปศูนย์รวมเกม</strong>
+                  <small>ฝึกเมาส์ คีย์บอร์ด และเกมโค้ดดิ้ง</small>
+                </div>
+              </button>
+            </div>
+            <div className="world-modal-footer">
+              <button
+                type="button"
+                className="world-btn-cancel"
+                onClick={() => setExitModalOpen(false)}
+              >
+                ✕ เล่นต่อในห้อง 3D
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* เมนูนำทางด่วน KruJames.com */}
+      {quickMenuOpen && (
+        <div
+          className="world-modal-backdrop"
+          onClick={() => setQuickMenuOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="world-menu-title"
+        >
+          <div className="world-modal-card quick-menu-card" onClick={(event) => event.stopPropagation()}>
+            <div className="world-modal-header">
+              <div className="world-modal-title">
+                <Menu size={22} style={{ color: '#2563eb' }} />
+                <h3 id="world-menu-title">เมนูเว็บไซต์ KruJames.com</h3>
+              </div>
+              <button
+                className="world-modal-close-btn"
+                onClick={() => setQuickMenuOpen(false)}
+                aria-label="ปิด"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="world-quick-menu-grid">
+              <Link
+                to="/"
+                className="world-menu-link"
+                onClick={() => { if (document.pointerLockElement) document.exitPointerLock(); }}
+              >
+                <Home size={20} />
+                <div>
+                  <strong>หน้าแรก</strong>
+                  <small>ข่าวสารและภาพรวม</small>
+                </div>
+              </Link>
+              <Link
+                to="/courses"
+                className="world-menu-link"
+                onClick={() => { if (document.pointerLockElement) document.exitPointerLock(); }}
+              >
+                <BookOpen size={20} />
+                <div>
+                  <strong>คอร์สเรียน</strong>
+                  <small>ประถม 1 - มัธยม 3</small>
+                </div>
+              </Link>
+              <Link
+                to="/curriculum"
+                className="world-menu-link"
+                onClick={() => { if (document.pointerLockElement) document.exitPointerLock(); }}
+              >
+                <Presentation size={20} />
+                <div>
+                  <strong>หลักสูตร & ตัวชี้วัด</strong>
+                  <small>เนื้อหาและสไลด์ 73 หน่วย</small>
+                </div>
+              </Link>
+              <Link
+                to="/games"
+                className="world-menu-link"
+                onClick={() => { if (document.pointerLockElement) document.exitPointerLock(); }}
+              >
+                <Gamepad2 size={20} />
+                <div>
+                  <strong>เกมฝึกทักษะ</strong>
+                  <small>เกมเมาส์ คีย์บอร์ด โค้ดดิ้ง</small>
+                </div>
+              </Link>
+              <Link
+                to="/resources"
+                className="world-menu-link"
+                onClick={() => { if (document.pointerLockElement) document.exitPointerLock(); }}
+              >
+                <Library size={20} />
+                <div>
+                  <strong>แหล่งเรียนรู้</strong>
+                  <small>สื่อ เอกสาร ซอฟต์แวร์</small>
+                </div>
+              </Link>
+              <Link
+                to="/dashboard"
+                className="world-menu-link"
+                onClick={() => { if (document.pointerLockElement) document.exitPointerLock(); }}
+              >
+                <LayoutDashboard size={20} />
+                <div>
+                  <strong>แดชบอร์ด</strong>
+                  <small>สรุปผลและคะแนน</small>
+                </div>
+              </Link>
+            </div>
+            <div className="world-quick-menu-footer">
+              <button
+                type="button"
+                className="world-menu-exit-action"
+                onClick={() => {
+                  setQuickMenuOpen(false);
+                  setExitModalOpen(true);
+                }}
+              >
+                <DoorOpen size={18} /> ออกจากห้องเรียน 3D
+              </button>
+              <button
+                type="button"
+                className="world-btn-cancel"
+                onClick={() => setQuickMenuOpen(false)}
+              >
+                ปิดเมนู
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* หน้าต่างยืนยันรีแมพสัปดาห์นี้สำหรับคุณครู */}
+      {confirmRemapOpen && (
+        <div
+          className="world-modal-backdrop"
+          onClick={() => setConfirmRemapOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="world-remap-title"
+        >
+          <div className="world-modal-card remap-modal-card" onClick={(event) => event.stopPropagation()}>
+            <div className="world-modal-header">
+              <div className="world-modal-title" style={{ color: '#d97706' }}>
+                <RotateCcw size={22} />
+                <h3 id="world-remap-title">รีแมพแผนที่สัปดาห์นี้?</h3>
+              </div>
+              <button
+                className="world-modal-close-btn"
+                onClick={() => setConfirmRemapOpen(false)}
+                aria-label="ปิด"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <p className="world-modal-desc">
+              คุณครูต้องการล้างบล็อกทั้งหมด ({worldBlockCount} ก้อน) ในแผนที่ <strong>{weekDisplayLabel}</strong> ของห้อง {activeClassroom} ใช่หรือไม่?
+              <br />
+              <small style={{ display: 'inline-block', marginTop: 6, color: '#64748b' }}>
+                * แผนที่จะถูกรีเซ็ตใหม่สะอาดทันที เพื่อให้เริ่มกิจกรรมสร้างสรรค์รอบใหม่
+              </small>
+            </p>
+            <div className="world-modal-actions">
+              <button
+                type="button"
+                className="world-btn-danger"
+                onClick={async () => {
+                  setConfirmRemapOpen(false);
+                  try {
+                    await clearWorldBlocks(roomId, currentWeekKey);
+                    celebrate();
+                    setStatus('รีแมพแผนที่สัปดาห์นี้เรียบร้อยแล้ว');
+                  } catch (err) {
+                    setStatus(err instanceof Error ? err.message : 'รีแมพไม่สำเร็จ');
+                  }
+                }}
+              >
+                <RotateCcw size={16} /> ยืนยันรีแมพสัปดาห์นี้
+              </button>
+              <button
+                type="button"
+                className="world-btn-cancel"
+                onClick={() => setConfirmRemapOpen(false)}
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import ts from 'typescript';
 import { buildGameProgressDedupKey } from '../src/services/gameProgressService';
 
 const source = (name: string) =>
@@ -7,11 +8,16 @@ const source = (name: string) =>
 
 const functionBody = (file: string, functionName: string): string => {
   const src = source(file);
-  const start = src.indexOf(`const ${functionName} =`);
-  expect(start, `${file} must contain ${functionName}`).toBeGreaterThanOrEqual(0);
-  const end = src.indexOf('\n  };', start + 8);
-  expect(end, `${file}.${functionName} must have a top-level closing brace`).toBeGreaterThan(start);
-  return src.slice(start, end + 5);
+  const ast = ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let found: ts.VariableDeclaration | undefined;
+  const visit = (node: ts.Node) => {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.name.text === functionName
+      && node.initializer && ts.isArrowFunction(node.initializer)) found = node;
+    ts.forEachChild(node, visit);
+  };
+  visit(ast);
+  expect(found, `${file} must contain function ${functionName}`).toBeDefined();
+  return found!.getText(ast);
 };
 
 describe('game completion scoring contracts', () => {
@@ -54,9 +60,23 @@ describe('game completion scoring contracts', () => {
   it('Algorithm Sorter freezes a solved puzzle to prevent score farming', () => {
     const src = source('AlgorithmSorter.tsx');
     expect(functionBody('AlgorithmSorter.tsx', 'move')).toContain('if (isCorrect) return');
-    expect(functionBody('AlgorithmSorter.tsx', 'check')).toContain('if (isCorrect) return');
+    expect(functionBody('AlgorithmSorter.tsx', 'check')).toContain('if (done || isCorrect) return');
     expect(functionBody('AlgorithmSorter.tsx', 'reset')).toContain('if (isCorrect) return');
     expect(src).toContain('{!isCorrect && (');
+  });
+
+  it.each([
+    ['BinaryGame.tsx', 'check', 'newRound'],
+    ['LogicGatesGame.tsx', 'check', 'next'],
+    ['PixelArtGame.tsx', 'check', 'nextPic'],
+    ['SearchSmartGame.tsx', 'choose', 'next'],
+    ['AlgorithmSorter.tsx', 'check', 'next'],
+    ['PatternGame.tsx', 'submit', 'next'],
+  ])('%s saves the session total instead of locking in the first correct answer', (file, answer, advance) => {
+    expect(functionBody(file, answer)).not.toContain('recordGame(');
+    expect(functionBody(file, answer)).toContain('roundGuard.claim');
+    expect(functionBody(file, advance)).toContain('recordGame(score, undefined,');
+    expect(functionBody(file, advance)).toContain('roundGuard.claim');
   });
 });
 

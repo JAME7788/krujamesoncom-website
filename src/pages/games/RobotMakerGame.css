@@ -1573,6 +1573,11 @@
     grid-template-columns: auto minmax(0, 1fr);
   }
 
+  .robot-maker-topbar > div:nth-child(2) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .robot-mode-switch {
     grid-column: 1 / -1;
     width: 100%;

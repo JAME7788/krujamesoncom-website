@@ -15,10 +15,12 @@ import {
   LockOpen,
   Play,
   Presentation,
+  Printer,
   RefreshCw,
   Save,
   Sparkles,
   Users,
+  Zap,
 } from 'lucide-react';
 import {
   TECHNOLOGY_GRADE_IDS,
@@ -82,7 +84,16 @@ import {
   fetchLearningEvidence,
   type LearningEvidence,
 } from '../services/learningEvidenceService';
+import {
+  fetchExitTickets,
+  getExitTicketSummary,
+  formatExitTicketNarrative,
+  type ExitTicket,
+} from '../services/exitTicketService';
 import { getAdminSession } from '../services/authAdmin';
+import { getClassroomExportSummary } from '../services/gradeExportService';
+import RosterSpinner from './tools/RosterSpinner';
+import { StudentGradeSlipPrintLayout } from './StudentGradeSlipPrintLayout';
 import { useToast } from './Toast';
 import './TeacherClassroomHub.css';
 
@@ -176,10 +187,13 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [evidence, setEvidence] = useState<LearningEvidence[]>([]);
+  const [exitTickets, setExitTickets] = useState<ExitTicket[]>([]);
   const [recordForm, setRecordForm] = useState(recordFormDefault);
   const [autoPostTeaching, setAutoPostTeaching] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showSpinner, setShowSpinner] = useState(false);
+  const [showGradeSlips, setShowGradeSlips] = useState(false);
   const toast = useToast();
 
   const schedule = useMemo(() => buildTechnologyTeachingSchedule(gradeId), [gradeId]);
@@ -187,6 +201,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
   const selectedSession = sessions.find((item) => item.period === selectedPeriod);
   const selectedPlan = plans.find((item) => item.no === selectedPeriod) || plans[0];
   const roster = useMemo(() => loadRoster(classroom), [classroom]);
+  const exitTicketSummary = useMemo(() => getExitTicketSummary(exitTickets), [exitTickets]);
   const selectedRecord = records.find((item) => (
     (selectedSession?.id && item.sessionId === selectedSession.id)
     || (
@@ -215,6 +230,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
         assignmentItems,
         submissionItems,
         evidenceItems,
+        ticketItems,
       ] = await Promise.all([
         fetchTeachingSessions(nextGradeId),
         fetchAttendance(teachingDate, nextClassroom),
@@ -223,6 +239,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
         fetchAssignmentsFromFirebase(),
         fetchSubmissionsFromFirebase(),
         fetchLearningEvidence(nextClassroom, nextSubject),
+        fetchExitTickets(nextClassroom, teachingDate),
       ]);
       setSessions(sessionItems);
       const exactToday = sessionItems.find((item) => (
@@ -236,6 +253,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
       setAssignments(assignmentItems);
       setSubmissions(submissionItems);
       setEvidence(evidenceItems);
+      setExitTickets(ticketItems);
     } catch (error) {
       toast.show(`โหลดคาบเรียนไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`, 'error');
     } finally {
@@ -522,6 +540,113 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
     }], `บันทึกหลังสอน_${classroom}_คาบ${selectedPeriod}_${teachingDate}.docx`);
   };
 
+  /** สร้างบันทึกหลังสอน 1 คลิก: ดึงผลเข้าเรียนและ K/P/A จริง เรียบเรียงตามแบบราชการ บันทึกลงฐานข้อมูล และโหลด Word (.docx) ทันที */
+  const handleOneClickAutoRecord = async () => {
+    if (!selectedSession) {
+      toast.show('กรุณาเลือกคาบเรียนที่ต้องการบันทึกก่อน', 'info');
+      return;
+    }
+    setBusy(true);
+    try {
+      // 1. ดึง/คำนวณ narrative จากผลจริง
+      const narrative = buildP1PostTeachingDraft(selectedPlan, snapshot);
+      const row = schedule.rows.find((item) => item.period === selectedPeriod);
+      const thai = splitIsoToThai(teachingDate);
+      const postTotal = snapshot.totalStudents || roster.length;
+      const postPassed = snapshot.passed;
+      const postFailed = Math.max(0, postTotal - postPassed);
+
+      let finalSummary = narrative.summary;
+      let finalProblems = narrative.problems;
+      if (exitTickets.length > 0) {
+        const exitAdditions = formatExitTicketNarrative(exitTicketSummary);
+        if (exitAdditions.summaryAddition) {
+          finalSummary += exitAdditions.summaryAddition;
+        }
+        if (exitAdditions.problemsAddition) {
+          finalProblems = finalProblems ? `${finalProblems}\n${exitAdditions.problemsAddition}` : exitAdditions.problemsAddition;
+        }
+      }
+
+      const postData = {
+        totalStudents: postTotal,
+        passedCount: postPassed,
+        failedCount: postFailed,
+        ...narrative,
+        summary: finalSummary,
+        problems: finalProblems,
+      };
+
+      // 2. บันทึกเอกสาร LessonRecord ลง Firestore
+      const saved = await saveLessonRecord({
+        sessionId: selectedSession.id,
+        classroom,
+        subject,
+        courseName: schedule.courseName,
+        planNo: selectedPeriod,
+        hourNo: 1,
+        teachingDate,
+        indicatorCodes: selectedPlan.indicators,
+        snapshot,
+        week: row?.week,
+        semester: row?.semester,
+        academicYear: ACADEMIC_YEAR,
+        unitNo: row?.unitNo,
+        unitTitle: row?.unitTitle,
+        planTitle: selectedPlan?.title ?? row?.lessonTitle,
+        ...postData,
+        status: 'complete',
+      });
+      setRecords((items) => [saved, ...items.filter((item) => item.id !== saved.id)]);
+
+      // 3. อัปเดตสถานะคาบเรียนเป็น completed
+      if (selectedSession.status !== 'completed') {
+        await changeSessionStatus('completed');
+      }
+
+      // 4. สั่งดาวน์โหลดไฟล์เอกสาร Word ทันที
+      downloadLessonRecordDocx([{
+        courseName: schedule.courseName,
+        gradeLabel: gradeId.slice(1),
+        unitNo: row?.unitNo ?? '',
+        unitTitle: row?.unitTitle ?? '',
+        planNo: selectedPeriod,
+        planTitle: selectedPlan?.title ?? row?.lessonTitle ?? '',
+        week: row?.week ?? '',
+        day: thai.day,
+        month: thai.month,
+        buddhistYear: thai.buddhistYear,
+        semester: row?.semester ?? 1,
+        academicYear: ACADEMIC_YEAR,
+        totalStudents: postData.totalStudents,
+        passedCount: postData.passedCount,
+        summary: postData.summary,
+        problems: postData.problems,
+        improvements: postData.improvements,
+        teacherName: COURSE_TEACHER_NAME,
+        teacherPosition: 'ครูผู้ช่วย',
+        deputyName: 'นางสาวเจนจีรา บุญเกตุ',
+        directorName: 'นายปรัชญา ปรางค์ชัยภูมิ',
+        schoolName: 'โรงเรียนบ้านคลองมดแดง',
+      }], `บันทึกหลังสอน_${classroom}_คาบ${selectedPeriod}_${teachingDate}.docx`);
+
+      // อัปเดตแบบฟอร์มหน้าเว็บให้ตรงกัน
+      setRecordForm((current) => ({
+        ...current,
+        ...postData,
+      }));
+
+      toast.show(
+        `⚡ บันทึกหลังสอน 1 คลิกสำเร็จ! เข้าเรียน ${snapshot.present}/${snapshot.totalStudents} คน ผ่านเกณฑ์ ${snapshot.passed} คน (ดาวน์โหลด Word เรียบร้อย)`,
+        'success',
+      );
+    } catch (error) {
+      toast.show(`บันทึกหลังสอนไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const savePostTeaching = async () => {
     if (!selectedSession || !postTeachingReady) {
       toast.show('ต้องเริ่มคาบหรือสอนแผนนี้ก่อน จึงจะบันทึกหลังสอนได้', 'info');
@@ -563,9 +688,30 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
     }
   };
 
+  const handleApplyExitTicketToRecord = () => {
+    if (exitTickets.length === 0) {
+      toast.show('ยังไม่มีข้อมูล Exit Ticket จากนักเรียนในคาบนี้', 'info');
+      return;
+    }
+    const exitAdditions = formatExitTicketNarrative(exitTicketSummary);
+    setRecordForm((prev) => ({
+      ...prev,
+      summary: prev.summary ? `${prev.summary}\n\n${exitAdditions.summaryAddition}` : exitAdditions.summaryAddition,
+      problems: exitAdditions.problemsAddition
+        ? (prev.problems ? `${prev.problems}\n\n${exitAdditions.problemsAddition}` : exitAdditions.problemsAddition)
+        : prev.problems,
+    }));
+    toast.show('⚡ ผสานข้อมูล Exit Ticket จากนักเรียนลงในแบบบันทึกหลังสอนแล้ว', 'success');
+  };
+
   const changeDate = async (value: string) => {
     setTeachingDate(value);
-    setAttendanceState(await fetchAttendance(value, classroom));
+    const [attendanceData, ticketItems] = await Promise.all([
+      fetchAttendance(value, classroom),
+      fetchExitTickets(classroom, value),
+    ]);
+    setAttendanceState(attendanceData);
+    setExitTickets(ticketItems);
   };
 
   if (loading) {
@@ -660,6 +806,15 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
             <button type="button" onClick={() => onNavigate('locks')}><LockOpen size={17} /> เปิดบทเรียน</button>
             <button type="button" onClick={() => window.open('/live/host', '_blank')}><FileQuestion size={17} /> ควิซสด</button>
             <button type="button" onClick={() => window.open('/games', '_blank')}><Gamepad2 size={17} /> เกมฝึก</button>
+            <button type="button" className="action-spinner" onClick={() => setShowSpinner(true)} title="สุ่มรายชื่อนักเรียนห้องนี้มาตอบคำถามหน้าห้อง">
+              <Sparkles size={17} /> วงล้อสุ่มชื่อ
+            </button>
+            <button type="button" className="action-auto-record" onClick={() => void handleOneClickAutoRecord()} disabled={busy} title="คำนวณผลจริง บันทึกปิดคาบ และโหลด Word (.docx) ทันที">
+              <Zap size={17} /> บันทึกหลังสอน 1 คลิก
+            </button>
+            <button type="button" className="action-slips" onClick={() => setShowGradeSlips(true)} title="พิมพ์ใบแจ้งผลการเรียนรายบุคคล (ปพ.6) ทั้งห้อง 2 คน/แผ่น">
+              <Printer size={17} /> พิมพ์ใบแจ้งเกรดทั้งห้อง
+            </button>
             <button type="button" onClick={() => onNavigate('homework')}><BookOpen size={17} /> มอบหมายงาน</button>
             <button
               type="button"
@@ -785,6 +940,106 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
           </button>
         </section>
 
+        {/* ขั้นที่ 3.5: เสียงสะท้อนจากผู้เรียน (Exit Ticket) */}
+        <section className="teacher-classroom-panel exit-ticket-panel">
+          <div className="panel-heading">
+            <div>
+              <span>สะท้อนคิด</span>
+              <h3><Sparkles size={19} /> ตั๋วบอกลาคาบเรียน (Exit Ticket)</h3>
+            </div>
+            <button
+              type="button"
+              onClick={handleApplyExitTicketToRecord}
+              disabled={exitTickets.length === 0}
+              style={{
+                background: exitTickets.length > 0 ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' : '#e2e8f0',
+                color: exitTickets.length > 0 ? '#ffffff' : '#94a3b8',
+                border: 'none',
+                borderRadius: 10,
+                padding: '7px 14px',
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                cursor: exitTickets.length > 0 ? 'pointer' : 'not-allowed',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                boxShadow: exitTickets.length > 0 ? '0 2px 8px rgba(79, 70, 229, 0.25)' : 'none',
+              }}
+            >
+              <Zap size={15} /> ผสานสู่บันทึกหลังสอน
+            </button>
+          </div>
+
+          <div className="snapshot-grid">
+            <div><span>ส่งแล้ว</span><strong>{exitTickets.length} คน</strong></div>
+            <div><span>สมาธิเฉลี่ย</span><strong>{exitTicketSummary.averageStars > 0 ? `${exitTicketSummary.averageStars} ⭐` : '-'}</strong></div>
+            <div>
+              <span>บรรยากาศส่วนใหญ่</span>
+              <strong>
+                {exitTicketSummary.moodCounts.great >= exitTicketSummary.moodCounts.good && exitTicketSummary.moodCounts.great > 0 ? '😄 สนุกมาก' :
+                 exitTicketSummary.moodCounts.good > 0 ? '🙂 ทำได้' :
+                 exitTicketSummary.moodCounts.confused > 0 ? '🤔 ยังงงๆ' :
+                 exitTicketSummary.moodCounts.tired > 0 ? '😴 เหนื่อย' : '-'}
+              </strong>
+            </div>
+            <div><span>คำถาม/ข้อสงสัย</span><strong>{exitTicketSummary.questions.length} ข้อ</strong></div>
+          </div>
+
+          {exitTickets.length === 0 ? (
+            <div className="all-clear" style={{ marginTop: 10 }}>
+              ยังไม่มีนักเรียนส่งตั๋วบอกลาคาบเรียนในวันนี้ (นักเรียนสามารถกดส่งผ่านหน้าหลักหรือท้ายบทเรียนเพื่อรับคะแนน A ได้ทันที)
+            </div>
+          ) : (
+            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {exitTicketSummary.topLearned.length > 0 && (
+                <div style={{ fontSize: '0.85rem', color: '#334155' }}>
+                  <strong style={{ display: 'block', marginBottom: 4 }}>💡 สิ่งที่ผู้เรียนเข้าใจดีที่สุด:</strong>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {exitTicketSummary.topLearned.map((item) => (
+                      <span
+                        key={item.keyword}
+                        style={{
+                          background: '#e0e7ff',
+                          color: '#3730a3',
+                          fontWeight: 600,
+                          padding: '3px 10px',
+                          borderRadius: 9999,
+                          fontSize: '0.8rem',
+                        }}
+                      >
+                        {item.keyword} ({item.count} คน)
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {exitTicketSummary.questions.length > 0 && (
+                <div
+                  style={{
+                    background: '#fffbeb',
+                    border: '1.5px solid #fde68a',
+                    borderRadius: 12,
+                    padding: '10px 14px',
+                    fontSize: '0.83rem',
+                  }}
+                >
+                  <strong style={{ color: '#92400e', display: 'block', marginBottom: 6 }}>
+                    💬 คำถาม/ข้อสงสัยจากนักเรียน ({exitTicketSummary.questions.length} ข้อ):
+                  </strong>
+                  <ul style={{ margin: 0, paddingLeft: 18, color: '#78350f', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {exitTicketSummary.questions.slice(0, 5).map((q, idx) => (
+                      <li key={idx}>
+                        <b>{q.studentName} (เลขที่ {q.studentNumber}):</b> "{q.text}"
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
         <section id="post-teaching-form" className="teacher-classroom-panel post-panel">
           <div className="panel-heading">
             <div>
@@ -867,6 +1122,23 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
           </div>
         </section>
       </div>
+
+      {/* วงล้อสุ่มชื่อนักเรียน Modal */}
+      {showSpinner && (
+        <RosterSpinner
+          initialClass={classroom}
+          isModal
+          onClose={() => setShowSpinner(false)}
+        />
+      )}
+
+      {/* ใบแจ้งผลการเรียนรายบุคคล (ปพ.6) พิมพ์ทั้งห้อง Modal */}
+      {showGradeSlips && (
+        <StudentGradeSlipPrintLayout
+          summary={getClassroomExportSummary(classroom, subject)}
+          onClose={() => setShowGradeSlips(false)}
+        />
+      )}
     </div>
   );
 };

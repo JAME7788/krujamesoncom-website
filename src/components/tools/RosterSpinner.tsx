@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useMemo, useState } from 'react';
-import { Volume2, Play, RefreshCw, Sparkles } from 'lucide-react';
+import { Volume2, Play, RefreshCw, Sparkles, X } from 'lucide-react';
 import { loadRoster, loadAllRosters } from '../../services/rosterService';
 import type { StudentInfo } from '../../data/students2569';
 
@@ -11,11 +11,83 @@ const COLORS = [
 
 const createSpinVelocity = () => 0.3 + Math.random() * 0.25;
 
-const RosterSpinner: React.FC = () => {
+// Web Audio Context for ticks and celebration
+let audioCtx: AudioContext | null = null;
+const getAudioContext = () => {
+  if (typeof window === 'undefined') return null;
+  const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  if (!audioCtx && AudioContextClass) {
+    audioCtx = new AudioContextClass();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    void audioCtx.resume();
+  }
+  return audioCtx;
+};
+
+// Play a short tick sound on segment pass
+const playTickSound = () => {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(560, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.035);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.035);
+  } catch {
+    // Ignore audio errors
+  }
+};
+
+// Play victory fanfare chord
+const playWinnerSound = () => {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const startTime = ctx.currentTime + i * 0.09;
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.2, startTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.6);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 0.6);
+    });
+  } catch {
+    // Ignore audio errors
+  }
+};
+
+export interface RosterSpinnerProps {
+  initialClass?: string;
+  isModal?: boolean;
+  onClose?: () => void;
+}
+
+const RosterSpinner: React.FC<RosterSpinnerProps> = ({
+  initialClass,
+  isModal = false,
+  onClose,
+}) => {
   const allRosters = useMemo(() => loadAllRosters(), []);
   const classrooms = useMemo(() => Object.keys(allRosters).sort(), [allRosters]);
 
-  const [selectedClass, setSelectedClass] = useState<string>(classrooms[0] || 'ป.1');
+  const [selectedClass, setSelectedClass] = useState<string>(
+    initialClass && classrooms.includes(initialClass) ? initialClass : (classrooms[0] || 'ป.1')
+  );
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
   const [winner, setWinner] = useState<StudentInfo | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -28,6 +100,16 @@ const RosterSpinner: React.FC = () => {
   const angleRef = useRef(0);
   const angularVelocityRef = useRef(0);
   const isSpinningRef = useRef(false);
+  const lastTickIndexRef = useRef(-1);
+
+  // Sync initialClass when prop changes
+  useEffect(() => {
+    if (initialClass && classrooms.includes(initialClass)) {
+      setSelectedClass(initialClass);
+      setExcludedIds(new Set());
+      setWinner(null);
+    }
+  }, [initialClass, classrooms]);
 
   const currentRoster = useMemo(() => {
     return loadRoster(selectedClass);
@@ -127,6 +209,15 @@ const RosterSpinner: React.FC = () => {
 
     drawWheel();
 
+    // Play tick sound when passing segments
+    const listLen = activeRoster.length || 1;
+    const arcSize = (Math.PI * 2) / listLen;
+    const currentTickIndex = Math.floor(angleRef.current / arcSize);
+    if (currentTickIndex !== lastTickIndexRef.current) {
+      lastTickIndexRef.current = currentTickIndex;
+      playTickSound();
+    }
+
     if (angularVelocityRef.current < 0.002) {
       // Stopped
       isSpinningRef.current = false;
@@ -141,6 +232,9 @@ const RosterSpinner: React.FC = () => {
   // Trigger spin
   const handleSpin = () => {
     if (isSpinning || activeRoster.length === 0) return;
+
+    // Ensure audio context is active
+    getAudioContext();
 
     setWinner(null);
     setIsSpinning(true);
@@ -171,6 +265,7 @@ const RosterSpinner: React.FC = () => {
     const selected = list[winningIndex];
 
     setWinner(selected);
+    playWinnerSound();
     speakName(selected);
   };
 
@@ -226,8 +321,8 @@ const RosterSpinner: React.FC = () => {
     }
   };
 
-  return (
-    <div className="spinner-container">
+  const content = (
+    <div className={`spinner-container ${isModal ? 'is-modal-view' : ''}`}>
       {/* Header and Class Selector */}
       <div className="section-header-spinner">
         <div className="title-block">
@@ -239,6 +334,16 @@ const RosterSpinner: React.FC = () => {
         </div>
 
         <div className="header-actions">
+          {isModal && onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-modal-close-spinner"
+              title="ปิดหน้าต่างสุ่มชื่อ"
+            >
+              <X size={16} /> ปิด
+            </button>
+          )}
           <button 
             type="button" 
             onClick={() => setSpeechEnabled(!speechEnabled)}
@@ -664,9 +769,63 @@ const RosterSpinner: React.FC = () => {
           from { transform: scale(0.9); opacity: 0; }
           to { transform: scale(1); opacity: 1; }
         }
+        .spinner-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.75);
+          backdrop-filter: blur(6px);
+          z-index: 10000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+          overflow-y: auto;
+        }
+        .spinner-modal-shell {
+          background: #f8fafc;
+          border-radius: 1.5rem;
+          max-width: 920px;
+          width: 100%;
+          max-height: 92vh;
+          overflow-y: auto;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+          padding: 1.25rem;
+          position: relative;
+          animation: scaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .btn-modal-close-spinner {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 6px 14px;
+          border-radius: 9999px;
+          background: #fee2e2;
+          color: #dc2626;
+          border: 1px solid #fca5a5;
+          font-weight: 700;
+          font-size: 0.85rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-modal-close-spinner:hover {
+          background: #dc2626;
+          color: #fff;
+        }
       `}</style>
     </div>
   );
+
+  if (isModal) {
+    return (
+      <div className="spinner-modal-backdrop" onClick={onClose}>
+        <div className="spinner-modal-shell" onClick={(e) => e.stopPropagation()}>
+          {content}
+        </div>
+      </div>
+    );
+  }
+
+  return content;
 };
 
 export default RosterSpinner;

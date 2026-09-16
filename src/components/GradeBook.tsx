@@ -19,6 +19,9 @@ import { allClassrooms2569 } from '../data/students2569';
 import { fetchRostersFromFirebase, loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
 import { loadAssignments } from '../services/homeworkService';
+import { OfficialGradeExportModal } from './OfficialGradeExportModal';
+import { StudentGradeSlipPrintLayout } from './StudentGradeSlipPrintLayout';
+import { getClassroomExportSummary } from '../services/gradeExportService';
 import { calculatePresetScore, type ScorePresetRatio } from '../utils/scorePresets';
 
 const withTimeout = async <T,>(promise: Promise<T>, milliseconds: number, label: string): Promise<T> => {
@@ -85,6 +88,8 @@ const GradeBook: React.FC = () => {
   const [newKnowledgeItem, setNewKnowledgeItem] = useState({ title: '', maxScore: 10 });
   const [newPracticeItem, setNewPracticeItem] = useState({ title: '', maxScore: 10 });
   const [students2569, setStudents2569] = useState(loadAllRosters);
+  const [showOfficialExportModal, setShowOfficialExportModal] = useState(false);
+  const [showBatchSlipsModal, setShowBatchSlipsModal] = useState(false);
   const toast = useToast();
   const gradebookKey = `${classroom}_${subject}`;
   const gradebookReady = loadedGradebookKey === gradebookKey;
@@ -147,15 +152,22 @@ const GradeBook: React.FC = () => {
   };
 
   useEffect(() => {
-    // Open from the local cache immediately. Cloud reads are teacher-triggered
-    // because Firestore retries quota errors for a long time and can otherwise
-    // keep issuing requests after the page has already timed out.
     const timer = window.setTimeout(() => {
       if (loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
         initClassroom(classroom, subject);
       }
       setLoadedGradebookKey(gradebookKey);
       setReloadKey((key) => key + 1);
+
+      // Auto-sync with Firebase in background so localhost and live site show identical grades
+      void fetchClassroomFromFirebase(classroom, subject).then((remote) => {
+        if (remote && remote.length > 0) {
+          cacheGradesLocally(classroom, remote, subject);
+          setReloadKey((k) => k + 1);
+        }
+      }).catch(() => {
+        // offline or unconfigured, ignore
+      });
     }, 0);
     return () => window.clearTimeout(timer);
   }, [classroom, gradebookKey, students2569, subject]);
@@ -558,6 +570,41 @@ const GradeBook: React.FC = () => {
         <button className="btn-secondary" onClick={handlePrint}>
           <Printer size={14} /> พิมพ์รายงานคะแนน
         </button>
+        <button
+          className="btn-primary"
+          style={{
+            background: 'linear-gradient(135deg, #16a34a, #15803d)',
+            color: 'white',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontWeight: 700,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 8px rgba(22, 163, 74, 0.25)',
+          }}
+          onClick={() => setShowOfficialExportModal(true)}
+        >
+          <FileSpreadsheet size={16} /> 📄 ส่งออก ปพ.5 & Excel ส่งวิชาการ
+        </button>
+        <button
+          type="button"
+          className="btn-primary"
+          style={{
+            background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+            color: 'white',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontWeight: 700,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
+          }}
+          onClick={() => setShowBatchSlipsModal(true)}
+        >
+          <Printer size={16} /> 🖨️ พิมพ์ใบแจ้งเกรดทั้งห้อง (ปพ.6)
+        </button>
         <div style={{ flex: 1 }} />
         <button className="btn-export" onClick={() => downloadCSV(classroom, subject)}>
           <Download size={16} /> Export CSV
@@ -887,11 +934,11 @@ const GradeBook: React.FC = () => {
                             <td className="text-center">
                               <button
                                 type="button"
-                                className={`p-score-button level-${s.practiceLevel || s.p}`}
+                                className={`p-score-button ${!s.pAssessed ? 'level-unassessed' : `level-${s.practiceLevel || (s.p === 'ดี' ? 'ดีมาก' : s.p === 'ปานกลาง' ? 'ดี' : 'พอใช้')}`}`}
                                 onClick={() => openPracticeDialog(g.studentCode, ind.id)}
                                 title="เปิดรายละเอียดคะแนนปฏิบัติ P"
                               >
-                                {s.practiceLevel || s.p}
+                                {!s.pAssessed ? '—' : (s.practiceLevel || (s.p === 'ดี' ? 'ดีมาก' : s.p === 'ปานกลาง' ? 'ดี' : 'พอใช้'))}
                               </button>
                             </td>
                             <td className="text-center">
@@ -1242,16 +1289,16 @@ const GradeBook: React.FC = () => {
             </div>
 
             <div className="gb-practice-thresholds" aria-label="เกณฑ์แปลผลคะแนนปฏิบัติ">
-              <div className="excellent"><strong>30</strong><span>ดีมาก</span></div>
-              <div className="moderate"><strong>20–29</strong><span>ปานกลาง</span></div>
-              <div className="fair"><strong>15–19</strong><span>พอใช้</span></div>
-              <div className="failed"><strong>0–14</strong><span>ไม่ผ่าน</span></div>
+              <div className="excellent"><strong>24–30</strong><span>ดีมาก</span></div>
+              <div className="good" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: 8, padding: '4px 8px', textAlign: 'center' }}><strong>18–23</strong><span>ดี</span></div>
+              <div className="fair"><strong>12–17</strong><span>พอใช้</span></div>
+              <div className="failed"><strong>0–11</strong><span>ปรับปรุง</span></div>
             </div>
 
             <div className="gb-score-items-heading gb-practice-heading">
               <div>
-                <h4>แบบประเมินการปฏิบัติ ข้อละ 1–3 คะแนน</h4>
-                <p>ไม่ผ่าน = 1 • พอใช้ = 2 • ผ่าน = 3 คะแนนเต็ม • เลือก “ยังไม่ประเมิน” เมื่อต้องการล้างคะแนนรายข้อ</p>
+                <h4>แบบประเมินการปฏิบัติ ข้อละ 1–3 คะแนน (รูบริก 10 ข้อ)</h4>
+                <p>ปรับปรุง = 1 • พอใช้ = 2 • ดีมาก = 3 คะแนนเต็ม • เลือก “ยังไม่ประเมิน” เมื่อต้องการล้างคะแนนรายข้อ</p>
               </div>
               <span>{practiceDialogScore?.teacherPScore || 0}/{PRACTICE_MAX_SCORE} คะแนน</span>
             </div>
@@ -1450,6 +1497,20 @@ const GradeBook: React.FC = () => {
           <small>ผู้บริหารโรงเรียน / หัวหน้าฝ่ายวิชาการ</small>
         </div>
       </div>
+
+      <OfficialGradeExportModal
+        isOpen={showOfficialExportModal}
+        initialClassroom={classroom}
+        initialSubject={subject}
+        onClose={() => setShowOfficialExportModal(false)}
+      />
+
+      {showBatchSlipsModal && (
+        <StudentGradeSlipPrintLayout
+          summary={getClassroomExportSummary(classroom, subject)}
+          onClose={() => setShowBatchSlipsModal(false)}
+        />
+      )}
     </div>
   );
 };

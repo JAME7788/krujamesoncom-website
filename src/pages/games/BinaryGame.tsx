@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, Lightbulb } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { createGameRoundGuard } from '../../utils/gameRoundGuard';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
@@ -18,6 +20,7 @@ const makeTargets = () => {
 };
 
 const BinaryGame: React.FC = () => {
+  const [roundGuard] = useState(createGameRoundGuard);
   const [targets, setTargets] = useState(makeTargets);
   const [roundIndex, setRoundIndex] = useState(0);
   const [done, setDone] = useState(false);
@@ -27,13 +30,14 @@ const BinaryGame: React.FC = () => {
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [showHelp, setShowHelp] = useState(true);
-  const [bestStreak, setBestStreak] = useState(() => parseInt(localStorage.getItem('kj_bin_best') || '0'));
+  const [bestStreak, setBestStreak] = useState(() => readGameRecord('kj_bin_best'));
   const recordGame = useGameProgress('binary', 'แปลงเลขฐานสอง');
 
   const newRound = () => {
+    if (done || checked !== 'correct' || !roundGuard.claim(`next-${roundIndex}`)) return;
     if (roundIndex + 1 >= targets.length) {
       setDone(true);
-      void recordGame(score);
+      void recordGame(score, undefined, targets.length * 10);
       return;
     }
     setRoundIndex((value) => value + 1);
@@ -42,6 +46,7 @@ const BinaryGame: React.FC = () => {
   };
 
   const restart = () => {
+    roundGuard.reset();
     setTargets(makeTargets());
     setRoundIndex(0);
     setBits([0, 0, 0, 0, 0, 0, 0, 0]);
@@ -62,20 +67,15 @@ const BinaryGame: React.FC = () => {
   const current = binToDec(bits.join(''));
 
   const check = () => {
+    if (done || checked === 'correct') return;
     if (current === target) {
+      if (!roundGuard.claim(`answer-${roundIndex}`)) return;
       setChecked('correct');
       const nextScore = score + 10;
       setScore(nextScore);
-      // บันทึกเมื่อตอบถูกเท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
-      recordGame(nextScore);
-      setStreak((st) => {
-        const ns = st + 1;
-        if (ns > bestStreak) {
-          setBestStreak(ns);
-          localStorage.setItem('kj_bin_best', String(ns));
-        }
-        return ns;
-      });
+      const ns = streak + 1;
+      setStreak(ns);
+      if (ns > bestStreak) { setBestStreak(ns); writeGameRecord('kj_bin_best', ns); }
     } else {
       setChecked('wrong');
       setStreak(0);

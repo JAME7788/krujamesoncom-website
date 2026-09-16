@@ -855,11 +855,13 @@
   border-color: #2563eb;
   outline: 2px solid rgba(37, 99, 235, 0.12);
 }
-.p-score-button.level-ดีมาก,
-.p-score-button.level-ดี { border-color: #86efac; background: #dcfce7; color: #166534; }
-.p-score-button.level-ปานกลาง { border-color: #fcd34d; background: #fef3c7; color: #92400e; }
-.p-score-button.level-พอใช้ { border-color: #93c5fd; background: #dbeafe; color: #1e40af; }
-.p-score-button.level-ไม่ผ่าน { border-color: #fca5a5; background: #fee2e2; color: #991b1b; }
+.p-score-button.level-ดีมาก { border-color: #86efac; background: #dcfce7; color: #166534; font-weight: bold; }
+.p-score-button.level-ดี { border-color: #bae6fd; background: #e0f2fe; color: #0369a1; font-weight: bold; }
+.p-score-button.level-ปานกลาง,
+.p-score-button.level-พอใช้ { border-color: #fde68a; background: #fef3c7; color: #b45309; font-weight: bold; }
+.p-score-button.level-ปรับปรุง,
+.p-score-button.level-ไม่ผ่าน { border-color: #fecdd3; background: #ffe4e6; color: #be123c; font-weight: bold; }
+.p-score-button.level-unassessed { border-color: #e2e8f0; background: #f8fafc; color: #94a3b8; font-weight: 500; }
 
 .gb-score-modal-backdrop {
   position: fixed;

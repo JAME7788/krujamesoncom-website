@@ -54,7 +54,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, State
             <p style={{ color: '#6b7280', marginBottom: '0.5rem' }}>
               ขออภัย! โปรดลองโหลดหน้าใหม่หรือกลับไปยังหน้าหลัก
             </p>
-            {this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <pre
                 style={{
                   background: '#f3f4f6',
@@ -70,7 +70,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, State
                 {this.state.error.message}
               </pre>
             )}
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
               <button className="btn-secondary" onClick={() => window.location.reload()}>
                 <RefreshCw size={16} /> โหลดใหม่
               </button>

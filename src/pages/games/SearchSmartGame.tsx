@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, Search } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { createGameRoundGuard } from '../../utils/gameRoundGuard';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
@@ -174,28 +176,30 @@ const SearchSmartGame: React.FC = () => {
   const [picked, setPicked] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
-  const [best, setBest] = useState(() => parseInt(localStorage.getItem('kj_search_best') || '0', 10));
+  const [roundGuard] = useState(createGameRoundGuard);
+  const [best, setBest] = useState(() => readGameRecord('kj_search_best'));
   const recordGame = useGameProgress('search-smart', 'นักสืบคำค้น');
 
   const answered = picked !== null;
   const correct = answered && q.options[picked!].correct;
 
   const choose = (origIdx: number) => {
-    if (answered) return;
+    if (done || answered || !q.options[origIdx] || !roundGuard.claim(`answer-${roundIndex}`)) return;
     setPicked(origIdx);
     if (q.options[origIdx].correct) {
       const nextScore = score + 10;
       setScore(nextScore);
-      // บันทึกเมื่อเลือกถูกเท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
-      recordGame(nextScore);
-      setStreak((st) => { const ns = st + 1; if (ns > best) { setBest(ns); localStorage.setItem('kj_search_best', String(ns)); } return ns; });
+      const ns = streak + 1;
+      setStreak(ns);
+      if (ns > best) { setBest(ns); writeGameRecord('kj_search_best', ns); }
     } else setStreak(0);
   };
 
   const next = () => {
+    if (done || !answered || !roundGuard.claim(`next-${roundIndex}`)) return;
     if (roundIndex + 1 >= session.length) {
       setDone(true);
-      void recordGame(score);
+      void recordGame(score, undefined, session.length * 10);
       return;
     }
     setRoundIndex((value) => value + 1);
@@ -203,6 +207,7 @@ const SearchSmartGame: React.FC = () => {
   };
 
   const restart = () => {
+    roundGuard.reset();
     setSession(makeSession());
     setRoundIndex(0);
     setPicked(null);

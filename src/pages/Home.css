@@ -1,6 +1,7 @@
 .home-page {
   padding-top: 90px;
 }
+.home-page .home-announcements { padding-top:24px; }
 
 .hero {
   position: relative;
@@ -35,7 +36,7 @@
   line-height: 1.05;
   margin-bottom: 2rem;
   font-weight: 900;
-  letter-spacing: -2px;
+  letter-spacing: 0;
 }
 
 .hero-text h1 span {
@@ -136,7 +137,7 @@
   font-size: 3.2rem;
   font-weight: 800;
   margin-bottom: 1.25rem;
-  letter-spacing: -1px;
+  letter-spacing: 0;
 }
 
 .section-header p {
@@ -175,7 +176,7 @@
   font-size: 1.4rem;
   font-weight: 800;
   margin-bottom: 1rem;
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
 }
 
 .goal-card p {
@@ -273,7 +274,7 @@
   font-size: 3.5rem;
   font-weight: 900;
   margin-bottom: 1.5rem;
-  letter-spacing: -1.5px;
+  letter-spacing: 0;
 }
 
 .cta-box p {
@@ -302,3 +303,37 @@
   .cta-box { padding: 4rem 2rem; }
   .cta-box h2 { font-size: 2.5rem; }
 }
+
+/* Refine the original yellow-and-white layout without changing its composition. */
+.home-page .hero { min-height:660px; padding:64px 0 80px; }
+.home-page .hero-content { gap:56px; }
+.home-page .hero-text h1 { font-size:64px; line-height:1.2; margin-top:20px; margin-bottom:24px; }
+.home-page .hero-text h1 span { display:inline-block; }
+.home-page .hero-text p { font-size:19px; line-height:1.85; margin-bottom:32px; }
+.home-page .hero-btns { flex-wrap:wrap; gap:14px; }
+.home-page .btn-primary,.home-page .btn-secondary { min-height:52px; padding:15px 26px; font-size:16px; justify-content:center; transition:background .18s,box-shadow .18s,transform .18s; }
+.home-page .btn-primary:hover { transform:translateY(-2px); }
+.home-page .btn-secondary { display:inline-flex; align-items:center; gap:10px; }
+.home-page button:focus-visible { outline:3px solid #9c7400; outline-offset:4px; }
+.home-page .img-card { box-shadow:0 18px 48px #33290014; }
+.home-page .img-card img { display:block; aspect-ratio:4/3; object-fit:cover; }
+.home-page .card-badge { bottom:24px; left:-12px; font-size:14px; padding:12px 18px; }
+.home-page .section-header { margin-bottom:40px; }
+.home-page .section-header h2 { font-size:38px; line-height:1.4; margin-top:16px; }
+.home-page .section-header p { font-size:17px; line-height:1.85; }
+.home-page .goals-grid,.home-page .features-grid { gap:24px; }
+.home-page .goal-card,.home-page .feature-card { padding:32px 26px; border-radius:8px; box-shadow:0 3px 15px #23232305; }
+.home-page .goal-card:hover { transform:translateY(-4px); box-shadow:0 12px 28px #33290012; }
+.home-page .goal-card h3,.home-page .feature-card h3 { font-size:21px; line-height:1.5; }
+.home-page .goal-card p,.home-page .feature-card p { line-height:1.8; }
+.home-page .f-icon { width:60px; height:60px; margin-bottom:20px; border-radius:16px; }
+.home-page .goal-icon { margin-bottom:0; }
+.home-page .video-container { overflow:hidden; border:1px solid var(--border); }
+.home-page .video-container iframe { display:block; width:100%; height:auto; aspect-ratio:16/9; border:0; }
+.home-page .cta-box { padding:56px 32px; box-shadow:0 14px 36px #ffcc0026; }
+.home-page .cta-box h2 { font-size:40px; line-height:1.4; }
+.home-page .cta-box>div { flex-wrap:wrap; }
+@media(max-width:1024px) { .home-page .hero-content { gap:32px; }.home-page .hero-text h1 { font-size:48px; }.home-page .goals-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:768px) { .home-page .hero { padding:40px 0 56px; min-height:0; }.home-page .hero-content { gap:44px; }.home-page .hero-image { max-width:440px; width:calc(100% - 24px); margin:auto; }.home-page .hero-text h1 { font-size:42px; }.home-page .hero-text p { font-size:17px; }.home-page .section-header h2 { font-size:30px; }.home-page .cta-box h2 { font-size:30px; } }
+@media(max-width:480px) { .home-page .goals-grid { grid-template-columns:1fr; }.home-page .hero-text h1 { font-size:36px; }.home-page .hero-btns { flex-direction:column; }.home-page .hero-btns button { width:100%; }.home-page .card-badge { left:0; font-size:12px; padding:10px 14px; }.home-page .cta-box { padding:36px 20px; }.home-page .section-header h2 { font-size:27px; } }
+@media(prefers-reduced-motion:reduce) { .home-page *, .home-page *::before, .home-page *::after { animation:none!important; transition:none!important; }.home-page .btn-primary:hover,.home-page .goal-card:hover { transform:none; } }

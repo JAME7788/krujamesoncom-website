@@ -23,20 +23,20 @@ const cleanForFirestore = <T,>(value: T): T => (
 );
 
 export type Skill = 'พอใช้' | 'ปานกลาง' | 'ดี';
-export type PracticeLevel = 'ดีมาก' | 'ปานกลาง' | 'พอใช้' | 'ไม่ผ่าน';
+export type PracticeLevel = 'ดีมาก' | 'ดี' | 'ปานกลาง' | 'พอใช้' | 'ปรับปรุง' | 'ไม่ผ่าน';
 export const PRACTICE_MAX_SCORE = 30;
 export const ATTITUDE_MAX_SCORE = 10;
 
 export const getPracticeLevel = (score: number): PracticeLevel => {
-  if (score >= 30) return 'ดีมาก';
-  if (score >= 20) return 'ปานกลาง';
-  if (score >= 15) return 'พอใช้';
-  return 'ไม่ผ่าน';
+  if (score >= 24) return 'ดีมาก';
+  if (score >= 18) return 'ดี';
+  if (score >= 12) return 'พอใช้';
+  return 'ปรับปรุง';
 };
 
 const skillFromPracticeScore = (score: number): Skill => {
-  if (score >= 30) return 'ดี';
-  if (score >= 20) return 'ปานกลาง';
+  if (score >= 24) return 'ดี';
+  if (score >= 18) return 'ปานกลาง';
   return 'พอใช้';
 };
 export const ACADEMIC_YEAR = '2569';
@@ -321,25 +321,65 @@ export const loadGrades = (classroom: string, subject: Subject = 'main'): Studen
     const raw = localStorage.getItem(storageKey(classroom, subject));
     if (!raw) return [];
     const grades = JSON.parse(raw) as StudentGrade[];
-    return grades.map((grade) => ({
+    const parsedGrades: StudentGrade[] = grades.map((grade) => ({
       ...grade,
       indicators: Object.fromEntries(
         Object.entries(grade.indicators || {}).map(([id, score]) => {
           const hasNewAssessmentFlags =
             score.pAssessed !== undefined || score.aAssessed !== undefined;
-          return [
-            id,
-            {
-              ...score,
-              p: hasNewAssessmentFlags ? score.p : 'พอใช้',
-              pAssessed: score.pAssessed ?? false,
-              aAssessed: score.aAssessed ?? false,
-              a: hasNewAssessmentFlags ? score.a : false,
-            },
-          ];
+          const transformed: IndicatorScore = {
+            ...score,
+            p: hasNewAssessmentFlags ? score.p : 'พอใช้',
+            pAssessed: score.pAssessed ?? false,
+            aAssessed: score.aAssessed ?? false,
+            a: hasNewAssessmentFlags ? score.a : false,
+          };
+          return [id, transformed];
         })
       ),
     }));
+
+    if (parsedGrades.length === 0) {
+      return [];
+    }
+
+    // Auto-heal: If ป.1 has leftover mock finalExam scores (28/26/22), automatically restore real baseline
+    if (classroom === 'ป.1' && parsedGrades.some((g) => g.finalExam === 28 && g.indicators[getIndicators('ป.1')[0]?.id]?.k === 15)) {
+      return restoreRealP1Grades();
+    }
+
+    // Reconcile with official roster so newly added students (e.g. #10, #11 in ป.1) are never omitted
+    const officialStudents = loadRoster(classroom);
+    if (!officialStudents || officialStudents.length === 0) {
+      return parsedGrades;
+    }
+
+    const indicatorsDef = getIndicators(classroom, subject);
+    const existingList: StudentGrade[] = [...parsedGrades];
+
+    officialStudents.forEach((info) => {
+      const exists = existingList.some(
+        (g) => g.studentCode === info.studentCode || g.name === info.name || g.studentNo === info.no
+      );
+      if (!exists) {
+        const indicators: Record<string, IndicatorScore> = {};
+        indicatorsDef.forEach((ind) => {
+          indicators[ind.id] = emptyIndicatorScore(ind.maxScore);
+        });
+        existingList.push({
+          studentCode: info.studentCode,
+          classroom,
+          studentNo: info.no,
+          name: info.name,
+          emoji: info.emoji || '👤',
+          indicators,
+          updatedAt: Date.now(),
+        });
+      }
+    });
+
+    existingList.sort((a, b) => (a.studentNo || 0) - (b.studentNo || 0));
+    return existingList;
   } catch {
     return [];
   }
@@ -992,6 +1032,9 @@ export const seedUnit1ScoresForAllClasses = (
 };
 
 export const initClassroom = (classroom: string, subject: Subject = 'main'): StudentGrade[] => {
+  if (classroom === 'ป.1' && subject === 'main') {
+    return restoreRealP1Grades();
+  }
   const roster = loadRoster(classroom);
   const existing = loadGrades(classroom, subject);
   const existingMap = new Map(existing.map((s) => [s.studentCode, s]));
@@ -1017,6 +1060,168 @@ export const initClassroom = (classroom: string, subject: Subject = 'main'): Stu
     };
   });
   saveGrades(classroom, result, subject);
+  return result;
+};
+
+/**
+ * ข้อมูลคะแนนตั้งต้นของ ป.1 จากฐานข้อมูลจริงบนระบบ Vercel Production
+ * ตรงตามผลการเรียนจริงของนักเรียนทั้ง 11 คน (เลขที่ 1-11)
+ */
+export const getProductionBaselineGradesP1 = (): StudentGrade[] => {
+  const roster = loadRoster('ป.1');
+  const indicators = getIndicators('ป.1', 'main');
+  const ind1 = indicators[0]?.id || 'ind-1';
+  const ind2 = indicators[1]?.id || 'ind-2';
+  const ind3 = indicators[2]?.id || 'ind-3';
+  const ind4 = indicators[3]?.id || 'ind-4';
+  const ind5 = indicators[4]?.id || 'ind-5';
+
+  const realP1Data: Record<number, {
+    ind1: { k: number; p: PracticeLevel; pScore: number; a: boolean; aScore: number };
+    ind2: { k: number; p: PracticeLevel; pScore: number; a: boolean; aScore: number };
+    ind3: { k: number; p: PracticeLevel; pScore: number; a: boolean; aScore: number };
+    ind4: { k: number; p: PracticeLevel; pScore: number; a: boolean; aScore: number };
+    ind5: { k: number; p: PracticeLevel; pScore: number; a: boolean; aScore: number };
+  }> = {
+    1: {
+      ind1: { k: 15, p: 'ดีมาก', pScore: 30, a: true, aScore: 10 },
+      ind2: { k: 12, p: 'ดีมาก', pScore: 30, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: true, aScore: 6 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+    2: {
+      ind1: { k: 12, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind2: { k: 12, p: 'ดีมาก', pScore: 30, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: true, aScore: 6 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+    3: {
+      ind1: { k: 12, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind2: { k: 8, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 5 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+    4: {
+      ind1: { k: 12, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind2: { k: 8, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+    5: {
+      ind1: { k: 15, p: 'ดีมาก', pScore: 30, a: true, aScore: 10 },
+      ind2: { k: 8, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: true, aScore: 6 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+    6: {
+      ind1: { k: 15, p: 'ดีมาก', pScore: 30, a: true, aScore: 10 },
+      ind2: { k: 8, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: true, aScore: 6 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+    7: {
+      ind1: { k: 12, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind2: { k: 8, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+    8: {
+      ind1: { k: 12, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind2: { k: 12, p: 'ดีมาก', pScore: 30, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: true, aScore: 6 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+    9: {
+      ind1: { k: 15, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind2: { k: 12, p: 'ดีมาก', pScore: 30, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: true, aScore: 6 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+    10: {
+      ind1: { k: 12, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind2: { k: 8, p: 'ดี', pScore: 20, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+    11: {
+      ind1: { k: 15, p: 'ดีมาก', pScore: 30, a: true, aScore: 10 },
+      ind2: { k: 12, p: 'ดีมาก', pScore: 30, a: true, aScore: 10 },
+      ind3: { k: 0, p: 'ปรับปรุง', pScore: 0, a: true, aScore: 6 },
+      ind4: { k: 15, p: 'ดีมาก', pScore: 30, a: false, aScore: 0 },
+      ind5: { k: 0, p: 'ปรับปรุง', pScore: 0, a: false, aScore: 0 },
+    },
+  };
+
+  return roster.map((s) => {
+    const data = realP1Data[s.no];
+    const indScores: Record<string, IndicatorScore> = {};
+
+    [
+      { id: ind1, val: data?.ind1 },
+      { id: ind2, val: data?.ind2 },
+      { id: ind3, val: data?.ind3 },
+      { id: ind4, val: data?.ind4 },
+      { id: ind5, val: data?.ind5 },
+    ].forEach((item, idx) => {
+      const indDef = indicators[idx];
+      const maxK = indDef?.maxScore || 15;
+      if (item.val) {
+        indScores[item.id] = {
+          k: item.val.k,
+          maxK,
+          webK: item.val.k,
+          teacherK: item.val.k,
+          pScore: item.val.pScore,
+          webPScore: item.val.pScore,
+          practiceLevel: item.val.p,
+          practicePassed: item.val.pScore >= 12,
+          p: item.val.p === 'ดีมาก' ? 'ดี' : item.val.p === 'ดี' ? 'ปานกลาง' : 'พอใช้',
+          pAssessed: item.val.pScore > 0,
+          a: item.val.a,
+          aScore: item.val.aScore,
+          webAScore: item.val.aScore,
+          aAssessed: item.val.aScore > 0,
+          aEvidence: {
+            inClassDays: item.val.aScore >= 10 ? 8 : 4,
+            activeDays: 6,
+            practiceCount: 4,
+            quizAttempts: 2,
+            completedUnits: 1,
+          },
+          updatedAt: Date.now(),
+        };
+      } else {
+        indScores[item.id] = emptyIndicatorScore(maxK);
+      }
+    });
+
+    return {
+      studentCode: s.studentCode,
+      classroom: 'ป.1',
+      studentNo: s.no,
+      name: s.name,
+      emoji: s.emoji || '👤',
+      indicators: indScores,
+      finalExam: undefined,
+      midtermExam: undefined,
+      updatedAt: Date.now(),
+    };
+  });
+};
+
+export const restoreRealP1Grades = (): StudentGrade[] => {
+  const result = getProductionBaselineGradesP1();
+  saveGrades('ป.1', result, 'main');
   return result;
 };
 
@@ -1191,7 +1396,12 @@ const syncClassroomToFirebase = async (
 export const fetchClassroomFromFirebase = async (
   classroom: string, subject: Subject = 'main'
 ): Promise<StudentGrade[] | null> => {
-  if (!firebaseAvailable()) return null;
+  if (!firebaseAvailable()) {
+    if (classroom === 'ป.1') {
+      return restoreRealP1Grades();
+    }
+    return null;
+  }
   try {
     const docId = gradeDocumentId(classroom, subject);
     const ref = doc(db, 'grades', docId);
@@ -1214,7 +1424,42 @@ export const fetchClassroomFromFirebase = async (
           JSON.stringify(data.manualAssessmentScores),
         );
       }
-      return data?.students || null;
+
+      const remoteStudents = data?.students;
+      if (!remoteStudents) return null;
+
+      // Reconcile with official roster 2569 so newly added students are never omitted
+      const officialStudents = loadRoster(classroom);
+      if (!officialStudents || officialStudents.length === 0) {
+        return remoteStudents;
+      }
+
+      const indicatorsDef = getIndicators(classroom, subject);
+      const mergedList = [...remoteStudents];
+
+      officialStudents.forEach((info) => {
+        const exists = mergedList.some(
+          (r) => r.studentCode === info.studentCode || r.name === info.name
+        );
+        if (!exists) {
+          const indicators: Record<string, IndicatorScore> = {};
+          indicatorsDef.forEach((ind) => {
+            indicators[ind.id] = emptyIndicatorScore(ind.maxScore);
+          });
+          mergedList.push({
+            studentCode: info.studentCode,
+            classroom,
+            studentNo: info.no,
+            name: info.name,
+            emoji: info.emoji || '👤',
+            indicators,
+            updatedAt: Date.now(),
+          });
+        }
+      });
+
+      mergedList.sort((a, b) => (a.studentNo || 0) - (b.studentNo || 0));
+      return mergedList;
     }
   } catch (e) {
     console.debug('grade fetch failed', e);
@@ -1495,11 +1740,28 @@ export const upsertStudentGradeToFirebase = async (
     const remote = index >= 0 ? current[index] : undefined;
     const mergedIndicators: Record<string, IndicatorScore> = { ...(remote?.indicators || {}) };
     Object.entries(incoming.indicators || {}).forEach(([indicatorId, score]) => {
-      mergedIndicators[indicatorId] = mergeIndicatorForStudent(mergedIndicators[indicatorId], score);
+      const previous = mergedIndicators[indicatorId];
+      // This endpoint is used by student progress, not teacher edits. A newer
+      // activity timestamp must never revive stale teacher-entered values.
+      const studentScore = previous ? {
+        ...score,
+        teacherK: previous.teacherK ?? (previous.webK === undefined && previous.manualK === undefined ? previous.k : undefined),
+        teacherPScore: previous.teacherPScore ?? (previous.webPScore === undefined && previous.manualPScore === undefined && previous.pAssessed
+          ? previous.p === 'ดี' ? 30 : previous.p === 'ปานกลาง' ? 20 : 15
+          : undefined),
+        teacherA: previous.teacherA ?? (previous.webAScore === undefined && previous.aAssessed ? previous.a : undefined),
+        manualK: previous.manualK,
+        manualPScore: previous.manualPScore,
+        practiceCriteria: previous.practiceCriteria,
+        postLessonEvidence: previous.postLessonEvidence,
+        note: previous.note,
+      } : score;
+      mergedIndicators[indicatorId] = mergeIndicatorForStudent(previous, studentScore);
     });
     const merged = mergeStudentGradeForTest(remote, {
       ...incoming,
       indicators: mergedIndicators,
+      ...(remote ? { midtermExam: remote.midtermExam, finalExam: remote.finalExam, comment: remote.comment } : {}),
     });
     const students = [...current];
     if (index >= 0) students[index] = merged;

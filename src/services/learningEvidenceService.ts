@@ -13,7 +13,8 @@ export type EvidenceSource =
   | 'web'
   | 'teacher'
   | 'live-quiz'
-  | 'project';
+  | 'project'
+  | 'exit-ticket';
 
 export interface LearningEvidence {
   id: string;
@@ -87,11 +88,11 @@ export const recordLearningEvidence = async (
     id,
     createdAt: Date.now(),
   });
+  if (firebaseAvailable()) {
+    await setDoc(doc(db, COLLECTION, id), evidence);
+  }
   const local = loadLearningEvidence();
   cacheEvidence([evidence, ...local.filter((item) => item.id !== id)]);
-  if (firebaseAvailable()) {
-    await setDoc(doc(db, COLLECTION, id), evidence, { merge: true });
-  }
   return evidence;
 };
 

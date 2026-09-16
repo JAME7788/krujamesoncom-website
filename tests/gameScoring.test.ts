@@ -52,6 +52,13 @@ describe('ระบบคะแนน — การผูกเกมเข้�
   it('ห้องเรียนที่ไม่รู้จักต้องไม่ได้คะแนน (กันข้อมูลขยะ)', () => {
     expect(getGameTargetUnits('binary', 'อนุบาล 1')).toEqual([]);
     expect(getGameTargetUnits('binary', '')).toEqual([]);
+    expect(getGameTargetUnits('snake', 'ป.9')).toEqual([]);
+    expect(getGameTargetUnits('snake', 'ป.4/1junk')).toEqual([]);
+  });
+
+  it('ห้องย่อยใช้หลักสูตรระดับเดียวกัน ไม่สร้าง gradeId เช่น p4/1', () => {
+    expect(getGameTargetUnits('krucom-arcade', 'ป.4/1')).toEqual(getGameTargetUnits('krucom-arcade', 'ป.4'));
+    expect(getGameTargetUnits('quick-answer', 'ม.1/2')).toEqual(getGameTargetUnits('quick-answer', 'ม.1'));
   });
 
   it('เกมเลขฐานสองให้คะแนนเฉพาะ ม.ต้น (ตามหลักสูตร)', () => {

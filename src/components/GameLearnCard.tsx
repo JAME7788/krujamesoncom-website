@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BookOpen, X, Rocket, Lightbulb } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -35,6 +35,7 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
   const { user } = useAuth();
   const lesson = gameLessons[gameKey];
   const seenKey = `kj_lesson_seen_${gameKey}`;
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(() => {
     try {
       return localStorage.getItem(seenKey) !== '1';
@@ -42,6 +43,18 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
       return true;
     }
   });
+
+  useEffect(() => {
+    if (!open || !lesson) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    return () => {
+      dialog?.close();
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open, seenKey, lesson]);
 
   if (!lesson) return null;
 
@@ -52,23 +65,6 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
     setOpen(false);
     try { localStorage.setItem(seenKey, '1'); } catch { /* ignore */ }
   };
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setOpen(false);
-        try { localStorage.setItem(seenKey, '1'); } catch { /* ignore */ }
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open, seenKey]);
 
   const themeVars = {
     '--glc': lesson.color,
@@ -85,7 +81,10 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
       </button>
 
       {open && createPortal((
-        <div className="glc-overlay" onClick={close} role="dialog" aria-label={`บทเรียน ${lesson.title}`}>
+        <dialog ref={dialogRef} className="glc-overlay" onClick={close}
+          onCancel={(event) => { event.preventDefault(); close(); }}
+          onKeyDown={(event) => event.stopPropagation()}
+          aria-modal="true" aria-label={`บทเรียน ${lesson.title}`}>
           <section className="glc-card" onClick={(e) => e.stopPropagation()} style={themeVars}>
             <header className="glc-head">
               <button className="glc-x" onClick={close} aria-label="ปิด"><X size={18} /></button>
@@ -128,7 +127,7 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
               <Rocket size={19} /> เข้าใจแล้ว เริ่มเล่นเลย!
             </button>
           </section>
-        </div>
+        </dialog>
       ), document.body)}
 
       <style>{`
@@ -143,10 +142,14 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
 
         .glc-overlay {
           position: fixed; inset: 0; z-index: 2147483000;
-          display: grid; place-items: center; padding: 16px;
+          width: 100%; height: 100%; max-width: none; max-height: none;
+          margin: 0; border: 0; box-sizing: border-box;
+          place-items: center; padding: 16px;
           background: rgba(15, 23, 42, 0.62); backdrop-filter: blur(6px);
           animation: glcFade 0.18s ease;
         }
+        .glc-overlay[open] { display: grid; }
+        .glc-overlay::backdrop { background: transparent; }
         @keyframes glcFade { from { opacity: 0; } to { opacity: 1; } }
 
         .glc-card {
@@ -183,7 +186,12 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
         .glc-head h2 { margin: 9px 0 2px; font-size: 1.45rem; letter-spacing: 0; }
         .glc-subject { margin: 0; font-size: 0.85rem; opacity: 0.9; font-weight: 600; }
 
-        .glc-body { padding: 20px 24px 8px; overflow-y: auto; }
+        .glc-head, .glc-cta { flex-shrink: 0; }
+        .glc-body { min-height: 0; padding: 20px 24px 8px; overflow-y: auto; overscroll-behavior: contain; }
+        .glc-card { max-height: calc(100dvh - 32px); }
+        @media (prefers-reduced-motion: reduce) {
+          .glc-overlay, .glc-card { animation: none; }
+        }
 
         .glc-concept {
           display: flex; gap: 10px; align-items: flex-start;

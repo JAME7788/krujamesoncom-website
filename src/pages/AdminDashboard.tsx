@@ -5,11 +5,12 @@ import {
   Download, Search, RefreshCw, Plus, Trash2, Save, CheckCircle2,
   XCircle, BookOpen, Award, FileText, Gamepad2, PlayCircle,
   LogOut, Pencil, Lock, MonitorPlay,
-  Globe2,
+  Globe2, FileSpreadsheet,
 } from 'lucide-react';
 import AdminGate from '../components/AdminGate';
 import CourseBuilder from '../components/CourseBuilder';
 import GradeBook from '../components/GradeBook';
+import { OfficialGradeExportModal } from '../components/OfficialGradeExportModal';
 import SkillGradeTable from '../components/SkillGradeTable';
 import BonusAwarder from '../components/BonusAwarder';
 import DailyQuestionEditor from '../components/DailyQuestionEditor';
@@ -47,7 +48,7 @@ import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
+type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'export-grades' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -89,12 +90,13 @@ const NAVIGATION_GROUPS: NavGroup[] = [
     title: '📋 การวัดผลการเรียน',
     items: [
       { id: 'gradebook', label: 'เก็บคะแนน K/P/A', icon: <Award size={16} /> },
+      { id: 'export-grades', label: 'ส่งออก ปพ.5 & เอกสารวัดผล', icon: <FileSpreadsheet size={16} /> },
       { id: 'assessments', label: 'แบบประเมินและหลังสอน', icon: <FileText size={16} /> },
       { id: 'question-bank', label: 'คลังข้อสอบ', icon: <FileText size={16} /> },
       { id: 'skill', label: 'ทักษะอาชีพ (K/P)', icon: <Award size={16} /> },
       { id: 'bonus', label: 'แจกรางวัล / Bonus', icon: <Award size={16} /> },
       { id: 'daily', label: 'คำถามประจำวัน', icon: <Award size={16} /> },
-      { id: 'research', label: 'สร้างงานวิจัย (WBI)', icon: <FileText size={16} /> },
+      { id: 'research', label: 'วิจัย ๕ บท & ว.PA', icon: <FileText size={16} /> },
     ]
   },
   {
@@ -593,6 +595,16 @@ const AdminDashboardInner: React.FC = () => {
               </motion.div>
             )}
 
+            {/* TAB: EXPORT GRADES */}
+            {tab === 'export-grades' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <OfficialGradeExportModal
+                  isOpen={true}
+                  onClose={() => setTab('gradebook')}
+                />
+              </motion.div>
+            )}
+
             {/* TAB: STUDENT ASSESSMENTS */}
             {tab === 'assessments' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
@@ -646,13 +658,13 @@ const AdminDashboardInner: React.FC = () => {
               </motion.div>
             )}
 
-            {/* TAB: RESEARCH — สร้างเอกสารงานวิจัย */}
+            {/* TAB: RESEARCH — สร้างเอกสารงานวิจัย & ว.PA */}
             {tab === 'research' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
                 <div style={{ marginBottom: '1rem' }}>
-                  <h2 style={{ margin: '0 0 0.25rem' }}>📄 สร้างเอกสารงานวิจัย (WBI + ADDIE)</h2>
+                  <h2 style={{ margin: '0 0 0.25rem' }}>📄 วิจัยในชั้นเรียน ๕ บท & ข้อตกลงพัฒนางาน ว.PA</h2>
                   <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
-                    ดึงผลสัมฤทธิ์จริงจากกระดาษเกรดมาคำนวณ ประกอบเป็นเอกสารวิจัย 5 บท — พิมพ์/คัดลอก/ให้ AI เรียบเรียงต่อได้
+                    คำนวณสถิติจริงจากฐานข้อมูลนักเรียน ป.๑ เชื่อมโยงเล่มวิจัย ๕ บท และประเด็นท้าทาย ว.PA (PA ๑/ส) เป็นเรื่องเดียวกัน พร้อมส่งออกไฟล์ Word (.docx) ในคลิกเดียว
                   </p>
                 </div>
                 <ResearchGenerator />

@@ -1,0 +1,360 @@
+/* BombCollectorGame.css - Cyber Arena & Bomb Collector Pro */
+
+.bomb-collector-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+  color: #fff;
+  user-select: none;
+  font-family: 'Kanit', system-ui, -apple-system, sans-serif;
+}
+
+/* Header */
+.bc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.bc-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.bc-back-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.bc-title-wrap {
+  text-align: center;
+}
+
+.bc-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bc-subtitle {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 2px 0 0 0;
+}
+
+/* HUD bar */
+.bc-hud {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.bc-hud-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.bc-hud-label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.bc-hud-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+.bc-hud-val.danger {
+  color: #ef4444;
+}
+
+.bc-hud-val.gold {
+  color: #fbbf24;
+}
+
+.bc-hud-val.cyan {
+  color: #38bdf8;
+}
+
+/* Arena Canvas Wrapper */
+.bc-canvas-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 4 / 3;
+  background: #090d16;
+  border: 2px solid rgba(239, 68, 68, 0.4);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(239, 68, 68, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bc-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Active Buffs Indicators in Canvas Overlay */
+.bc-active-buffs {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.bc-buff-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.bc-buff-pill.shield {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.bc-buff-pill.speed {
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.bc-buff-pill.freeze {
+  border-color: #a855f7;
+  color: #c084fc;
+}
+
+/* Screen overlay states (Start / Paused / Game Over) */
+.bc-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 15, 29, 0.88);
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  z-index: 20;
+}
+
+.bc-overlay-icon {
+  font-size: 3rem;
+  margin-bottom: 8px;
+  animation: bcPulse 1.5s infinite;
+}
+
+@keyframes bcPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.bc-overlay-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+}
+
+.bc-overlay-title.over {
+  color: #ef4444;
+}
+
+.bc-overlay-title.start {
+  color: #fbbf24;
+}
+
+.bc-overlay-desc {
+  font-size: 0.92rem;
+  color: #cbd5e1;
+  max-width: 440px;
+  margin: 0 0 18px 0;
+  line-height: 1.5;
+}
+
+.bc-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 18px;
+}
+
+.bc-result-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.bc-result-key {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.bc-result-val {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.bc-btn-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.bc-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  transition: all 0.2s ease;
+}
+
+.bc-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.6);
+}
+
+.bc-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bc-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* Touch Controls / Virtual D-pad for mobile */
+.bc-touch-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  gap: 8px;
+  margin-top: 14px;
+  justify-content: center;
+}
+
+.bc-dpad-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  touch-action: manipulation;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.bc-dpad-btn:active, .bc-dpad-btn.active {
+  background: rgba(239, 68, 68, 0.6);
+  transform: scale(0.92);
+}
+
+.bc-dpad-up { grid-column: 2; grid-row: 1; }
+.bc-dpad-left { grid-column: 1; grid-row: 2; }
+.bc-dpad-right { grid-column: 3; grid-row: 2; }
+.bc-dpad-down { grid-column: 2; grid-row: 3; }
+
+/* Desktop instructions */
+.bc-instructions {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-align: center;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.bc-kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #f1f5f9;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .bc-hud {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .bc-title {
+    font-size: 1.15rem;
+  }
+}

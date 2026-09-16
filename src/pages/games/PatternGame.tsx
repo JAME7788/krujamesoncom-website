@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { createGameRoundGuard } from '../../utils/gameRoundGuard';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
@@ -164,13 +166,16 @@ const PatternGame: React.FC = () => {
   const [level, setLevel] = useState(0);
   const [round, setRound] = useState(1);
   const [done, setDone] = useState(false);
-  const [bestStreak, setBestStreak] = useState(() => parseInt(localStorage.getItem('kj_pat_best') || '0'));
+  const [roundGuard] = useState(createGameRoundGuard);
+  const [bestStreak, setBestStreak] = useState(() => readGameRecord('kj_pat_best'));
   const recordGame = useGameProgress('pattern', 'หาแพทเทิร์น');
 
   const next = () => {
+    if (done || !showResult || !roundGuard.claim(`next-${round}`)) return;
     if (round >= SESSION_ROUNDS) {
       setDone(true);
-      void recordGame(score);
+      const maximum = Array.from({ length: SESSION_ROUNDS }, (_, index) => 20 + Math.min(4, Math.floor(index / 3)) * 5).reduce((sum, value) => sum + value, 0);
+      void recordGame(score, undefined, maximum);
       return;
     }
     const newLevel = Math.min(4, Math.floor(round / 3));
@@ -182,6 +187,7 @@ const PatternGame: React.FC = () => {
   };
 
   const restart = () => {
+    roundGuard.reset();
     setPattern(generatePattern(0));
     setPicked(null);
     setShowResult(false);
@@ -193,21 +199,15 @@ const PatternGame: React.FC = () => {
   };
 
   const submit = (choice: string) => {
+    if (done || showResult || !pattern.options.includes(choice) || !roundGuard.claim(`answer-${round}`)) return;
     setPicked(choice);
     setShowResult(true);
     if (choice === pattern.answer) {
       const nextScore = score + 20 + level * 5;
       setScore(nextScore);
-      // บันทึกเมื่อตอบถูกเท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
-      recordGame(nextScore);
-      setStreak((st) => {
-        const ns = st + 1;
-        if (ns > bestStreak) {
-          setBestStreak(ns);
-          localStorage.setItem('kj_pat_best', String(ns));
-        }
-        return ns;
-      });
+      const ns = streak + 1;
+      setStreak(ns);
+      if (ns > bestStreak) { setBestStreak(ns); writeGameRecord('kj_pat_best', ns); }
     } else {
       setStreak(0);
     }

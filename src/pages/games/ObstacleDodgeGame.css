@@ -1,0 +1,359 @@
+/* ObstacleDodgeGame.css - Cyber Runner & Dynamic Hazard Dodge */
+
+.dodge-game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 16px;
+  color: #fff;
+  user-select: none;
+  font-family: 'Kanit', system-ui, -apple-system, sans-serif;
+}
+
+/* Header */
+.od-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.od-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.od-back-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.od-title-wrap {
+  text-align: center;
+}
+
+.od-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.od-subtitle {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 2px 0 0 0;
+}
+
+/* HUD Bar */
+.od-hud {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.od-hud-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.od-hud-label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.od-hud-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+.od-hud-val.cyan {
+  color: #06b6d4;
+}
+
+.od-hud-val.gold {
+  color: #fbbf24;
+}
+
+.od-hud-val.purple {
+  color: #c084fc;
+}
+
+/* Runner Canvas Arena */
+.od-canvas-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 9 / 14;
+  max-height: 560px;
+  background: #050814;
+  border: 2px solid rgba(6, 182, 212, 0.4);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 25px rgba(6, 182, 212, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.od-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Active Buffs Pill */
+.od-active-buffs {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.od-buff-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.od-buff-pill.boost {
+  border-color: #06b6d4;
+  color: #38bdf8;
+}
+
+.od-buff-pill.shield {
+  border-color: #10b981;
+  color: #34d399;
+}
+
+/* Overlay Screen */
+.od-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 8, 20, 0.88);
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  z-index: 20;
+}
+
+.od-overlay-icon {
+  font-size: 3.2rem;
+  margin-bottom: 8px;
+}
+
+.od-overlay-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+}
+
+.od-overlay-title.over {
+  color: #ef4444;
+}
+
+.od-overlay-title.start {
+  color: #38bdf8;
+}
+
+.od-overlay-desc {
+  font-size: 0.92rem;
+  color: #cbd5e1;
+  max-width: 420px;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+.od-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 20px;
+}
+
+.od-result-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.od-result-key {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.od-result-val {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.od-btn-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.od-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+  color: #fff;
+  border: none;
+  padding: 12px 26px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+  transition: all 0.2s ease;
+}
+
+.od-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.6);
+}
+
+.od-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.od-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* Mobile On-Screen Controls */
+.od-controls-panel {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 480px;
+  margin-top: 14px;
+  justify-content: center;
+}
+
+.od-ctrl-btn {
+  flex: 1;
+  padding: 14px 10px;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.1s ease;
+}
+
+.od-ctrl-btn:active {
+  background: rgba(6, 182, 212, 0.6);
+  transform: scale(0.95);
+}
+
+.od-ctrl-btn.jump {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+.od-ctrl-btn.jump:active {
+  background: rgba(245, 158, 11, 0.5);
+}
+
+/* Instructions */
+.od-instructions {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-align: center;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.od-kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #f1f5f9;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .od-hud {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .od-title {
+    font-size: 1.15rem;
+  }
+}

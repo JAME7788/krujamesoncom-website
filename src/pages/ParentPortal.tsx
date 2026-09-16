@@ -41,7 +41,7 @@ const ParentPortal: React.FC = () => {
 
   useEffect(() => {
     if (!studentId) return;
-    fetchStudentProgress(studentId).then(() => setSummary(getSummary(studentId)));
+    fetchStudentProgress(studentId).then(() => setSummary(getSummary(studentId, studentInfo?.classroom)));
   }, [studentId]);
 
   useEffect(() => {

@@ -379,9 +379,21 @@
   margin: 0 auto;
 }
 .mem-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-width: 0;
   aspect-ratio: 1;
   perspective: 1000px;
   cursor: pointer;
+}
+.mem-card:focus-visible { outline: 3px solid #087f8c; outline-offset: 3px; }
+.mem-card:disabled { cursor: default; }
+.memory-paused .mem-card-inner { visibility: hidden; }
+.memory-paused .mem-card { background: #e2e8f0; border-radius: 8px; }
+.memory-pause-status { color: #fff; background: #164e43; padding: 12px; text-align: center; margin: 12px 0; }
+@media (prefers-reduced-motion: reduce) {
+  .mem-card-inner { transition: none; }
 }
 .mem-card-inner {
   position: relative;

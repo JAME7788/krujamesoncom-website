@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, PlayCircle, CheckCircle2, XCircle, RotateCcw, Sparkles, Video, Gamepad2, FileText, Award, BookOpen, Menu, Maximize, Download, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlayCircle, CheckCircle2, XCircle, RotateCcw, Sparkles, Video, Gamepad2, FileText, Award, BookOpen, Menu, Maximize, Minimize, Download, Lock } from 'lucide-react';
 import { findGrade, type Grade, type Unit } from '../data/curriculum';
 import { unitContent } from '../data/unitContent';
 import { unitExtras, type Article, type LearningFile, type LessonNotes, type QuizQuestion } from '../data/unitExtras';
@@ -35,9 +35,10 @@ import {
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import RichSlideViewer from '../components/RichSlideViewer';
 import '../components/RichSlideViewer.css';
-import { hasRichSlides, getRichSlides, type RichSlide } from '../data/richSlides';
+import ExitTicketModal from '../components/ExitTicketModal';
+import { enrichRichSlideDeck, hasRichSlides, getRichSlides, type RichSlide } from '../data/richSlides';
 import { fetchCustomSlides } from '../services/slideService';
-import { detectLessonTheme, type LessonTheme } from '../utils/lessonTheme';
+import { detectLessonTheme, isArduinoLessonText, type LessonTheme } from '../utils/lessonTheme';
 import './UnitDetail.css';
 
 const mergeList = (...lists: Array<string[] | undefined>) => {
@@ -81,11 +82,83 @@ const mergeFiles = (...lists: Array<LearningFile[] | undefined>) => {
   });
 };
 
-const buildDefaultLessonNotes = (title: string, topics: string[]): LessonNotes => {
+const buildDefaultLessonNotes = (title: string, topics: string[], gradeId: string = ''): LessonNotes => {
   const text = `${title} ${topics.join(' ')}`;
+  const isPrimary = /^p[1-3]$/.test(gradeId);
+  const isUpperPrimary = /^p[4-6]$/.test(gradeId);
+
+  // สำหรับเด็กประถมต้น (ป.1 - ป.3): ใช้ภาษาน่ารัก ประโยคสั้น มีอีโมจิสดใส และไม่มีศัพท์วิชาการขั้นสูง
+  if (isPrimary) {
+    const topicPoints = topics.length > 0
+      ? topics.slice(0, 4).map((t) => `✨ ${t}`)
+      : [`✨ สำรวจและทำความรู้จักกับ ${title}`, '✨ ฝึกทักษะการใช้งานอุปกรณ์อย่างถูกต้อง', '✨ สนุกกับเกมและกิจกรรมในห้องเรียน'];
+
+    return {
+      objectives: [
+        `เข้าใจเรื่อง "${title}" ผ่านภาพและการลงมือทำจริง`,
+        'รู้จักและเรียกชื่ออุปกรณ์หรือขั้นตอนสำคัญได้ถูกต้อง',
+        'ใช้อุปกรณ์ด้วยความระมัดระวังและมีระเบียบวินัยในห้องเรียน',
+      ],
+      summary: [
+        `บทเรียนนี้ชวนเด็ก ๆ มารู้จักและฝึกฝนเรื่อง "${title}"`,
+        ...topicPoints,
+        'ร่วมมือกับเพื่อน ๆ ปฏิบัติตามกติกาความปลอดภัย และเก็บอุปกรณ์ให้เรียบร้อยหลังใช้งาน',
+      ],
+      activities: [
+        'ชี้และบอกชื่ออุปกรณ์หรือขั้นตอนที่เรียนรู้ในชั่วโมง',
+        'จับคู่ภาพหรือฝึกทำตามขั้นตอนทีละขั้นอย่างใจเย็น',
+        'ทดลองเล่นเกมและฝึกปฏิบัติในคอมพิวเตอร์โดยมีครูคอยดูแล',
+      ],
+      checkQuestions: [
+        `เรื่อง "${title}" ช่วยให้เราเรียนรู้หรือทำงานง่ายขึ้นอย่างไร`,
+        'สิ่งที่หนูชอบและจำได้แม่นที่สุดในบทนี้คืออะไร',
+        'ถ้าเพื่อนข้าง ๆ ยังทำไม่ได้ หนูจะช่วยบอกเพื่อนอย่างไร',
+      ],
+      vocabulary: [
+        'คอมพิวเตอร์ (Computer): เพื่อนตัวเก่งที่ช่วยเราเรียนรู้',
+        'คลิก (Click): การกดปุ่มเมาส์เพื่อสั่งงาน',
+        'ปลอดภัย (Safety): ใช้อย่างระมัดระวังและถูกวิธี',
+      ],
+    };
+  }
+
+  // สำหรับประถมปลาย (ป.4 - ป.6): ฝึกการคิดเป็นขั้นตอนและการแก้ปัญหา
+  if (isUpperPrimary) {
+    const topicPoints = topics.length > 0
+      ? topics.slice(0, 4).map((t) => `📌 ${t}`)
+      : [`📌 ศึกษาแนวคิดหลักของ ${title}`, '📌 ฝึกออกแบบขั้นตอนการทำงานอย่างเป็นระบบ', '📌 ตรวจสอบและประเมินผลงาน'];
+
+    return {
+      objectives: [
+        `อธิบายหลักการและขั้นตอนของเรื่อง "${title}" ได้อย่างชัดเจน`,
+        'ใช้เหตุผลเชิงตรรกะหรือซอฟต์แวร์ในการแก้ปัญหาตามสถานการณ์',
+        'ใช้เทคโนโลยีอย่างปลอดภัย มีมารยาท และเคารพสิทธิของผู้อื่น',
+      ],
+      summary: [
+        `สาระสำคัญของ "${title}": พัฒนาทักษะการคิดวิเคราะห์และการแก้ปัญหาอย่างเป็นระบบ`,
+        ...topicPoints,
+        'ตรวจสอบและแก้ไขข้อผิดพลาด (Debug) เพื่อให้ได้ผลลัพธ์ที่ถูกต้องและสมบูรณ์',
+      ],
+      activities: [
+        'วิเคราะห์โจทย์สถานการณ์ แล้วออกแบบลำดับขั้นตอนการแก้ปัญหา',
+        'ลงมือปฏิบัติจริงด้วยซอฟต์แวร์หรือกิจกรรมการเรียนรู้ที่กำหนด',
+        'แลกเปลี่ยนผลงานกับเพื่อนและสรุปข้อค้นพบร่วมกัน',
+      ],
+      checkQuestions: [
+        `แนวคิดสำคัญของ "${title}" นำไปประยุกต์ใช้ในชีวิตประจำวันได้อย่างไร`,
+        'หากขั้นตอนการทำงานเกิดข้อผิดพลาด นักเรียนมีวิธีตรวจสอบและแก้ไขอย่างไร',
+      ],
+      vocabulary: [
+        'Algorithm (อัลกอริทึม): ลำดับขั้นตอนการทำงานหรือแก้ปัญหา',
+        'Debug (ดีบั๊ก): การตรวจหาและแก้ไขข้อผิดพลาด',
+        'Logic (ตรรกะ): การคิดอย่างมีเหตุมีผลและเป็นระบบ',
+      ],
+    };
+  }
+
   const topicSummary = topics.slice(0, 6).map((topic) => `เชื่อมโยงหัวข้อ "${topic}" กับตัวอย่างจริง แล้วฝึกอธิบายด้วยคำของตนเอง`);
 
-  if (/Arduino|ไมโครคอนโทรลเลอร์|บอร์ด|วงจร|LED|เซนเซอร์|PWM|Serial Monitor|บูตโหลดเดอร์/i.test(text)) {
+  if (isArduinoLessonText(text)) {
     return {
       objectives: [
         'อธิบายความสัมพันธ์ของ input, process และ output ในชิ้นงาน Arduino ได้',
@@ -118,7 +191,7 @@ const buildDefaultLessonNotes = (title: string, topics: string[]): LessonNotes =
     };
   }
 
-  if (/AI|ปัญญาประดิษฐ์|Machine Learning|Prompt|โมเดล/i.test(text)) {
+  if (/\bAI\b|ปัญญาประดิษฐ์|Machine Learning|โมเดล/i.test(text)) {
     return {
       objectives: [
         'แยกความแตกต่างระหว่าง AI, Machine Learning และเครื่องมือดิจิทัลทั่วไปได้',
@@ -218,33 +291,25 @@ const buildDefaultLessonNotes = (title: string, topics: string[]): LessonNotes =
         'อ่านกราฟหรือแผนภูมิแล้วสรุปแนวโน้มและข้อค้นพบได้',
       ],
       summary: [
-        'อ้างอิงชุด Data Science ของ สสวท.: เริ่มจากแนะนำวิทยาการข้อมูล กระบวนการวิทยาการข้อมูล การเก็บรวบรวมข้อมูล การประมวลผล และการสร้างทางเลือกเพื่อตัดสินใจ',
-        'วิทยาการข้อมูลคือการตั้งคำถาม เก็บข้อมูล สำรวจ ทำความสะอาด วิเคราะห์ นำเสนอ และใช้ผลลัพธ์ช่วยตัดสินใจอย่างมีเหตุผล',
-        'ก่อนวิเคราะห์ควรทำความสะอาดข้อมูล เช่น ตรวจคำซ้ำ ค่าที่หายไป ข้อมูลที่กรอกผิด และจัดกลุ่มข้อมูลด้วยตารางหรือ Pivot Table',
-        'การนำเสนอข้อมูลด้วยตาราง กราฟ หรือแผนภูมิช่วยให้มองเห็นรูปแบบ แนวโน้ม ความสัมพันธ์ และเปรียบเทียบทางเลือกได้ง่ายขึ้น',
-        'เมื่อข้อมูลพร้อมแล้วสามารถต่อยอดสู่ Machine Learning เช่น Linear Regression สำหรับทำนายค่าต่อเนื่อง และ K-NN สำหรับทำนายเชิงหมวดหมู่',
-        'Data Storytelling คือการเล่าเรื่องจากข้อมูล โดยต้องมีคำถามหลัก หลักฐานจากข้อมูล ภาพประกอบ และข้อเสนอแนะที่ชัดเจน',
+        'กระบวนการวิทยาการข้อมูล: ตั้งคำถาม เก็บข้อมูล สำรวจ ทำความสะอาด วิเคราะห์ และนำเสนอผลลัพธ์',
+        'ก่อนวิเคราะห์ควรทำความสะอาดข้อมูล เช่น ตรวจคำซ้ำ ค่าที่หายไป ข้อมูลที่กรอกผิด',
+        'การนำเสนอข้อมูลด้วยตาราง กราฟ หรือแผนภูมิช่วยให้มองเห็นรูปแบบและแนวโน้มได้ง่ายขึ้น',
         ...topicSummary,
       ],
       activities: [
-        'ตั้งคำถามจากชีวิตจริง เช่น “เพื่อนในห้องนอนกี่ชั่วโมง” หรือ “วิธีมาโรงเรียนแบบใดใช้เวลาน้อยที่สุด” แล้ววางแผนเก็บข้อมูล',
-        'จัดข้อมูลเป็นตาราง ตรวจค่าผิดปกติ ค่าที่หายไป และจัดกลุ่มข้อมูลก่อนวิเคราะห์',
-        'สร้างกราฟที่เหมาะกับข้อมูล เช่น กราฟแท่งสำหรับเปรียบเทียบ กราฟเส้นสำหรับแนวโน้ม และแผนภูมิวงกลมสำหรับสัดส่วน',
-        'ทำ Mini Data Story: เขียนคำถามหลัก แสดงกราฟ 1 ภาพ สรุปข้อค้นพบ 2-3 ประโยค และเสนอทางเลือกในการตัดสินใจ',
+        'ตั้งคำถามจากชีวิตจริง แล้ววางแผนเก็บข้อมูลอย่างง่าย',
+        'จัดข้อมูลเป็นตาราง ตรวจค่าผิดปกติ และจัดกลุ่มข้อมูลก่อนวิเคราะห์',
+        'สร้างกราฟที่เหมาะกับข้อมูล เช่น กราฟแท่งสำหรับเปรียบเทียบ กราฟเส้นสำหรับแนวโน้ม',
       ],
       checkQuestions: [
         'ข้อมูลที่ดีควรมีลักษณะอย่างไร',
         'ทำไมต้องตรวจสอบข้อมูลก่อนนำไปวิเคราะห์',
         'กราฟช่วยให้เข้าใจข้อมูลได้ง่ายขึ้นอย่างไร',
-        'Linear Regression กับ K-NN เหมาะกับโจทย์ต่างกันอย่างไรในภาษาง่าย ๆ',
-        'การเล่าเรื่องด้วยข้อมูลที่ดีควรมีองค์ประกอบอะไรบ้าง',
       ],
       vocabulary: [
-        'Data Cleaning: การทำข้อมูลให้พร้อมใช้',
-        'Pivot Table: ตารางช่วยสรุปและจัดกลุ่มข้อมูล',
-        'Visualization: การทำข้อมูลให้เห็นภาพ',
-        'Regression: การทำนายค่าต่อเนื่อง',
-        'K-NN: วิธีทำนายจากข้อมูลตัวอย่างที่ใกล้เคียง',
+        'Data: ข้อมูลดิบที่เก็บรวบรวมมา',
+        'Table: ตารางช่วยจัดระเบียบข้อมูล',
+        'Visualization: การนำเสนอข้อมูลให้เห็นเป็นภาพ',
       ],
     };
   }
@@ -397,19 +462,7 @@ const lessonSlideToRichSlide = (text: string, index: number): RichSlide => {
   };
 };
 
-const richSlideKey = (slide: RichSlide) => slide.title
-  .replace(/[^\u0E00-\u0E7Fa-zA-Z0-9]+/g, '')
-  .toLocaleLowerCase();
 
-const mergeRichSlideSets = (...sets: RichSlide[][]): RichSlide[] => {
-  const seen = new Set<string>();
-  return sets.flat().filter((slide) => {
-    const key = richSlideKey(slide);
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-};
 
 const getVisibleSlideIndexes = (total: number, current: number, maxVisible = 15): number[] => {
   const visible = Math.min(total, maxVisible);
@@ -1107,8 +1160,8 @@ const buildIndicatorSlides = (grade: Grade, unit: Unit, notes: LessonNotes): str
 };
 
 const shouldUseGeneratedSlides = (slides: string[], slideImages?: string[]) => {
-  // Do not render bundled third-party slide images; use locally generated lesson slides instead.
-  if (slideImages?.length) return true;
+  // If official/curriculum slide images are present, prioritize showing slide images
+  if (slideImages && slideImages.length > 0) return false;
   if (slides.length === 0) return true;
 
   const cleanedSlides = slides.map((slide) => slide.replace(/\s+/g, ' ').trim()).filter(Boolean);
@@ -1138,7 +1191,7 @@ const buildTeachingExplanation = (title: string, bullets: string[], unitTitle: s
     };
   }
 
-  if (/AI|Machine Learning|โมเดล|ข้อมูล/i.test(joined)) {
+  if (/\bAI\b|Machine Learning|โมเดล/i.test(joined)) {
     return {
       explain: 'AI เรียนรู้จากตัวอย่างจำนวนมาก คล้ายเด็กที่เห็นรูปแมวหลายแบบแล้วค่อย ๆ จำลักษณะร่วม เช่น หู หนวด หาง แต่ AI ไม่ได้เข้าใจโลกเหมือนมนุษย์ มันใช้รูปแบบจากข้อมูลเพื่อทำนายคำตอบ ดังนั้นข้อมูลที่ใช้สอนจึงสำคัญมาก',
       example: 'ตัวอย่าง: ถ้าสอน AI ด้วยรูปแมวสีขาวอย่างเดียว เมื่อเจอแมวดำ AI อาจทายผิด เพราะยังไม่เคยเห็นตัวอย่างที่หลากหลาย',
@@ -1291,12 +1344,13 @@ const UnitDetail: React.FC = () => {
   const [completedPractices, setCompletedPractices] = useState<string[]>([]);
   const [savingPractice, setSavingPractice] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('slides');
   const [quizIdx, setQuizIdx] = useState(0);
   const [customSlides, setCustomSlides] = useState<RichSlide[] | null>(null);
   const [unlockedMap, setUnlockedMap] = useState<UnitUnlockMap>(() => getUnlockedUnits());
   const [locksReady, setLocksReady] = useState(false);
   const [courseAccessSettings, setCourseAccessSettings] = useState<CourseAccessSettings>(() => getCourseAccessSettings());
+  const [showExitTicketModal, setShowExitTicketModal] = useState(false);
 
   const quizItems = useMemo(
     () => grade && unit ? buildQuizItems(grade, unit, extras.quiz || []) : [],
@@ -1373,7 +1427,7 @@ const UnitDetail: React.FC = () => {
       setQuizSubmitted(false);
       setSavingQuiz(false);
       setQuizIdx(0);
-      setActiveTab('overview');
+      setActiveTab('slides');
       setCompletedPractices([]);
       setSavingPractice(null);
       if (user && gradeId) {
@@ -1444,6 +1498,9 @@ const UnitDetail: React.FC = () => {
 
   // Track slide views — บันทึกทุกครั้งที่นักเรียนเปลี่ยนสไลด์
   useEffect(() => {
+    const richTotal = (gradeId && hasRichSlides(gradeId, unitNumber))
+      ? getRichSlides(gradeId, unitNumber).length
+      : (customSlides?.length || 0);
     const generatedTotal = grade && unit
       ? buildIndicatorSlides(
           grade,
@@ -1451,9 +1508,11 @@ const UnitDetail: React.FC = () => {
           (gradeId && unitExtras[gradeId]?.[unitNumber]?.lessonNotes) || buildDefaultLessonNotes(unit.title, unit.topics || [])
         ).length
       : 0;
-    const total = shouldUseGeneratedSlides(slidesEntry?.slides || [], slidesEntry?.slideImages)
-      ? generatedTotal
-      : (slidesEntry?.slideImages?.length || slidesEntry?.slides?.length || 0);
+    const total = richTotal > 0
+      ? richTotal
+      : shouldUseGeneratedSlides(slidesEntry?.slides || [], slidesEntry?.slideImages)
+        ? generatedTotal
+        : (slidesEntry?.slideImages?.length || slidesEntry?.slides?.length || 0);
     if (!user || !gradeId || activeTab !== 'slides' || total === 0) return;
     const t = setTimeout(() => {
       // บันทึกให้ทั้ง main + partner (ถ้านั่งคู่)
@@ -1551,7 +1610,7 @@ const UnitDetail: React.FC = () => {
 
   const topics = unit.topics || [];
   const lessonNotes: LessonNotes = mergeLessonNotes(
-    buildDefaultLessonNotes(unit.title, topics),
+    buildDefaultLessonNotes(unit.title, topics, gradeId || ''),
     { activities: unit.activities || [] },
     buildOfficialLessonNotes(grade, unit),
     extras.lessonNotes
@@ -1559,30 +1618,51 @@ const UnitDetail: React.FC = () => {
   const articleItems = mergeArticles(extras.articles, buildOfficialArticles(grade, unit));
   const fileItems = mergeFiles(extras.files, buildOfficialFiles(grade, unit));
   const generatedSlides = buildIndicatorSlides(grade, unit, lessonNotes);
-  // สไลด์ที่ครูสร้าง/สไลด์เฉพาะหน่วยเป็นชุดนำ แล้วเติมชุดอธิบายตามตัวชี้วัด
-  // เพื่อไม่ให้สไลด์สวยเพียงไม่กี่หน้าทับเนื้อหาพร้อมสอนทั้งบท
+
+  // สไลด์ที่จัดทำไว้อย่างสมบูรณ์ (9-10 สไลด์ พร้อมภาพ การ์ด และแบบฝึกที่ถูกลิขสิทธิ์)
   const hasCustom = !!(customSlides && customSlides.length > 0);
   const authoredRichSlides = hasCustom
     ? customSlides!
     : hasRichSlides(gradeId || '', unitNumber)
       ? getRichSlides(gradeId || '', unitNumber)
       : [];
-  const shouldCompleteLessonDeck = /^p[1-6]$/.test(grade.id)
-    || shouldUseGeneratedSlides(slides, slidesEntry?.slideImages);
+  const shouldCompleteLessonDeck = authoredRichSlides.length === 0 && (
+    /^p[1-6]$/.test(grade.id) || shouldUseGeneratedSlides(slides)
+  );
   const generatedRichSlides = shouldCompleteLessonDeck
     ? generatedSlides.map(lessonSlideToRichSlide)
     : [];
-  const richSlideList = mergeRichSlideSets(authoredRichSlides, generatedRichSlides);
+  const richSlideList = authoredRichSlides.length > 0
+    ? authoredRichSlides
+    : enrichRichSlideDeck(
+        grade.id,
+        unitNumber,
+        generatedRichSlides,
+      );
+
   const useRichSlides = richSlideList.length > 0;
-  const useGeneratedSlides = !useRichSlides && shouldUseGeneratedSlides(slides, slidesEntry?.slideImages);
+  const useGeneratedSlides = !useRichSlides && shouldUseGeneratedSlides(slides);
   const displaySlides = useGeneratedSlides ? generatedSlides : slides;
-  const displaySlideImages = useGeneratedSlides ? [] : slidesEntry?.slideImages;
   const totalSlides = useRichSlides
     ? richSlideList.length
-    : (displaySlideImages?.length || displaySlides.length);
+    : displaySlides.length;
   const visibleSlideIndexes = getVisibleSlideIndexes(totalSlides, slideIdx);
   const currentSlide = displaySlides[slideIdx] || '';
-  const currentSlideImage = displaySlideImages?.[slideIdx];
+
+  useEffect(() => {
+    if (activeTab !== 'slides' || totalSlides === 0) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const targetTag = (e.target as HTMLElement)?.tagName;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(targetTag)) return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        setSlideIdx((i) => Math.min(totalSlides - 1, i + 1));
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        setSlideIdx((i) => Math.max(0, i - 1));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, totalSlides]);
   const selfStudyGuide = [
     {
       step: '1',
@@ -1611,6 +1691,16 @@ const UnitDetail: React.FC = () => {
 
   const score = quizItems.reduce((acc, q, i) => (quizAnswers[i] === q.answer ? acc + 1 : acc), 0);
   const maxScore = quizItems.length;
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const toggleFullScreen = () => {
     const elem = document.querySelector('.slide-viewer');
@@ -1658,6 +1748,8 @@ const UnitDetail: React.FC = () => {
                     if (isLocked) {
                       e.preventDefault();
                       toast.show(`🔒 บทเรียนที่ ${u.no} ยังไม่เปิดให้เข้าเรียนในขณะนี้ คุณครูจะค่อยๆ ปลดล็อกให้เรียนตามลำดับค่ะ`, 'info');
+                    } else if (window.innerWidth <= 768) {
+                      setSidebarOpen(false);
                     }
                   }}
                 >
@@ -1667,7 +1759,14 @@ const UnitDetail: React.FC = () => {
                 {isActive && (
                   <ul className="lms-unit-tabs">
                     {tabList.map(tab => (
-                      <li key={tab.id} className={activeTab === tab.id ? 'active' : ''} onClick={() => setActiveTab(tab.id)}>
+                      <li
+                        key={tab.id}
+                        className={activeTab === tab.id ? 'active' : ''}
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          if (window.innerWidth <= 768) setSidebarOpen(false);
+                        }}
+                      >
                         {tab.icon} {tab.label}
                       </li>
                     ))}
@@ -1712,31 +1811,52 @@ const UnitDetail: React.FC = () => {
                       {quizItems.length > 0 && <span><Award size={16} /> {quizItems.length} ข้อสอบ</span>}
                       {extras.fun && <span><Gamepad2 size={16} /> {extras.fun.length} กิจกรรม</span>}
                     </div>
-                    {unit.indicators && unit.indicators.length > 0 && grade.indicators && (
-                      <div className="unit-indicator-link">
-                        <strong>📊 ทำหน่วยนี้แล้วได้คะแนนตัวชี้วัด:</strong>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-                          {unit.indicators.map((idx: number) => {
-                            const ind = grade.indicators?.[idx];
-                            if (!ind) return null;
-                            return (
-                              <span key={idx} className="ind-link-pill" title={ind.text}>
-                                {ind.code} (K)
-                              </span>
-                            );
-                          })}
-                        </div>
+                    {totalSlides > 0 && (
+                      <div className="hero-action-row">
+                        <button
+                          type="button"
+                          className="hero-start-lesson-btn"
+                          onClick={() => {
+                            setActiveTab('slides');
+                            setSlideIdx(0);
+                          }}
+                        >
+                          🚀 เริ่มเรียนสไลด์บทเรียน ({totalSlides} หน้า)
+                        </button>
                       </div>
                     )}
-                    {grade.technologyProfile && (
-                      <div className="unit-technology-focus">
-                        <strong>🎯 เป้าหมายเทคโนโลยีระดับชั้น:</strong>
-                        <ul>
-                          {grade.technologyProfile.focus.slice(0, 3).map((item, i) => (
-                            <li key={i}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
+                    {((unit.indicators && unit.indicators.length > 0 && grade.indicators) || grade.technologyProfile) && (
+                      <details className="teacher-curriculum-accordion">
+                        <summary>📋 ข้อมูลตัวชี้วัดและแผนการสอน (สำหรับคุณครู/ผู้ปกครอง)</summary>
+                        <div className="teacher-accordion-content">
+                          {unit.indicators && unit.indicators.length > 0 && grade.indicators && (
+                            <div className="unit-indicator-link">
+                              <strong>📊 ทำหน่วยนี้แล้วได้คะแนนตัวชี้วัด:</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                                {unit.indicators.map((idx: number) => {
+                                  const ind = grade.indicators?.[idx];
+                                  if (!ind) return null;
+                                  return (
+                                    <span key={idx} className="ind-link-pill" title={ind.text}>
+                                      {ind.code} (K)
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          {grade.technologyProfile && (
+                            <div className="unit-technology-focus" style={{ marginTop: '0.75rem' }}>
+                              <strong>🎯 เป้าหมายเทคโนโลยีระดับชั้น:</strong>
+                              <ul>
+                                {grade.technologyProfile.focus.slice(0, 3).map((item, i) => (
+                                  <li key={i}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </details>
                     )}
                   </div>
                 </div>
@@ -1793,31 +1913,33 @@ const UnitDetail: React.FC = () => {
                   </div>
                 ) : null}
 
-                <div className="lms-section">
-                  <div className="self-study-guide">
-                    <div className="self-study-guide-header">
-                      <div>
-                        <span className="lesson-note-kicker">เรียนด้วยตนเอง</span>
-                        <h2><BookOpen size={24} /> วิธีเรียนหน่วยนี้ให้เข้าใจ</h2>
+                {!/^p[1-6]$/.test(grade.id) && (
+                  <div className="lms-section">
+                    <div className="self-study-guide">
+                      <div className="self-study-guide-header">
+                        <div>
+                          <span className="lesson-note-kicker">เรียนด้วยตนเอง</span>
+                          <h2><BookOpen size={24} /> วิธีเรียนหน่วยนี้ให้เข้าใจ</h2>
+                        </div>
+                        <p>
+                          อ่านตามลำดับนี้ก่อนเปิดสไลด์ทั้งหมด เพื่อให้นักเรียนรู้เป้าหมาย เห็นใจความสำคัญ
+                          ได้ฝึกปฏิบัติ และตรวจคำตอบของตนเองได้ชัดเจนขึ้น
+                        </p>
                       </div>
-                      <p>
-                        อ่านตามลำดับนี้ก่อนเปิดสไลด์ทั้งหมด เพื่อให้นักเรียนรู้เป้าหมาย เห็นใจความสำคัญ
-                        ได้ฝึกปฏิบัติ และตรวจคำตอบของตนเองได้ชัดเจนขึ้น
-                      </p>
-                    </div>
-                    <div className="self-study-steps">
-                      {selfStudyGuide.map((item) => (
-                        <section key={item.step} className="self-study-step">
-                          <div className="self-study-step-number">{item.step}</div>
-                          <div>
-                            <h3>{item.title}</h3>
-                            <p>{item.detail}</p>
-                          </div>
-                        </section>
-                      ))}
+                      <div className="self-study-steps">
+                        {selfStudyGuide.map((item) => (
+                          <section key={item.step} className="self-study-step">
+                            <div className="self-study-step-number">{item.step}</div>
+                            <div>
+                              <h3>{item.title}</h3>
+                              <p>{item.detail}</p>
+                            </div>
+                          </section>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className="lms-section">
                   <h2><BookOpen size={24} /> เนื้อหาเรียนรู้เพิ่มเติม</h2>
@@ -1880,7 +2002,7 @@ const UnitDetail: React.FC = () => {
             {activeTab === 'slides' && totalSlides > 0 && (
               <motion.div key="slides" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 <div className="lms-section-header"><h2><FileText size={24} /> สไลด์เนื้อหาบทเรียน</h2></div>
-                <div className="slide-viewer glass">
+                <div className={`slide-viewer glass ${isFullscreen ? 'is-fullscreen' : ''}`}>
                   <div className="slide-header">
                     <div className="slide-counter">สไลด์ {slideIdx + 1} จาก {totalSlides}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -1896,8 +2018,14 @@ const UnitDetail: React.FC = () => {
                           />
                         ))}
                       </div>
-                      <button onClick={toggleFullScreen} className="control-icon-btn" style={{ background: 'var(--surface)' }} title="ขยายเต็มจอ">
-                        <Maximize size={18} />
+                      <button
+                        type="button"
+                        onClick={toggleFullScreen}
+                        className="control-icon-btn fullscreen-toggle-btn"
+                        title={isFullscreen ? 'ออกจากเต็มจอ (Esc)' : 'ขยายเต็มจอ'}
+                        aria-label={isFullscreen ? 'ออกจากเต็มจอ' : 'ขยายเต็มจอ'}
+                      >
+                        {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
                       </button>
                     </div>
                   </div>
@@ -1910,10 +2038,6 @@ const UnitDetail: React.FC = () => {
                           current={slideIdx}
                           total={richSlideList.length}
                         />
-                      ) : currentSlideImage ? (
-                        <motion.div key={`img-${slideIdx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="slide-content-image-wrapper">
-                          <img src={currentSlideImage} alt={`Slide ${slideIdx + 1}`} className="slide-image" />
-                        </motion.div>
                       ) : (
                         <motion.div key={slideIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className={`slide-content-big ${useGeneratedSlides ? 'generated-slide' : ''}`}>
                           {useGeneratedSlides && <div className="slide-mini-label">บทเรียนเรียบเรียงใหม่ตามตัวชี้วัด</div>}
@@ -1950,10 +2074,23 @@ const UnitDetail: React.FC = () => {
                   </div>
 
                   <div className="slide-controls">
-                    <button disabled={slideIdx === 0} onClick={() => setSlideIdx(i => Math.max(0, i - 1))} className="control-icon-btn">
+                    <button
+                      disabled={slideIdx === 0}
+                      onClick={() => setSlideIdx(i => Math.max(0, i - 1))}
+                      className="control-icon-btn"
+                      title="สไลด์ก่อนหน้า (⬅️)"
+                    >
                       <ChevronLeft size={24} />
                     </button>
-                    <button disabled={slideIdx === totalSlides - 1} onClick={() => setSlideIdx(i => Math.min(totalSlides - 1, i + 1))} className="control-icon-btn">
+                    <span className="slide-nav-hint">
+                      หน้า {slideIdx + 1} / {totalSlides} • กดแป้น ⬅️ ➡️ หรือคลิกเปลี่ยนสไลด์
+                    </span>
+                    <button
+                      disabled={slideIdx === totalSlides - 1}
+                      onClick={() => setSlideIdx(i => Math.min(totalSlides - 1, i + 1))}
+                      className="control-icon-btn"
+                      title="สไลด์ถัดไป (➡️)"
+                    >
                       <ChevronRight size={24} />
                     </button>
                   </div>
@@ -2238,6 +2375,23 @@ const UnitDetail: React.FC = () => {
                 >
                   <ChevronLeft size={18} /> ก่อนหน้า
                 </button>
+
+                {user && user.id !== 'admin_teacher_account' && (
+                  <button
+                    type="button"
+                    className="lms-nav-btn exit-ticket-btn"
+                    style={{
+                      background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontWeight: 700,
+                      boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                    }}
+                    onClick={() => setShowExitTicketModal(true)}
+                  >
+                    📝 ตั๋วบอกลาคาบเรียน (+คะแนน A)
+                  </button>
+                )}
                 
                 <button 
                   className="lms-nav-btn next"
@@ -2257,6 +2411,22 @@ const UnitDetail: React.FC = () => {
           })()}
         </div>
       </main>
+
+      {showExitTicketModal && user && (
+        <ExitTicketModal
+          isOpen={showExitTicketModal}
+          onClose={() => setShowExitTicketModal(false)}
+          student={{
+            id: user.id,
+            name: user.name || '',
+            classroom: user.classroom,
+            studentNumber: user.studentNumber || '0',
+          }}
+          subject={gradeId?.startsWith('m') ? 'cs' : 'main'}
+          unitId={unit ? `unit_${unit.no}` : undefined}
+          unitTitle={unit?.title}
+        />
+      )}
     </div>
   );
 };

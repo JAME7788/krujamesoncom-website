@@ -5,9 +5,14 @@
 // /Prompt/i ของตัวตรวจธีม บทเรียนอัลกอริทึมของ ป.3 จึงขึ้นคำเตือนว่า
 // "AI ตอบผิดได้และตอบผิดอย่างมั่นใจด้วย" ซึ่งไม่เกี่ยวกับบทเรียนเลย
 import { describe, expect, it } from 'vitest';
-import { detectLessonTheme } from '../src/utils/lessonTheme';
+import { detectLessonTheme, isArduinoLessonText } from '../src/utils/lessonTheme';
 
 describe('ตรวจธีมบทเรียนจากข้อความ', () => {
+  it('ไม่ตีความคำว่าคีย์บอร์ดเป็นบทเรียน Arduino', () => {
+    expect(isArduinoLessonText('รู้จักคีย์บอร์ด เมาส์ และหน้าจอคอมพิวเตอร์')).toBe(false);
+    expect(isArduinoLessonText('ต่อบอร์ด Arduino กับเซนเซอร์แล้วอ่าน Serial Monitor')).toBe(true);
+  });
+
   it.each([
     ['เขียนโปรแกรมด้วยบล็อกคำสั่ง', 'coding'],
     ['การแสดงอัลกอริทึมด้วยภาพ สัญลักษณ์ ข้อความ', 'coding'],
@@ -38,4 +43,15 @@ describe('ตรวจธีมบทเรียนจากข้อควา�
     expect(detectLessonTheme('AI ช่วยแนะนำวิดีโอให้เราอย่างไร')).toBe('ai');
     expect(detectLessonTheme('ระบบAIในชีวิตประจำวัน')).toBe('ai');
   });
+
+  it('สไลด์ ป.1 หน่วย 1 ต้องมีจำนวน 10 แผ่น และไม่มีเนื้อหาหุ่นยนต์/AI ขั้นสูง (Turing Test, AlphaGo)', async () => {
+    const { getRichSlides } = await import('../src/data/richSlides');
+    const p1Slides = getRichSlides('p1', 1);
+    expect(p1Slides.length).toBe(10);
+    const combined = JSON.stringify(p1Slides);
+    expect(combined).not.toContain('Turing Test');
+    expect(combined).not.toContain('AlphaGo');
+    expect(combined).not.toContain('Deep Blue');
+  });
 });
+

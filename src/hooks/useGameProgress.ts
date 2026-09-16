@@ -6,6 +6,7 @@ import type { GameProgressId } from '../services/gameProgressService';
 import { celebrate } from '../utils/celebrate';
 import { addCoins, coinsForGameScore } from '../services/coinService';
 import { isScoreEligibleUser } from '../services/userAccessService';
+import { retryGameSave } from '../utils/retryGameSave';
 
 type GameProgressOptions = {
   recordOnce?: boolean;
@@ -17,42 +18,45 @@ export const useGameProgress = (
   options: GameProgressOptions = {},
 ) => {
   const { user, partner } = useAuth();
-  const toast = useToast();
-  const recordedRef = useRef(false);
+  const { show: showToast } = useToast();
+  const recordedRef = useRef(new Set<string>());
   const recordOnce = options.recordOnce ?? true;
 
   return useCallback(
-    async (score?: number, activityKey?: string) => {
-      celebrate(); // 🎉 ฉลองทุกครั้งที่เล่นจบ (เสียง + confetti) — เด็กทุกคนรวม guest
+    async (score?: number, activityKey?: string, maxScore?: number) => {
+      const scoringPartner = isScoreEligibleUser(partner) ? partner : null;
+      const completionKey = JSON.stringify([user?.id, scoringPartner?.id, gameId, activityKey?.trim() || 'complete']);
+      if (recordOnce && recordedRef.current.has(completionKey)) return;
+      if (recordOnce) recordedRef.current.add(completionKey);
+      celebrate();
       if (!isScoreEligibleUser(user)) return;
-      if (recordOnce && recordedRef.current) return;
-      if (recordOnce) recordedRef.current = true;
-
-      // 🪙 เหรียญสำหรับซื้อตัวละครในร้าน — ได้จากการเล่นจบเท่านั้น
-      // ผูกกับ recordOnce เดียวกัน จึงกดรัว ๆ เพื่อปั๊มเหรียญไม่ได้
-      const earned = coinsForGameScore(score);
-      addCoins(earned, user.id);
-      toast.show(`🪙 ได้ ${earned} เหรียญ ไปสะสมซื้อตัวละครได้`, 'info');
       try {
-        const result = await recordGameProgress(
+        const result = await retryGameSave(() => recordGameProgress(
           gameId,
           gameTitle,
-          [user, isScoreEligibleUser(partner) ? partner : null],
+          [user, scoringPartner],
           score,
           activityKey,
-        );
+          maxScore,
+        ));
         if (result.saved > 0) {
-          toast.show(
-            `บันทึกคะแนนกิจกรรมเกมแล้ว${partner ? ' ให้ทั้ง 2 คน' : ''}`,
+          const earned = coinsForGameScore(score);
+          addCoins(earned, user.id);
+          showToast(`🪙 ได้ ${earned} เหรียญ ไปสะสมซื้อตัวละครได้`, 'info');
+          showToast(
+            `บันทึกคะแนนกิจกรรมเกมแล้ว${result.students === 2 ? ' ให้ทั้ง 2 คน' : ''}`,
             'success'
           );
+        } else {
+          recordedRef.current.delete(completionKey);
+          showToast('กิจกรรมนี้ยังไม่ผูกกับวิชาที่เปิดให้ชั้นเรียน จึงยังไม่บันทึกคะแนน', 'info');
         }
       } catch (e) {
-        if (recordOnce) recordedRef.current = false;
+        if (recordOnce) recordedRef.current.delete(completionKey);
         console.warn('Game progress save failed', e);
-        toast.show('บันทึกคะแนนเกมไม่สำเร็จ ระบบจะลองใหม่เมื่อเล่นอีกครั้ง', 'error');
+        showToast('ยังส่งคะแนนให้ครูไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วเล่นกิจกรรมนี้อีกครั้ง', 'error');
       }
     },
-    [gameId, gameTitle, partner, recordOnce, toast, user]
+    [gameId, gameTitle, partner, recordOnce, showToast, user]
   );
 };

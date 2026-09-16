@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { useGameTimers } from '../../hooks/useGameTimers';
 import './GameStyles.css';
 
 interface Scenario { emoji: string; text: string; safe: boolean; why: string }
@@ -30,6 +31,7 @@ const SCENARIOS: Scenario[] = [
 const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
 
 const SafetyGame: React.FC = () => {
+  const timers = useGameTimers();
   const recordGame = useGameProgress('safety', 'ปลอดภัยหรือไม่ปลอดภัยออนไลน์');
   const [order] = useState<Scenario[]>(() => shuffle(SCENARIOS));
   const [idx, setIdx] = useState(0);
@@ -43,10 +45,10 @@ const SafetyGame: React.FC = () => {
     const correct = choice === cur.safe;
     setAnswered(choice);
     if (correct) setScore((s) => s + 1);
-    setTimeout(() => {
+    timers.schedule(() => {
       if (idx + 1 >= order.length) {
         setDone(true);
-        recordGame(score + (correct ? 1 : 0));
+        recordGame(score + (correct ? 1 : 0), undefined, order.length);
       } else {
         setIdx((i) => i + 1);
         setAnswered(null);
@@ -54,7 +56,7 @@ const SafetyGame: React.FC = () => {
     }, 1600);
   };
 
-  const restart = () => { setIdx(0); setScore(0); setAnswered(null); setDone(false); };
+  const restart = () => { timers.clear(); setIdx(0); setScore(0); setAnswered(null); setDone(false); };
 
   const isCorrect = answered !== null && answered === cur.safe;
 

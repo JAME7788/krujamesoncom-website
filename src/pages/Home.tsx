@@ -19,7 +19,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="home-page page-transition">
-      <div className="container" style={{ paddingTop: '5rem' }}>
+      <div className="container home-announcements">
         <AnnouncementBanner />
       </div>
       {/* Hero Section */}
@@ -78,7 +78,8 @@ const Home: React.FC = () => {
                 width="100%" 
                 height="550" 
                 src="https://www.youtube.com/embed/TJpkm-WDRHU" 
-                title="ทำไมต้องเรียนวิชา เทคโนโลยี" 
+                title="ทำไมต้องเรียนวิชา เทคโนโลยี"
+                loading="lazy"
                 frameBorder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowFullScreen

@@ -19,7 +19,7 @@ const ReportCard: React.FC = () => {
   const [loadingGrades, setLoadingGrades] = useState(true);
   const [localGradesVersion, setLocalGradesVersion] = useState(0);
 
-  const stats = useMemo(() => (user ? getSummary(user.id) : null), [user]);
+  const stats = useMemo(() => (user ? getSummary(user.id, user.classroom) : null), [user]);
 
   useEffect(() => {
     if (!isScoreEligibleUser(user)) return;

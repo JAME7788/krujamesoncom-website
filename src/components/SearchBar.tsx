@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Search, X } from 'lucide-react';
+import { Search, X, ArrowUpRight, BookOpen, Gamepad2, Library } from 'lucide-react';
 import { search } from '../services/searchService';
 import type { SearchResult } from '../services/searchService';
 import './SearchBar.css';
@@ -11,6 +10,7 @@ const SearchBar: React.FC = () => {
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const navigate = useNavigate();
 
   const results = React.useMemo(() => {
@@ -20,20 +20,25 @@ const SearchBar: React.FC = () => {
     return [];
   }, [query]);
 
-  // Reset activeIdx when results change, during rendering
-  const [prevResultsLength, setPrevResultsLength] = useState(0);
-  if (results.length !== prevResultsLength) {
-    setPrevResultsLength(results.length);
-    setActiveIdx(0);
-  }
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (open && !dialog.open) {
+      dialog.showModal();
+      inputRef.current?.focus();
+    } else if (!open && dialog.open) dialog.close();
+  }, [open]);
+
+  useEffect(() => {
+    if (open) dialogRef.current?.querySelector('.search-result.active')?.scrollIntoView({ block: 'nearest' });
+  }, [activeIdx, open]);
 
   // Keyboard shortcut Ctrl/Cmd + K
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setOpen(true);
-        setTimeout(() => inputRef.current?.focus(), 100);
       }
       if (e.key === 'Escape' && open) {
         setOpen(false);
@@ -44,9 +49,10 @@ const SearchBar: React.FC = () => {
   }, [open]);
 
   const handleNav = (e: React.KeyboardEvent) => {
+    if (e.nativeEvent.isComposing) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActiveIdx((i) => Math.min(results.length - 1, i + 1));
+      setActiveIdx((i) => Math.max(0, Math.min(results.length - 1, i + 1)));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIdx((i) => Math.max(0, i - 1));
@@ -63,50 +69,48 @@ const SearchBar: React.FC = () => {
 
   return (
     <>
-      <button className="search-trigger" onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 100); }} title="ค้นหา (Ctrl+K)">
+      <button className="search-trigger" onClick={() => setOpen(true)} title="ค้นหา (Ctrl+K)" aria-haspopup="dialog">
         <Search size={18} />
         <span className="search-hint">ค้นหา...</span>
         <kbd className="search-kbd">Ctrl K</kbd>
       </button>
 
-      {open && createPortal(
-        <div className="search-overlay" onClick={() => setOpen(false)}>
-          <div className="search-modal" onClick={(e) => e.stopPropagation()}>
+      <dialog ref={dialogRef} className="search-dialog" aria-label="ค้นหาในห้องเรียน" onCancel={() => setOpen(false)} onClose={() => setOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
+          <div className="search-modal">
+            <div className="search-heading"><strong>ค้นหาในห้องเรียน</strong><span>บทเรียน · สื่อ · เกม</span></div>
             <div className="search-input-wrap">
               <Search size={20} />
               <input
                 ref={inputRef}
                 type="text"
+                aria-label="คำค้น"
+                aria-controls="portal-search-results"
                 placeholder="ค้นหา หน่วย, ตัวชี้วัด, เกม, ลิงก์เรียน..."
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => { setQuery(e.target.value); setActiveIdx(0); }}
                 onKeyDown={handleNav}
-                autoFocus
               />
-              <button className="search-close" onClick={() => setOpen(false)}>
+              <button className="search-close" onClick={() => setOpen(false)} aria-label="ปิดการค้นหา">
                 <X size={18} />
               </button>
             </div>
 
             {query.trim().length < 2 && (
-              <div className="search-empty">
-                💡 พิมพ์อย่างน้อย 2 ตัวอักษร — ลอง: Scratch, AI, ป.5, ว 4.2 ฯลฯ
-                <div style={{ marginTop: 12 }}>
-                  <kbd>↑↓</kbd> เลื่อน • <kbd>↵</kbd> เปิด • <kbd>Esc</kbd> ปิด
-                </div>
+              <div className="search-destinations">
+                {[{ title: 'คอร์สเรียน', url: '/courses', Icon: BookOpen }, { title: 'เกมและกิจกรรม', url: '/games', Icon: Gamepad2 }, { title: 'แหล่งเรียนรู้', url: '/resources', Icon: Library }].map(({ title, url, Icon }) => <button type="button" key={url} onClick={() => { navigate(url); setOpen(false); setQuery(''); }}><Icon size={21} /><span>{title}</span><ArrowUpRight size={18} /></button>)}
               </div>
             )}
 
             {query.trim().length >= 2 && results.length === 0 && (
-              <div className="search-empty">😞 ไม่พบผลการค้นหา "{query}"</div>
+              <div className="search-empty" role="status">ไม่พบผลการค้นหา “{query}”</div>
             )}
 
             {results.length > 0 && (
-              <div className="search-results">
-                <div className="search-meta">พบ {results.length} ผลลัพธ์</div>
+              <div className="search-results" id="portal-search-results">
+                <div className="search-meta" role="status">{results.length} ผลลัพธ์</div>
                 {results.map((r, i) => (
                   <button
-                    key={i}
+                    key={`${r.url}-${r.title}`}
                     className={`search-result ${i === activeIdx ? 'active' : ''}`}
                     onClick={() => go(r)}
                     onMouseEnter={() => setActiveIdx(i)}
@@ -123,9 +127,7 @@ const SearchBar: React.FC = () => {
               </div>
             )}
           </div>
-        </div>,
-        document.body
-      )}
+      </dialog>
     </>
   );
 };

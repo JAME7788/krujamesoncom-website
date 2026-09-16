@@ -99,11 +99,47 @@ const WORLD_COLLECTION = 'virtualWorlds';
 const PLAYER_COLLECTION = 'virtualPlayers';
 const ROOM_COLLECTION = 'virtualRooms';
 const EVENT_COLLECTION = 'virtualActivityEvents';
-const blockKey = (roomId: string) => `kj_virtual_world_${roomId}`;
+
+/**
+ * คำนวณรหัสสัปดาห์ตามมาตรฐาน ISO-8601 (ขึ้นต้นสัปดาห์ใหม่ทุกวันจันทร์)
+ * เช่น 2026-W36, 2026-W37 เพื่อรีแมพโลกเสมือนอัตโนมัติทุกสัปดาห์
+ */
+export const getWorldWeekKey = (date = new Date()): string => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+};
+
+export const getWeekDisplayLabel = (weekKey = getWorldWeekKey()): string => {
+  const match = weekKey.match(/(\d{4})-W(\d{2})/);
+  if (!match) return 'สัปดาห์ปัจจุบัน';
+  const yearBE = parseInt(match[1], 10) + 543;
+  const weekNo = parseInt(match[2], 10);
+  return `สัปดาห์ที่ ${weekNo} (${yearBE})`;
+};
+
+export const getWorldDocId = (roomId: string, weekKey = getWorldWeekKey()): string => (
+  `${roomId}_${weekKey}`
+);
+
+const blockKey = (roomId: string, weekKey = getWorldWeekKey()) => (
+  `kj_virtual_world_${roomId}_${weekKey}`
+);
 const playerKey = (roomId: string) => `kj_virtual_players_${roomId}`;
 const roomKey = (roomId: string) => `kj_virtual_room_state_${roomId}`;
 const eventKey = (roomId: string) => `kj_virtual_events_${roomId}`;
 const channelName = (roomId: string) => `kj-virtual-world-${roomId}`;
+
+const emitWorldBlocks = (roomId: string, weekKey = getWorldWeekKey()) => {
+  try {
+    const channel = new BroadcastChannel(`${channelName(roomId)}-${weekKey}`);
+    channel.postMessage({ type: 'blocks_changed', at: Date.now() });
+    channel.close();
+  } catch { /* channel optional */ }
+};
 
 const readLocal = <T>(key: string, fallback: T): T => {
   try {
@@ -277,27 +313,47 @@ export const verifyVirtualRoomAccessCode = async (state: VirtualRoomState, acces
   !state.accessCodeHash || await hashText(accessCode) === state.accessCodeHash
 );
 
-export const getLocalWorldBlocks = (roomId: string): WorldBlock[] => (
-  readLocal<WorldBlock[]>(blockKey(roomId), [])
-);
+export const getLocalWorldBlocks = (roomId: string, weekKey = getWorldWeekKey()): WorldBlock[] => {
+  const current = readLocal<WorldBlock[]>(blockKey(roomId, weekKey), []);
+  if (current.length > 0) return current;
+
+  // Fallback: ตรวจสอบข้อมูลเก่า unversioned สำหรับสัปดาห์นี้
+  const legacy = readLocal<WorldBlock[]>(`kj_virtual_world_${roomId}`, []);
+  if (legacy.length > 0) {
+    const validInWeek = legacy.filter((b) => {
+      if (!b.createdAt) return false;
+      return getWorldWeekKey(new Date(b.createdAt)) === weekKey;
+    });
+    if (validInWeek.length > 0) {
+      writeLocal(blockKey(roomId, weekKey), validInWeek);
+      return validInWeek;
+    }
+  }
+  return [];
+};
 
 export const MAX_WORLD_BLOCKS = 1_200;
 
 export const subscribeWorldBlocks = (
   roomId: string,
   onChange: (blocks: WorldBlock[]) => void,
+  weekKey = getWorldWeekKey(),
 ): (() => void) => {
-  onChange(getLocalWorldBlocks(roomId));
-  const channel = new BroadcastChannel(channelName(roomId));
-  channel.onmessage = () => onChange(getLocalWorldBlocks(roomId));
+  const docId = getWorldDocId(roomId, weekKey);
+  const localKey = blockKey(roomId, weekKey);
+  const channelKey = `${channelName(roomId)}-${weekKey}`;
+
+  onChange(getLocalWorldBlocks(roomId, weekKey));
+  const channel = new BroadcastChannel(channelKey);
+  channel.onmessage = () => onChange(getLocalWorldBlocks(roomId, weekKey));
 
   const unsubscribe = onSnapshot(
-    doc(db, WORLD_COLLECTION, roomId),
+    doc(db, WORLD_COLLECTION, docId),
     (snapshot) => {
       const blocks = snapshot.exists()
         ? ((snapshot.data().blocks as WorldBlock[] | undefined) || [])
         : [];
-      writeLocal(blockKey(roomId), blocks);
+      writeLocal(localKey, blocks);
       onChange(blocks);
     },
     (error) => console.warn('virtual world sync unavailable; using local world', error),
@@ -309,38 +365,81 @@ export const subscribeWorldBlocks = (
   };
 };
 
-export const addWorldBlock = async (roomId: string, block: WorldBlock): Promise<boolean> => {
-  const current = getLocalWorldBlocks(roomId);
+export const addWorldBlock = async (
+  roomId: string,
+  block: WorldBlock,
+  weekKey = getWorldWeekKey(),
+): Promise<boolean> => {
+  const docId = getWorldDocId(roomId, weekKey);
+  const current = getLocalWorldBlocks(roomId, weekKey);
   if (current.some((item) => item.x === block.x && item.y === block.y && item.z === block.z)) return false;
   if (current.length >= MAX_WORLD_BLOCKS) {
     throw new Error(`โลกนี้มีบล็อกครบ ${MAX_WORLD_BLOCKS.toLocaleString('th-TH')} ชิ้นแล้ว`);
   }
   const next = [...current, block];
-  writeLocal(blockKey(roomId), next);
-  emit(roomId);
+  writeLocal(blockKey(roomId, weekKey), next);
+  emitWorldBlocks(roomId, weekKey);
   try {
-    await setDoc(doc(db, WORLD_COLLECTION, roomId), {
+    const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
       roomId,
+      weekKey,
       blocks: arrayUnion(block),
       updatedAt: Date.now(),
     }, { merge: true });
+    await Promise.race([
+      writePromise,
+      new Promise((resolve) => setTimeout(resolve, 1500)),
+    ]);
   } catch (error) {
     console.warn('block saved locally only', error);
   }
   return true;
 };
 
-export const removeWorldBlock = async (roomId: string, block: WorldBlock): Promise<void> => {
-  const next = getLocalWorldBlocks(roomId).filter((item) => item.id !== block.id);
-  writeLocal(blockKey(roomId), next);
-  emit(roomId);
+export const removeWorldBlock = async (
+  roomId: string,
+  block: WorldBlock,
+  weekKey = getWorldWeekKey(),
+): Promise<void> => {
+  const docId = getWorldDocId(roomId, weekKey);
+  const next = getLocalWorldBlocks(roomId, weekKey).filter((item) => item.id !== block.id);
+  writeLocal(blockKey(roomId, weekKey), next);
+  emitWorldBlocks(roomId, weekKey);
   try {
-    await updateDoc(doc(db, WORLD_COLLECTION, roomId), {
+    const writePromise = updateDoc(doc(db, WORLD_COLLECTION, docId), {
       blocks: arrayRemove(block),
       updatedAt: Date.now(),
     });
+    await Promise.race([
+      writePromise,
+      new Promise((resolve) => setTimeout(resolve, 1500)),
+    ]);
   } catch (error) {
     console.warn('block removed locally only', error);
+  }
+};
+
+/** ล้างบล็อกทั้งหมดในแผนที่สำหรับสัปดาห์นี้ (รีแมพ / Reset Map) */
+export const clearWorldBlocks = async (
+  roomId: string,
+  weekKey = getWorldWeekKey(),
+): Promise<void> => {
+  const docId = getWorldDocId(roomId, weekKey);
+  writeLocal(blockKey(roomId, weekKey), []);
+  emitWorldBlocks(roomId, weekKey);
+  try {
+    const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
+      roomId,
+      weekKey,
+      blocks: [],
+      updatedAt: Date.now(),
+    }, { merge: true });
+    await Promise.race([
+      writePromise,
+      new Promise((resolve) => setTimeout(resolve, 1000)),
+    ]);
+  } catch (error) {
+    console.warn('world cleared locally only', error);
   }
 };
 
@@ -492,6 +591,7 @@ export const cleanupVirtualQaRoom = async (roomId: string): Promise<void> => {
   try {
     const [players, events] = await Promise.all([getDocs(playersQuery), getDocs(eventsQuery)]);
     await Promise.all([
+      deleteDoc(doc(db, WORLD_COLLECTION, getWorldDocId(roomId))),
       deleteDoc(doc(db, WORLD_COLLECTION, roomId)),
       deleteDoc(doc(db, ROOM_COLLECTION, roomId)),
       ...players.docs.map((item) => deleteDoc(item.ref)),
@@ -502,6 +602,7 @@ export const cleanupVirtualQaRoom = async (roomId: string): Promise<void> => {
   }
   try {
     localStorage.removeItem(blockKey(roomId));
+    localStorage.removeItem(`kj_virtual_world_${roomId}`);
     localStorage.removeItem(playerKey(roomId));
     localStorage.removeItem(roomKey(roomId));
     localStorage.removeItem(eventKey(roomId));
