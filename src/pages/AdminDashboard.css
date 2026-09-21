@@ -814,6 +814,49 @@
 }
 .k-input:focus { outline: none; border-color: #6366f1; background: #eef2ff; }
 
+.k-cell-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.k-cell-container .k-input {
+  width: 44px;
+  min-height: 28px;
+  box-sizing: border-box;
+}
+
+.k-cell-container .k-input.teacher-override {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+.k-more-btn {
+  width: 20px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.k-more-btn:hover {
+  border-color: #6366f1;
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
 .k-score-button {
   width: 50px;
   min-height: 30px;

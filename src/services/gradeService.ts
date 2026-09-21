@@ -81,8 +81,8 @@ export interface StudentGrade {
   name: string;
   emoji: string;
   indicators: Record<string, IndicatorScore>;  // key = indicator id เช่น 'cs_p1_1'
-  midtermExam?: number;      // คะแนนสอบกลางภาค (มัธยมเต็ม 15; ประถมไม่ใช้ช่องนี้)
-  finalExam?: number;        // คะแนนสอบปลายภาค (ประถมเต็ม 30; มัธยมเต็ม 15)
+  midtermExam?: number;      // คะแนนสอบกลางภาค (ถ้ามี)
+  finalExam?: number;        // คะแนนสอบปลายภาค (เต็ม 30)
   comment?: string;
   updatedAt: number;
 }
@@ -93,7 +93,7 @@ export const examMaxScores = (classroom: string): { midterm: number; final: numb
     return { midterm: 0, final: 30 };
   }
   if (classroom.startsWith('ม.')) {
-    return { midterm: 15, final: 15 };
+    return { midterm: 0, final: 30 };
   }
   return { midterm: 0, final: 0 };
 };
@@ -110,7 +110,7 @@ export const getExamPolicyLabel = (classroom: string): string => {
     return `ประถม: ไม่มีสอบกลางภาคในสมุดคะแนน ใช้คะแนนสอบปลายภาคของเทอม ${exam.final} คะแนน`;
   }
   if (classroom.startsWith('ม.')) {
-    return `มัธยมออก 1 เทอม 1 เกรด: กลางภาค ${exam.midterm} คะแนน + ปลายภาค ${exam.final} คะแนน`;
+    return `มัธยม: คะแนนเก็บ 70 คะแนน + คะแนนสอบปลายภาค ${exam.final} คะแนน (รวม 100 คะแนน)`;
   }
   return '';
 };
@@ -253,8 +253,8 @@ export const getIndicators = (classroom: string, subject: Subject = 'main'): Ind
     return csIndicators[classroom] || [];
   }
   if (classroom.startsWith('ม.')) {
-    if (subject === 'cs') return csIndicatorsM[classroom] || [];
     if (subject === 'dt') return dtIndicatorsOnly[classroom] || [];
+    return csIndicatorsM[classroom] || [];
   }
   return [];
 };
@@ -355,7 +355,21 @@ export const loadGrades = (classroom: string, subject: Subject = 'main'): Studen
     }
 
     const indicatorsDef = getIndicators(classroom, subject);
-    const existingList: StudentGrade[] = [...parsedGrades];
+    const officialByCode = new Map(officialStudents.map((s) => [s.studentCode, s]));
+
+    // Update names and student numbers of official students if matched
+    const existingList: StudentGrade[] = parsedGrades.map((g) => {
+      const official = officialByCode.get(g.studentCode);
+      if (official) {
+        return {
+          ...g,
+          name: official.name,
+          studentNo: official.no,
+          emoji: official.emoji || g.emoji || '👤',
+        };
+      }
+      return g;
+    });
 
     officialStudents.forEach((info) => {
       const exists = existingList.some(
@@ -418,20 +432,19 @@ export const updateStudentScore = (
     updatedAt: Date.now(),
   };
   if (patch.k !== undefined) {
-    next.teacherK = Math.max(0, Math.min(next.maxK || 15, patch.k));
-    next.k = Math.max(
-      next.teacherK,
-      Math.min(next.maxK || 15, (next.webK || 0) + (next.manualK || 0)),
-    );
+    if (patch.k === null || Number.isNaN(patch.k)) {
+      delete next.teacherK;
+      next.k = Math.min(next.maxK || 15, (Number(next.webK) || 0) + (Number(next.manualK) || 0));
+    } else {
+      next.teacherK = Math.max(0, Math.min(next.maxK || 15, patch.k));
+      next.k = next.teacherK;
+    }
   }
   if (patch.p !== undefined) {
     const teacherPScore = patch.p === 'ดี' ? 30 : patch.p === 'ปานกลาง' ? 20 : 15;
     next.teacherPScore = teacherPScore;
-    next.pScore = Math.max(
-      teacherPScore,
-      Math.min(PRACTICE_MAX_SCORE, (next.webPScore || 0) + (next.manualPScore || 0)),
-    );
-    next.p = skillFromPracticeScore(next.pScore);
+    next.pScore = teacherPScore;
+    next.p = patch.p;
     next.practiceLevel = getPracticeLevel(next.pScore);
     next.practicePassed = next.pScore >= 15;
   }
@@ -478,12 +491,13 @@ export const updateTeacherKnowledgeScore = (
     maxK,
     updatedAt: Date.now(),
   };
-  if (score === null) delete next.teacherK;
-  else next.teacherK = Math.max(0, Math.min(maxK, score));
-  next.k = Math.max(
-    next.teacherK || 0,
-    Math.min(maxK, (next.webK || 0) + (next.manualK || 0)),
-  );
+  if (score === null || Number.isNaN(score)) {
+    delete next.teacherK;
+    next.k = Math.min(maxK, (Number(next.webK) || 0) + (Number(next.manualK) || 0));
+  } else {
+    next.teacherK = Math.max(0, Math.min(maxK, score));
+    next.k = next.teacherK;
+  }
   student.indicators[indicatorId] = next;
   student.updatedAt = Date.now();
   cacheGradesLocally(classroom, grades, subject);
@@ -519,10 +533,7 @@ export const updatePracticeCriteriaScores = (
     Math.max(0, Math.min(3, Number(criteria[index]) || 0))
   ));
   const teacherPScore = normalized.reduce((sum, score) => sum + score, 0);
-  const pScore = Math.max(
-    teacherPScore,
-    Math.min(PRACTICE_MAX_SCORE, (current.webPScore || 0) + (current.manualPScore || 0)),
-  );
+  const pScore = teacherPScore;
   const next: IndicatorScore = {
     ...current,
     practiceCriteria: normalized,
@@ -556,17 +567,21 @@ export const updatePracticeCriteriaScores = (
 export const updateFinalExam = (
   classroom: string,
   studentCode: string,
-  score: number,
+  score: number | null | undefined,
   subject: Subject = 'main'
 ) => {
   const grades = loadGrades(classroom, subject);
   const student = grades.find((g) => g.studentCode === studentCode);
   if (!student) return;
   const previousScore = student.finalExam;
-  student.finalExam = score;
+  if (score === null || score === undefined || Number.isNaN(score)) {
+    delete student.finalExam;
+  } else {
+    student.finalExam = score;
+  }
   student.updatedAt = Date.now();
   cacheGradesLocally(classroom, grades, subject);
-  void patchStudentGradeInFirebase(classroom, student, subject, { finalExam: score });
+  void patchStudentGradeInFirebase(classroom, student, subject, { finalExam: student.finalExam ?? null });
   void writeAuditLog({
     action: 'score',
     entityType: 'finalExam',
@@ -575,7 +590,7 @@ export const updateFinalExam = (
     subject,
     summary: `แก้คะแนนปลายภาคของ ${student.name}`,
     before: previousScore,
-    after: score,
+    after: student.finalExam ?? null,
   });
 };
 
@@ -583,17 +598,21 @@ export const updateFinalExam = (
 export const updateMidtermExam = (
   classroom: string,
   studentCode: string,
-  score: number,
+  score: number | null | undefined,
   subject: Subject = 'main'
 ) => {
   const grades = loadGrades(classroom, subject);
   const student = grades.find((g) => g.studentCode === studentCode);
   if (!student) return;
   const previousScore = student.midtermExam;
-  student.midtermExam = score;
+  if (score === null || score === undefined || Number.isNaN(score)) {
+    delete student.midtermExam;
+  } else {
+    student.midtermExam = score;
+  }
   student.updatedAt = Date.now();
   cacheGradesLocally(classroom, grades, subject);
-  void patchStudentGradeInFirebase(classroom, student, subject, { midtermExam: score });
+  void patchStudentGradeInFirebase(classroom, student, subject, { midtermExam: student.midtermExam ?? null });
   void writeAuditLog({
     action: 'score',
     entityType: 'midtermExam',
@@ -602,7 +621,7 @@ export const updateMidtermExam = (
     subject,
     summary: `แก้คะแนนกลางภาคของ ${student.name}`,
     before: previousScore,
-    after: score,
+    after: student.midtermExam ?? null,
   });
 };
 
@@ -822,8 +841,8 @@ export const applyManualAssessmentsToGrades = (
       if (related.length === 0) {
         if (current.manualK !== undefined || current.manualPScore !== undefined) {
           const next = { ...current, manualK: 0, manualPScore: 0, updatedAt: Date.now() };
-          next.k = Math.max(next.webK || 0, next.teacherK || 0);
-          next.pScore = Math.max(next.webPScore || 0, next.teacherPScore || 0);
+          next.k = next.teacherK !== undefined ? next.teacherK : (next.webK || 0);
+          next.pScore = next.teacherPScore !== undefined ? next.teacherPScore : (next.webPScore || 0);
           next.p = skillFromPracticeScore(next.pScore);
           next.practiceLevel = getPracticeLevel(next.pScore);
           next.practicePassed = next.pScore >= 15;
@@ -854,12 +873,12 @@ export const applyManualAssessmentsToGrades = (
             next = {
               ...next,
               manualK: 0,
-              k: Math.max(next.webK || 0, next.teacherK || 0),
+              k: next.teacherK !== undefined ? next.teacherK : (next.webK || 0),
             };
             changedForIndicator = true;
           }
           if (category === 'p' && next.manualPScore !== undefined) {
-            const pScore = Math.max(next.webPScore || 0, next.teacherPScore || 0);
+            const pScore = next.teacherPScore !== undefined ? next.teacherPScore : (next.webPScore || 0);
             next = {
               ...next,
               manualPScore: 0,
@@ -879,16 +898,16 @@ export const applyManualAssessmentsToGrades = (
           const legacyTeacherK = next.webK === undefined
             && next.manualK === undefined
             && next.teacherK === undefined
-            ? next.k || 0
-            : next.teacherK || 0;
+            ? next.k
+            : undefined;
+          const teacherK = next.teacherK !== undefined ? next.teacherK : legacyTeacherK;
           next = {
             ...next,
-            teacherK: legacyTeacherK || next.teacherK,
+            teacherK,
             manualK: newK,
-            k: Math.max(
-              legacyTeacherK,
-              Math.min(indicator.maxScore, (next.webK || 0) + newK),
-            ),
+            k: teacherK !== undefined
+              ? teacherK
+              : Math.min(indicator.maxScore, (next.webK || 0) + newK),
             maxK: indicator.maxScore,
           };
         } else {
@@ -899,14 +918,14 @@ export const applyManualAssessmentsToGrades = (
             && next.teacherPScore === undefined
             && next.pAssessed
             ? (next.p === 'ดี' ? 30 : next.p === 'ปานกลาง' ? 20 : 15)
-            : next.teacherPScore || 0;
-          const pScore = Math.max(
-            legacyPScore,
-            Math.min(PRACTICE_MAX_SCORE, (next.webPScore || 0) + manualPScore),
-          );
+            : undefined;
+          const teacherPScore = next.teacherPScore !== undefined ? next.teacherPScore : legacyPScore;
+          const pScore = teacherPScore !== undefined
+            ? teacherPScore
+            : Math.min(PRACTICE_MAX_SCORE, (next.webPScore || 0) + manualPScore);
           next = {
             ...next,
-            teacherPScore: legacyPScore || next.teacherPScore,
+            teacherPScore,
             manualPScore,
             pScore,
             p: skillFromPracticeScore(pScore),
@@ -1319,8 +1338,8 @@ export const computeBreakdown = (
   const totalA = contributions.reduce((s, c) => s + c.a, 0);
   const collected = totalK + totalP + totalA;
 
-  const midterm = Math.min(g.midtermExam || 0, exam.midterm);
-  const final = Math.min(g.finalExam || 0, exam.final);
+  const midterm = Math.max(0, Math.min(Number.isFinite(g.midtermExam) ? Number(g.midtermExam) : 0, exam.midterm));
+  const final = Math.max(0, Math.min(Number.isFinite(g.finalExam) ? Number(g.finalExam) : 0, exam.final));
   const examTotal = midterm + final;
 
   return {
@@ -1435,7 +1454,20 @@ export const fetchClassroomFromFirebase = async (
       }
 
       const indicatorsDef = getIndicators(classroom, subject);
-      const mergedList = [...remoteStudents];
+      const officialByCode = new Map(officialStudents.map((s) => [s.studentCode, s]));
+
+      const mergedList: StudentGrade[] = remoteStudents.map((r) => {
+        const official = officialByCode.get(r.studentCode);
+        if (official) {
+          return {
+            ...r,
+            name: official.name,
+            studentNo: official.no,
+            emoji: official.emoji || r.emoji || '👤',
+          };
+        }
+        return r;
+      });
 
       officialStudents.forEach((info) => {
         const exists = mergedList.some(
@@ -1497,6 +1529,33 @@ export const mergeStudentGradeForTest = (
   };
 };
 
+/** รวมข้อมูลนักเรียนจาก Firebase เข้ากับข้อมูลในเครื่อง โดยรักษาคะแนนที่ครูกรอกล่าสุดไว้ */
+export const mergeRemoteWithLocalGrades = (
+  remote: StudentGrade[],
+  local: StudentGrade[],
+): StudentGrade[] => {
+  if (!local || local.length === 0) return remote;
+  if (!remote || remote.length === 0) return local;
+  const localByCode = new Map(local.map((s) => [s.studentCode, s]));
+  return remote.map((remoteStudent) => {
+    const localStudent = localByCode.get(remoteStudent.studentCode);
+    if (!localStudent) return remoteStudent;
+    const mergedIndicators: Record<string, IndicatorScore> = {
+      ...(remoteStudent.indicators || {}),
+    };
+    Object.entries(localStudent.indicators || {}).forEach(([indId, localScore]) => {
+      mergedIndicators[indId] = mergeIndicatorForStudent(
+        mergedIndicators[indId],
+        localScore,
+      );
+    });
+    return mergeStudentGradeForTest(remoteStudent, {
+      ...localStudent,
+      indicators: mergedIndicators,
+    });
+  });
+};
+
 /**
  * รวมคะแนนของตัวชี้วัดเดียวระหว่างค่าที่อยู่บน Firebase กับค่าที่กำลังจะเขียน
  *
@@ -1527,14 +1586,13 @@ const mergeIndicatorForStudent = (
   // คะแนนอัตโนมัติจากกิจกรรมนักเรียนยังใช้ค่าที่ดีที่สุด เพราะเป็นผลงานที่เคยทำได้จริง
   const webPScore = Math.max(remote.webPScore || 0, incoming.webPScore || 0);
   const manualPScore = byRecency((s) => s.manualPScore) || 0;
-  const teacherPScore = byRecency((s) => s.teacherPScore) || 0;
-  const pScore = Math.max(
-    teacherPScore,
-    Math.min(PRACTICE_MAX_SCORE, webPScore + manualPScore),
-  );
+  const teacherPScore = byRecency((s) => s.teacherPScore);
+  const pScore = teacherPScore !== undefined
+    ? teacherPScore
+    : Math.min(PRACTICE_MAX_SCORE, webPScore + manualPScore);
   const webK = Math.max(remote.webK || 0, incoming.webK || 0);
   const manualK = byRecency((s) => s.manualK) || 0;
-  const teacherK = byRecency((s) => s.teacherK) || 0;
+  const teacherK = byRecency((s) => s.teacherK);
   const maxK = Math.max(remote.maxK || 0, incoming.maxK || 0, 15);
   const teacherA = byRecency((s) => s.teacherA);
   const webAScore = Math.max(remote.webAScore || 0, incoming.webAScore || 0);
@@ -1544,7 +1602,7 @@ const mergeIndicatorForStudent = (
   return {
     ...remote,
     ...incoming,
-    k: Math.max(teacherK, Math.min(maxK, webK + manualK)),
+    k: teacherK !== undefined ? teacherK : Math.min(maxK, webK + manualK),
     webK,
     manualK,
     teacherK,
@@ -1579,18 +1637,17 @@ const mergeManualIndicatorForStudent = (
   const maxK = Math.max(remote.maxK || 0, incoming.maxK || 0, 15);
   const webK = Math.max(remote.webK || 0, incoming.webK || 0);
   const manualK = incoming.manualK ?? remote.manualK ?? 0;
-  const teacherK = remote.teacherK ?? incoming.teacherK ?? 0;
+  const teacherK = incoming.teacherK ?? remote.teacherK;
   const webPScore = Math.max(remote.webPScore || 0, incoming.webPScore || 0);
   const manualPScore = incoming.manualPScore ?? remote.manualPScore ?? 0;
-  const teacherPScore = remote.teacherPScore ?? incoming.teacherPScore ?? 0;
-  const pScore = Math.max(
-    teacherPScore,
-    Math.min(PRACTICE_MAX_SCORE, webPScore + manualPScore),
-  );
+  const teacherPScore = incoming.teacherPScore ?? remote.teacherPScore;
+  const pScore = teacherPScore !== undefined
+    ? teacherPScore
+    : Math.min(PRACTICE_MAX_SCORE, webPScore + manualPScore);
   return {
     ...incoming,
     ...remote,
-    k: Math.max(teacherK, Math.min(maxK, webK + manualK)),
+    k: teacherK !== undefined ? teacherK : Math.min(maxK, webK + manualK),
     webK,
     manualK,
     teacherK,
@@ -1666,8 +1723,8 @@ const mergeClassroomGradesToFirebase = async (
 type TeacherGradePatch = {
   indicatorId?: string;
   indicatorScore?: IndicatorScore;
-  midtermExam?: number;
-  finalExam?: number;
+  midtermExam?: number | null;
+  finalExam?: number | null;
 };
 
 /** ครูแก้เฉพาะช่องด้วย transaction โดยไม่ส่งสำเนาคะแนนทั้งห้องไปทับข้อมูลล่าสุด */
@@ -1695,8 +1752,20 @@ const patchStudentGradeInFirebase = async (
       if (patch.indicatorId && patch.indicatorScore) {
         next.indicators[patch.indicatorId] = patch.indicatorScore;
       }
-      if (patch.midtermExam !== undefined) next.midtermExam = patch.midtermExam;
-      if (patch.finalExam !== undefined) next.finalExam = patch.finalExam;
+      if (patch.midtermExam !== undefined) {
+        if (patch.midtermExam === null) {
+          delete next.midtermExam;
+        } else {
+          next.midtermExam = patch.midtermExam;
+        }
+      }
+      if (patch.finalExam !== undefined) {
+        if (patch.finalExam === null) {
+          delete next.finalExam;
+        } else {
+          next.finalExam = patch.finalExam;
+        }
+      }
       if (index < 0) {
         index = students.length;
         students.push(next);
@@ -2150,12 +2219,12 @@ export const syncFromProgress = (
     const legacyTeacherK = currentScore.webK === undefined
       && currentScore.manualK === undefined
       && currentScore.teacherK === undefined
-      ? currentScore.k || 0
-      : currentScore.teacherK || 0;
-    const k = Math.max(
-      legacyTeacherK,
-      Math.min(ind.maxScore, webK + (currentScore.manualK || 0)),
-    );
+      ? currentScore.k
+      : undefined;
+    const teacherK = currentScore.teacherK !== undefined ? currentScore.teacherK : legacyTeacherK;
+    const k = teacherK !== undefined
+      ? teacherK
+      : Math.min(ind.maxScore, webK + (currentScore.manualK || 0));
 
     // P: คะแนนปฏิบัติจากการใช้เว็บ รวมสูงสุด 30 คะแนน
     const webPScore = Math.min(PRACTICE_MAX_SCORE, Math.round(skillPoints * 10) / 10);
@@ -2164,11 +2233,11 @@ export const syncFromProgress = (
       && currentScore.teacherPScore === undefined
       && currentScore.pAssessed
       ? (currentScore.p === 'ดี' ? 30 : currentScore.p === 'ปานกลาง' ? 20 : 15)
-      : currentScore.teacherPScore || 0;
-    const pScore = Math.max(
-      legacyTeacherPScore,
-      Math.min(PRACTICE_MAX_SCORE, webPScore + (currentScore.manualPScore || 0)),
-    );
+      : undefined;
+    const teacherPScore = currentScore.teacherPScore !== undefined ? currentScore.teacherPScore : legacyTeacherPScore;
+    const pScore = teacherPScore !== undefined
+      ? teacherPScore
+      : Math.min(PRACTICE_MAX_SCORE, webPScore + (currentScore.manualPScore || 0));
     const p = skillFromPracticeScore(pScore);
 
     // ============ A = จิตพิสัย ============
@@ -2193,10 +2262,14 @@ export const syncFromProgress = (
     }
 
     (prog.inClassDays || []).forEach((day) => inClassDays.add(day));
-    const activeDays = new Set(prog.daysActive || []);
+    const activeDays = new Set<string>();
+    allActivities.forEach((act: ActivityLog) => {
+      const d = new Date(act.timestamp);
+      activeDays.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+    });
     const webAScore = Math.min(
       ATTITUDE_MAX_SCORE,
-      Math.min(4, inClassDays.size * 2)
+      Math.min(5, inClassDays.size * 2.5)
       + Math.min(2, activeDays.size)
       + Math.min(2, practiceCount)
       + Math.min(1, quizAttempts)
@@ -2206,8 +2279,6 @@ export const syncFromProgress = (
     const aScore = currentScore.teacherA === undefined
       ? webAScore
       : currentScore.teacherA ? ATTITUDE_MAX_SCORE : 0;
-    const teacherK = legacyTeacherK || currentScore.teacherK;
-    const teacherPScore = legacyTeacherPScore || currentScore.teacherPScore;
     const aEvidence = {
       inClassDays: inClassDays.size,
       activeDays: activeDays.size,

@@ -10,7 +10,7 @@ import {
   updateManualAssessment, updateTeacherKnowledgeScore,
   updatePracticeCriteriaScores, getPracticeLevel, PRACTICE_MAX_SCORE,
   applyManualAssessmentsToGrades, COURSE_TEACHER_NAME,
-  getGradingPeriodLabel, getExamPolicyLabel,
+  getGradingPeriodLabel, getExamPolicyLabel, mergeRemoteWithLocalGrades,
 } from '../services/gradeService';
 import { findGrade } from '../data/curriculum';
 import { Link as LinkIcon, Info } from 'lucide-react';
@@ -68,6 +68,85 @@ const SCORE_PRESET_OPTIONS: Array<{
   { ratio: 0.8, label: 'ปานกลาง', scoreLabel: 'หัก 20%', className: 'moderate' },
   { ratio: 0.5, label: 'พอใช้', scoreLabel: '50%', className: 'fair' },
 ];
+
+interface KScoreInputProps {
+  score: number;
+  webScore: number;
+  hasTeacherScore: boolean;
+  maxScore: number;
+  onSave: (val: string) => void;
+}
+
+const KScoreInput: React.FC<KScoreInputProps> = ({
+  score,
+  webScore,
+  hasTeacherScore,
+  maxScore,
+  onSave,
+}) => {
+  const [localVal, setLocalVal] = useState<string>(
+    score !== undefined && score !== null ? String(score) : '',
+  );
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalVal(score !== undefined && score !== null ? String(score) : '');
+    }
+  }, [score, isFocused]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setLocalVal(raw);
+    if (raw.trim() === '') {
+      return;
+    }
+    const num = Number(raw);
+    if (!Number.isNaN(num) && num >= 0 && num <= maxScore) {
+      onSave(raw);
+    }
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    if (localVal.trim() === '') {
+      onSave('');
+      setLocalVal(webScore > 0 ? String(webScore) : '');
+    } else {
+      const num = Number(localVal);
+      if (!Number.isNaN(num)) {
+        const clamped = Math.max(0, Math.min(maxScore, Math.round(num * 10) / 10));
+        setLocalVal(String(clamped));
+        onSave(String(clamped));
+      } else {
+        setLocalVal(score !== undefined && score !== null ? String(score) : '');
+      }
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      className={`k-input ${hasTeacherScore ? 'teacher-override' : ''}`}
+      value={localVal}
+      min={0}
+      max={maxScore}
+      step="any"
+      placeholder={webScore > 0 ? String(webScore) : '-'}
+      onFocus={() => setIsFocused(true)}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      title={`คะแนน K (เต็ม ${maxScore})${hasTeacherScore ? ' • ครูกรอกทับไว้' : ` • จากแบบทดสอบ/งาน: ${webScore}`}`}
+    />
+  );
+};
 
 const GradeBook: React.FC = () => {
   const [classroom, setClassroom] = useState<string>('ป.1');
@@ -162,7 +241,9 @@ const GradeBook: React.FC = () => {
       // Auto-sync with Firebase in background so localhost and live site show identical grades
       void fetchClassroomFromFirebase(classroom, subject).then((remote) => {
         if (remote && remote.length > 0) {
-          cacheGradesLocally(classroom, remote, subject);
+          const currentLocal = loadGrades(classroom, subject);
+          const merged = mergeRemoteWithLocalGrades(remote, currentLocal);
+          cacheGradesLocally(classroom, merged, subject);
           setReloadKey((k) => k + 1);
         }
       }).catch(() => {
@@ -173,8 +254,14 @@ const GradeBook: React.FC = () => {
   }, [classroom, gradebookKey, students2569, subject]);
 
   const handleTeacherK = (studentCode: string, indicatorId: string, value: string) => {
-    const score = value.trim() === '' ? null : Number(value);
-    updateTeacherKnowledgeScore(classroom, studentCode, indicatorId, score, subject);
+    if (value.trim() === '') {
+      updateTeacherKnowledgeScore(classroom, studentCode, indicatorId, null, subject);
+      reload();
+      return;
+    }
+    const num = Number(value);
+    if (Number.isNaN(num)) return;
+    updateTeacherKnowledgeScore(classroom, studentCode, indicatorId, num, subject);
     reload();
   };
 
@@ -306,15 +393,27 @@ const GradeBook: React.FC = () => {
   }, [classroom, grades, subject]);
 
   const handleFinal = (studentCode: string, value: string) => {
-    if (value.trim() === '') return;
-    const v = Math.max(0, Math.min(examMax.final, Number(value) || 0));
+    if (value.trim() === '') {
+      updateFinalExam(classroom, studentCode, undefined, subject);
+      reload();
+      return;
+    }
+    const num = Number(value);
+    if (Number.isNaN(num)) return;
+    const v = Math.max(0, Math.min(examMax.final, Math.round(num * 10) / 10));
     updateFinalExam(classroom, studentCode, v, subject);
     reload();
   };
 
   const handleMidterm = (studentCode: string, value: string) => {
-    if (value.trim() === '') return;
-    const v = Math.max(0, Math.min(examMax.midterm, Number(value) || 0));
+    if (value.trim() === '') {
+      updateMidtermExam(classroom, studentCode, undefined, subject);
+      reload();
+      return;
+    }
+    const num = Number(value);
+    if (Number.isNaN(num)) return;
+    const v = Math.max(0, Math.min(examMax.midterm, Math.round(num * 10) / 10));
     updateMidtermExam(classroom, studentCode, v, subject);
     reload();
   };
@@ -401,7 +500,9 @@ const GradeBook: React.FC = () => {
         'การดึงสมุดคะแนนจาก Firebase',
       );
       if (remote) {
-        cacheGradesLocally(classroom, remote, subject);
+        const currentLocal = loadGrades(classroom, subject);
+        const merged = mergeRemoteWithLocalGrades(remote, currentLocal);
+        cacheGradesLocally(classroom, merged, subject);
         reload();
         toast.show('ดึงข้อมูลจาก Firebase สำเร็จ ✓', 'success');
       } else {
@@ -781,6 +882,7 @@ const GradeBook: React.FC = () => {
                               type="number"
                               min={0}
                               max={assessment.maxScore}
+                              step="any"
                               className="ma-score-input"
                               value={manualScores[assessment.id]?.[g.studentCode] ?? ''}
                               onChange={(e) => handleManualScore(assessment, g.studentCode, e.target.value)}
@@ -922,14 +1024,24 @@ const GradeBook: React.FC = () => {
                         return (
                           <React.Fragment key={ind.id}>
                             <td className="text-center">
-                              <button
-                                type="button"
-                                className="k-score-button"
-                                onClick={() => openKnowledgeDialog(g.studentCode, ind.id)}
-                                title="เปิดรายละเอียดและใส่คะแนน K"
-                              >
-                                {s.k}
-                              </button>
+                              <div className="k-cell-container">
+                                <KScoreInput
+                                  score={s.k}
+                                  webScore={Number(s.webK || 0) + Number(s.manualK || 0)}
+                                  hasTeacherScore={s.teacherK !== undefined}
+                                  maxScore={ind.maxScore}
+                                  onSave={(val) => handleTeacherK(g.studentCode, ind.id, val)}
+                                />
+                                <button
+                                  type="button"
+                                  className="k-more-btn"
+                                  onClick={() => openKnowledgeDialog(g.studentCode, ind.id)}
+                                  title="เปิดรายละเอียด K / เพิ่มงานย่อย"
+                                  aria-label="ดูรายละเอียดคะแนน K"
+                                >
+                                  ⋯
+                                </button>
+                              </div>
                             </td>
                             <td className="text-center">
                               <button
@@ -978,6 +1090,7 @@ const GradeBook: React.FC = () => {
                             value={g.midtermExam ?? ''}
                             min={0}
                             max={examMax.midterm}
+                            step="any"
                             placeholder="-"
                             onChange={(e) => handleMidterm(g.studentCode, e.target.value)}
                           />
@@ -990,6 +1103,7 @@ const GradeBook: React.FC = () => {
                           value={g.finalExam ?? ''}
                           min={0}
                           max={examMax.final}
+                          step="any"
                           placeholder="-"
                           onChange={(e) => handleFinal(g.studentCode, e.target.value)}
                         />
@@ -1098,6 +1212,7 @@ const GradeBook: React.FC = () => {
                     type="number"
                     min={0}
                     max={dialogIndicator.maxScore}
+                    step="any"
                     value={dialogIndicatorScore?.teacherK ?? ''}
                     onChange={(event) => handleTeacherK(dialogStudent.studentCode, dialogIndicator.id, event.target.value)}
                     aria-label="คะแนน K ที่ครูกรอกเอง"
@@ -1172,6 +1287,7 @@ const GradeBook: React.FC = () => {
                         type="number"
                         min={0}
                         max={assessment.maxScore}
+                        step="any"
                         value={manualScores[assessment.id]?.[dialogStudent.studentCode] ?? ''}
                         onChange={(event) => handleKnowledgeItemScore(assessment, dialogStudent.studentCode, event.target.value)}
                         aria-label={`คะแนนที่ได้จาก ${assessment.title}`}
@@ -1404,6 +1520,7 @@ const GradeBook: React.FC = () => {
                         type="number"
                         min={0}
                         max={assessment.maxScore}
+                        step="any"
                         value={manualScores[assessment.id]?.[practiceDialogStudent.studentCode] ?? ''}
                         onChange={(event) => handleKnowledgeItemScore(assessment, practiceDialogStudent.studentCode, event.target.value)}
                       />

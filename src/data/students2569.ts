@@ -440,69 +440,69 @@ export const students2569: Record<string, StudentInfo[]> = {
   "ม.1": [
     {
       "no": 1,
-      "studentCode": "2533",
-      "name": "เด็กชายพัชรพล ภูเด่นตา",
-      "emoji": "👦"
-    },
-    {
-      "no": 2,
       "studentCode": "2536",
       "name": "เด็กชายเอกพล รักชาติ",
       "emoji": "👦"
     },
     {
+      "no": 2,
+      "studentCode": "2533",
+      "name": "เด็กชายพัชรพล ภูเด่นตา",
+      "emoji": "👦"
+    },
+    {
       "no": 3,
+      "studentCode": "3218",
+      "name": "เด็กชายกฤษณชัย แซ่ม้า",
+      "emoji": "👦"
+    },
+    {
+      "no": 4,
       "studentCode": "2538",
       "name": "เด็กหญิงณัชชา คงทน",
       "emoji": "👧"
     },
     {
-      "no": 4,
+      "no": 5,
       "studentCode": "2539",
       "name": "เด็กหญิงพิชญธิดา มาไกล",
       "emoji": "👧"
     },
     {
-      "no": 5,
+      "no": 6,
       "studentCode": "2540",
       "name": "เด็กหญิงเขมิกา ลึบอ",
       "emoji": "👧"
     },
     {
-      "no": 6,
+      "no": 7,
       "studentCode": "2602",
       "name": "เด็กหญิงวราภรณ์ -",
       "emoji": "👧"
     },
     {
-      "no": 7,
+      "no": 8,
       "studentCode": "2831",
       "name": "เด็กหญิงสิริกานต์ เปี่ยมใจ",
       "emoji": "👧"
     },
     {
-      "no": 8,
+      "no": 9,
       "studentCode": "3215",
       "name": "เด็กหญิงสุพิชชา พูลจวง",
       "emoji": "👧"
     },
     {
-      "no": 9,
+      "no": 10,
       "studentCode": "3216",
       "name": "เด็กหญิงบุญจิรา ธัญชาติไพศาล",
       "emoji": "👧"
     },
     {
-      "no": 10,
+      "no": 11,
       "studentCode": "3217",
       "name": "เด็กหญิงกชกร แซ่ม้า",
       "emoji": "👧"
-    },
-    {
-      "no": 11,
-      "studentCode": "3218",
-      "name": "เด็กชายกฤษณชัย แซ่ม้า",
-      "emoji": "👦"
     },
     {
       "no": 12,
@@ -556,33 +556,45 @@ export const students2569: Record<string, StudentInfo[]> = {
     },
     {
       "no": 8,
-      "studentCode": "2404",
-      "name": "เด็กหญิงธันย์ชนก โพธิ์มณี",
-      "emoji": "👧"
+      "studentCode": "3220",
+      "name": "เด็กชายชูเดช พวงมาลี",
+      "emoji": "👦"
     },
     {
       "no": 9,
+      "studentCode": "3231",
+      "name": "เด็กชายพีรวัส เปกไธสง",
+      "emoji": "👦"
+    },
+    {
+      "no": 10,
       "studentCode": "2405",
       "name": "เด็กหญิงกัญญารัตน์ แก้วมณี",
       "emoji": "👧"
     },
     {
-      "no": 10,
+      "no": 11,
       "studentCode": "2541",
       "name": "เด็กหญิงเพ็ญพิชชา หมู่ทอง",
       "emoji": "👧"
     },
     {
-      "no": 11,
+      "no": 12,
       "studentCode": "2832",
       "name": "เด็กหญิงศิรญา เปี่ยมใจ",
       "emoji": "👧"
     },
     {
-      "no": 12,
-      "studentCode": "3220",
-      "name": "เด็กชายชูเดช พวงมาลี",
-      "emoji": "👦"
+      "no": 13,
+      "studentCode": "2404",
+      "name": "เด็กหญิงธันย์ชนก โพธิ์มณี",
+      "emoji": "👧"
+    },
+    {
+      "no": 14,
+      "studentCode": "2435",
+      "name": "เด็กหญิงสุวภัทร ตลับทอง",
+      "emoji": "👧"
     }
   ],
   "ม.3": [
@@ -648,72 +660,60 @@ export const students2569: Record<string, StudentInfo[]> = {
     },
     {
       "no": 11,
-      "studentCode": "3031",
-      "name": "เด็กชายชิติพัทธ์ ศรีรินทร์",
-      "emoji": "👦"
-    },
-    {
-      "no": 12,
       "studentCode": "2261",
       "name": "เด็กหญิงพรชิตา ดันบิน",
       "emoji": "👧"
     },
     {
-      "no": 13,
+      "no": 12,
       "studentCode": "2260",
       "name": "เด็กหญิงกัญญาพัชร ขัดสี",
       "emoji": "👧"
     },
     {
-      "no": 14,
-      "studentCode": "2279",
-      "name": "เด็กหญิงนภัส สอนเยี่ยม",
-      "emoji": "👧"
-    },
-    {
-      "no": 15,
+      "no": 13,
       "studentCode": "2278",
       "name": "เด็กหญิงสรัญญา วิจิตรปัญญา",
       "emoji": "👧"
     },
     {
-      "no": 16,
+      "no": 14,
       "studentCode": "2413",
       "name": "เด็กหญิงสุวรรณษา นาน้อง",
       "emoji": "👧"
     },
     {
-      "no": 17,
+      "no": 15,
       "studentCode": "2411",
       "name": "เด็กหญิงณัฐณิชา แก้วมณี",
       "emoji": "👧"
     },
     {
-      "no": 18,
+      "no": 16,
       "studentCode": "2412",
       "name": "เด็กหญิงสุรัมภา จูมงคล",
       "emoji": "👧"
     },
     {
-      "no": 19,
+      "no": 17,
       "studentCode": "2415",
       "name": "เด็กหญิงกัญญานัท แสงทองศรี",
       "emoji": "👧"
     },
     {
-      "no": 20,
+      "no": 18,
       "studentCode": "2414",
       "name": "เด็กหญิงกัญญาภัทร ดานบิน",
       "emoji": "👧"
     },
     {
-      "no": 21,
+      "no": 19,
       "studentCode": "2416",
       "name": "เด็กหญิงสุธิดา รัตนาวงค์",
       "emoji": "👧"
     },
     {
-      "no": 22,
+      "no": 20,
       "studentCode": "2936",
       "name": "เด็กหญิงชลดา พันธ์ศรี",
       "emoji": "👧"
