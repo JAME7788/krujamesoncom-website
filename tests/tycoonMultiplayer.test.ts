@@ -13,8 +13,8 @@ import {
   type TycoonRoom,
 } from '../src/services/tycoonMultiplayerService';
 
-const serviceSource = readFileSync('src/services/tycoonMultiplayerService.ts', 'utf8');
-const digitalCitySource = readFileSync('src/pages/games/DigitalCityQuestGame.tsx', 'utf8');
+const serviceSource = readFileSync('src/services/tycoonMultiplayerService.ts', 'utf8').replace(/\r\n/g, '\n');
+const digitalCitySource = readFileSync('src/pages/games/DigitalCityQuestGame.tsx', 'utf8').replace(/\r\n/g, '\n');
 
 const room = (ready: boolean[]): TycoonRoom => ({
   code: '123456',

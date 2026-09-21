@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
@@ -56,6 +56,17 @@ const LiveQuizHost = React.lazy(() => import('./pages/LiveQuizHost'));
 const LiveQuizPlay = React.lazy(() => import('./pages/LiveQuizPlay'));
 const HomeworkStudent = React.lazy(() => import('./pages/HomeworkStudent'));
 const VirtualClassroom = React.lazy(() => import('./pages/VirtualClassroom'));
+const CyberShieldGame = React.lazy(() => import('./pages/games/CyberShieldGame'));
+const SortingDashGame = React.lazy(() => import('./pages/games/SortingDashGame'));
+const BombCollectorGame = React.lazy(() => import('./pages/games/BombCollectorGame'));
+const ObstacleDodgeGame = React.lazy(() => import('./pages/games/ObstacleDodgeGame'));
+const SituationReactionGame = React.lazy(() => import('./pages/games/SituationReactionGame'));
+const PCBuilderGame = React.lazy(() => import('./pages/games/PCBuilderGame'));
+const StroopColorGame = React.lazy(() => import('./pages/games/StroopColorGame'));
+const SpaceTreasureGame = React.lazy(() => import('./pages/games/SpaceTreasureGame'));
+const CyberCopGame = React.lazy(() => import('./pages/games/CyberCopGame'));
+const KruComArcadeGame = React.lazy(() => import('./pages/games/KruComArcadeGame'));
+const FlowchartBingoGame = React.lazy(() => import('./pages/games/FlowchartBingoGame'));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -67,6 +78,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const PageBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+  return <ErrorBoundary key={location.pathname}>{children}</ErrorBoundary>;
+};
+
 function App() {
   return (
     <ErrorBoundary>
@@ -75,8 +91,9 @@ function App() {
           <Router>
             <ScrollToTop />
             <Layout>
-              <Suspense fallback={<Loading text="กำลังโหลดหน้า..." />}>
-                <Routes>
+              <PageBoundary>
+                <Suspense fallback={<Loading text="กำลังโหลดหน้า..." />}>
+                  <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
@@ -119,6 +136,17 @@ function App() {
                   <Route path="/games/robot-maker" element={<LoginPromptOverlay><RobotMakerGame /></LoginPromptOverlay>} />
                   <Route path="/games/tech-system" element={<LoginPromptOverlay><TechSystemGame /></LoginPromptOverlay>} />
                   <Route path="/games/search-smart" element={<LoginPromptOverlay><SearchSmartGame /></LoginPromptOverlay>} />
+                  <Route path="/games/cyber-shield" element={<LoginPromptOverlay><CyberShieldGame /></LoginPromptOverlay>} />
+                  <Route path="/games/sorting-dash" element={<LoginPromptOverlay><SortingDashGame /></LoginPromptOverlay>} />
+                  <Route path="/games/bomb-collector" element={<LoginPromptOverlay><BombCollectorGame /></LoginPromptOverlay>} />
+                  <Route path="/games/obstacle-dodge" element={<LoginPromptOverlay><ObstacleDodgeGame /></LoginPromptOverlay>} />
+                  <Route path="/games/situation-reaction" element={<LoginPromptOverlay><SituationReactionGame /></LoginPromptOverlay>} />
+                  <Route path="/games/pc-builder" element={<LoginPromptOverlay><PCBuilderGame /></LoginPromptOverlay>} />
+                  <Route path="/games/stroop-color" element={<LoginPromptOverlay><StroopColorGame /></LoginPromptOverlay>} />
+                  <Route path="/games/space-treasure" element={<LoginPromptOverlay><SpaceTreasureGame /></LoginPromptOverlay>} />
+                  <Route path="/games/cyber-cop" element={<LoginPromptOverlay><CyberCopGame /></LoginPromptOverlay>} />
+                  <Route path="/games/krucom-arcade" element={<LoginPromptOverlay><KruComArcadeGame /></LoginPromptOverlay>} />
+                  <Route path="/games/flowchart-bingo" element={<LoginPromptOverlay><FlowchartBingoGame /></LoginPromptOverlay>} />
                   <Route path="/tools" element={<Tools />} />
                   <Route path="/parent/:studentId" element={<ParentPortal />} />
                   <Route path="/live" element={<LiveQuizPlay />} />
@@ -128,7 +156,8 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
-            </Layout>
+            </PageBoundary>
+          </Layout>
           </Router>
         </ToastProvider>
       </AuthProvider>
