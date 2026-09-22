@@ -75,7 +75,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         { title: 'TypingClub', desc: 'ฝึกพิมพ์ดีด เล่นได้เลย', url: 'https://www.typingclub.com/', emoji: '⌨️', noLogin: true },
         { title: 'TypingStudy ภาษาไทย', desc: 'ฝึกพิมพ์ไทย ไม่ต้องสมัคร', url: 'https://www.typingstudy.com/th/', emoji: '🇹🇭', noLogin: true },
         { title: 'JS Paint', desc: 'โปรแกรม Paint ในเบราว์เซอร์', url: 'https://jspaint.app/', emoji: '🎨', noLogin: true },
-        { title: 'Mouse-Run', desc: 'เกมขยับเมาส์ตามเส้น', url: 'https://www.helpkidzlearn.com/games/early-years', emoji: '🐭', noLogin: true },
+        { title: 'Mouse-Run', desc: 'เกมขยับเมาส์ตามเส้น', url: 'https://www.helpkidzlearn.com/', emoji: '🐭', noLogin: true },
       ],
       articles: [scimathArticles.computerBasics],
       quiz: [
@@ -122,7 +122,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         { title: '🅱️ Code.org Course B (ป.1)', desc: 'หลักสูตรเขียนโค้ด ป.1 — events, sequence', url: 'https://studio.code.org/s/courseb-2023', emoji: '🅱️', noLogin: true },
         { title: '❄️ Frozen (Hour of Code)', desc: 'Anna+Elsa เล่นสเก็ต — เรียน loop วาดหิมะ', url: 'https://studio.code.org/s/frozen', emoji: '❄️', noLogin: true },
         { title: 'Scratch (Try It)', desc: 'เขียนโปรแกรมเลย ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
-        { title: 'Lightbot Hour', desc: 'เกมสั่งหุ่นยนต์ — เล่นได้เลย', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
+        { title: 'Lightbot Hour', desc: 'เกมสั่งหุ่นยนต์ — เล่นได้เลย', url: 'https://lightbot.com/', emoji: '💡', noLogin: true },
         { title: 'Blockly Games', desc: '7 เกมเขียนโค้ด ไม่ต้อง login', url: 'https://blockly.games/', emoji: '🎮', noLogin: true },
         { title: 'Hour of Code', desc: 'เลือกบทเรียนเล่น 1 ชั่วโมง', url: 'https://hourofcode.com/th/learn', emoji: '⏰', noLogin: true },
       ],
@@ -158,7 +158,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       videos: [yt('การแก้ปัญหา 4 ขั้นตอน วิทยาการคำนวณ ป.2'), yt('Problem solving for kids')],
       fun: [
         { title: 'Blockly Maze', desc: 'เกมเขาวงกต ไม่ต้องสมัคร', url: 'https://blockly.games/maze', emoji: '🧩', noLogin: true },
-        { title: 'Lightbot Hour', desc: 'แก้ปัญหาด้วยลำดับคำสั่ง', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
+        { title: 'Lightbot Hour', desc: 'แก้ปัญหาด้วยลำดับคำสั่ง', url: 'https://lightbot.com/', emoji: '💡', noLogin: true },
         { title: 'Hour of Code', desc: 'บทเรียนสั้น 1 ชั่วโมง', url: 'https://hourofcode.com/th/learn', emoji: '⏰', noLogin: true },
       ],
       quiz: [
@@ -172,7 +172,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       videos: [yt('Debugging programming for kids'), yt('Code.org loops Thai')],
       fun: [
         { title: '🔠 Code.org Course C (ป.2)', desc: 'เน้น Debug + Loop พื้นฐาน — เหมาะกับ ป.2', url: 'https://studio.code.org/s/coursec-2023', emoji: '🔠', noLogin: true },
-        { title: '⭐ Star Wars Blockly', desc: 'BB-8 ผจญภัย ฝึก loop รวบรวมเศษโลหะ', url: 'https://studio.code.org/s/starwarsblocks-2018', emoji: '⭐', noLogin: true },
+        { title: '⭐ Star Wars Blockly', desc: 'BB-8 ผจญภัย ฝึก loop รวบรวมเศษโลหะ', url: 'https://studio.code.org/s/starwarsblocks', emoji: '⭐', noLogin: true },
         { title: '🐞 Bug Catcher (ในเว็บนี้)', desc: 'จับบั๊กให้ทัน — ฝึกความเร็วและสมาธิ', url: '/games/bug-catcher', emoji: '🐞', noLogin: true },
         { title: 'Scratch Try It', desc: 'เขียนโค้ดเลย ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
         { title: 'Blockly Bird', desc: 'ฝึก if/else กับนก', url: 'https://blockly.games/bird', emoji: '🐦', noLogin: true },
@@ -232,8 +232,8 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       fun: [
         { title: '🇩 Code.org Course D (ป.3)', desc: 'Nested loops + Functions — เหมาะกับ ป.3', url: 'https://studio.code.org/s/coursed-2023', emoji: '🇩', noLogin: true },
         { title: '⛏️ Minecraft Hour of Code', desc: 'เขียนโค้ดสำรวจโลก Minecraft', url: 'https://code.org/minecraft', emoji: '⛏️', noLogin: true },
-        { title: '🎨 Artist (Code.org)', desc: 'เขียนโค้ดให้ตัวละครวาดรูป', url: 'https://studio.code.org/s/artist-2018', emoji: '🎨', noLogin: true },
-        { title: '🎮 Play Lab', desc: 'สร้างเกม + เล่าเรื่องของตัวเอง', url: 'https://studio.code.org/s/playlab-2018', emoji: '🎮', noLogin: true },
+        { title: '🎨 Artist (Code.org)', desc: 'เขียนโค้ดให้ตัวละครวาดรูป', url: 'https://studio.code.org/s/artist', emoji: '🎨', noLogin: true },
+        { title: '🎮 Play Lab', desc: 'สร้างเกม + เล่าเรื่องของตัวเอง', url: 'https://studio.code.org/s/playlab', emoji: '🎮', noLogin: true },
         { title: 'Scratch Try It', desc: 'เขียนโปรแกรมเลย ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
         { title: 'Blockly Games', desc: '7 เกมเขียนโค้ด', url: 'https://blockly.games/', emoji: '🎮', noLogin: true },
       ],
@@ -304,7 +304,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         { title: '🐤 Flappy Code', desc: 'สร้างเกม Flappy ใน 1 ชั่วโมง', url: 'https://studio.code.org/s/flappy', emoji: '🐤', noLogin: true },
         { title: '🐠 Minecraft AI for Good', desc: 'ใช้ AI ใน Minecraft แก้ปัญหาสิ่งแวดล้อม', url: 'https://studio.code.org/s/aquatic', emoji: '🐠', noLogin: true },
         { title: 'Scratch Try It', desc: 'แพลตฟอร์มหลัก ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
-        { title: 'Lightbot', desc: 'เกมเขียนโค้ดสั่งหุ่นยนต์', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
+        { title: 'Lightbot', desc: 'เกมเขียนโค้ดสั่งหุ่นยนต์', url: 'https://lightbot.com/', emoji: '💡', noLogin: true },
       ],
       quiz: [
         { q: 'Scratch พัฒนาขึ้นที่ไหน?', options: ['Google', 'MIT Media Lab', 'Microsoft', 'Apple'], answer: 1 },
@@ -360,7 +360,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         { title: 'Blockly Games', desc: 'ฝึกตรรกะ 7 ระดับ', url: 'https://blockly.games/', emoji: '🧩', noLogin: true },
         { title: 'Caesar & Atbash', desc: 'เกมรหัสลับตรรกะ', url: 'https://codingthailand.app/minigame/atbash-caesar', emoji: '🔐', noLogin: true },
         { title: 'Cipher Game', desc: 'ถอดรหัสด้วยตรรกะ', url: 'https://codingthailand.app/minigame/cipher', emoji: '🗝️', noLogin: true },
-        { title: 'Lightbot', desc: 'แก้ปัญหาด้วยลำดับ', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
+        { title: 'Lightbot', desc: 'แก้ปัญหาด้วยลำดับ', url: 'https://lightbot.com/', emoji: '💡', noLogin: true },
       ],
       quiz: [
         { q: 'การแก้ปัญหาด้วยเหตุผลเชิงตรรกะเริ่มจาก?', options: ['ลงมือ', 'หารูปแบบของปัญหา', 'คิดสูตร', 'ลองสุ่ม'], answer: 1 },
@@ -417,7 +417,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         { title: 'Cipher Mini Game', desc: 'เกมถอดรหัสตรรกะ', url: 'https://codingthailand.app/minigame/cipher', emoji: '🔐', noLogin: true },
         { title: 'Caesar & Atbash', desc: 'เกมรหัสตรรกะแบบโบราณ', url: 'https://codingthailand.app/minigame/atbash-caesar', emoji: '🗝️', noLogin: true },
         { title: 'Blockly Games', desc: 'ปริศนาตรรกะ 7 ระดับ', url: 'https://blockly.games/', emoji: '🧩', noLogin: true },
-        { title: 'Lightbot', desc: 'เกมตรรกะการเดินทาง', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
+        { title: 'Lightbot', desc: 'เกมตรรกะการเดินทาง', url: 'https://lightbot.com/', emoji: '💡', noLogin: true },
       ],
       quiz: [
         { q: 'การให้เหตุผลเชิงตรรกะใช้เพื่อ?', options: ['ตัดสินความสมเหตุสมผล', 'ความบันเทิง', 'ความสวยงาม', 'การเล่นเกม'], answer: 0 },
@@ -430,7 +430,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         { title: 'Scratch Try It', desc: 'สร้างเกมเอง ไม่ต้องสมัคร', url: 'https://scratch.mit.edu/projects/editor/?tutorial=getStarted', emoji: '🐱', noLogin: true },
         { title: 'Diagrams.net', desc: 'วาด Flowchart', url: 'https://app.diagrams.net/', emoji: '📐', noLogin: true },
         { title: 'AI for Oceans', desc: 'เรียน AI สนุกๆ', url: 'https://code.org/oceans', emoji: '🤖', noLogin: true },
-        { title: 'Lightbot', desc: 'เกมเขียนโค้ดสั่งหุ่นยนต์', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
+        { title: 'Lightbot', desc: 'เกมเขียนโค้ดสั่งหุ่นยนต์', url: 'https://lightbot.com/', emoji: '💡', noLogin: true },
       ],
       quiz: [
         { q: 'สัญลักษณ์ Flowchart รูปสี่เหลี่ยมข้าวหลามตัดใช้สำหรับ?', options: ['เริ่ม/จบ', 'การประมวลผล', 'การตัดสินใจ', 'การรับข้อมูล'], answer: 2 },
@@ -476,7 +476,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         { title: '🤖 Coding Maze (ในเว็บนี้)', desc: 'ลากบล็อกพาหุ่นยนต์ฝ่ามาผ่านอุปสรรค', url: '/games/coding-maze', emoji: '🤖', noLogin: true },
         { title: '🧩 Algorithm Sorter (ในเว็บนี้)', desc: 'ลากขั้นตอนเรียงตามลำดับที่ถูกต้อง', url: '/games/algorithm-sorter', emoji: '🧩', noLogin: true },
         { title: 'Blockly Games', desc: 'ปริศนาตรรกะ 7 ระดับ', url: 'https://blockly.games/', emoji: '🧩', noLogin: true },
-        { title: 'Lightbot', desc: 'เกมตรรกะการเดินทาง', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
+        { title: 'Lightbot', desc: 'เกมตรรกะการเดินทาง', url: 'https://lightbot.com/', emoji: '💡', noLogin: true },
         { title: 'Cipher Mini Game', desc: 'เกมถอดรหัส', url: 'https://codingthailand.app/minigame/cipher', emoji: '🔐', noLogin: true },
       ],
       articles: [scimathArticles.algorithm],
@@ -596,7 +596,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       videos: [yt('แนวคิดเชิงคำนวณ ม.2'), yt('Computational Thinking ภาษาไทย')],
       fun: [
         { title: 'Blockly Games', desc: 'ฝึกแนวคิดเชิงคำนวณ', url: 'https://blockly.games/', emoji: '🧩', noLogin: true },
-        { title: 'Lightbot', desc: 'แก้ปัญหาด้วยอัลกอริทึม', url: 'https://lightbot.com/hour-of-code-2023.html', emoji: '💡', noLogin: true },
+        { title: 'Lightbot', desc: 'แก้ปัญหาด้วยอัลกอริทึม', url: 'https://lightbot.com/', emoji: '💡', noLogin: true },
         { title: 'Code Combat', desc: 'ผจญภัยเขียนโค้ด', url: 'https://codecombat.com/play', emoji: '⚔️', noLogin: true },
       ],
       articles: [scimathArticles.algorithm],
@@ -635,7 +635,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       videos: [yt('องค์ประกอบคอมพิวเตอร์ ม.2'), yt('การทำงานของอินเทอร์เน็ต'), yt('คลาวด์คอมพิวติงคืออะไร')],
       fun: [
         { title: 'How does the Internet work', desc: 'วิดีโออธิบายการทำงาน', url: 'https://code.org/curriculum/course3/15/Teacher', emoji: '🌐', noLogin: true },
-        { title: 'CPU Sim', desc: 'จำลองการทำงาน CPU', url: 'https://www.cs.colostate.edu/~cs270/.Spring16/recitation/2/CPUSim.html', emoji: '⚙️', noLogin: true },
+        { title: 'CircuitVerse Simulator', desc: 'จำลองการทำงานวงจรและ CPU', url: 'https://circuitverse.org/simulator', emoji: '⚙️', noLogin: true },
         { title: 'Network Simulator', desc: 'จำลองเครือข่าย', url: 'https://www.netsim.online/', emoji: '🔗', noLogin: true },
       ],
       articles: [scimathArticles.computerBasics, scimathArticles.network, scimathArticles.os, scimathArticles.software, scimathArticles.dataCommunication],
@@ -942,7 +942,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
         yt('ข้อควรระวังในการใช้ AI เด็ก'),
       ],
       fun: [
-        { title: 'Semantris', desc: 'เล่นเกมคำศัพท์กับ AI ของ Google', url: 'https://research.google.com/semantris/', emoji: '📝', noLogin: true },
+        { title: 'Quick, Draw!', desc: 'วาดรูปให้ AI ของ Google ทายแบบสดๆ', url: 'https://quickdraw.withgoogle.com/', emoji: '🎨', noLogin: true },
         { title: 'Thing Translator', desc: 'ถ่ายรูปแล้ว AI บอกชื่อเป็นภาษาต่างๆ', url: 'https://thing-translator.appspot.com/', emoji: '🌐', noLogin: true },
         { title: 'AI Duet', desc: 'เล่นเปียโนคู่กับ AI!', url: 'https://experiments.withgoogle.com/ai/ai-duet/view/', emoji: '🎹', noLogin: true },
       ],
@@ -1070,7 +1070,7 @@ export const unitExtras: Record<string, Record<number, UnitExtras>> = {
       fun: [
         { title: 'Teachable Machine', desc: 'สร้างโมเดล Image Classification ง่ายๆ', url: 'https://teachablemachine.withgoogle.com/', emoji: '📷', noLogin: true },
         { title: 'Quick, Draw!', desc: 'ดู AI จำแนกรูปวาดแบบ real-time', url: 'https://quickdraw.withgoogle.com/', emoji: '🎨', noLogin: true },
-        { title: 'Semantris', desc: 'เกม NLP — AI เข้าใจความหมายคำศัพท์', url: 'https://research.google.com/semantris/', emoji: '📝', noLogin: true },
+        { title: 'AutoDraw (Google AI)', desc: 'AI ช่วยวาดรูปสวยทันใจจากลายเส้นสเก็ตช์', url: 'https://www.autodraw.com/', emoji: '✨', noLogin: true },
       ],
       quiz: [
         { q: 'Computer Vision ทำอะไรได้?', options: ['แปลภาษา', 'จำแนกรูปภาพ/ตรวจจับวัตถุ', 'แต่งเพลง', 'พิมพ์เอกสาร'], answer: 1 },
@@ -1471,7 +1471,7 @@ const arduinoExpandedMediaExtras: Record<number, UnitExtras> = {
   },
   4: {
     files: [
-      { title: 'Arduino Analog In, Out Serial', url: 'https://www.arduino.cc/en/Tutorial/BuiltInExamples/AnalogInOutSerial/', source: 'Arduino', kind: 'web', desc: 'อ่าน potentiometer แปลงค่า และใช้ PWM ปรับความสว่าง LED พร้อมพิมพ์ค่าออก Serial' },
+      { title: 'Arduino Analog In, Out Serial', url: 'https://docs.arduino.cc/built-in-examples/analog/AnalogInOutSerial/', source: 'Arduino', kind: 'web', desc: 'อ่าน potentiometer แปลงค่า และใช้ PWM ปรับความสว่าง LED พร้อมพิมพ์ค่าออก Serial' },
       { title: 'Use PWM output with Arduino', url: 'https://support.arduino.cc/hc/en-us/articles/9350537961500-Use-PWM-output-with-Arduino', source: 'Arduino Help Center', kind: 'web', desc: 'คำอธิบาย PWM และรายการขา PWM ของบอร์ด Arduino หลายรุ่น' },
     ],
     fun: [
