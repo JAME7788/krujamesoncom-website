@@ -254,7 +254,7 @@ const SortingDashGame: React.FC = () => {
   }, [gameOver]);
 
   return (
-    <div className="dash-game-container">
+    <div className="sorting-dash-wrap">
       <GameLearnCard gameKey="sorting-dash" />
       <div className="sorting-dash-container">
         {/* Top Bar */}

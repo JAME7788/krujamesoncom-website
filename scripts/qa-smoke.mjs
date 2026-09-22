@@ -56,9 +56,11 @@ const run = async () => {
     args: ['--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'],
   });
 
+  const paths = await gamePaths();
   const targets = [
     ...ROUTES,
-    ...(await gamePaths()).map((p) => ({ path: p, auth: 'student' })),
+    ...paths.map((p) => ({ path: p, auth: 'student' })),
+    ...paths.map((p) => ({ path: p, auth: 'student', viewport: { width: 390, height: 844 } })),
   ];
   const selectedTargets = process.env.QA_ROUTE
     ? targets.filter((target) => target.path === process.env.QA_ROUTE)
@@ -68,7 +70,7 @@ const run = async () => {
   let passed = 0;
 
   for (const target of selectedTargets) {
-    const context = await browser.newContext({ viewport: { width: 1366, height: 850 } });
+    const context = await browser.newContext({ viewport: target.viewport || { width: 1366, height: 850 } });
     if (target.auth) {
       await context.addInitScript((arg) => {
         if (arg.role === 'student') sessionStorage.setItem('current_student', JSON.stringify(arg.student));
@@ -81,24 +83,34 @@ const run = async () => {
     try {
       await page.goto(baseUrl + target.path, { waitUntil: 'domcontentloaded', timeout: 25000 });
       await page.waitForTimeout(target.wait || 1500);
-      const pageState = await page.evaluate(({ mustInclude, mustExclude }) => {
+      const pageState = await page.evaluate(({ mustInclude, mustExclude, isGame }) => {
         const root = document.getElementById('root');
         const bodyText = document.body?.innerText || '';
         const lessonButtons = document.querySelectorAll('.glc-open');
         const lessonOverlays = document.querySelectorAll('.glc-overlay');
         const lessonCards = document.querySelectorAll('.glc-card');
         const lessonOverlay = lessonOverlays[0];
-        const lessonModalLayerValid = lessonButtons.length === 0 || (
-          lessonOverlays.length === 1
-          && lessonCards.length === 1
-          && lessonOverlay?.parentElement === document.body
-          && Number(window.getComputedStyle(lessonOverlay).zIndex) >= 2147483000
-        );
+        const lessonModalLayerValid = lessonButtons.length === 0
+          || (lessonOverlays.length === 0 && lessonCards.length === 0)
+          || (
+            lessonOverlays.length === 1
+            && lessonCards.length === 1
+            && lessonOverlay?.parentElement === document.body
+            && Number(window.getComputedStyle(lessonOverlay).zIndex) >= 2147483000
+          );
+        const gameAnchor = document.querySelector('#portal-main h1, #portal-main h2, #portal-main header, #portal-main .tyc-arcade-banner');
+        const navbar = document.querySelector('.navbar');
+        const gameLayoutValid = !isGame || !navbar || (!!gameAnchor && (
+          gameAnchor.getBoundingClientRect().top >= navbar.getBoundingClientRect().bottom + 8
+          && document.documentElement.scrollWidth <= window.innerWidth
+        ));
         return {
           mounted: !!root && root.childElementCount > 0,
           includesExpected: !mustInclude || bodyText.includes(mustInclude),
           excludesBlockedState: !mustExclude || !bodyText.includes(mustExclude),
           lessonModalLayerValid,
+          gameLayoutValid,
+          gameControlsBlocked: isGame && !!document.querySelector('.glc-overlay[open]'),
           lessonModalCount: lessonCards.length,
           headings: Array.from(document.querySelectorAll('h1,h2,h3'))
             .slice(0, 8)
@@ -108,12 +120,15 @@ const run = async () => {
       }, {
         mustInclude: target.mustInclude || '',
         mustExclude: target.mustExclude || '',
+        isGame: target.path.startsWith('/games/'),
       });
       if (
         pageState.mounted
         && pageState.includesExpected
         && pageState.excludesBlockedState
         && pageState.lessonModalLayerValid
+        && pageState.gameLayoutValid
+        && !pageState.gameControlsBlocked
         && errors.length === 0
       ) passed += 1;
       else failures.push({ path: target.path, ...pageState, errors });

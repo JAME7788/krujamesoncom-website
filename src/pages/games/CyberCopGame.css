@@ -4,10 +4,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-sizing: border-box;
   width: 100%;
   max-width: 960px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 96px 16px 24px;
   color: #fff;
   user-select: none;
   font-family: 'Kanit', system-ui, -apple-system, sans-serif;
@@ -18,6 +19,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   width: 100%;
   margin-bottom: 16px;
 }
@@ -43,6 +45,8 @@
 }
 
 .cc-title-wrap {
+  flex: 1;
+  min-width: 0;
   text-align: center;
 }
 
@@ -50,6 +54,7 @@
   font-size: 1.45rem;
   font-weight: 800;
   margin: 0;
+  overflow-wrap: anywhere;
   background: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -108,6 +113,7 @@
 
 /* Case Dossier Main Card */
 .cc-main-card {
+  box-sizing: border-box;
   width: 100%;
   background: rgba(15, 23, 42, 0.9);
   border: 1px solid rgba(16, 185, 129, 0.3);
@@ -309,4 +315,18 @@
   padding: 24px;
   color: #fff;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.8);
+}
+
+@media (max-width: 700px) {
+  .cyber-cop-container { padding-top: 80px; }
+  .cc-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+  .cc-title-wrap { grid-column: 1 / -1; grid-row: 1; }
+  .cc-title { font-size: 1.2rem; }
+  .cc-back-btn { grid-column: 1; grid-row: 2; justify-self: start; }
+  .cc-sheet-trigger { grid-column: 2; grid-row: 2; justify-self: end; }
+  .cc-hud { grid-template-columns: 1fr; }
 }
