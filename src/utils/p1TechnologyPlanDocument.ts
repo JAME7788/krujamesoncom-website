@@ -97,7 +97,7 @@ const scoringRubric = (plan: P1LessonPlan) => `<table>
 <thead><tr><th rowspan="2">ประเด็นการประเมินชิ้นงาน</th><th colspan="3">คำอธิบายระดับคุณภาพ / ระดับคะแนน</th></tr><tr><th>ดี (3 คะแนน)</th><th>พอใช้ (2 คะแนน)</th><th>ปรับปรุง (1 คะแนน)</th></tr></thead>
 <tbody>${plan.objectives.map((item) => `<tr><td>${escapeHtml(item.text)} (${item.domain})</td><td>${rubricDescription(item.domain, 3)}</td><td>${rubricDescription(item.domain, 2)}</td><td>${rubricDescription(item.domain, 1)}</td></tr>`).join('')}</tbody></table>`;
 
-const behaviorTable = () => `<table>
+const behaviorTable = () => `<table class="score-form behavior-table">
 <thead><tr><th rowspan="2">พฤติกรรมที่สังเกต</th><th colspan="3">ระดับคะแนน</th></tr><tr><th>3</th><th>2</th><th>1</th></tr></thead>
 <tbody>${p1TechnologyCourse.characteristics.map((item, index) => `<tr><td>${index + 1}. ${escapeHtml(item)}</td><td></td><td></td><td></td></tr>`).join('')}<tr><td class="center"><b>รวมคะแนน</b></td><td colspan="3"></td></tr></tbody></table>
 <p><b>เกณฑ์การตัดสินคุณภาพ</b></p><table class="quality-table"><tr><th>ช่วงคะแนน</th><th>ระดับคุณภาพ</th></tr><tr><td>13 - 15</td><td>ดีมาก</td></tr><tr><td>10 - 12</td><td>ดี</td></tr><tr><td>7 - 9</td><td>พอใช้</td></tr><tr><td>1 - 6</td><td>ปรับปรุง</td></tr></table>`;
@@ -109,7 +109,7 @@ const productTable = (plan: P1LessonPlan) => {
     'การอธิบายเหตุผลและตรวจสอบผลงาน',
     'ความรับผิดชอบและความเรียบร้อยของชิ้นงาน',
   ];
-  return `<p><b>ชิ้นงาน:</b> ${escapeHtml(plan.product)}</p><table>
+  return `<p><b>ชิ้นงาน:</b> ${escapeHtml(plan.product)}</p><table class="score-form product-score-table">
 <thead><tr><th>ประเด็นการประเมินชิ้นงาน</th><th>3 คะแนน</th><th>2 คะแนน</th><th>1 คะแนน</th></tr></thead>
 <tbody>${criteria.map((item, index) => `<tr><td>${index + 1}. ${item}</td><td></td><td></td><td></td></tr>`).join('')}<tr><td class="center"><b>รวมคะแนน</b></td><td colspan="3"></td></tr></tbody></table>
 <p><b>เกณฑ์การตัดสินคุณภาพ</b></p><table class="quality-table"><tr><th>ช่วงคะแนน</th><th>ระดับคุณภาพ</th></tr><tr><td>9 - 12</td><td>ดี</td></tr><tr><td>5 - 8</td><td>พอใช้</td></tr><tr><td>1 - 4</td><td>ปรับปรุง</td></tr></table>`;
@@ -178,13 +178,19 @@ p { margin:1pt 0; } .indent { text-indent:36pt; text-align:justify; } .objective
 .metadata td { border:0; padding:0; vertical-align:top; } .metadata td:first-child { width:68%; } .metadata td:last-child { width:32%; text-align:right; }
 .official-rule { border-top:1.25pt solid #000; margin:3pt 0 10pt; }
 .check-list { margin-left:52pt; } .check-list p { margin:1pt 0; }
-table { width:100%; margin:5pt 0 10pt; border-collapse:collapse; page-break-inside:auto; }
-th,td { border:1px solid #000; padding:4pt 5pt; vertical-align:top; }
+table { width:100%; margin:3pt 0 7pt; border-collapse:collapse; page-break-inside:auto; }
+th,td { border:1px solid #000; padding:3pt 4pt; vertical-align:top; }
 th { background:#e7e7e7; text-align:center; font-weight:bold; vertical-align:middle; }
 .metadata { margin:0; } .metadata,.metadata td,.check-table,.check-table td { border:0; }
 .check-table { width:88%; margin:0 0 5pt 52pt; } .check-table td { width:50%; padding:1pt 4pt; }
 thead { display:table-header-group; } tr { page-break-inside:avoid; }
-.quality-table { width:56% !important; margin-left:auto !important; margin-right:auto !important; page-break-inside:avoid; } .quality-table td { text-align:center; }
+.score-form { font-size:15pt; }
+.score-form th,.score-form td { padding:0.5pt 3pt; mso-padding-alt:0.5pt 3pt 0.5pt 3pt; line-height:1; vertical-align:middle; }
+.score-form th:first-child,.score-form td:first-child { width:68%; }
+.score-form th:not(:first-child),.score-form td:not(:first-child) { width:10.67%; text-align:center; }
+.quality-table { width:56% !important; margin:2pt auto 6pt !important; page-break-inside:avoid; }
+.quality-table { font-size:15pt; }
+.quality-table th,.quality-table td { padding:0.5pt 3pt; mso-padding-alt:0.5pt 3pt 0.5pt 3pt; line-height:1; text-align:center; vertical-align:middle; }
 .record-table td { text-align:center; vertical-align:middle !important; } .center { text-align:center; }
 .write-line { margin:2pt 0 8pt; } .signature { width:48%; margin:22pt 0 0 auto; text-align:center; }
 .plan { page-break-after:always; } .plan:last-child { page-break-after:auto; }
