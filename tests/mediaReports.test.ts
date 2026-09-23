@@ -27,8 +27,10 @@ describe('ระบบแบบบันทึกข้อมูลการผ�
     localStorage.clear();
   });
 
-  it('มีข้อมูลสื่อเริ่มต้นอย่างน้อย 50 รายการ (ครอบคลุมสื่อสไลด์ Canva, สื่อหลักสูตร และเกมการเรียนรู้ทั้งหมด)', () => {
-    expect(DEFAULT_MEDIA_REPORTS.length).toBeGreaterThanOrEqual(50);
+  it('มีข้อมูลสื่อเริ่มต้นมากกว่า 100 รายการ และมีสื่อจาก Canva ครบ 62 หน้าตามแม่แบบ', () => {
+    expect(DEFAULT_MEDIA_REPORTS.length).toBeGreaterThanOrEqual(100);
+    const canvaItems = DEFAULT_MEDIA_REPORTS.filter((m) => m.category === 'canva-slide');
+    expect(canvaItems.length).toBe(62);
   });
 
   it('มีรายการสื่อเกมสไลด์และโครงงานนวัตกรรมจาก Canva ครบถ้วน', () => {
@@ -63,14 +65,18 @@ describe('ระบบแบบบันทึกข้อมูลการผ�
     expect(plc?.title).toContain('PLC');
   });
 
-  it('ไฟล์รูปภาพสื่อหลักจาก Canva และแบนเนอร์ต้องมีอยู่จริงในโฟลเดอร์ public', () => {
+  it('รายการ Canva ทั้ง 62 หน้าต้องใช้ภาพจริงเฉพาะหน้าที่มีไฟล์อยู่ครบ', () => {
+    const canvaItems = DEFAULT_MEDIA_REPORTS.filter((m) => m.category === 'canva-slide');
+    const imageUrls = canvaItems.map((m) => m.imageUrl);
+
+    expect(imageUrls).toHaveLength(62);
+    expect(new Set(imageUrls).size).toBe(62);
+    imageUrls.forEach((imageUrl, index) => {
+      expect(imageUrl).toBe(`/media/reports/canva/page-${String(index + 1).padStart(2, '0')}.webp`);
+      expect(existsSync(`public${imageUrl}`)).toBe(true);
+    });
+
     expect(existsSync('public/media/reports/banner_kids.png')).toBe(true);
-    expect(existsSync('public/media/reports/photo_robot.png')).toBe(true);
-    expect(existsSync('public/media/reports/photo_chicken.png')).toBe(true);
-    expect(existsSync('public/media/reports/photo_circuit_project.png')).toBe(true);
-    expect(existsSync('public/media/reports/photo_boardgame_ar.png')).toBe(true);
-    expect(existsSync('public/media/reports/photo_pandan_project.png')).toBe(true);
-    expect(existsSync('public/media/reports/photo_plc_activity.png')).toBe(true);
   });
 
   it('ทุกรายการสื่อต้องมี id ไม่ซ้ำกัน และกรอกข้อมูลฟิลด์สำคัญครบถ้วน', () => {

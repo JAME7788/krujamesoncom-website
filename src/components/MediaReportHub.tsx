@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   Printer, Plus, Download, Search, CheckSquare, Square,
-  RotateCcw, Trash2, Edit3, Eye, FileText, X, Check, Image as ImageIcon
+  RotateCcw, Trash2, Edit3, Eye, FileText, X, Check, Image as ImageIcon,
+  Palette
 } from 'lucide-react';
 import {
   type MediaReportItem,
@@ -15,9 +16,11 @@ import './MediaReportHub.css';
 export const MediaReportHub: React.FC = () => {
   const toast = useToast();
   const [items, setItems] = useState<MediaReportItem[]>(() => loadMediaReports());
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(items.map((i) => i.id)));
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(items.filter((i) => i.category === 'canva-slide').map((i) => i.id)),
+  );
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('canva-slide');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [printQueue, setPrintQueue] = useState<MediaReportItem[]>([]);
   const [showSignature, setShowSignature] = useState(true);
@@ -66,6 +69,16 @@ export const MediaReportHub: React.FC = () => {
       return;
     }
     setPrintQueue(items);
+    setIsPrintModalOpen(true);
+  };
+
+  const handlePrintCanvaAll = () => {
+    const canvaItems = items.filter((i) => i.category === 'canva-slide');
+    if (canvaItems.length === 0) {
+      toast.show('ไม่พบรายการสื่อจาก Canva สำหรับสั่งพิมพ์', 'error');
+      return;
+    }
+    setPrintQueue(canvaItems);
     setIsPrintModalOpen(true);
   };
 
@@ -195,11 +208,14 @@ export const MediaReportHub: React.FC = () => {
           <button type="button" className="btn-hub btn-hub-secondary" onClick={handleReset} title="คืนค่าข้อมูลเริ่มต้นตาม Canva">
             <RotateCcw size={16} /> รีเซ็ตแม่แบบ
           </button>
+          <button type="button" className="btn-hub btn-hub-canva" onClick={handlePrintCanvaAll} title="สั่งพิมพ์เอกสารรายงานสไตล์ Canva ทั้งหมด 62 หน้า">
+            <Palette size={16} /> พิมพ์ชุด Canva ({items.filter((i) => i.category === 'canva-slide').length} แผ่น)
+          </button>
           <button type="button" className="btn-hub btn-hub-success" onClick={handlePrintSelected}>
-            <Printer size={16} /> พิมพ์ / บันทึก PDF เฉพาะที่เลือก ({items.filter((i) => selectedIds.has(i.id)).length})
+            <Printer size={16} /> พิมพ์ที่เลือก ({items.filter((i) => selectedIds.has(i.id)).length})
           </button>
           <button type="button" className="btn-hub btn-hub-primary" onClick={handlePrintAll}>
-            <Download size={16} /> พิมพ์ / บันทึก PDF รวมทุกรายการ ({items.length})
+            <Download size={16} /> พิมพ์รวมทั้งหมด ({items.length} แผ่น)
           </button>
         </div>
       </div>
@@ -222,11 +238,11 @@ export const MediaReportHub: React.FC = () => {
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
-            <option value="all">📁 ทุกหมวดหมู่สื่อ ({items.length})</option>
-            <option value="canva-slide">🎨 สื่อเกมสไลด์ทำมือจาก Canva ({items.filter((i) => i.category === 'canva-slide').length})</option>
-            <option value="digital-game">🎮 สื่อนวัตกรรมเกมการเรียนรู้ ({items.filter((i) => i.category === 'digital-game').length})</option>
-            <option value="interactive-slide">📖 สื่อสไลด์บทเรียนอินเทอร์แอคทีฟ ({items.filter((i) => i.category === 'interactive-slide').length})</option>
-            <option value="custom">✏️ สื่อที่กำหนดเอง ({items.filter((i) => i.category === 'custom').length})</option>
+            <option value="all">📁 ทุกหมวดหมู่สื่อทั้งหมด ({items.length} รายการ)</option>
+            <option value="canva-slide">🎨 สื่อเกมสไลด์และรายงานจาก Canva ทั้งหมด ({items.filter((i) => i.category === 'canva-slide').length} แผ่น)</option>
+            <option value="digital-game">🎮 สื่อนวัตกรรมเกมการเรียนรู้ ({items.filter((i) => i.category === 'digital-game').length} รายการ)</option>
+            <option value="interactive-slide">📖 สื่อสไลด์บทเรียนหลักสูตร ({items.filter((i) => i.category === 'interactive-slide').length} รายการ)</option>
+            <option value="custom">✏️ สื่อที่กำหนดเอง ({items.filter((i) => i.category === 'custom').length} รายการ)</option>
           </select>
         </div>
 
