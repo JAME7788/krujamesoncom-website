@@ -592,6 +592,7 @@ const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRe
 );
 
 const P1TechnologyPlan: React.FC = () => {
+  const semesterOnePlanNumbers = useMemo(() => Array.from({ length: 20 }, (_, index) => index + 1), []);
   const [view, setView] = useState<View>('annual');
   const [selectedPlan, setSelectedPlan] = useState(1);
   const [exporting, setExporting] = useState(false);
@@ -601,9 +602,9 @@ const P1TechnologyPlan: React.FC = () => {
     [selectedPlan],
   );
 
-  const downloadWord = (records: LessonRecord[], fileName: string) => {
+  const downloadWord = (records: LessonRecord[], fileName: string, planNumbers?: number[]) => {
     const blob = new Blob(
-      ['\ufeff' + buildP1TechnologyPlanDocumentHtml(records)],
+      ['\ufeff' + buildP1TechnologyPlanDocumentHtml(records, { planNumbers })],
       { type: 'application/msword;charset=utf-8' },
     );
     const url = URL.createObjectURL(blob);
@@ -618,16 +619,24 @@ const P1TechnologyPlan: React.FC = () => {
     setExporting(true);
     try {
       const records = await fetchLessonRecords('ป.1', 'main');
-      downloadWord(records, `แผนพร้อมบันทึกหลังสอน_เทคโนโลยี_ป1_${p1TechnologyCourse.academicYear}.doc`);
+      downloadWord(
+        records,
+        `แผนพร้อมบันทึกหลังสอน_เทคโนโลยี_ป1_ภาคเรียน1_20แผน_${p1TechnologyCourse.academicYear}.doc`,
+        semesterOnePlanNumbers,
+      );
       const latestByPlan = new Map<number, LessonRecord>();
       [...records].sort((a, b) => b.updatedAt - a.updatedAt).forEach((record) => {
         if (!latestByPlan.has(record.planNo)) latestByPlan.set(record.planNo, record);
       });
-      const completed = [...latestByPlan.values()].filter((record) => record.status === 'complete').length;
-      toast.show(`ดาวน์โหลดไฟล์รวม 40 แผนแล้ว · บันทึกสมบูรณ์ ${completed} แผน`, 'success');
+      const completed = semesterOnePlanNumbers.filter((planNo) => latestByPlan.get(planNo)?.status === 'complete').length;
+      toast.show(`ดาวน์โหลดแผนพร้อมบันทึกหลังสอนภาคเรียน 1 ครบ 20 แผนแล้ว · มีผลจริง ${completed} แผน`, 'success');
     } catch (error) {
       const cached = loadLessonRecords();
-      downloadWord(cached, `แผนพร้อมบันทึกหลังสอน_เทคโนโลยี_ป1_${p1TechnologyCourse.academicYear}.doc`);
+      downloadWord(
+        cached,
+        `แผนพร้อมบันทึกหลังสอน_เทคโนโลยี_ป1_ภาคเรียน1_20แผน_${p1TechnologyCourse.academicYear}.doc`,
+        semesterOnePlanNumbers,
+      );
       toast.show(`โหลด Firebase ไม่สำเร็จ จึงใช้บันทึกในเครื่อง: ${error instanceof Error ? error.message : String(error)}`, 'info');
     } finally {
       setExporting(false);
@@ -648,8 +657,8 @@ const P1TechnologyPlan: React.FC = () => {
           <p>{p1TechnologyCourse.school} · ครูผู้สอน {p1TechnologyCourse.teacher}</p>
         </div>
         <div className="p1plan-actions">
-          <button type="button" onClick={() => void downloadCombinedWord()} disabled={exporting} title="รวมแผน 40 แผนกับบันทึกหลังสอนล่าสุดจากระบบ">
-            <Download size={17} /> {exporting ? 'กำลังรวมไฟล์...' : 'ดาวน์โหลดไฟล์รวม'}
+          <button type="button" onClick={() => void downloadCombinedWord()} disabled={exporting} title="รวมแผนภาคเรียน 1 จำนวน 20 แผนกับบันทึกหลังสอนล่าสุดจากระบบ">
+            <Download size={17} /> {exporting ? 'กำลังรวมไฟล์...' : 'ไฟล์รวม 20 แผน'}
           </button>
           <button type="button" onClick={() => window.print()} title="พิมพ์แผนฉบับเต็ม">
             <Printer size={17} /> พิมพ์ฉบับเต็ม
@@ -662,7 +671,7 @@ const P1TechnologyPlan: React.FC = () => {
 
       <div className="p1plan-metrics" aria-label="ข้อมูลสรุปแผน">
         <div><Calendar size={20} /><strong>{p1TechnologyCourse.totalPeriods}</strong><span>คาบตลอดปี</span></div>
-        <div><FileText size={20} /><strong>{p1LessonPlans.length}</strong><span>แผนพร้อมสอน</span></div>
+        <div><FileText size={20} /><strong>20</strong><span>หลังแผนภาคเรียน 1</span></div>
         <div><CheckCircle2 size={20} /><strong>{p1Indicators.length}</strong><span>ตัวชี้วัดครบ</span></div>
         <div><Award size={20} /><strong>100</strong><span>คะแนน K/P/A + สอบ</span></div>
       </div>

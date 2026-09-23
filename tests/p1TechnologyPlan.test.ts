@@ -105,4 +105,37 @@ describe('P.1 hourly technology lesson plans', () => {
     expect(html).toContain(record.nextAction);
     expect(html.match(/ยังไม่มีบันทึกหลังสอนในระบบ/g)).toHaveLength(39);
   });
+
+  it('exports exactly 20 plans for the semester-one combined file', () => {
+    const html = buildP1TechnologyPlanDocumentHtml([], {
+      planNumbers: Array.from({ length: 20 }, (_, index) => index + 1),
+    });
+
+    expect(html.match(/แผนการจัดการเรียนรู้ที่ \d+/g)).toHaveLength(20);
+    expect(html.match(/15\. บันทึกหลังสอน/g)).toHaveLength(20);
+    expect(html).toContain('แผนการจัดการเรียนรู้ที่ 20');
+    expect(html).not.toContain('แผนการจัดการเรียนรู้ที่ 21');
+    expect(html).not.toContain('ภาคเรียนที่ 2 ปีการศึกษา 2569');
+  });
+
+  it('replaces legacy post-teaching placeholders with a K/P/A result narrative', () => {
+    const record: LessonRecord = {
+      id: 'p1-plan-1-hour-1-2026-05-07', classroom: 'ป.1', subject: 'main',
+      courseName: 'เทคโนโลยี (วิทยาการคำนวณ)', planNo: 1, hourNo: 1,
+      teachingDate: '2026-05-07', indicatorCodes: ['ว 4.2 ป.1/1'],
+      snapshot: { present: 11, absent: 0, totalStudents: 11, passed: 11, averageK: 13.2, averageP: 26.3, attitudePassed: 11 },
+      totalStudents: 11, passedCount: 11, failedCount: 0,
+      summary: 'ฉบับร่างหลังแผนจากโปรไฟล์ผู้เรียน ครูต้องตรวจและยืนยันผล K/P/A หลังสอน',
+      strengths: 'ร่างจากโปรไฟล์ความสามารถรายบุคคล รอครูปรับตามหลักฐานที่เกิดขึ้นจริงในคาบ',
+      problems: '', causes: '',
+      improvements: 'ตรวจนักเรียนรายคนจากงาน แบบทดสอบ การปฏิบัติ และพฤติกรรมก่อนยืนยัน',
+      nextAction: 'บันทึกผลจริงทันทีหลังสอนและเปลี่ยนสถานะเป็นสมบูรณ์',
+      teacherName: 'นายอนันตชัย เพ็ชรรี่', status: 'complete', createdAt: 1, updatedAt: 2,
+    };
+
+    const html = buildP1TechnologyPlanDocumentHtml([record], { planNumbers: [1] });
+    expect(html).toContain('ผ่านจุดประสงค์ 11 คน จากทั้งหมด 11 คน');
+    expect(html).not.toContain('ฉบับร่างหลังแผนจากโปรไฟล์ผู้เรียน');
+    expect(html).not.toContain('บันทึกผลจริงทันทีหลังสอน');
+  });
 });

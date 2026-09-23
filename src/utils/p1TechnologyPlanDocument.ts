@@ -6,6 +6,14 @@ import {
 } from '../data/p1TechnologyPlan';
 import type { P1LessonPlan } from '../data/p1TechnologyPlan';
 import type { LessonRecord } from '../services/lessonRecordService';
+import {
+  buildP1PostTeachingDraft,
+  isLegacyPostTeachingText,
+} from './p1PostTeachingDraft';
+
+export interface P1TechnologyPlanDocumentOptions {
+  planNumbers?: number[];
+}
 
 const escapeHtml = (value: string) => value
   .replaceAll('&', '&amp;')
@@ -58,6 +66,23 @@ const rubricDescription = (domain: 'K' | 'P' | 'A', score: 3 | 2 | 1) => {
     : score === 2
       ? 'ปฏิบัติตามข้อตกลงและร่วมกิจกรรมเป็นส่วนใหญ่ เมื่อได้รับคำเตือนเล็กน้อย'
       : 'ปฏิบัติตามข้อตกลงหรือร่วมกิจกรรมได้บางครั้ง และต้องได้รับการดูแล';
+};
+
+const recordForExport = (plan: P1LessonPlan, record?: LessonRecord): LessonRecord | undefined => {
+  if (!record) return undefined;
+  const draft = buildP1PostTeachingDraft(plan, record.snapshot);
+  const resultText = (value: string | undefined, fallback: string) => (
+    isLegacyPostTeachingText(value) ? fallback : value || fallback
+  );
+  return {
+    ...record,
+    summary: resultText(record.summary, draft.summary),
+    strengths: resultText(record.strengths, draft.strengths),
+    problems: resultText(record.problems, draft.problems),
+    causes: resultText(record.causes, draft.causes),
+    improvements: resultText(record.improvements, draft.improvements),
+    nextAction: resultText(record.nextAction, draft.nextAction),
+  };
 };
 
 const postTeachingHtml = (record?: LessonRecord) => {
@@ -115,7 +140,8 @@ const productTable = (plan: P1LessonPlan) => {
 <p><b>เกณฑ์การตัดสินคุณภาพ</b></p><table class="quality-table"><tr><th>ช่วงคะแนน</th><th>ระดับคุณภาพ</th></tr><tr><td>9 - 12</td><td>ดี</td></tr><tr><td>5 - 8</td><td>พอใช้</td></tr><tr><td>1 - 4</td><td>ปรับปรุง</td></tr></table>`;
 };
 
-const planHtml = (plan: P1LessonPlan, record?: LessonRecord) => {
+const planHtml = (plan: P1LessonPlan, sourceRecord?: LessonRecord) => {
+  const record = recordForExport(plan, sourceRecord);
   const unit = p1AnnualUnits.find((item) => item.no === plan.unitNo);
   const semester = plan.no <= 20 ? 1 : 2;
   const indicatorTexts = plan.indicators.map((code) => {
@@ -164,8 +190,15 @@ const latestRecordByPlan = (records: LessonRecord[]) => {
   return result;
 };
 
-export const buildP1TechnologyPlanDocumentHtml = (records: LessonRecord[] = []) => {
+export const buildP1TechnologyPlanDocumentHtml = (
+  records: LessonRecord[] = [],
+  options: P1TechnologyPlanDocumentOptions = {},
+) => {
   const recordsByPlan = latestRecordByPlan(records);
+  const includedPlanNumbers = options.planNumbers ? new Set(options.planNumbers) : undefined;
+  const plans = includedPlanNumbers
+    ? p1LessonPlans.filter((plan) => includedPlanNumbers.has(plan.no))
+    : p1LessonPlans;
   return `<!doctype html><html lang="th"><head><meta charset="utf-8"><title>แผนพร้อมบันทึกหลังสอน เทคโนโลยี ป.1 ปีการศึกษา ${p1TechnologyCourse.academicYear}</title>
 <style>
 @page { size: A4 portrait; margin: 2.54cm; }
@@ -195,5 +228,5 @@ thead { display:table-header-group; } tr { page-break-inside:avoid; }
 .record-table td { text-align:center; vertical-align:middle !important; } .center { text-align:center; }
 .write-line { margin:2pt 0 8pt; } .signature { width:48%; margin:22pt 0 0 auto; text-align:center; }
 .plan { page-break-after:always; } .plan:last-child { page-break-after:auto; }
-</style></head><body>${p1LessonPlans.map((plan) => planHtml(plan, recordsByPlan.get(plan.no))).join('')}</body></html>`;
+</style></head><body>${plans.map((plan) => planHtml(plan, recordsByPlan.get(plan.no))).join('')}</body></html>`;
 };
