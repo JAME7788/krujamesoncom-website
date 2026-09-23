@@ -16,11 +16,9 @@ import './MediaReportHub.css';
 export const MediaReportHub: React.FC = () => {
   const toast = useToast();
   const [items, setItems] = useState<MediaReportItem[]>(() => loadMediaReports());
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    () => new Set(items.filter((i) => i.category === 'canva-slide').map((i) => i.id)),
-  );
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(items.map((i) => i.id)));
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('canva-slide');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [printQueue, setPrintQueue] = useState<MediaReportItem[]>([]);
   const [showSignature, setShowSignature] = useState(true);

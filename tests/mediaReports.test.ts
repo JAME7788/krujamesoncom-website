@@ -79,6 +79,18 @@ describe('ระบบแบบบันทึกข้อมูลการผ�
     expect(existsSync('public/media/reports/banner_kids.png')).toBe(true);
   });
 
+  it('สื่อเกมทั้ง 36 เกมต้องใช้ภาพหน้าจอจริงเฉพาะเกมและมีไฟล์อยู่ครบ', () => {
+    const gameItems = DEFAULT_MEDIA_REPORTS.filter((m) => m.category === 'digital-game');
+    const imageUrls = gameItems.map((m) => m.imageUrl);
+
+    expect(gameItems).toHaveLength(36);
+    expect(new Set(imageUrls).size).toBe(36);
+    imageUrls.forEach((imageUrl) => {
+      expect(imageUrl).toMatch(/^\/media\/reports\/games\/[a-z0-9-]+\.webp$/);
+      expect(existsSync(`public${imageUrl}`)).toBe(true);
+    });
+  });
+
   it('ทุกรายการสื่อต้องมี id ไม่ซ้ำกัน และกรอกข้อมูลฟิลด์สำคัญครบถ้วน', () => {
     const ids = DEFAULT_MEDIA_REPORTS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);

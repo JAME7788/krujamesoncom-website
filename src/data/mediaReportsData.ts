@@ -1191,7 +1191,7 @@ const INTERACTIVE_SLIDE_REPORTS: MediaReportItem[] = [
 ];
 
 // 3. สื่อนวัตกรรมเกมการเรียนรู้ดิจิทัลทั้งหมดจาก gamesCatalog.ts (36 รายการ)
-const GAMES_CATALOG_REPORTS: MediaReportItem[] = gamesCatalog.map((game, index) => {
+const GAMES_CATALOG_REPORTS: MediaReportItem[] = gamesCatalog.map((game) => {
   const gradeText = game.level ? `ระดับชั้น ${game.level}` : 'ทุกระดับชั้น (ป.1 - ม.3)';
 
   let subjectName = 'วิทยาการคำนวณ';
@@ -1200,8 +1200,6 @@ const GAMES_CATALOG_REPORTS: MediaReportItem[] = gamesCatalog.map((game, index) 
   } else if (game.skill?.includes('คำนวณ') || game.skill?.includes('แก้ปัญหา')) {
     subjectName = 'วิทยาการคำนวณ (ทักษะเชิงคำนวณ)';
   }
-
-  const thumb = index % 2 === 0 ? '/media/reports/photo_robot.png' : '/media/reports/photo_chicken.png';
 
   return {
     id: `game-${game.id}`,
@@ -1212,8 +1210,8 @@ const GAMES_CATALOG_REPORTS: MediaReportItem[] = gamesCatalog.map((game, index) 
     subject: subjectName,
     gradeLevel: gradeText,
     schoolName: 'โรงเรียนบ้านคลองมดแดง',
-    imageUrl: thumb,
-    imageAlt: game.title,
+    imageUrl: `/media/reports/games/${game.id}.webp`,
+    imageAlt: `ภาพหน้าจอจริงของเกม ${game.title}`,
     usageInstructions: `ใช้เป็นสื่อนวัตกรรมเกมการเรียนรู้เชิงโต้ตอบ (Gamification) ให้นักเรียนฝึกปฏิบัติผ่านคอมพิวเตอร์หรือแท็บเล็ต: ${game.desc} ช่วยเสริมสร้างแรงจูงใจ ความเข้าใจในแนวคิดวิทยาการคำนวณ และฝึกการแก้ปัญหาแบบมีส่วนร่วม`,
     category: 'digital-game' as const,
     dottedLinesCount: 6,
@@ -1228,7 +1226,7 @@ export const DEFAULT_MEDIA_REPORTS: MediaReportItem[] = [
   ...GAMES_CATALOG_REPORTS,
 ];
 
-const STORAGE_KEY = 'krujames_media_reports_v4';
+const STORAGE_KEY = 'krujames_media_reports_v5';
 
 export const loadMediaReports = (): MediaReportItem[] => {
   try {
@@ -1273,6 +1271,7 @@ export const resetMediaReports = (): MediaReportItem[] => {
       localStorage.removeItem('krujames_media_reports_v1');
       localStorage.removeItem('krujames_media_reports_v2');
       localStorage.removeItem('krujames_media_reports_v3');
+      localStorage.removeItem('krujames_media_reports_v4');
     }
   } catch (e) {
     console.error('Failed to reset media reports in localStorage:', e);
