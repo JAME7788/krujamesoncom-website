@@ -1,0 +1,71 @@
+.technology-plan-hub {
+  display: grid;
+  gap: 1rem;
+}
+
+.technology-plan-hub__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.technology-plan-hub__header h2 {
+  margin: 0 0 0.2rem;
+  color: #172033;
+  font-size: 1.18rem;
+}
+
+.technology-plan-hub__header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.technology-plan-hub__tabs {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.25rem;
+  border-radius: 12px;
+  background: #f1f5f9;
+}
+
+.technology-plan-hub__tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #475569;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.technology-plan-hub__tabs button:hover {
+  background: #fff;
+  color: #172033;
+}
+
+.technology-plan-hub__tabs button.active {
+  background: #f2a900;
+  color: #172033;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+}
+
+@media (max-width: 900px) {
+  .technology-plan-hub__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .technology-plan-hub__tabs {
+    overflow-x: auto;
+  }
+}

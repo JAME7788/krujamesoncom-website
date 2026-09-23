@@ -27,8 +27,7 @@ import ThemeCustomizer from '../components/ThemeCustomizer';
 import LessonLockManager from '../components/LessonLockManager';
 import SlideManager from '../components/SlideManager';
 import VirtualClassroomManager from '../components/VirtualClassroomManager';
-import P1TechnologyPlan from '../components/P1TechnologyPlan';
-import PrimaryTechnologyPlans from '../components/PrimaryTechnologyPlans';
+import TechnologyPlanHub from '../components/TechnologyPlanHub';
 import CoursePlan5 from '../components/CoursePlan5';
 import StudentAssessmentHub from '../components/StudentAssessmentHub';
 import TeacherClassroomHub from '../components/TeacherClassroomHub';
@@ -139,9 +138,8 @@ const NAVIGATION_GROUPS: NavGroup[] = [
       {
         id: 'lesson-plans', label: 'แผนและหลังสอน', icon: <FileText size={16} />,
         items: [
-          { id: 'p1-plan', label: 'แผนเทคโนโลยี ป.1', icon: <FileText size={16} /> },
+          { id: 'p1-plan', label: 'แผนเทคโนโลยีและหลังสอน', icon: <FileText size={16} /> },
           { id: 'teaching-schedule', label: 'กำหนดการสอน ป.1-6', icon: <Calendar size={16} /> },
-          { id: 'course-plan5', label: 'แผนเทคโนโลยีข้อ 5', icon: <FileText size={16} /> },
         ],
       },
       {
@@ -202,6 +200,7 @@ const fmtDateTime = (ts?: number) =>
 
 const getInitialAdminTab = (): Tab => {
   const requested = new URLSearchParams(window.location.search).get('tab') as Tab | null;
+  if (requested === 'course-plan5') return requested;
   const exists = requested && NAVIGATION_GROUPS.some((group) => (
     group.folders.some((folder) => folder.items.some((item) => item.id === requested))
   ));
@@ -941,9 +940,9 @@ const AdminDashboardInner: React.FC = () => {
             )}
 
             {/* TAB: PRIMARY TECHNOLOGY TEACHING PLANS */}
-            {tab === 'p1-plan' && (
+            {(tab === 'p1-plan' || tab === 'course-plan5') && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
-                <P1TechnologyPlan />
+                <TechnologyPlanHub initialView={tab === 'course-plan5' ? 'primary-outcomes' : 'p1-year'} />
               </motion.div>
             )}
 
@@ -951,13 +950,6 @@ const AdminDashboardInner: React.FC = () => {
             {tab === 'teaching-schedule' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
                 <CoursePlan5 />
-              </motion.div>
-            )}
-
-            {/* TAB: COURSE PLAN — LEARNING OUTCOME #5 (ป.1-6) */}
-            {tab === 'course-plan5' && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
-                <PrimaryTechnologyPlans />
               </motion.div>
             )}
 
