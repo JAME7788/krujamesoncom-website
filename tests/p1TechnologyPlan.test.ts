@@ -57,6 +57,8 @@ describe('P.1 hourly technology lesson plans', () => {
     expect(html).toContain('ภาคเรียนที่ 2 ปีการศึกษา 2569');
     expect(html).toContain('เวลา 1 ชั่วโมง');
     expect(html).toContain('วันที่สอน ......./........./...........');
+    expect(html.match(/ผลลัพธ์การเรียนรู้ข้อ 5/g)).toHaveLength(40);
+    expect(html.match(new RegExp(p1TechnologyCourse.learningOutcome5, 'g'))).toHaveLength(40);
     expect(html).toContain('5. รูปแบบการสอน / วิธีการสอน');
     expect(html).toContain('7. ทักษะ 4 Cs');
     expect(html).toContain('11. การวัดและการประเมินผล');

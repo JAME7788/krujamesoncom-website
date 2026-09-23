@@ -130,7 +130,8 @@ const planHtml = (plan: P1LessonPlan, record?: LessonRecord) => {
 <tr><td>เรื่อง ${escapeHtml(plan.title)}</td><td>เวลา ${plan.hours} ชั่วโมง</td></tr>
 <tr><td>ครูผู้สอน ${escapeHtml(p1TechnologyCourse.teacher)}</td><td>วันที่สอน ${displayDate(record?.teachingDate)}</td></tr></table>
 <div class="official-rule"></div>
-<h2>1. มาตรฐานการเรียนรู้/ตัวชี้วัด</h2>
+<h2>1. ผลลัพธ์การเรียนรู้ มาตรฐาน และตัวชี้วัด</h2>
+<p class="indent"><b>ผลลัพธ์การเรียนรู้ข้อ 5</b> ${escapeHtml(p1TechnologyCourse.learningOutcome5)}</p>
 <p class="indent"><b>สาระที่ 4 เทคโนโลยี</b></p>
 <p class="indent"><b>มาตรฐาน ว 4.2</b> เข้าใจและใช้แนวคิดเชิงคำนวณในการแก้ปัญหาที่พบในชีวิตจริงอย่างเป็นขั้นตอนและเป็นระบบ ใช้เทคโนโลยีสารสนเทศและการสื่อสารในการเรียนรู้ การทำงาน และการแก้ปัญหาได้อย่างมีประสิทธิภาพ รู้เท่าทัน และมีจริยธรรม</p>
 ${listHtml(indicatorTexts)}

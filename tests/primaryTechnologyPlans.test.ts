@@ -38,6 +38,8 @@ describe('primary technology course descriptions and official plans', () => {
       expect(html).toContain(`เรื่อง ${plan.title}`);
       expect(html).toContain('ครูผู้สอน');
       expect(html).toContain('วันที่สอน');
+      expect(html).toContain('ผลลัพธ์การเรียนรู้ข้อ 5');
+      expect(html).toContain(plan.mainOutcome);
       expect(html).toContain('5. รูปแบบการสอน / วิธีการสอน');
       expect(html).toContain('12. เกณฑ์การให้คะแนน');
       expect(html).toContain('13. แบบสังเกตพฤติกรรมของนักเรียน');

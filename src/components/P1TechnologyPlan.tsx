@@ -462,7 +462,8 @@ const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRe
     />
 
     <section className="p1plan-section">
-      <h4>1. มาตรฐานการเรียนรู้/ตัวชี้วัด</h4>
+      <h4>1. ผลลัพธ์การเรียนรู้ มาตรฐาน และตัวชี้วัด</h4>
+      <p className="p1plan-standard"><strong>ผลลัพธ์การเรียนรู้ข้อ 5</strong> {p1TechnologyCourse.learningOutcome5}</p>
       <p className="p1plan-standard"><strong>มาตรฐาน ว 4.2</strong> เข้าใจและใช้แนวคิดเชิงคำนวณในการแก้ปัญหาที่พบในชีวิตจริงอย่างเป็นขั้นตอน ใช้เทคโนโลยีสารสนเทศและการสื่อสารในการเรียนรู้ การทำงาน และการแก้ปัญหาได้อย่างมีประสิทธิภาพ รู้เท่าทัน และมีจริยธรรม</p>
       <div className="p1plan-indicator-row">
         {plan.indicators.map((code) => <span key={code}>{code}</span>)}
@@ -685,6 +686,11 @@ const P1TechnologyPlan: React.FC = () => {
               <h3>สมรรถนะที่พัฒนา</h3>
               <ul>{p1TechnologyCourse.competencies.map((item) => <li key={item}>{item}</li>)}</ul>
             </div>
+          </section>
+
+          <section className="p1plan-section">
+            <h3>ผลลัพธ์การเรียนรู้ที่ใช้ร่วมกันทุกแผน</h3>
+            <p className="p1plan-standard"><strong>ข้อ 5</strong> {p1TechnologyCourse.learningOutcome5}</p>
           </section>
 
           <section className="p1plan-section">

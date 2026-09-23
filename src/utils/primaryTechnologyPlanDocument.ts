@@ -60,7 +60,7 @@ th { background:#e7e7e7; text-align:center; vertical-align:middle; } thead { dis
 <p>เรื่อง ${escapeHtml(plan.title)}</p><p>เวลา 4 ชั่วโมง</p>
 <p>ครูผู้สอน ${escapeHtml(COURSE_TEACHER_NAME)}</p><p>วันที่สอน ......./........./...........</p>
 </div><div class="official-rule"></div>
-<h2>1. มาตรฐานการเรียนรู้/ตัวชี้วัด</h2><p class="indent"><b>สาระที่ 4 เทคโนโลยี</b></p><p class="indent"><b>มาตรฐาน ว 4.2</b> เข้าใจและใช้แนวคิดเชิงคำนวณในการแก้ปัญหาที่พบในชีวิตจริงอย่างเป็นขั้นตอนและเป็นระบบ ใช้เทคโนโลยีสารสนเทศและการสื่อสารในการเรียนรู้ การทำงาน และการแก้ปัญหาได้อย่างมีประสิทธิภาพ รู้เท่าทัน และมีจริยธรรม</p>${listHtml(plan.subIndicators.map((item) => `${item.code} ${item.description}`))}
+<h2>1. ผลลัพธ์การเรียนรู้ มาตรฐาน และตัวชี้วัด</h2><p class="indent"><b>ผลลัพธ์การเรียนรู้ข้อ 5</b> ${escapeHtml(plan.mainOutcome)}</p><p class="indent"><b>สาระที่ 4 เทคโนโลยี</b></p><p class="indent"><b>มาตรฐาน ว 4.2</b> เข้าใจและใช้แนวคิดเชิงคำนวณในการแก้ปัญหาที่พบในชีวิตจริงอย่างเป็นขั้นตอนและเป็นระบบ ใช้เทคโนโลยีสารสนเทศและการสื่อสารในการเรียนรู้ การทำงาน และการแก้ปัญหาได้อย่างมีประสิทธิภาพ รู้เท่าทัน และมีจริยธรรม</p>${listHtml(plan.subIndicators.map((item) => `${item.code} ${item.description}`))}
 <h2>2. สาระสำคัญ</h2><p class="indent">${escapeHtml(plan.concept)}</p><p class="indent">${escapeHtml(courseDescription)}</p>
 <h2>3. จุดประสงค์การเรียนรู้</h2><h3>3.1 ด้านพุทธิพิสัย (K)</h3><p class="objective">3.1.1 ${escapeHtml(plan.objectives.k)}</p><h3>3.2 ด้านทักษะพิสัย (P)</h3><p class="objective">3.2.1 ${escapeHtml(plan.objectives.p)}</p><h3>3.3 ด้านจิตพิสัย (A)</h3><p class="objective">3.3.1 ${escapeHtml(plan.objectives.a)}</p>
 <h2>4. สาระการเรียนรู้</h2>${listHtml(plan.content)}

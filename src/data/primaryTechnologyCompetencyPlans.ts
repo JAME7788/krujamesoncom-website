@@ -1,3 +1,5 @@
+import { MAIN_OUTCOME_5 } from './technologyLearningOutcomes';
+
 export type PrimaryGrade = 'ป.1' | 'ป.2' | 'ป.3' | 'ป.4' | 'ป.5' | 'ป.6';
 
 export interface SubIndicator {
@@ -40,7 +42,7 @@ export interface PrimaryTechnologyCompetencyPlan {
   quiz: QuizItem[];
 }
 
-export const MAIN_OUTCOME_5 = 'ผู้เรียนสามารถค้นหา คัดเลือก และจัดการข้อมูลจากแหล่งข้อมูลหรือโดยใช้เทคโนโลยีพื้นฐาน เพื่อนำมาใช้ในการเรียนรู้หรือสนับสนุนการอธิบายปรากฏการณ์ได้อย่างเหมาะสม';
+export { MAIN_OUTCOME_5 } from './technologyLearningOutcomes';
 
 export const technologyCompetencyCriteria = [
   'เลือกใช้เทคโนโลยีได้อย่างเหมาะสมกับวัยและงาน',
