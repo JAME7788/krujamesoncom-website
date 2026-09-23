@@ -1,11 +1,7 @@
 import { trackMediaClick } from './progressService';
 import {
-  cacheGradesLocally,
   ensureStudentGrade,
-  fetchClassroomFromFirebase,
-  loadGrades,
   syncFromProgress,
-  upsertStudentGradeToFirebase,
   getLinkedUnitsForSubject,
 } from './gradeService';
 import type { Subject } from './gradeService';
@@ -59,7 +55,6 @@ export type GameProgressId =
   | 'stroop-color'
   | 'space-treasure'
   | 'cyber-cop'
-  | 'krucom-arcade'
   | 'flowchart-bingo';
 
 type StudentLike = {
@@ -246,10 +241,6 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
   if (normalizedGameId === 'cyber-cop') {
     return [isPrimary ? primaryDigitalUnit(classroom) : middleCodingUnit(classroom)];
   }
-  // อาร์เคดภารกิจครูคอม 100+ ด่าน
-  if (normalizedGameId === 'krucom-arcade') {
-    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleCodingUnit(classroom)];
-  }
   // บิงโกสัญลักษณ์ผังงาน
   if (normalizedGameId === 'flowchart-bingo') {
     return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
@@ -276,7 +267,6 @@ const subjectsForClassroom = (
   return getActiveSubjectsForClassroom(classroom, settings);
 };
 
-const hydratedGradebooks = new Set<string>();
 
 export const buildGameProgressDedupKey = (gameTitle: string, activityKey?: string): string => {
   const normalizedActivityKey = activityKey?.trim().replace(/\s+/g, '-').slice(0, 120);
@@ -291,15 +281,8 @@ export const syncStudentGradesFromProgress = async (
   settings: CourseAccessSettings = getCourseAccessSettings(),
 ): Promise<void> => {
   await Promise.all(subjectsForClassroom(student.classroom, settings).map(async (subject) => {
-    const gradebookKey = `${student.classroom}_${subject}`;
-    if (!hydratedGradebooks.has(gradebookKey)) {
-      const remote = await fetchClassroomFromFirebase(student.classroom, subject);
-      if (remote) cacheGradesLocally(student.classroom, remote, subject);
-      hydratedGradebooks.add(gradebookKey);
-    }
-
     const rosterStudent = loadRoster(student.classroom).find((entry) => (
-      entry.no === Number(student.studentNumber) || entry.name === student.name
+      entry.no === Number(student.studentNumber) && entry.name.replace(/\s/g, '') === student.name.replace(/\s/g, '')
     ));
     const grade = ensureStudentGrade(student.classroom, {
       studentCode: rosterStudent?.studentCode || student.id,
@@ -315,15 +298,9 @@ export const syncStudentGradesFromProgress = async (
       subject,
       'local',
     );
-    // A previous attempt may have updated the local grade but failed remotely.
-    // Always confirm the student row on retry, even when local values match.
+    // Progress and learningEvidence have already been acknowledged by Firebase.
+    // Official grade documents are teacher-only; this is a local preview.
 
-    const updated = loadGrades(student.classroom, subject).find((entry) => (
-      entry.studentCode === grade.studentCode
-    ));
-    if (updated) {
-      await upsertStudentGradeToFirebase(student.classroom, updated, subject);
-    }
   }));
 };
 
@@ -390,7 +367,7 @@ export const recordGameProgress = async (
         const evidenceBase = {
           studentId: student.id,
           studentCode: loadRoster(student.classroom).find((entry) => (
-            entry.no === Number(student.studentNumber) || entry.name === student.name
+            entry.no === Number(student.studentNumber) && entry.name.replace(/\s/g, '') === student.name.replace(/\s/g, '')
           ))?.studentCode,
           studentName: student.name,
           classroom: student.classroom,

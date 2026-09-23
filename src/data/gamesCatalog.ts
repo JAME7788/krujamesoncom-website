@@ -362,16 +362,6 @@ export const gamesCatalog: GameInfo[] = [
     path: '/games/cyber-cop',
   },
   {
-    id: 'krucom-arcade',
-    title: '🕹️ อาร์เคดภารกิจครูคอม 100+ ด่าน (Kru-Com Arcade)',
-    desc: 'คลังเกมภารกิจกว่า 100+ ด่าน ครอบคลุมสื่อและใบงานทั้งหมดจาก Google Sheets พร้อมโหมดคัดแยก จับคู่ เรียงลำดับ และควิซสืบสวน',
-    emoji: '🕹️',
-    level: 'ป.1-ม.3',
-    skill: 'วิทยาการคำนวณรอบด้าน/100+ภารกิจ',
-    color: '#f59e0b',
-    path: '/games/krucom-arcade',
-  },
-  {
     id: 'flowchart-bingo',
     title: '🎯 บิงโกสัญลักษณ์ผังงาน (Flowchart Bingo)',
     desc: 'ประยุกต์จากบอร์ดเกมผังงานวิทยาการคำนวณ ฝึกทักษะการจำแนกสัญลักษณ์ผังงานและหน้าที่ผ่านกติกาเกมบิงโกสุดเร้าใจ',

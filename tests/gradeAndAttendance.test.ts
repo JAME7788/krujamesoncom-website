@@ -94,7 +94,7 @@ beforeEach(() => {
 });
 
 describe('ระบบคำนวณเกรด K/P/A', () => {
-  it('ประถม: คะแนนเต็มทุกตัวชี้วัดและปลายภาคต้องรวมได้ 100 และเกรด 4', () => {
+  it('ประถม: คะแนนเต็มเทอมละ 50 และยังไม่ตัดเกรดทั้งปี', () => {
     const grade = makeStudentGrade();
     Object.values(grade.indicators).forEach((score) => {
       score.k = 15;
@@ -109,12 +109,12 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
     grade.finalExam = 30;
 
     const result = computeBreakdown(grade, 'ป.1');
-    expect(result.collected).toBe(70);
-    expect(result.exam).toBe(30);
+    expect(result.collected).toBe(35);
+    expect(result.exam).toBe(15);
     expect(result.midterm).toBe(0);
-    expect(result.final).toBe(30);
-    expect(result.total).toBe(100);
-    expect(computeGrade(grade, 'ป.1')).toBe('4');
+    expect(result.final).toBe(15);
+    expect(result.total).toBe(50);
+    expect(computeGrade(grade, 'ป.1')).toBe('รอผลทั้งปี');
   });
 
   it('ประถม: ไม่ใช้คะแนนกลางภาค แม้มีข้อมูลเก่าค้างอยู่', () => {
@@ -126,7 +126,7 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
     expect(result.exam).toBe(0);
   });
 
-  it('ต้อง cap คะแนน K/P และคะแนนสอบ ไม่ให้คะแนนรวมเกิน 100', () => {
+  it('ต้อง cap คะแนน K/P และคะแนนสอบ ไม่ให้คะแนนประถมรวมเกิน 50', () => {
     const grade = makeStudentGrade();
     Object.values(grade.indicators).forEach((score) => {
       score.k = 999;
@@ -140,7 +140,7 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
     grade.midtermExam = 999;
     grade.finalExam = 999;
 
-    expect(computeBreakdown(grade, 'ป.1').total).toBe(100);
+    expect(computeBreakdown(grade, 'ป.1').total).toBe(50);
   });
 
   it('P และ A ที่ยังไม่ประเมินต้องไม่ถูกนำไปคิดคะแนน', () => {
@@ -347,8 +347,9 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
     const first = syncAllFromProgress('ป.1');
     const grades = loadGrades('ป.1');
     expect(first.studentsUpdated).toBe(2);
-    expect(grades[0].indicators[indicator.id].webK).toBe(12);
-    expect(grades[1].indicators[indicator.id].webK).toBe(9);
+    expect(grades.find(s => s.studentCode === 'student-1')?.indicators[indicator.id].webK).toBe(12);
+    expect(grades.find(s => s.studentCode === 'student-2')?.indicators[indicator.id].webK).toBe(9);
+    expect(grades.filter(s => !s.studentCode.startsWith('student-')).every(s => !s.indicators[indicator.id].webK)).toBe(true);
 
     const second = syncAllFromProgress('ป.1');
     expect(second.studentsUpdated).toBe(0);

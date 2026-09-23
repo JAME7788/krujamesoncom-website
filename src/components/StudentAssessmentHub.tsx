@@ -395,7 +395,7 @@ const StudentAssessmentHub: React.FC = () => {
   const changeAssessment = useCallback((updater: (current: ClassroomAssessment) => ClassroomAssessment) => {
     dirtyRef.current = true;
     setSaveState('idle');
-    setAssessment((current) => current ? updater(current) : current);
+    setAssessment((current) => current ? { ...updater(current), ...(current.kind !== 'post-lesson' ? { confirmedByTeacher: false, provisional: true } : {}) } : current);
   }, []);
 
   const updateEntry = useCallback((
@@ -578,6 +578,16 @@ const StudentAssessmentHub: React.FC = () => {
         >
           <Save size={16} /> บันทึกทันที
         </button>
+        {assessment && ['desirable-attributes', 'competencies', 'literacy'].includes(kind) && (
+          <button type="button" className="sah-button primary" disabled={saveState === 'saving'} onClick={() => {
+            const incomplete = roster.some(student => {
+              const result = calculateAssessmentResult(kind, assessment.entries[student.studentCode]?.scores ?? {});
+              return result.completed !== result.categoryCount;
+            });
+            if (incomplete) { showToast('ยังประเมินไม่ครบทุกหัวข้อของนักเรียนในห้อง', 'error'); return; }
+            void persist({ ...assessment, confirmedByTeacher: true, provisional: false, meta: { ...assessment.meta, status: 'complete' } });
+          }}>ยืนยันผลเพื่อใช้ในรายงาน</button>
+        )}
       </div>
 
       <nav className="sah-tabs" aria-label="เลือกแบบประเมิน">

@@ -18,21 +18,57 @@ const HomeworkStudent: React.FC = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [contentUrl, setContentUrl] = useState('');
   const [comment, setComment] = useState('');
-  const [syncing, setSyncing] = useState(true);
+  const [loadingAssignments, setLoadingAssignments] = useState(true);
+  const [usingCachedAssignments, setUsingCachedAssignments] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [, setDataVersion] = useState(0);
+
+  // A link and note belong to one assignment. Clear them whenever the dialog
+  // changes so a student's previous work cannot be submitted to another task.
+  const openSubmission = (assignment: Assignment) => {
+    setContentUrl('');
+    setComment('');
+    setSelected(assignment);
+  };
+
+  const closeSubmission = () => {
+    setSelected(null);
+    setContentUrl('');
+    setComment('');
+  };
 
   useEffect(() => {
     if (!isScoreEligibleUser(user)) return;
     let cancelled = false;
+    // Firestore can remain pending for a long time when the school connection is
+    // unstable. Show cached assignments so students can still open the form.
+    const fallback = window.setTimeout(() => {
+      if (cancelled) return;
+      setAssignments(getAssignmentsForStudent(user.classroom));
+      setDataVersion((version) => version + 1);
+      setUsingCachedAssignments(true);
+      setLoadingAssignments(false);
+    }, 5000);
     Promise.all([fetchAssignmentsFromFirebase(), fetchSubmissionsFromFirebase()])
       .then(() => {
         if (!cancelled) {
           setAssignments(getAssignmentsForStudent(user.classroom));
           setDataVersion((version) => version + 1);
+          setUsingCachedAssignments(false);
         }
       })
-      .finally(() => { if (!cancelled) setSyncing(false); });
-    return () => { cancelled = true; };
+      .catch((error) => {
+        console.warn('load homework failed, using local cache', error);
+        if (!cancelled) {
+          setAssignments(getAssignmentsForStudent(user.classroom));
+          setUsingCachedAssignments(true);
+        }
+      })
+      .finally(() => {
+        window.clearTimeout(fallback);
+        if (!cancelled) setLoadingAssignments(false);
+      });
+    return () => { cancelled = true; window.clearTimeout(fallback); };
   }, [user]);
 
   if (!user) {
@@ -55,8 +91,12 @@ const HomeworkStudent: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!selected) return;
-    if (!/^https?:\/\//i.test(contentUrl.trim())) {
-      alert('กรุณาใส่ลิงก์ผลงานที่ขึ้นต้นด้วย http:// หรือ https://');
+    let validUrl = false;
+    try {
+      validUrl = ['http:', 'https:'].includes(new URL(contentUrl.trim()).protocol);
+    } catch { /* Invalid link. */ }
+    if (!validUrl) {
+      alert('กรุณาใส่ลิงก์ผลงานที่ถูกต้องและขึ้นต้นด้วย http:// หรือ https://');
       return;
     }
     setSyncing(true);
@@ -89,9 +129,7 @@ const HomeworkStudent: React.FC = () => {
       }
       setDataVersion((version) => version + 1);
       alert(progressSaved ? 'ส่งงานสำเร็จ ✓ +5 XP' : 'ส่งงานสำเร็จ แต่ยังบันทึก XP ไม่สำเร็จ กรุณาแจ้งครู');
-      setSelected(null);
-      setContentUrl('');
-      setComment('');
+      closeSubmission();
     } catch (error) {
       console.error(error);
       alert('ส่งงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
@@ -104,8 +142,13 @@ const HomeworkStudent: React.FC = () => {
     <div className="container section-padding" style={{ paddingTop: '6rem' }}>
       <h1>📝 งานที่ครูสั่ง</h1>
       <p style={{ color: '#6b7280' }}>รายการการบ้านของชั้น {user.classroom}</p>
+      {usingCachedAssignments && (
+        <p role="status" style={{ color: '#92400e', background: '#fef3c7', padding: '8px 12px', borderRadius: 8 }}>
+          กำลังแสดงรายการที่บันทึกไว้ในเครื่อง ข้อมูลออนไลน์อาจยังไม่ล่าสุด
+        </p>
+      )}
 
-      {syncing && assignments.length === 0 ? (
+      {loadingAssignments && assignments.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>กำลังดึงงานจากฐานข้อมูล...</div>
       ) : assignments.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
@@ -161,7 +204,7 @@ const HomeworkStudent: React.FC = () => {
                         <AlertCircle size={16} style={{ verticalAlign: 'middle' }} /> เกินกำหนด
                       </div>
                     ) : (
-                      <button onClick={() => setSelected(a)} className="btn-primary">
+                      <button onClick={() => openSubmission(a)} className="btn-primary">
                         <Upload size={14} /> ส่งงาน
                       </button>
                     )}
@@ -179,7 +222,7 @@ const HomeworkStudent: React.FC = () => {
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
           zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '1rem',
-        }} onClick={() => setSelected(null)}>
+        }} onClick={() => { if (!syncing) closeSubmission(); }}>
           <div className="card" style={{ width: '100%', maxWidth: 500, background: 'white' }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ marginTop: 0 }}>{selected.title}</h2>
             <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>{selected.description}</p>
@@ -205,7 +248,7 @@ const HomeworkStudent: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-              <button onClick={() => setSelected(null)} className="btn-secondary">ยกเลิก</button>
+              <button onClick={closeSubmission} className="btn-secondary" disabled={syncing}>ยกเลิก</button>
               <button onClick={() => void handleSubmit()} className="btn-primary" disabled={syncing}>
                 {syncing ? 'กำลังส่ง...' : 'ส่งงาน'}
               </button>

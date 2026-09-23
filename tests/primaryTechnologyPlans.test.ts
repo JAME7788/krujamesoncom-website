@@ -38,7 +38,12 @@ describe('primary technology course descriptions and official plans', () => {
       expect(html).toContain(`เรื่อง ${plan.title}`);
       expect(html).toContain('ครูผู้สอน');
       expect(html).toContain('วันที่สอน');
-      expect(html).toContain('คำอธิบายรายวิชาเทคโนโลยี');
+      expect(html).toContain('5. รูปแบบการสอน / วิธีการสอน');
+      expect(html).toContain('12. เกณฑ์การให้คะแนน');
+      expect(html).toContain('13. แบบสังเกตพฤติกรรมของนักเรียน');
+      expect(html).toContain('14. แบบประเมินใบงานและชิ้นงาน');
+      expect(html).toContain('15. บันทึกหลังสอน');
+      expect(html).toContain('font-family:"TH SarabunPSK"');
     });
   });
 });

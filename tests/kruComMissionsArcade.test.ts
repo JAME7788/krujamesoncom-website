@@ -81,10 +81,9 @@ describe('Kru-Com 100+ Missions Arcade System', () => {
     });
   });
 
-  it('verifies integration with gamesCatalog and gameLessons', () => {
+  it('keeps synthesized sheet missions out of the public game catalog', () => {
     const arcadeEntry = gamesCatalog.find((g) => g.id === 'krucom-arcade');
-    expect(arcadeEntry).toBeDefined();
-    expect(arcadeEntry?.path).toBe('/games/krucom-arcade');
+    expect(arcadeEntry).toBeUndefined();
 
     const spaceEntry = gamesCatalog.find((g) => g.id === 'space-treasure');
     expect(spaceEntry).toBeDefined();
@@ -96,13 +95,10 @@ describe('Kru-Com 100+ Missions Arcade System', () => {
     expect(bingoEntry).toBeDefined();
     expect(bingoEntry?.path).toBe('/games/flowchart-bingo');
 
-    expect(gameLessons['krucom-arcade']).toBeDefined();
+    expect(gameLessons['krucom-arcade']).toBeUndefined();
     expect(gameLessons['space-treasure']).toBeDefined();
     expect(gameLessons['cyber-cop']).toBeDefined();
     expect(gameLessons['flowchart-bingo']).toBeDefined();
-
-    const arcadeUnits = getGameTargetUnits('krucom-arcade', 'ป.4/1');
-    expect(arcadeUnits.length).toBeGreaterThan(0);
 
     const bingoUnits = getGameTargetUnits('flowchart-bingo', 'ป.4/1');
     expect(bingoUnits.length).toBeGreaterThan(0);

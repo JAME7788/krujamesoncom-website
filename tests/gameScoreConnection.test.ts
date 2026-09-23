@@ -101,11 +101,12 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('game -> progress -> evidence -> teacher grades', () => {
-  it('saves the true 20/40 result and practice evidence to the teacher grade row', async () => {
+  it('saves game evidence and local preview without accessing teacher-only grades', async () => {
     expect((await save(20, 40)).saved).toBe(1);
     expect(documents('learningEvidence')).toHaveLength(2);
     expect(documents('learningEvidence').every((item) => item.score === 20 && item.maxScore === 40)).toBe(true);
-    const rows = documents('grades')[0].students as StudentGrade[];
+    expect(documents('grades')).toHaveLength(0);
+    const rows = loadGrades(student.classroom);
     expect(rows.find((row) => row.studentNo === 901)?.indicators).toBeDefined();
     expect(Object.values(rows.find((row) => row.studentNo === 901)!.indicators).some((item) => item.webPScore === 3)).toBe(true);
   });
@@ -147,12 +148,12 @@ describe('game -> progress -> evidence -> teacher grades', () => {
     expect(getProgress(student.id).totalActivities).toBe(1);
   });
 
-  it('retry repairs a failed grade write even when the local grade already matches', async () => {
-    backend.failCollection = 'grades'; backend.failures = 1;
-    await expect(save()).rejects.toThrow();
+  it('games still save when official grade writes are forbidden', async () => {
+    backend.failCollection = 'grades'; backend.failures = 100;
+    await save();
     expect(documents('grades')).toHaveLength(0);
     await save();
-    expect(documents('grades')).toHaveLength(1);
+    expect(documents('grades')).toHaveLength(0);
     expect(getProgress(student.id).totalActivities).toBe(1);
   });
 
@@ -211,7 +212,9 @@ describe('game -> progress -> evidence -> teacher grades', () => {
 
   it('a student sync cannot overwrite newer teacher edits or another student', async () => {
     await save();
-    const [path, data] = [...backend.docs].find(([key]) => key.startsWith('grades/'))!;
+    const path = `grades/${student.classroom}`;
+    const data = { students: loadGrades(student.classroom).filter(row => row.studentNo === 901) };
+    backend.docs.set(path, data);
     const existing = structuredClone((data.students as StudentGrade[])[0]);
     const indicatorId = Object.keys(existing.indicators)[0];
     const remote = { ...existing, finalExam: 12, comment: 'Teacher verified' };

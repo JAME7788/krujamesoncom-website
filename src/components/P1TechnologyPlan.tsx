@@ -593,22 +593,49 @@ const PlanDetail = ({ plan, allowRecord = false }: { plan: P1LessonPlan; allowRe
 const P1TechnologyPlan: React.FC = () => {
   const [view, setView] = useState<View>('annual');
   const [selectedPlan, setSelectedPlan] = useState(1);
+  const [exporting, setExporting] = useState(false);
+  const toast = useToast();
   const plan = useMemo(
     () => p1LessonPlans.find((item) => item.no === selectedPlan) || p1LessonPlans[0],
     [selectedPlan],
   );
 
-  const downloadWord = () => {
+  const downloadWord = (records: LessonRecord[], fileName: string) => {
     const blob = new Blob(
-      ['\ufeff' + buildP1TechnologyPlanDocumentHtml()],
+      ['\ufeff' + buildP1TechnologyPlanDocumentHtml(records)],
       { type: 'application/msword;charset=utf-8' },
     );
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'แผนเทคโนโลยี_ป1_40แผน_ปี2569.doc';
+    link.download = fileName;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const downloadCombinedWord = async () => {
+    setExporting(true);
+    try {
+      const records = await fetchLessonRecords('ป.1', 'main');
+      downloadWord(records, `แผนพร้อมบันทึกหลังสอน_เทคโนโลยี_ป1_${p1TechnologyCourse.academicYear}.doc`);
+      const latestByPlan = new Map<number, LessonRecord>();
+      [...records].sort((a, b) => b.updatedAt - a.updatedAt).forEach((record) => {
+        if (!latestByPlan.has(record.planNo)) latestByPlan.set(record.planNo, record);
+      });
+      const completed = [...latestByPlan.values()].filter((record) => record.status === 'complete').length;
+      toast.show(`ดาวน์โหลดไฟล์รวม 40 แผนแล้ว · บันทึกสมบูรณ์ ${completed} แผน`, 'success');
+    } catch (error) {
+      const cached = loadLessonRecords();
+      downloadWord(cached, `แผนพร้อมบันทึกหลังสอน_เทคโนโลยี_ป1_${p1TechnologyCourse.academicYear}.doc`);
+      toast.show(`โหลด Firebase ไม่สำเร็จ จึงใช้บันทึกในเครื่อง: ${error instanceof Error ? error.message : String(error)}`, 'info');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const downloadPlansOnly = () => {
+    downloadWord([], `แผนเทคโนโลยี_ป1_40แผน_${p1TechnologyCourse.academicYear}.doc`);
+    toast.show('ดาวน์โหลดแผนพร้อมแบบบันทึกเปล่า 40 แผนแล้ว', 'success');
   };
 
   return (
@@ -620,11 +647,14 @@ const P1TechnologyPlan: React.FC = () => {
           <p>{p1TechnologyCourse.school} · ครูผู้สอน {p1TechnologyCourse.teacher}</p>
         </div>
         <div className="p1plan-actions">
+          <button type="button" onClick={() => void downloadCombinedWord()} disabled={exporting} title="รวมแผน 40 แผนกับบันทึกหลังสอนล่าสุดจากระบบ">
+            <Download size={17} /> {exporting ? 'กำลังรวมไฟล์...' : 'ดาวน์โหลดไฟล์รวม'}
+          </button>
           <button type="button" onClick={() => window.print()} title="พิมพ์แผนฉบับเต็ม">
             <Printer size={17} /> พิมพ์ฉบับเต็ม
           </button>
-          <button type="button" onClick={downloadWord} title="ดาวน์โหลดแผน 40 ชั่วโมงเป็นไฟล์ Word">
-            <Download size={17} /> ดาวน์โหลด Word
+          <button type="button" onClick={downloadPlansOnly} title="ดาวน์โหลดแผนพร้อมแบบบันทึกหลังสอนเปล่า">
+            <FileText size={17} /> แบบฟอร์มเปล่า
           </button>
         </div>
       </header>

@@ -8,7 +8,7 @@ import {
   downloadClassroomExcelFile,
   downloadClassroomCsvFile,
 } from '../services/gradeExportService';
-import { examMaxScores } from '../services/gradeService';
+import { examMaxScores, getGradingPolicy } from '../services/gradeService';
 
 interface OfficialPp5PrintLayoutProps {
   summary: ClassroomExportSummary;
@@ -20,6 +20,7 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
   onClose,
 }) => {
   const exam = examMaxScores(summary.classroom);
+  const weights = getGradingPolicy(summary.classroom);
 
   const handlePrint = () => {
     window.print();
@@ -78,7 +79,7 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
             <div><strong>กลุ่มสาระการเรียนรู้:</strong> วิทยาศาสตร์และเทคโนโลยี</div>
             <div><strong>รายวิชา:</strong> {summary.subjectTitle} ({summary.subjectCode})</div>
             <div><strong>ระดับชั้น:</strong> {summary.classroom}</div>
-            <div><strong>ปีการศึกษา:</strong> {summary.academicYear}</div>
+            <div><strong>ภาคเรียน/ปีการศึกษา:</strong> {summary.term}/{summary.academicYear}</div>
             <div><strong>ครูผู้สอน:</strong> {summary.teacherName}</div>
             <div><strong>สังกัด:</strong> {summary.affiliation}</div>
           </div>
@@ -100,8 +101,8 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
                 <th colSpan={4} className="w-col-total">คะแนนเก็บ</th>
                 {exam.midterm > 0 && <th rowSpan={2} className="w-exam">กลางภาค<br/>({exam.midterm})</th>}
                 <th rowSpan={2} className="w-exam">ปลายภาค<br/>({exam.final})</th>
-                <th rowSpan={2} className="w-exam">รวมสอบ<br/>(30)</th>
-                <th rowSpan={2} className="w-total">รวม<br/>(100)</th>
+                <th rowSpan={2} className="w-exam">รวมสอบ<br/>({weights.EXAM})</th>
+                <th rowSpan={2} className="w-total">รวม<br/>({weights.TOTAL})</th>
                 <th rowSpan={2} className="w-grade">เกรด</th>
                 <th rowSpan={2} className="w-eval">ผล</th>
               </tr>
@@ -113,10 +114,10 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
                     <th className="sub-th">A</th>
                   </React.Fragment>
                 ))}
-                <th className="sub-th">K (42)</th>
-                <th className="sub-th">P (17.5)</th>
-                <th className="sub-th">A (10.5)</th>
-                <th className="sub-th">รวม (70)</th>
+                <th className="sub-th">K ({weights.COLLECTED * weights.K_RATIO})</th>
+                <th className="sub-th">P ({weights.COLLECTED * weights.P_RATIO})</th>
+                <th className="sub-th">A ({weights.COLLECTED * weights.A_RATIO})</th>
+                <th className="sub-th">รวม ({weights.COLLECTED})</th>
               </tr>
             </thead>
             <tbody>

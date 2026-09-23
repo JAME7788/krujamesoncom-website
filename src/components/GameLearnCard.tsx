@@ -27,22 +27,12 @@ const darken = (hex: string, amount = 0.42) => {
   return `rgb(${ch[0]}, ${ch[1]}, ${ch[2]})`;
 };
 
-/**
- * การ์ด "เรียนก่อนเล่น" — เปิดอัตโนมัติครั้งแรกที่เด็กเข้าเกม
- * เลือกความลึกของเนื้อหาตามระดับชั้นของนักเรียนโดยอัตโนมัติ
- */
+/** บทเรียนประกอบเกม เปิดได้จากปุ่มโดยไม่ขวางปุ่มเริ่มเล่น */
 const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
   const { user } = useAuth();
   const lesson = gameLessons[gameKey];
-  const seenKey = `kj_lesson_seen_${gameKey}`;
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [open, setOpen] = useState(() => {
-    try {
-      return localStorage.getItem(seenKey) !== '1';
-    } catch {
-      return true;
-    }
-  });
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!open || !lesson) return undefined;
@@ -54,7 +44,7 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
       dialog?.close();
       document.body.style.overflow = previousOverflow;
     };
-  }, [open, seenKey, lesson]);
+  }, [open, lesson]);
 
   if (!lesson) return null;
 
@@ -63,7 +53,6 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
 
   const close = () => {
     setOpen(false);
-    try { localStorage.setItem(seenKey, '1'); } catch { /* ignore */ }
   };
 
   const themeVars = {

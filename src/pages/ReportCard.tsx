@@ -4,7 +4,7 @@ import { Printer, ChevronLeft, GraduationCap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
   loadGrades, getIndicators, computeBreakdown, computeGrade,
-  getSubjectsForClassroom, examMaxScores, SCORE_WEIGHT,
+  getSubjectsForClassroom, examMaxScores, getGradingPolicy,
   fetchClassroomFromFirebase, cacheGradesLocally, COURSE_TEACHER_NAME,
   getGradingPeriodLabel, getExamPolicyLabel,
 } from '../services/gradeService';
@@ -28,6 +28,7 @@ const ReportCard: React.FC = () => {
       setLoadingGrades(true);
       try {
         const subjects = getSubjectsForClassroom(user.classroom);
+
         let updated = false;
         for (const subj of subjects) {
           const remoteGrades = await fetchClassroomFromFirebase(user.classroom, subj.id);
@@ -76,6 +77,7 @@ const ReportCard: React.FC = () => {
   }
 
   const subjects = getSubjectsForClassroom(user.classroom);
+  const SCORE_WEIGHT = getGradingPolicy(user.classroom);
 
   const findMyGrade = (subject: Subject) => {
     // Reference localGradesVersion to satisfy TypeScript compile checks and trigger updates
@@ -191,34 +193,34 @@ const ReportCard: React.FC = () => {
               <table className="rc-summary-table">
                 <tbody>
                   <tr>
-                    <td>คะแนน K (ความรู้, จาก 40)</td>
-                    <td className="rc-num">{breakdown.k.toFixed(1)}</td>
+                    <td>คะแนน K (ความรู้, จาก {SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.K_RATIO})</td>
+                    <td className="rc-num">{breakdown.k.toFixed(2)}</td>
                   </tr>
                   <tr>
-                    <td>คะแนน P (ทักษะ, จาก 20)</td>
-                    <td className="rc-num">{breakdown.p.toFixed(1)}</td>
+                    <td>คะแนน P (ทักษะ, จาก {SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.P_RATIO})</td>
+                    <td className="rc-num">{breakdown.p.toFixed(2)}</td>
                   </tr>
                   <tr>
-                    <td>คะแนน A (จิตพิสัย, จาก 10)</td>
-                    <td className="rc-num">{breakdown.a.toFixed(1)}</td>
+                    <td>คะแนน A (จิตพิสัย, จาก {SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.A_RATIO})</td>
+                    <td className="rc-num">{breakdown.a.toFixed(2)}</td>
                   </tr>
                   <tr className="rc-subtotal">
                     <td><strong>รวมคะแนนเก็บ (จาก {SCORE_WEIGHT.COLLECTED})</strong></td>
-                    <td className="rc-num"><strong>{breakdown.collected.toFixed(1)}</strong></td>
+                    <td className="rc-num"><strong>{breakdown.collected.toFixed(2)}</strong></td>
                   </tr>
                   {exam.midterm > 0 && (
                     <tr>
                       <td>สอบกลางภาค (จาก {exam.midterm})</td>
-                      <td className="rc-num">{breakdown.midterm}</td>
+                      <td className="rc-num">{grade.midtermExam === undefined ? 'ยังไม่กรอก' : breakdown.midterm}</td>
                     </tr>
                   )}
                   <tr>
                     <td>สอบปลายภาค (จาก {exam.final})</td>
-                    <td className="rc-num">{breakdown.final}</td>
+                    <td className="rc-num">{grade.finalExam === undefined ? 'ยังไม่กรอก' : breakdown.final}</td>
                   </tr>
                   <tr className="rc-total">
-                    <td><strong>คะแนนรวม (จาก 100)</strong></td>
-                    <td className="rc-num"><strong>{breakdown.total.toFixed(1)}</strong></td>
+                    <td><strong>คะแนนรวม (จาก {SCORE_WEIGHT.TOTAL})</strong></td>
+                    <td className="rc-num"><strong>{breakdown.total.toFixed(2)}</strong></td>
                   </tr>
                   <tr className="rc-grade">
                     <td><strong>เกรด</strong></td>

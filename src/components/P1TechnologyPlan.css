@@ -69,6 +69,11 @@
   color: #0f766e;
 }
 
+.p1plan-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .p1plan-actions button:first-child {
   background: #0f766e;
   border-color: #0f766e;

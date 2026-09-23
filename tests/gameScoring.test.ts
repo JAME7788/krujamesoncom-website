@@ -57,7 +57,7 @@ describe('ระบบคะแนน — การผูกเกมเข้�
   });
 
   it('ห้องย่อยใช้หลักสูตรระดับเดียวกัน ไม่สร้าง gradeId เช่น p4/1', () => {
-    expect(getGameTargetUnits('krucom-arcade', 'ป.4/1')).toEqual(getGameTargetUnits('krucom-arcade', 'ป.4'));
+    expect(getGameTargetUnits('flowchart-bingo', 'ป.4/1')).toEqual(getGameTargetUnits('flowchart-bingo', 'ป.4'));
     expect(getGameTargetUnits('quick-answer', 'ม.1/2')).toEqual(getGameTargetUnits('quick-answer', 'ม.1'));
   });
 

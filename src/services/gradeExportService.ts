@@ -1,3 +1,4 @@
+import { getConfirmedAssessmentScore } from './studentAssessmentService';
 /**
  * บริการส่งออกผลการเรียนและสถิติวัดผลทางการ (Grade Export & Statistics Service)
  * สำหรับโรงเรียนบ้านคลองมดแดง สพป.กำแพงเพชร เขต 2
@@ -11,9 +12,9 @@
 
 import {
   loadGrades, getIndicators, computeBreakdown, computeGrade,
-  examMaxScores, COURSE_TEACHER_NAME, ACADEMIC_YEAR,
+  examMaxScores, COURSE_TEACHER_NAME, getCurrentAcademicYear, getCurrentTerm,
   type Subject, type IndicatorDef,
-  getSubjectsForClassroom,
+  getSubjectsForClassroom, getGradingPolicy, getFinalExamScore,
 } from './gradeService';
 import { allClassrooms2569 } from '../data/students2569';
 import { loadRoster } from './rosterService';
@@ -60,16 +61,16 @@ export interface StudentExportRow {
   collectedP: number;
   collectedA: number;
   totalCollected: number;
-  midtermExam: number;
-  finalExam: number;
+  midtermExam: number | '';
+  finalExam: number | '';
   totalExam: number;
   totalScore: number;
   grade: string;
   isPassed: boolean;
-  evaluationText: 'ผ่าน' | 'ไม่ผ่าน';
-  characteristicsScore: 3 | 2 | 1 | 0; // คุณลักษณะอันพึงประสงค์ (3=ดีเยี่ยม, 2=ดี, 1=ผ่าน, 0=ไม่ผ่าน)
-  competencyScore: 3 | 2 | 1 | 0;      // สมรรถนะสำคัญ
-  readingThinkingScore: 3 | 2 | 1 | 0; // อ่าน คิดวิเคราะห์ และเขียน
+  evaluationText: 'ผ่าน' | 'ไม่ผ่าน' | 'รอผลทั้งปี' | 'คะแนนยังไม่ครบ';
+  characteristicsScore: 3 | 2 | 1 | 0 | null; // คุณลักษณะอันพึงประสงค์ (3=ดีเยี่ยม, 2=ดี, 1=ผ่าน, 0=ไม่ผ่าน)
+  competencyScore: 3 | 2 | 1 | 0 | null;      // สมรรถนะสำคัญ
+  readingThinkingScore: 3 | 2 | 1 | 0 | null; // อ่าน คิดวิเคราะห์ และเขียน
 }
 
 export interface ClassroomExportSummary {
@@ -82,6 +83,7 @@ export interface ClassroomExportSummary {
   affiliation: string;
   directorName: string;
   academicYear: string;
+  term: string;
   indicators: IndicatorDef[];
   rows: StudentExportRow[];
   stats: GradeStatistics;
@@ -165,7 +167,7 @@ export const calculateGradeStatistics = (
   const qualityCount = gradeCounts['4'] + gradeCounts['3.5'] + gradeCounts['3'];
   const qualityPercentage = Math.round((qualityCount / totalStudents) * 1000) / 10;
 
-  const passCount = totalStudents - gradeCounts['0'];
+  const passCount = gradeCounts['1'] + gradeCounts['1.5'] + gradeCounts['2'] + gradeCounts['2.5'] + gradeCounts['3'] + gradeCounts['3.5'] + gradeCounts['4'];
   const passPercentage = Math.round((passCount / totalStudents) * 1000) / 10;
 
   const failCount = gradeCounts['0'];
@@ -181,7 +183,7 @@ export const calculateGradeStatistics = (
 
   return {
     totalStudents,
-    evaluatedStudents: totalStudents,
+    evaluatedStudents: Object.values(gradeCounts).reduce((sum, count) => sum + count, 0),
     gradeCounts,
     gradePercentages,
     qualityCount,
@@ -232,7 +234,7 @@ export const getClassroomExportSummary = (
     const { prefix, firstName, lastName } = parseThaiName(g.name);
     const b = computeBreakdown(g, classroom, subject);
     const grade = computeGrade(g, classroom, subject);
-    const isPassed = grade !== '0';
+    const isPassed = ['1', '1.5', '2', '2.5', '3', '3.5', '4'].includes(grade);
 
     const indicatorScores: Record<string, { k: number; p: string; a: boolean }> = {};
     indicators.forEach((ind) => {
@@ -244,28 +246,9 @@ export const getClassroomExportSummary = (
       };
     });
 
-    // คุณลักษณะอันพึงประสงค์ & สมรรถนะ คำนวณจากสัดส่วน A และคะแนนรวม
-    const aPassedRatio = indicators.length > 0
-      ? indicators.filter((ind) => g.indicators[ind.id]?.a).length / indicators.length
-      : 1;
-
-    let characteristicsScore: 3 | 2 | 1 | 0 = 3;
-    if (aPassedRatio >= 0.8) characteristicsScore = 3;
-    else if (aPassedRatio >= 0.6) characteristicsScore = 2;
-    else if (aPassedRatio >= 0.4) characteristicsScore = 1;
-    else characteristicsScore = 0;
-
-    let competencyScore: 3 | 2 | 1 | 0 = 3;
-    if (b.total >= 70) competencyScore = 3;
-    else if (b.total >= 60) competencyScore = 2;
-    else if (b.total >= 50) competencyScore = 1;
-    else competencyScore = 0;
-
-    let readingThinkingScore: 3 | 2 | 1 | 0 = 3;
-    if (b.total >= 75) readingThinkingScore = 3;
-    else if (b.total >= 65) readingThinkingScore = 2;
-    else if (b.total >= 50) readingThinkingScore = 1;
-    else readingThinkingScore = 0;
+    const characteristicsScore = getConfirmedAssessmentScore(classroom, getCurrentAcademicYear(), getCurrentTerm(), 'desirable-attributes', g.studentCode);
+    const competencyScore = getConfirmedAssessmentScore(classroom, getCurrentAcademicYear(), getCurrentTerm(), 'competencies', g.studentCode);
+    const readingThinkingScore = getConfirmedAssessmentScore(classroom, getCurrentAcademicYear(), getCurrentTerm(), 'literacy', g.studentCode);
 
     return {
       studentNo: g.studentNo,
@@ -282,13 +265,13 @@ export const getClassroomExportSummary = (
       collectedP: b.p,
       collectedA: b.a,
       totalCollected: b.collected,
-      midtermExam: b.midterm,
-      finalExam: b.final,
+      midtermExam: g.midtermExam === undefined ? '' : b.midterm,
+      finalExam: getFinalExamScore(g, classroom) ?? '',
       totalExam: b.exam,
       totalScore: b.total,
       grade,
       isPassed,
-      evaluationText: isPassed ? 'ผ่าน' : 'ไม่ผ่าน',
+      evaluationText: grade === 'รอผลทั้งปี' || grade === 'คะแนนยังไม่ครบ' ? grade : isPassed ? 'ผ่าน' : 'ไม่ผ่าน',
       characteristicsScore,
       competencyScore,
       readingThinkingScore,
@@ -309,7 +292,8 @@ export const getClassroomExportSummary = (
     schoolName: SCHOOL_NAME,
     affiliation: SCHOOL_AFFILIATION,
     directorName: SCHOOL_DIRECTOR_NAME,
-    academicYear: ACADEMIC_YEAR,
+    academicYear: getCurrentAcademicYear(),
+    term: getCurrentTerm(),
     indicators,
     rows,
     stats,
@@ -320,9 +304,10 @@ export const getClassroomExportSummary = (
 export const generateClassroomCsv = (classroom: string, subject: Subject = 'main'): string => {
   const summary = getClassroomExportSummary(classroom, subject);
   const exam = examMaxScores(classroom);
+  const weights = getGradingPolicy(classroom);
 
   let csv = `แบบบันทึกผลการพัฒนาคุณภาพผู้เรียน (ปพ.5) - ${SCHOOL_NAME}\n`;
-  csv += `กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี รายวิชา ${summary.subjectTitle} (${summary.subjectCode}) ชั้น ${classroom} ปีการศึกษา ${ACADEMIC_YEAR}\n`;
+  csv += `กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี รายวิชา ${summary.subjectTitle} (${summary.subjectCode}) ชั้น ${classroom} ภาคเรียนที่ ${summary.term} ปีการศึกษา ${summary.academicYear}\n`;
   csv += `ครูผู้สอน: ${COURSE_TEACHER_NAME} | ผู้อำนวยการ: ${SCHOOL_DIRECTOR_NAME}\n\n`;
 
   // Header row
@@ -330,9 +315,9 @@ export const generateClassroomCsv = (classroom: string, subject: Subject = 'main
   summary.indicators.forEach((ind) => {
     header += `,"${ind.code} (K)","${ind.code} (P)","${ind.code} (A)"`;
   });
-  header += ',รวม K (42),รวม P (17.5),รวม A (10.5),คะแนนเก็บ (70)';
+  header += `,รวม K (${weights.COLLECTED * weights.K_RATIO}),รวม P (${weights.COLLECTED * weights.P_RATIO}),รวม A (${weights.COLLECTED * weights.A_RATIO}),คะแนนเก็บ (${weights.COLLECTED})`;
   if (exam.midterm > 0) header += `,สอบกลางภาค (${exam.midterm})`;
-  header += `,สอบปลายภาค (${exam.final}),คะแนนสอบ (30),คะแนนรวม (100),ผลการเรียน,ผลการประเมิน,คุณลักษณะฯ,อ่านคิดฯ,สมรรถนะ\n`;
+  header += `,สอบปลายภาค (${exam.final}),คะแนนสอบ (${weights.EXAM}),คะแนนรวม (${weights.TOTAL}),ผลการเรียน,ผลการประเมิน,คุณลักษณะฯ,อ่านคิดฯ,สมรรถนะ\n`;
 
   csv += header;
 
@@ -344,7 +329,7 @@ export const generateClassroomCsv = (classroom: string, subject: Subject = 'main
     });
     row += `,${r.collectedK},${r.collectedP},${r.collectedA},${r.totalCollected}`;
     if (exam.midterm > 0) row += `,${r.midtermExam}`;
-    row += `,${r.finalExam},${r.totalExam},${r.totalScore},${r.grade},"${r.evaluationText}",${r.characteristicsScore},${r.readingThinkingScore},${r.competencyScore}\n`;
+    row += `,${r.finalExam},${r.totalExam},${r.totalScore},${r.grade},"${r.evaluationText}",${r.characteristicsScore ?? ''},${r.readingThinkingScore ?? ''},${r.competencyScore ?? ''}\n`;
     csv += row;
   });
 
@@ -368,15 +353,15 @@ export const generateClassroomCsv = (classroom: string, subject: Subject = 'main
 /** สร้าง Master CSV รวมทุกห้อง ป.1 - ม.3 ทั้ง 111 คน */
 export const generateMasterAllClassroomsCsv = (): string => {
   let csv = `ทะเบียนสรุปผลการเรียนรวมทุกระดับชั้น (Master Grade Sheet) - ${SCHOOL_NAME}\n`;
-  csv += `ปีการศึกษา ${ACADEMIC_YEAR} | ข้อมูลรวม 9 ห้องเรียน 111 คน | ครูผู้สอน: ${COURSE_TEACHER_NAME}\n\n`;
-  csv += 'ระดับชั้น,วิชา,รหัสวิชา,เลขที่,รหัสนักเรียน,คำนำหน้า,ชื่อ,นามสกุล,ชื่อ-สกุล,คะแนนเก็บ K,คะแนนเก็บ P,คะแนนเก็บ A,รวมคะแนนเก็บ (70),สอบกลางภาค,สอบปลายภาค,รวมคะแนนสอบ (30),คะแนนรวม (100),ระดับผลการเรียน,ผลการตัดสิน,คุณลักษณะฯ,อ่านคิดเขียน,สมรรถนะ\n';
+  csv += `ปีการศึกษา ${getCurrentAcademicYear()} ภาคเรียนที่ ${getCurrentTerm()} | ข้อมูลรวม 9 ห้องเรียน 111 คน | ครูผู้สอน: ${COURSE_TEACHER_NAME}\n\n`;
+  csv += 'ระดับชั้น,วิชา,รหัสวิชา,เลขที่,รหัสนักเรียน,คำนำหน้า,ชื่อ,นามสกุล,ชื่อ-สกุล,คะแนนเก็บ K,คะแนนเก็บ P,คะแนนเก็บ A,รวมคะแนนเก็บ,สอบกลางภาค,สอบปลายภาค,รวมคะแนนสอบ,คะแนนรวม,ระดับผลการเรียน,ผลการตัดสิน,คุณลักษณะฯ,อ่านคิดเขียน,สมรรถนะ,คะแนนเต็ม,ปีการศึกษา,ภาคเรียน,รุ่นเกณฑ์\n';
 
   allClassrooms2569.forEach((cls) => {
     const subjects = getSubjectsForClassroom(cls);
     subjects.forEach((subj) => {
       const summary = getClassroomExportSummary(cls, subj.id);
       summary.rows.forEach((r) => {
-        csv += `"${cls}","${summary.subjectTitle}","${summary.subjectCode}",${r.studentNo},"${r.studentCode}","${r.prefix}","${r.firstName}","${r.lastName}","${r.fullName}",${r.collectedK},${r.collectedP},${r.collectedA},${r.totalCollected},${r.midtermExam},${r.finalExam},${r.totalExam},${r.totalScore},${r.grade},"${r.evaluationText}",${r.characteristicsScore},${r.readingThinkingScore},${r.competencyScore}\n`;
+        csv += `"${cls}","${summary.subjectTitle}","${summary.subjectCode}",${r.studentNo},"${r.studentCode}","${r.prefix}","${r.firstName}","${r.lastName}","${r.fullName}",${r.collectedK},${r.collectedP},${r.collectedA},${r.totalCollected},${r.midtermExam},${r.finalExam},${r.totalExam},${r.totalScore},${r.grade},"${r.evaluationText}",${r.characteristicsScore ?? ''},${r.readingThinkingScore ?? ''},${r.competencyScore ?? ''},${getGradingPolicy(cls).TOTAL},${summary.academicYear},${summary.term},${getGradingPolicy(cls).version}\n`;
       });
     });
   });
@@ -387,10 +372,15 @@ export const generateMasterAllClassroomsCsv = (): string => {
 /** สร้างไฟล์รูปแบบที่ตรงตามระบบทะเบียน SchoolMIS / SGS */
 export const generateSchoolMisCsv = (classroom: string, subject: Subject = 'main'): string => {
   const summary = getClassroomExportSummary(classroom, subject);
+  const incomplete = summary.rows.filter(row => !['0', '1', '1.5', '2', '2.5', '3', '3.5', '4'].includes(row.grade)
+    || row.characteristicsScore === null || row.competencyScore === null || row.readingThinkingScore === null);
+  if (!summary.rows.length || incomplete.length) {
+    throw new Error(`ยังส่ง SchoolMIS ไม่ได้: ${incomplete.length} คนมีคะแนน/ผลทั้งปีไม่ครบ หรือแบบประเมินยังไม่ยืนยัน`);
+  }
   let csv = 'รหัสประจำตัว,เลขที่,คำนำหน้า,ชื่อ,นามสกุล,คะแนนเก็บ,คะแนนกลางภาค,คะแนนปลายภาค,คะแนนรวม,เกรด,คุณลักษณะ,อ่านคิดวิเคราะห์,สมรรถนะ\n';
 
   summary.rows.forEach((r) => {
-    csv += `"${r.studentCode}",${r.studentNo},"${r.prefix}","${r.firstName}","${r.lastName}",${r.totalCollected},${r.midtermExam},${r.finalExam},${r.totalScore},${r.grade},${r.characteristicsScore},${r.readingThinkingScore},${r.competencyScore}\n`;
+    csv += `"${r.studentCode}",${r.studentNo},"${r.prefix}","${r.firstName}","${r.lastName}",${r.totalCollected},${r.midtermExam},${r.finalExam},${r.totalScore},${r.grade},${r.characteristicsScore ?? ''},${r.readingThinkingScore ?? ''},${r.competencyScore ?? ''}\n`;
   });
 
   return csv;
@@ -403,6 +393,7 @@ export const generateSchoolMisCsv = (classroom: string, subject: Subject = 'main
 export const generateExcelHtml = (classroom: string, subject: Subject = 'main'): string => {
   const summary = getClassroomExportSummary(classroom, subject);
   const exam = examMaxScores(classroom);
+  const weights = getGradingPolicy(classroom);
 
   const html = `
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -425,7 +416,7 @@ export const generateExcelHtml = (classroom: string, subject: Subject = 'main'):
 <body>
 <table>
   <tr><td colspan="${summary.indicators.length * 3 + 12}" class="header-title">${SCHOOL_NAME}</td></tr>
-  <tr><td colspan="${summary.indicators.length * 3 + 12}" class="header-sub">แบบบันทึกผลการเรียนรายวิชา (ปพ.5) ปีการศึกษา ${ACADEMIC_YEAR}</td></tr>
+  <tr><td colspan="${summary.indicators.length * 3 + 12}" class="header-sub">แบบบันทึกผลการเรียนรายวิชา (ปพ.5) ภาคเรียนที่ ${summary.term} ปีการศึกษา ${summary.academicYear}</td></tr>
   <tr><td colspan="${summary.indicators.length * 3 + 12}" class="header-sub">กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี รายวิชา ${summary.subjectTitle} (${summary.subjectCode}) ชั้น ${classroom}</td></tr>
   <tr><td colspan="${summary.indicators.length * 3 + 12}" class="header-sub">ครูผู้สอน: ${COURSE_TEACHER_NAME} | สังกัด: ${SCHOOL_AFFILIATION}</td></tr>
   <tr><td colspan="${summary.indicators.length * 3 + 12}" style="border:none; height:15px;"></td></tr>
@@ -439,17 +430,17 @@ export const generateExcelHtml = (classroom: string, subject: Subject = 'main'):
       <th colspan="4">คะแนนเก็บ</th>
       ${exam.midterm > 0 ? `<th rowspan="2">กลางภาค<br>(${exam.midterm})</th>` : ''}
       <th rowspan="2">ปลายภาค<br>(${exam.final})</th>
-      <th rowspan="2">รวมสอบ<br>(30)</th>
-      <th rowspan="2">รวมทั้งสิ้น<br>(100)</th>
+      <th rowspan="2">รวมสอบ<br>(${weights.EXAM})</th>
+      <th rowspan="2">รวมทั้งสิ้น<br>(${weights.TOTAL})</th>
       <th rowspan="2">ผลการเรียน<br>(เกรด)</th>
       <th rowspan="2">ผลการตัดสิน</th>
     </tr>
     <tr>
       ${summary.indicators.map(() => '<th>K</th><th>P</th><th>A</th>').join('')}
-      <th>K (42)</th>
-      <th>P (17.5)</th>
-      <th>A (10.5)</th>
-      <th>รวม (70)</th>
+      <th>K (${weights.COLLECTED * weights.K_RATIO})</th>
+      <th>P (${weights.COLLECTED * weights.P_RATIO})</th>
+      <th>A (${weights.COLLECTED * weights.A_RATIO})</th>
+      <th>รวม (${weights.COLLECTED})</th>
     </tr>
   </thead>
   <tbody>
@@ -567,22 +558,22 @@ export const downloadFile = (content: string, filename: string, mimeType: string
 export const downloadClassroomCsvFile = (classroom: string, subject: Subject = 'main') => {
   const csv = generateClassroomCsv(classroom, subject);
   const subjLabel = subject === 'cs' ? '_วิทยาการคำนวณ' : subject === 'dt' ? '_ออกแบบ' : '';
-  downloadFile('\uFEFF' + csv, `ปพ5_คะแนน_${classroom}${subjLabel}_${ACADEMIC_YEAR}.csv`, 'text/csv;charset=utf-8');
+  downloadFile('\uFEFF' + csv, `ปพ5_คะแนน_${classroom}${subjLabel}_${getCurrentAcademicYear()}_ท${getCurrentTerm()}.csv`, 'text/csv;charset=utf-8');
 };
 
 export const downloadMasterCsvFile = () => {
   const csv = generateMasterAllClassroomsCsv();
-  downloadFile('\uFEFF' + csv, `Master_สรุปคะแนนทุกห้อง_ป1-ม3_${ACADEMIC_YEAR}.csv`, 'text/csv;charset=utf-8');
+  downloadFile('\uFEFF' + csv, `Master_สรุปคะแนนทุกห้อง_ป1-ม3_${getCurrentAcademicYear()}_ท${getCurrentTerm()}.csv`, 'text/csv;charset=utf-8');
 };
 
 export const downloadSchoolMisCsvFile = (classroom: string, subject: Subject = 'main') => {
   const csv = generateSchoolMisCsv(classroom, subject);
   const subjLabel = subject === 'cs' ? '_CS' : subject === 'dt' ? '_DT' : '';
-  downloadFile('\uFEFF' + csv, `SchoolMIS_${classroom}${subjLabel}_${ACADEMIC_YEAR}.csv`, 'text/csv;charset=utf-8');
+  downloadFile('\uFEFF' + csv, `SchoolMIS_${classroom}${subjLabel}_${getCurrentAcademicYear()}_ท${getCurrentTerm()}.csv`, 'text/csv;charset=utf-8');
 };
 
 export const downloadClassroomExcelFile = (classroom: string, subject: Subject = 'main') => {
   const html = generateExcelHtml(classroom, subject);
   const subjLabel = subject === 'cs' ? '_วิทยาการคำนวณ' : subject === 'dt' ? '_ออกแบบ' : '';
-  downloadFile(html, `ปพ5_${classroom}${subjLabel}_${ACADEMIC_YEAR}.xls`, 'application/vnd.ms-excel;charset=utf-8');
+  downloadFile(html, `ปพ5_${classroom}${subjLabel}_${getCurrentAcademicYear()}_ท${getCurrentTerm()}.xls`, 'application/vnd.ms-excel;charset=utf-8');
 };

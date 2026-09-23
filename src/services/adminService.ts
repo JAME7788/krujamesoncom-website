@@ -37,7 +37,7 @@ const firebaseAvailable = (): boolean => {
 };
 
 /** ดึงข้อมูลนักเรียนทั้งหมดจาก Firebase + local progress */
-export const fetchAllStudents = async (): Promise<StudentRecord[]> => {
+export const fetchAllStudents = async (onError?: (error: unknown) => void): Promise<StudentRecord[]> => {
   const records: Record<string, StudentRecord> = {};
 
   // 1) จาก Firebase students collection
@@ -74,7 +74,10 @@ export const fetchAllStudents = async (): Promise<StudentRecord[]> => {
       });
     } catch (e) {
       console.warn('Firebase fetch failed', e);
+      onError?.(e);
     }
+  } else {
+    onError?.(new Error('Firebase is not configured'));
   }
 
   // (online-only mode — ไม่ต้องเสริมจาก localStorage แล้ว Firebase ดึงครบหมด)

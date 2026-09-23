@@ -1,3 +1,13 @@
+import { requireTeacherGradeAccess } from './teacherGradeAccess';
+import { PersistentSaveQueue } from './persistentSaveQueue';
+import { getGradingPolicy, GRADING_POLICY_VERSION } from './gradingPolicy';
+import {
+  getActiveGradingPeriod,
+  gradingPeriodKey,
+  isLegacyDefaultPeriod,
+  type GradingPeriod,
+} from './gradingPeriodService';
+export { getGradingPolicy } from './gradingPolicy';
 // ระบบเก็บคะแนน K/P/A ต่อตัวชี้วัด — เลียนแบบไฟล์ Excel "คมด.เก็บคะแนนV.2 2568"
 //
 // โครงสร้าง:
@@ -40,6 +50,8 @@ const skillFromPracticeScore = (score: number): Skill => {
   return 'พอใช้';
 };
 export const ACADEMIC_YEAR = '2569';
+export const getCurrentAcademicYear = () => getActiveGradingPeriod().academicYear;
+export const getCurrentTerm = () => getActiveGradingPeriod().term;
 export const COURSE_TEACHER_NAME = 'นายอนันตชัย เพ็ชรรี่';
 
 export interface IndicatorScore {
@@ -48,6 +60,7 @@ export interface IndicatorScore {
   webK?: number;    // คะแนนอัตโนมัติจากควิซ/กิจกรรมในเว็บ
   manualK?: number; // คะแนนที่คำนวณจากการบ้าน/งานเพิ่มเติม
   teacherK?: number;// คะแนน K ที่ครูใส่ตรง
+  teacherKUpdatedAt?: number; // เก็บไว้แม้ล้าง teacherK เพื่อไม่ให้สำเนาเก่าคืนคะแนน
   pScore?: number;        // คะแนนปฏิบัติรวมที่ใช้จริง 0-30
   webPScore?: number;     // คะแนนปฏิบัติอัตโนมัติจากการใช้เว็บ
   manualPScore?: number;  // คะแนนปฏิบัติจากการบ้าน/งานเพิ่มเติม
@@ -83,46 +96,57 @@ export interface StudentGrade {
   indicators: Record<string, IndicatorScore>;  // key = indicator id เช่น 'cs_p1_1'
   midtermExam?: number;      // คะแนนสอบกลางภาค (ถ้ามี)
   finalExam?: number;        // คะแนนสอบปลายภาค (เต็ม 30)
+  midtermExamUpdatedAt?: number;
+  finalExamUpdatedAt?: number;
+  finalExamMax?: number; // Legacy scores were entered out of 30. Preserve their original scale.
+  gradingPolicyVersion?: string;
   comment?: string;
   updatedAt: number;
 }
 
 /** คะแนนเต็มของสอบ */
 export const examMaxScores = (classroom: string): { midterm: number; final: number } => {
-  if (classroom.startsWith('ป.')) {
-    return { midterm: 0, final: 30 };
-  }
-  if (classroom.startsWith('ม.')) {
-    return { midterm: 0, final: 30 };
-  }
-  return { midterm: 0, final: 0 };
+  const policy = getGradingPolicy(classroom);
+  return { midterm: policy.MIDTERM, final: policy.FINAL };
+};
+
+/** Read legacy /30 scores on the approved scale without rewriting raw stored marks. */
+export const getFinalExamScore = (grade: StudentGrade, classroom: string): number | undefined => {
+  if (grade.finalExam === undefined || !Number.isFinite(grade.finalExam)) return undefined;
+  const maximum = getGradingPolicy(classroom).FINAL;
+  const sourceMaximum = grade.finalExamMax && grade.finalExamMax > 0 ? grade.finalExamMax : 30;
+  return Math.round(Math.max(0, Math.min(maximum, grade.finalExam / sourceMaximum * maximum)) * 100) / 100;
 };
 
 export const getGradingPeriodLabel = (classroom: string): string => {
-  if (classroom.startsWith('ป.')) return `ปีการศึกษา ${ACADEMIC_YEAR} (ประถม: ใช้ปลายภาคของแต่ละเทอม ไม่มีกลางภาค)`;
-  if (classroom.startsWith('ม.')) return `ภาคเรียนที่ 1 ปีการศึกษา ${ACADEMIC_YEAR} (มัธยม: 1 เทอม 1 เกรด)`;
-  return `ปีการศึกษา ${ACADEMIC_YEAR}`;
+  const period = getActiveGradingPeriod();
+  if (classroom.startsWith('ป.')) return `ภาคเรียนที่ ${period.term} ปีการศึกษา ${period.academicYear} (ประถม: เทอมละ 50 คะแนน รอรวมสองเทอมเพื่อตัดเกรดทั้งปี)`;
+  if (classroom.startsWith('ม.')) return `ภาคเรียนที่ ${period.term} ปีการศึกษา ${period.academicYear} (มัธยม: 1 เทอม 1 เกรด)`;
+  return `ปีการศึกษา ${period.academicYear}`;
 };
 
 export const getExamPolicyLabel = (classroom: string): string => {
   const exam = examMaxScores(classroom);
   if (classroom.startsWith('ป.')) {
-    return `ประถม: ไม่มีสอบกลางภาคในสมุดคะแนน ใช้คะแนนสอบปลายภาคของเทอม ${exam.final} คะแนน`;
+    return `ประถม: คะแนนเก็บ 35 + ปลายภาค ${exam.final} = 50 คะแนนต่อเทอม`;
   }
   if (classroom.startsWith('ม.')) {
-    return `มัธยม: คะแนนเก็บ 70 คะแนน + คะแนนสอบปลายภาค ${exam.final} คะแนน (รวม 100 คะแนน)`;
+    return `มัธยม: คะแนนเก็บ 55 + กลางภาค ${exam.midterm} + ปลายภาค ${exam.final} คะแนน (รวม 100 คะแนน)`;
   }
   return '';
 };
 
 const KEY_PREFIX = 'krujames_grades_v1_';
-const storageKey = (classroom: string, subject: Subject = 'main') => {
+const legacyStorageKey = (classroom: string, subject: Subject = 'main') => {
   // สำหรับ ม.X แยก storage key ตามวิชา
   if (classroom.startsWith('ม.') && subject !== 'main') {
     return `${KEY_PREFIX}${classroom}_${subject}`;
   }
   return `${KEY_PREFIX}${classroom}`;
 };
+const storageKey = (classroom: string, subject: Subject = 'main') => (
+  `${KEY_PREFIX}${gradingPeriodKey()}_${classroom}_${subject}`
+);
 
 // ---------- Indicators per classroom ----------
 
@@ -285,8 +309,6 @@ export const ensureStudentGrade = (
   const grades = loadGrades(classroom, subject);
   const existing = grades.find((grade) => (
     grade.studentCode === student.studentCode
-    || grade.studentNo === student.studentNo
-    || grade.name === student.name
   ));
   if (existing) {
     existing.studentNo = student.studentNo;
@@ -318,7 +340,8 @@ export const ensureStudentGrade = (
 
 export const loadGrades = (classroom: string, subject: Subject = 'main'): StudentGrade[] => {
   try {
-    const raw = localStorage.getItem(storageKey(classroom, subject));
+    const raw = localStorage.getItem(storageKey(classroom, subject))
+      ?? (isLegacyDefaultPeriod() ? localStorage.getItem(legacyStorageKey(classroom, subject)) : null);
     if (!raw) return [];
     const grades = JSON.parse(raw) as StudentGrade[];
     const parsedGrades: StudentGrade[] = grades.map((grade) => ({
@@ -341,11 +364,6 @@ export const loadGrades = (classroom: string, subject: Subject = 'main'): Studen
 
     if (parsedGrades.length === 0) {
       return [];
-    }
-
-    // Auto-heal: If ป.1 has leftover mock finalExam scores (28/26/22), automatically restore real baseline
-    if (classroom === 'ป.1' && parsedGrades.some((g) => g.finalExam === 28 && g.indicators[getIndicators('ป.1')[0]?.id]?.k === 15)) {
-      return restoreRealP1Grades();
     }
 
     // Reconcile with official roster so newly added students (e.g. #10, #11 in ป.1) are never omitted
@@ -373,7 +391,7 @@ export const loadGrades = (classroom: string, subject: Subject = 'main'): Studen
 
     officialStudents.forEach((info) => {
       const exists = existingList.some(
-        (g) => g.studentCode === info.studentCode || g.name === info.name || g.studentNo === info.no
+        (g) => g.studentCode === info.studentCode
       );
       if (!exists) {
         const indicators: Record<string, IndicatorScore> = {};
@@ -432,6 +450,7 @@ export const updateStudentScore = (
     updatedAt: Date.now(),
   };
   if (patch.k !== undefined) {
+    next.teacherKUpdatedAt = Math.max(Date.now(), (cur.teacherKUpdatedAt || 0) + 1);
     if (patch.k === null || Number.isNaN(patch.k)) {
       delete next.teacherK;
       next.k = Math.min(next.maxK || 15, (Number(next.webK) || 0) + (Number(next.manualK) || 0));
@@ -490,6 +509,7 @@ export const updateTeacherKnowledgeScore = (
     ...current,
     maxK,
     updatedAt: Date.now(),
+    teacherKUpdatedAt: Math.max(Date.now(), (current.teacherKUpdatedAt || 0) + 1),
   };
   if (score === null || Number.isNaN(score)) {
     delete next.teacherK;
@@ -574,10 +594,13 @@ export const updateFinalExam = (
   const student = grades.find((g) => g.studentCode === studentCode);
   if (!student) return;
   const previousScore = student.finalExam;
+  student.finalExamMax = examMaxScores(classroom).final;
+  student.gradingPolicyVersion = GRADING_POLICY_VERSION;
+  student.finalExamUpdatedAt = Math.max(Date.now(), (student.finalExamUpdatedAt || 0) + 1);
   if (score === null || score === undefined || Number.isNaN(score)) {
     delete student.finalExam;
   } else {
-    student.finalExam = score;
+    student.finalExam = Math.max(0, Math.min(examMaxScores(classroom).final, score));
   }
   student.updatedAt = Date.now();
   cacheGradesLocally(classroom, grades, subject);
@@ -605,10 +628,12 @@ export const updateMidtermExam = (
   const student = grades.find((g) => g.studentCode === studentCode);
   if (!student) return;
   const previousScore = student.midtermExam;
+  student.gradingPolicyVersion = GRADING_POLICY_VERSION;
+  student.midtermExamUpdatedAt = Math.max(Date.now(), (student.midtermExamUpdatedAt || 0) + 1);
   if (score === null || score === undefined || Number.isNaN(score)) {
     delete student.midtermExam;
   } else {
-    student.midtermExam = score;
+    student.midtermExam = Math.max(0, Math.min(examMaxScores(classroom).midterm, score));
   }
   student.updatedAt = Date.now();
   cacheGradesLocally(classroom, grades, subject);
@@ -647,23 +672,39 @@ export type ManualAssessmentScores = Record<string, Record<string, number>>;
 const ASSESSMENT_PREFIX = 'krujames_manual_assessments_v1_';
 const ASSESSMENT_SCORE_PREFIX = 'krujames_manual_assessment_scores_v1_';
 
-const assessmentKey = (classroom: string, subject: Subject = 'main') =>
+const legacyAssessmentKey = (classroom: string, subject: Subject = 'main') =>
   `${ASSESSMENT_PREFIX}${classroom}_${subject}`;
-
-const assessmentScoreKey = (classroom: string, subject: Subject = 'main') =>
+const legacyAssessmentScoreKey = (classroom: string, subject: Subject = 'main') =>
   `${ASSESSMENT_SCORE_PREFIX}${classroom}_${subject}`;
 
-const gradeDocumentId = (classroom: string, subject: Subject = 'main') => (
+const assessmentKey = (classroom: string, subject: Subject = 'main') =>
+  `${ASSESSMENT_PREFIX}${gradingPeriodKey()}_${classroom}_${subject}`;
+
+const assessmentScoreKey = (classroom: string, subject: Subject = 'main') =>
+  `${ASSESSMENT_SCORE_PREFIX}${gradingPeriodKey()}_${classroom}_${subject}`;
+
+const legacyGradeDocumentId = (classroom: string, subject: Subject = 'main') => (
   subject === 'main' ? classroom : `${classroom}_${subject}`
+);
+
+const gradeDocumentId = (
+  classroom: string,
+  subject: Subject = 'main',
+  period: GradingPeriod = getActiveGradingPeriod(),
+) => (
+  `${gradingPeriodKey(period)}_${classroom}_${subject}`
 );
 
 /** เก็บโครงสร้างใบงานนอกเว็บและคะแนนดิบไว้ในเอกสารเดียวกับกระดาษเกรด */
 const syncManualAssessmentData = async (classroom: string, subject: Subject = 'main') => {
   try {
     if (!db || !import.meta.env.VITE_FIREBASE_PROJECT_ID) return;
-    await setDoc(doc(db, 'grades', gradeDocumentId(classroom, subject)), cleanForFirestore({
+    const period = getActiveGradingPeriod();
+    await setDoc(doc(db, 'grades', gradeDocumentId(classroom, subject, period)), cleanForFirestore({
       classroom,
       subject,
+      academicYear: period.academicYear,
+      term: period.term,
       manualAssessments: loadManualAssessments(classroom, subject),
       manualAssessmentScores: loadManualAssessmentScores(classroom, subject),
       manualUpdatedAt: Date.now(),
@@ -690,7 +731,8 @@ export const loadManualAssessments = (
   subject: Subject = 'main'
 ): ManualAssessment[] => {
   try {
-    const raw = localStorage.getItem(assessmentKey(classroom, subject));
+    const raw = localStorage.getItem(assessmentKey(classroom, subject))
+      ?? (isLegacyDefaultPeriod() ? localStorage.getItem(legacyAssessmentKey(classroom, subject)) : null);
     if (!raw) return [];
     return JSON.parse(raw);
   } catch {
@@ -712,7 +754,8 @@ export const loadManualAssessmentScores = (
   subject: Subject = 'main'
 ): ManualAssessmentScores => {
   try {
-    const raw = localStorage.getItem(assessmentScoreKey(classroom, subject));
+    const raw = localStorage.getItem(assessmentScoreKey(classroom, subject))
+      ?? (isLegacyDefaultPeriod() ? localStorage.getItem(legacyAssessmentScoreKey(classroom, subject)) : null);
     if (!raw) return {};
     return JSON.parse(raw);
   } catch {
@@ -895,7 +938,8 @@ export const applyManualAssessmentsToGrades = (
         if (category === 'k') {
           const earnedRatio = Math.min(1, earned / max);
           const newK = Math.round(earnedRatio * indicator.maxScore * 10) / 10;
-          const legacyTeacherK = next.webK === undefined
+          const legacyTeacherK = next.teacherKUpdatedAt === undefined
+            && next.webK === undefined
             && next.manualK === undefined
             && next.teacherK === undefined
             ? next.k
@@ -1051,9 +1095,6 @@ export const seedUnit1ScoresForAllClasses = (
 };
 
 export const initClassroom = (classroom: string, subject: Subject = 'main'): StudentGrade[] => {
-  if (classroom === 'ป.1' && subject === 'main') {
-    return restoreRealP1Grades();
-  }
   const roster = loadRoster(classroom);
   const existing = loadGrades(classroom, subject);
   const existingMap = new Map(existing.map((s) => [s.studentCode, s]));
@@ -1289,7 +1330,7 @@ export interface ScoreBreakdown {
   total: number;      // รวมทั้งหมด (จาก 100)
 }
 
-const round1 = (n: number) => Math.round(n * 10) / 10;
+const roundScore = (n: number) => Math.round(n * 100) / 100;
 
 export const computeBreakdown = (
   g: StudentGrade,
@@ -1297,6 +1338,7 @@ export const computeBreakdown = (
   subject: Subject = 'main'
 ): ScoreBreakdown => {
   const indicators = getIndicators(classroom, subject);
+  const SCORE_WEIGHT = getGradingPolicy(classroom);
   const exam = examMaxScores(classroom);
 
   if (indicators.length === 0) {
@@ -1326,10 +1368,10 @@ export const computeBreakdown = (
       kMax: kMaxPer,
       pMax: pMaxPer,
       aMax: aMaxPer,
-      k: round1(kVal),
-      p: round1(pVal),
-      a: round1(aVal),
-      total: round1(kVal + pVal + aVal),
+      k: kVal,
+      p: pVal,
+      a: aVal,
+      total: kVal + pVal + aVal,
     };
   });
 
@@ -1339,19 +1381,19 @@ export const computeBreakdown = (
   const collected = totalK + totalP + totalA;
 
   const midterm = Math.max(0, Math.min(Number.isFinite(g.midtermExam) ? Number(g.midtermExam) : 0, exam.midterm));
-  const final = Math.max(0, Math.min(Number.isFinite(g.finalExam) ? Number(g.finalExam) : 0, exam.final));
+  const final = getFinalExamScore(g, classroom) ?? 0;
   const examTotal = midterm + final;
 
   return {
     contributions,
-    k: round1(totalK),
-    p: round1(totalP),
-    a: round1(totalA),
-    collected: round1(collected),
+    k: roundScore(totalK),
+    p: roundScore(totalP),
+    a: roundScore(totalA),
+    collected: roundScore(collected),
     midterm,
     final,
     exam: examTotal,
-    total: round1(collected + examTotal),
+    total: roundScore(collected + examTotal),
   };
 };
 
@@ -1371,14 +1413,19 @@ export const computeTotal = (
 };
 
 /** คะแนนเต็ม = 100 เสมอ (มาตรฐานไทย) */
-export const computeMaxTotal = (): number => {
-  return SCORE_WEIGHT.TOTAL;
+export const computeMaxTotal = (classroom?: string): number => {
+  return classroom ? getGradingPolicy(classroom).TOTAL : SCORE_WEIGHT.TOTAL;
 };
 
 /** เกรดตามเกณฑ์ไทย: 80=4, 75=3.5, 70=3, 65=2.5, 60=2, 55=1.5, 50=1, <50=0 */
 export const computeGrade = (g: StudentGrade, classroom: string, subject: Subject = 'main'): string => {
   const total = computeTotal(g, classroom, subject);
-  const pct = total; // คะแนน = % เพราะ max = 100
+  if (getGradingPolicy(classroom).annualGrade) return 'รอผลทั้งปี';
+  if (!Number.isFinite(g.midtermExam) || !Number.isFinite(g.finalExam) || getIndicators(classroom, subject).some(ind => {
+    const score = g.indicators[ind.id];
+    return !score || !score.pAssessed || !score.aAssessed || !(score.k > 0 || score.teacherK !== undefined || score.webK !== undefined || score.manualK !== undefined);
+  })) return 'คะแนนยังไม่ครบ';
+  const pct = total / getGradingPolicy(classroom).TOTAL * 100;
   if (pct >= 80) return '4';
   if (pct >= 75) return '3.5';
   if (pct >= 70) return '3';
@@ -1400,11 +1447,12 @@ const syncClassroomToFirebase = async (
 ) => {
   if (!firebaseAvailable()) return;
   try {
+    const period = getActiveGradingPeriod();
     const docId = gradeDocumentId(classroom, subject);
     const ref = doc(db, 'grades', docId);
     await setDoc(
       ref,
-      cleanForFirestore({ classroom, subject, students: grades, updatedAt: Date.now() }),
+      cleanForFirestore({ classroom, subject, academicYear: period.academicYear, term: period.term, students: grades, updatedAt: Date.now() }),
       { merge: true },
     );
   } catch (e) {
@@ -1416,15 +1464,15 @@ export const fetchClassroomFromFirebase = async (
   classroom: string, subject: Subject = 'main'
 ): Promise<StudentGrade[] | null> => {
   if (!firebaseAvailable()) {
-    if (classroom === 'ป.1') {
-      return restoreRealP1Grades();
-    }
     return null;
   }
   try {
-    const docId = gradeDocumentId(classroom, subject);
-    const ref = doc(db, 'grades', docId);
-    const snap = await getDoc(ref);
+    const period = getActiveGradingPeriod();
+    const docId = gradeDocumentId(classroom, subject, period);
+    let snap = await getDoc(doc(db, 'grades', docId));
+    if (!snap.exists() && isLegacyDefaultPeriod(period)) {
+      snap = await getDoc(doc(db, 'grades', legacyGradeDocumentId(classroom, subject)));
+    }
     if (snap.exists()) {
       const data = snap.data() as {
         students?: StudentGrade[];
@@ -1471,7 +1519,7 @@ export const fetchClassroomFromFirebase = async (
 
       officialStudents.forEach((info) => {
         const exists = mergedList.some(
-          (r) => r.studentCode === info.studentCode || r.name === info.name
+          (r) => r.studentCode === info.studentCode
         );
         if (!exists) {
           const indicators: Record<string, IndicatorScore> = {};
@@ -1501,6 +1549,16 @@ export const fetchClassroomFromFirebase = async (
 
 const skillRank: Record<Skill, number> = { 'พอใช้': 1, 'ปานกลาง': 2, 'ดี': 3 };
 
+/** Explicit field edits, including clears, survive activity syncs and JSON serialization. */
+const pickTeacherEdit = <T,>(
+  remoteValue: T | undefined, remoteRevision: number | undefined,
+  incomingValue: T | undefined, incomingRevision: number | undefined,
+  legacyValue: T | undefined,
+): T | undefined => {
+  if (remoteRevision === undefined && incomingRevision === undefined) return legacyValue;
+  return (incomingRevision ?? -1) >= (remoteRevision ?? -1) ? incomingValue : remoteValue;
+};
+
 /**
  * รวมข้อมูลระดับนักเรียน (คะแนนสอบและหมายเหตุ)
  *
@@ -1512,7 +1570,7 @@ export const mergeStudentGradeForTest = (
   remote: StudentGrade | undefined,
   incoming: StudentGrade,
 ): StudentGrade => {
-  if (!remote) return { ...incoming, updatedAt: Date.now() };
+  if (!remote) return { ...incoming };
   const incomingIsNewer = (incoming.updatedAt || 0) >= (remote.updatedAt || 0);
   const pick = <T,>(a: T | undefined, b: T | undefined): T | undefined => {
     const [newer, older] = incomingIsNewer ? [a, b] : [b, a];
@@ -1521,11 +1579,14 @@ export const mergeStudentGradeForTest = (
   return {
     ...remote,
     ...incoming,
-    midtermExam: pick(incoming.midtermExam, remote.midtermExam),
-    finalExam: pick(incoming.finalExam, remote.finalExam),
+    midtermExam: pickTeacherEdit(remote.midtermExam, remote.midtermExamUpdatedAt, incoming.midtermExam, incoming.midtermExamUpdatedAt, pick(incoming.midtermExam, remote.midtermExam)),
+    finalExam: pickTeacherEdit(remote.finalExam, remote.finalExamUpdatedAt, incoming.finalExam, incoming.finalExamUpdatedAt, pick(incoming.finalExam, remote.finalExam)),
+    midtermExamUpdatedAt: Math.max(remote.midtermExamUpdatedAt ?? 0, incoming.midtermExamUpdatedAt ?? 0) || undefined,
+    finalExamUpdatedAt: Math.max(remote.finalExamUpdatedAt ?? 0, incoming.finalExamUpdatedAt ?? 0) || undefined,
+    finalExamMax: pickTeacherEdit(remote.finalExamMax, remote.finalExamUpdatedAt, incoming.finalExamMax, incoming.finalExamUpdatedAt, pick(incoming.finalExam !== undefined ? incoming.finalExamMax ?? 30 : undefined, remote.finalExam !== undefined ? remote.finalExamMax ?? 30 : undefined)),
     comment: pick(incoming.comment, remote.comment),
     indicators: incoming.indicators,
-    updatedAt: Date.now(),
+    updatedAt: Math.max(remote.updatedAt || 0, incoming.updatedAt || 0),
   };
 };
 
@@ -1537,7 +1598,7 @@ export const mergeRemoteWithLocalGrades = (
   if (!local || local.length === 0) return remote;
   if (!remote || remote.length === 0) return local;
   const localByCode = new Map(local.map((s) => [s.studentCode, s]));
-  return remote.map((remoteStudent) => {
+  const merged = remote.map((remoteStudent) => {
     const localStudent = localByCode.get(remoteStudent.studentCode);
     if (!localStudent) return remoteStudent;
     const mergedIndicators: Record<string, IndicatorScore> = {
@@ -1554,6 +1615,9 @@ export const mergeRemoteWithLocalGrades = (
       indicators: mergedIndicators,
     });
   });
+  const remoteCodes = new Set(remote.map((student) => student.studentCode));
+  return [...merged, ...local.filter((student) => !remoteCodes.has(student.studentCode))]
+    .sort((a, b) => a.studentNo - b.studentNo);
 };
 
 /**
@@ -1592,7 +1656,7 @@ const mergeIndicatorForStudent = (
     : Math.min(PRACTICE_MAX_SCORE, webPScore + manualPScore);
   const webK = Math.max(remote.webK || 0, incoming.webK || 0);
   const manualK = byRecency((s) => s.manualK) || 0;
-  const teacherK = byRecency((s) => s.teacherK);
+  const teacherK = pickTeacherEdit(remote.teacherK, remote.teacherKUpdatedAt, incoming.teacherK, incoming.teacherKUpdatedAt, byRecency((s) => s.teacherK));
   const maxK = Math.max(remote.maxK || 0, incoming.maxK || 0, 15);
   const teacherA = byRecency((s) => s.teacherA);
   const webAScore = Math.max(remote.webAScore || 0, incoming.webAScore || 0);
@@ -1606,6 +1670,7 @@ const mergeIndicatorForStudent = (
     webK,
     manualK,
     teacherK,
+    teacherKUpdatedAt: Math.max(remote.teacherKUpdatedAt ?? 0, incoming.teacherKUpdatedAt ?? 0) || undefined,
     maxK,
     webPScore,
     manualPScore,
@@ -1637,7 +1702,7 @@ const mergeManualIndicatorForStudent = (
   const maxK = Math.max(remote.maxK || 0, incoming.maxK || 0, 15);
   const webK = Math.max(remote.webK || 0, incoming.webK || 0);
   const manualK = incoming.manualK ?? remote.manualK ?? 0;
-  const teacherK = incoming.teacherK ?? remote.teacherK;
+  const teacherK = pickTeacherEdit(remote.teacherK, remote.teacherKUpdatedAt, incoming.teacherK, incoming.teacherKUpdatedAt, incoming.teacherK ?? remote.teacherK);
   const webPScore = Math.max(remote.webPScore || 0, incoming.webPScore || 0);
   const manualPScore = incoming.manualPScore ?? remote.manualPScore ?? 0;
   const teacherPScore = incoming.teacherPScore ?? remote.teacherPScore;
@@ -1651,6 +1716,7 @@ const mergeManualIndicatorForStudent = (
     webK,
     manualK,
     teacherK,
+    teacherKUpdatedAt: Math.max(remote.teacherKUpdatedAt ?? 0, incoming.teacherKUpdatedAt ?? 0) || undefined,
     maxK,
     webPScore,
     manualPScore,
@@ -1684,8 +1750,6 @@ const mergeClassroomGradesToFirebase = async (
     incomingGrades.forEach((incoming) => {
       let index = remoteGrades.findIndex((student) => (
         student.studentCode === incoming.studentCode
-        || student.studentNo === incoming.studentNo
-        || student.name === incoming.name
       ));
       const remote = index >= 0 ? remoteGrades[index] : undefined;
       const indicators: Record<string, IndicatorScore> = { ...(remote?.indicators || {}) };
@@ -1727,17 +1791,39 @@ type TeacherGradePatch = {
   finalExam?: number | null;
 };
 
+type QueuedTeacherPatch = { classroom: string; student: StudentGrade; subject: Subject; period: GradingPeriod; patch: TeacherGradePatch };
+let teacherSaveQueue: PersistentSaveQueue<QueuedTeacherPatch> | undefined;
+let teacherQueueStorage: Storage | undefined;
+const getTeacherSaveQueue = () => {
+  if (!teacherSaveQueue || teacherQueueStorage !== localStorage) {
+    teacherQueueStorage = localStorage;
+    teacherSaveQueue = new PersistentSaveQueue(localStorage, 'krujames_teacher_grade_outbox_v1',
+      ({ classroom, student, subject, period, patch }) => sendTeacherGradePatch(classroom, student, subject, period, patch));
+  }
+  return teacherSaveQueue;
+};
+export const getGradeSaveStatus = (classroom: string, subject: Subject) => getTeacherSaveQueue().status(`${gradingPeriodKey()}_${classroom}_${subject}`);
+export const subscribeGradeSaveStatus = (listener: () => void) => getTeacherSaveQueue().subscribe(listener);
+export const retryGradeSaves = () => getTeacherSaveQueue().retry();
+const patchStudentGradeInFirebase = (classroom: string, student: StudentGrade, subject: Subject, patch: TeacherGradePatch) => {
+  const period = getActiveGradingPeriod();
+  const scope = `${gradingPeriodKey(period)}_${classroom}_${subject}`;
+  const field = patch.indicatorId ?? (patch.finalExam !== undefined ? 'finalExam' : 'midtermExam');
+  getTeacherSaveQueue().enqueue(`${scope}_${student.studentCode}_${field}`, scope, { classroom, student, subject, period, patch });
+};
+
 /** ครูแก้เฉพาะช่องด้วย transaction โดยไม่ส่งสำเนาคะแนนทั้งห้องไปทับข้อมูลล่าสุด */
-const patchStudentGradeInFirebase = async (
+const sendTeacherGradePatch = async (
   classroom: string,
   fallbackStudent: StudentGrade,
   subject: Subject,
+  period: GradingPeriod,
   patch: TeacherGradePatch,
 ): Promise<void> => {
-  if (!firebaseAvailable()) return;
-  const ref = doc(db, 'grades', gradeDocumentId(classroom, subject));
-  try {
-    await runTransaction(db, async (transaction) => {
+  if (!firebaseAvailable()) throw new Error('ยังไม่ได้เชื่อมต่อ Firebase คะแนนเก็บอยู่ในเครื่อง');
+  await requireTeacherGradeAccess();
+  const ref = doc(db, 'grades', gradeDocumentId(classroom, subject, period));
+  await runTransaction(db, async (transaction) => {
       const snap = await transaction.get(ref);
       const students = snap.exists()
         ? [...((snap.data().students as StudentGrade[] | undefined) || [])]
@@ -1750,16 +1836,21 @@ const patchStudentGradeInFirebase = async (
         indicators: { ...(current.indicators || {}) },
       };
       if (patch.indicatorId && patch.indicatorScore) {
-        next.indicators[patch.indicatorId] = patch.indicatorScore;
+        next.indicators[patch.indicatorId] = mergeIndicatorForStudent(current.indicators?.[patch.indicatorId], patch.indicatorScore);
       }
-      if (patch.midtermExam !== undefined) {
+      if (patch.midtermExam !== undefined && (fallbackStudent.midtermExamUpdatedAt ?? 0) >= (current.midtermExamUpdatedAt ?? 0)) {
+        next.midtermExamUpdatedAt = fallbackStudent.midtermExamUpdatedAt;
+        next.gradingPolicyVersion = GRADING_POLICY_VERSION;
         if (patch.midtermExam === null) {
           delete next.midtermExam;
         } else {
           next.midtermExam = patch.midtermExam;
         }
       }
-      if (patch.finalExam !== undefined) {
+      if (patch.finalExam !== undefined && (fallbackStudent.finalExamUpdatedAt ?? 0) >= (current.finalExamUpdatedAt ?? 0)) {
+        next.finalExamUpdatedAt = fallbackStudent.finalExamUpdatedAt;
+        next.finalExamMax = fallbackStudent.finalExamMax;
+        next.gradingPolicyVersion = GRADING_POLICY_VERSION;
         if (patch.finalExam === null) {
           delete next.finalExam;
         } else {
@@ -1774,13 +1865,10 @@ const patchStudentGradeInFirebase = async (
       }
       transaction.set(
         ref,
-        cleanForFirestore({ classroom, subject, students, updatedAt: Date.now() }),
+        cleanForFirestore({ classroom, subject, academicYear: period.academicYear, term: period.term, students, updatedAt: Date.now() }),
         { merge: true },
       );
     });
-  } catch (error) {
-    console.warn('teacher grade patch failed', error);
-  }
 };
 
 /**
@@ -1803,8 +1891,6 @@ export const upsertStudentGradeToFirebase = async (
       : [];
     const index = current.findIndex((student) => (
       student.studentCode === incoming.studentCode
-      || student.studentNo === incoming.studentNo
-      || student.name === incoming.name
     ));
     const remote = index >= 0 ? current[index] : undefined;
     const mergedIndicators: Record<string, IndicatorScore> = { ...(remote?.indicators || {}) };
@@ -1814,7 +1900,8 @@ export const upsertStudentGradeToFirebase = async (
       // activity timestamp must never revive stale teacher-entered values.
       const studentScore = previous ? {
         ...score,
-        teacherK: previous.teacherK ?? (previous.webK === undefined && previous.manualK === undefined ? previous.k : undefined),
+        teacherKUpdatedAt: previous.teacherKUpdatedAt,
+        teacherK: previous.teacherK ?? (previous.teacherKUpdatedAt === undefined && previous.webK === undefined && previous.manualK === undefined ? previous.k : undefined),
         teacherPScore: previous.teacherPScore ?? (previous.webPScore === undefined && previous.manualPScore === undefined && previous.pAssessed
           ? previous.p === 'ดี' ? 30 : previous.p === 'ปานกลาง' ? 20 : 15
           : undefined),
@@ -1830,7 +1917,7 @@ export const upsertStudentGradeToFirebase = async (
     const merged = mergeStudentGradeForTest(remote, {
       ...incoming,
       indicators: mergedIndicators,
-      ...(remote ? { midtermExam: remote.midtermExam, finalExam: remote.finalExam, comment: remote.comment } : {}),
+      ...(remote ? { midtermExam: remote.midtermExam, finalExam: remote.finalExam, finalExamMax: remote.finalExamMax, midtermExamUpdatedAt: remote.midtermExamUpdatedAt, finalExamUpdatedAt: remote.finalExamUpdatedAt, comment: remote.comment } : {}),
     });
     const students = [...current];
     if (index >= 0) students[index] = merged;
@@ -1985,62 +2072,16 @@ const buildStudentId = (classroom: string, studentNo: number, name: string): str
   return `${classroom}_${studentNo}_${name.replace(/\s/g, '')}`;
 };
 
-/**
- * ค้นหา progress data ของนักเรียนใน localStorage แบบ fuzzy
- * เพราะชื่อที่ผู้ใช้พิมพ์ login อาจไม่ตรงกับ roster เป๊ะ
- *
- * ลำดับการค้น:
- * 1. exact studentId match
- * 2. classroom + studentNumber match (ไม่สนชื่อ — ใช้เลขที่อย่างเดียว)
- * 3. classroom + name substring match (ค้นชื่อบางส่วน)
- */
+/** Legacy progress IDs have no permanent code. Accept exact identity only; unmatched rows remain for review. */
 const findProgressForStudent = (
   classroom: string,
   studentNo: number,
   name: string
 ): { progress: StudentProgressData; matchedKey: string; matchType: 'exact' | 'number' | 'name' } | null => {
-  // 1) exact
   const exactId = buildStudentId(classroom, studentNo, name);
   const exactProg = loadProgressData(exactId);
   if (exactProg) return { progress: exactProg, matchedKey: exactId, matchType: 'exact' };
-
-  // 2+3) scan all progress data ใน in-memory cache ของ progressService
-  // (cache ถูก populate จาก fetchAllProgressFromFirebase / fetchStudentProgress)
-  const cleanedName = name.replace(/\s/g, '').toLowerCase();
-  const nameTokens = name.split(/\s+/).filter((t) => t.length > 1);
-
-  let numberMatch: { progress: StudentProgressData; key: string } | null = null;
-  let nameMatch: { progress: StudentProgressData; key: string } | null = null;
-
-  const allProgress = getAllCachedProgress();
-  for (const prog of allProgress) {
-    const id = prog.studentId || '';
-    if (!id) continue;
-    const parts = id.split('_');
-    if (parts.length < 3) continue;
-    const [keyClass, keyNo, ...keyNameParts] = parts;
-    if (keyClass !== classroom) continue;
-
-    const keyName = keyNameParts.join('_').toLowerCase();
-
-    if (parseInt(keyNo) === studentNo) {
-      numberMatch = { progress: prog, key: id };
-    }
-
-    if (!numberMatch) {
-      const matchToken =
-        keyName === cleanedName ||
-        nameTokens.some((t) => keyName.includes(t.toLowerCase())) ||
-        cleanedName.includes(keyName) ||
-        keyName.includes(cleanedName);
-      if (matchToken) {
-        nameMatch = { progress: prog, key: id };
-      }
-    }
-  }
-
-  if (numberMatch) return { progress: numberMatch.progress, matchedKey: numberMatch.key, matchType: 'number' };
-  if (nameMatch) return { progress: nameMatch.progress, matchedKey: nameMatch.key, matchType: 'name' };
+  // A number or partial name alone can assign another student's work.
   return null;
 };
 
@@ -2095,7 +2136,7 @@ export const syncFromProgress = (
     prog = loadProgressData(studentId);
     if (prog) matchType = 'exact';
   }
-  // ถ้าไม่เจอ ค้นแบบ fuzzy ใน localStorage
+  // รับเฉพาะข้อมูลที่ตรงทั้งห้อง เลขที่ และชื่อ สำหรับ progress รุ่นเก่า
   if (!prog) {
     const found = findProgressForStudent(classroom, student.studentNo, student.name);
     if (found) {
@@ -2216,7 +2257,8 @@ export const syncFromProgress = (
         : 0;
     const currentScore = student.indicators[ind.id] || emptyIndicatorScore(ind.maxScore);
     const webK = Math.max(quizK, worldK, currentScore.webK || 0);
-    const legacyTeacherK = currentScore.webK === undefined
+    const legacyTeacherK = currentScore.teacherKUpdatedAt === undefined
+      && currentScore.webK === undefined
       && currentScore.manualK === undefined
       && currentScore.teacherK === undefined
       ? currentScore.k
@@ -2436,14 +2478,15 @@ export const getLinkedUnits = (classroom: string, subject: Subject = 'main') => 
 export const exportToCSV = (classroom: string, subject: Subject = 'main'): string => {
   const grades = loadGrades(classroom, subject);
   const indicators = getIndicators(classroom, subject);
+  const SCORE_WEIGHT = getGradingPolicy(classroom);
   const exam = examMaxScores(classroom);
   let csv = 'เลขที่,รหัสนักเรียน,ชื่อ-สกุล';
   indicators.forEach((ind) => {
     csv += `,${ind.code} (K),${ind.code} (P),${ind.code} (A)`;
   });
-  csv += ',คะแนนเก็บ K (40),คะแนน P (20),คะแนน A (10),รวมเก็บ (70)';
+  csv += `,คะแนนเก็บ K (${SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.K_RATIO}),คะแนน P (${SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.P_RATIO}),คะแนน A (${SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.A_RATIO}),รวมเก็บ (${SCORE_WEIGHT.COLLECTED})`;
   if (exam.midterm > 0) csv += `,สอบกลางภาค (${exam.midterm})`;
-  csv += `,สอบปลายภาค (${exam.final}),รวมสอบ (30),คะแนนรวม (100),เกรด\n`;
+  csv += `,สอบปลายภาค (${exam.final}),รวมสอบ (${SCORE_WEIGHT.EXAM}),คะแนนรวม (${SCORE_WEIGHT.TOTAL}),เกรด\n`;
 
   grades.forEach((g) => {
     csv += `${g.studentNo},${g.studentCode},${g.name}`;
@@ -2453,8 +2496,8 @@ export const exportToCSV = (classroom: string, subject: Subject = 'main'): strin
     });
     const b = computeBreakdown(g, classroom, subject);
     csv += `,${b.k},${b.p},${b.a},${b.collected}`;
-    if (exam.midterm > 0) csv += `,${g.midtermExam || 0}`;
-    csv += `,${g.finalExam || 0},${b.exam},${b.total},${computeGrade(g, classroom, subject)}\n`;
+    if (exam.midterm > 0) csv += `,${g.midtermExam ?? ''}`;
+    csv += `,${getFinalExamScore(g, classroom) ?? ''},${b.exam},${b.total},${computeGrade(g, classroom, subject)}\n`;
   });
   return csv;
 };

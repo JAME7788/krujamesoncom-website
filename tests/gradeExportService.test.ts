@@ -99,7 +99,7 @@ describe('gradeExportService', () => {
     expect(dtSummary.subjectCode).toBe('ว 4.1');
   });
 
-  it('generates non-empty CSV, Master CSV, and SchoolMIS CSV with required headers', () => {
+  it('generates review CSVs and blocks SchoolMIS before annual results are complete', () => {
     const classCsv = generateClassroomCsv('ป.1', 'main');
     expect(classCsv).toContain(SCHOOL_NAME);
     expect(classCsv).toContain('แบบบันทึกผลการพัฒนาคุณภาพผู้เรียน (ปพ.5)');
@@ -110,8 +110,7 @@ describe('gradeExportService', () => {
     expect(masterCsv).toContain('Master Grade Sheet');
     expect(masterCsv).toContain('ระดับชั้น,วิชา,รหัสวิชา,เลขที่,รหัสนักเรียน');
 
-    const schoolMisCsv = generateSchoolMisCsv('ป.1', 'main');
-    expect(schoolMisCsv).toContain('รหัสประจำตัว,เลขที่,คำนำหน้า,ชื่อ,นามสกุล,คะแนนเก็บ,คะแนนกลางภาค,คะแนนปลายภาค,คะแนนรวม,เกรด');
+    expect(() => generateSchoolMisCsv('ป.1', 'main')).toThrow('ยังส่ง SchoolMIS ไม่ได้');
   });
 
   it('generates valid Excel HTML format with tables, styling, and statistics', () => {

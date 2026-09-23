@@ -5,12 +5,14 @@ import {
   Download, Search, RefreshCw, Plus, Trash2, Save, CheckCircle2,
   XCircle, BookOpen, Award, FileText, Gamepad2, PlayCircle,
   LogOut, Pencil, Lock, MonitorPlay,
-  Globe2, FileSpreadsheet,
+  Globe2, FileSpreadsheet, Layers,
+  ChevronDown,
 } from 'lucide-react';
 import AdminGate from '../components/AdminGate';
 import CourseBuilder from '../components/CourseBuilder';
 import GradeBook from '../components/GradeBook';
 import { OfficialGradeExportModal } from '../components/OfficialGradeExportModal';
+import { MediaReportHub } from '../components/MediaReportHub';
 import SkillGradeTable from '../components/SkillGradeTable';
 import BonusAwarder from '../components/BonusAwarder';
 import DailyQuestionEditor from '../components/DailyQuestionEditor';
@@ -48,7 +50,7 @@ import type { ClassSlot } from '../data/schedule';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'export-grades' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
+type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'export-grades' | 'media-reports' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -56,79 +58,136 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
+interface NavFolder {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  items: NavItem[];
+}
+
 interface NavGroup {
   title: string;
-  items: NavItem[];
+  folders: NavFolder[];
 }
 
 const NAVIGATION_GROUPS: NavGroup[] = [
   {
     title: 'การสอนวันนี้',
-    items: [
-      { id: 'today', label: 'คาบเรียนวันนี้', icon: <PlayCircle size={16} /> },
+    folders: [
+      {
+        id: 'today', label: 'คาบเรียนวันนี้', icon: <PlayCircle size={16} />,
+        items: [{ id: 'today', label: 'คาบเรียนวันนี้', icon: <PlayCircle size={16} /> }],
+      },
     ],
   },
   {
     title: '📊 หน้าหลักและสถิติ',
-    items: [
-      { id: 'overview', label: 'ภาพรวมระบบ', icon: <BarChart3 size={16} /> },
-      { id: 'world', label: 'ห้องเรียน 3D', icon: <MonitorPlay size={16} /> },
-      { id: 'scores', label: 'สถิตินักเรียนในเว็บ', icon: <BarChart3 size={16} /> },
-      { id: 'development', label: 'พัฒนาการรายคน', icon: <TrendingUp size={16} /> },
-    ]
+    folders: [{
+      id: 'insights', label: 'ภาพรวมและพัฒนาการ', icon: <BarChart3 size={16} />,
+      items: [
+        { id: 'overview', label: 'ภาพรวมระบบ', icon: <BarChart3 size={16} /> },
+        { id: 'world', label: 'ห้องเรียน 3D', icon: <MonitorPlay size={16} /> },
+        { id: 'scores', label: 'สถิตินักเรียนในเว็บ', icon: <BarChart3 size={16} /> },
+        { id: 'development', label: 'พัฒนาการรายคน', icon: <TrendingUp size={16} /> },
+      ],
+    }],
   },
   {
     title: '👥 ชั้นเรียนและเช็คชื่อ',
-    items: [
-      { id: 'roster', label: 'จัดการนักเรียน', icon: <Users size={16} /> },
-      { id: 'external-visitors', label: 'ผู้ทดลองภายนอก', icon: <Globe2 size={16} /> },
-      { id: 'attendance', label: 'เช็คชื่อตามตาราง', icon: <Calendar size={16} /> },
-      { id: 'quick-att', label: 'เช็คชื่อ Quick (มา/ขาด/ลา)', icon: <Calendar size={16} /> },
-    ]
+    folders: [{
+      id: 'students', label: 'นักเรียนและเช็คชื่อ', icon: <Users size={16} />,
+      items: [
+        { id: 'roster', label: 'จัดการนักเรียน', icon: <Users size={16} /> },
+        { id: 'external-visitors', label: 'ผู้ทดลองภายนอก', icon: <Globe2 size={16} /> },
+        { id: 'attendance', label: 'เช็คชื่อตามตาราง', icon: <Calendar size={16} /> },
+        { id: 'quick-att', label: 'เช็คชื่อ Quick (มา/ขาด/ลา)', icon: <Calendar size={16} /> },
+      ],
+    }],
   },
   {
     title: '📋 การวัดผลการเรียน',
-    items: [
-      { id: 'gradebook', label: 'เก็บคะแนน K/P/A', icon: <Award size={16} /> },
-      { id: 'export-grades', label: 'ส่งออก ปพ.5 & เอกสารวัดผล', icon: <FileSpreadsheet size={16} /> },
-      { id: 'assessments', label: 'แบบประเมินและหลังสอน', icon: <FileText size={16} /> },
-      { id: 'question-bank', label: 'คลังข้อสอบ', icon: <FileText size={16} /> },
-      { id: 'skill', label: 'ทักษะอาชีพ (K/P)', icon: <Award size={16} /> },
-      { id: 'bonus', label: 'แจกรางวัล / Bonus', icon: <Award size={16} /> },
-      { id: 'daily', label: 'คำถามประจำวัน', icon: <Award size={16} /> },
-      { id: 'research', label: 'วิจัย ๕ บท & ว.PA', icon: <FileText size={16} /> },
-    ]
+    folders: [
+      {
+        id: 'grades', label: 'คะแนนและเอกสาร', icon: <FileSpreadsheet size={16} />,
+        items: [
+          { id: 'gradebook', label: 'เก็บคะแนน K/P/A', icon: <Award size={16} /> },
+          { id: 'export-grades', label: 'ปพ.5 และเอกสารวัดผล', icon: <FileSpreadsheet size={16} /> },
+          { id: 'assessments', label: 'แบบประเมินและหลังสอน', icon: <FileText size={16} /> },
+          { id: 'skill', label: 'ทักษะอาชีพ (K/P)', icon: <Award size={16} /> },
+        ],
+      },
+      {
+        id: 'assessment-activities', label: 'ข้อสอบและกิจกรรม', icon: <Award size={16} />,
+        items: [
+          { id: 'question-bank', label: 'คลังข้อสอบ', icon: <FileText size={16} /> },
+          { id: 'daily', label: 'คำถามประจำวัน', icon: <Award size={16} /> },
+          { id: 'bonus', label: 'รางวัลและ Bonus', icon: <Award size={16} /> },
+        ],
+      },
+      {
+        id: 'reports', label: 'รายงานและวิจัย', icon: <Layers size={16} />,
+        items: [
+          { id: 'media-reports', label: 'รายงานผลิตสื่อ (A4)', icon: <Layers size={16} /> },
+          { id: 'research', label: 'วิจัย ๕ บท และ ว.PA', icon: <FileText size={16} /> },
+        ],
+      },
+    ],
   },
   {
     title: '📚 จัดการบทเรียน',
-    items: [
-      { id: 'courses', label: 'จัดการรายวิชา', icon: <Pencil size={16} /> },
-      { id: 'p1-plan', label: 'แผนเทคโนโลยี ป.1 + หลังสอน', icon: <FileText size={16} /> },
-      { id: 'teaching-schedule', label: 'กำหนดการสอน ป.1-6', icon: <Calendar size={16} /> },
-      { id: 'course-plan5', label: 'แผนเทคโนโลยีข้อ 5 ป.1-6', icon: <FileText size={16} /> },
-      { id: 'locks', label: 'ปลดล็อกบทเรียน', icon: <Lock size={16} /> },
-      { id: 'slides', label: 'จัดการสไลด์', icon: <BookOpen size={16} /> },
-      { id: 'schedule', label: 'จัดการตารางสอน', icon: <Clock size={16} /> },
-    ]
+    folders: [
+      {
+        id: 'lesson-plans', label: 'แผนและหลังสอน', icon: <FileText size={16} />,
+        items: [
+          { id: 'p1-plan', label: 'แผนเทคโนโลยี ป.1', icon: <FileText size={16} /> },
+          { id: 'teaching-schedule', label: 'กำหนดการสอน ป.1-6', icon: <Calendar size={16} /> },
+          { id: 'course-plan5', label: 'แผนเทคโนโลยีข้อ 5', icon: <FileText size={16} /> },
+        ],
+      },
+      {
+        id: 'lesson-content', label: 'รายวิชา สไลด์ และการเข้าถึง', icon: <BookOpen size={16} />,
+        items: [
+          { id: 'courses', label: 'จัดการรายวิชา', icon: <Pencil size={16} /> },
+          { id: 'slides', label: 'จัดการสไลด์', icon: <BookOpen size={16} /> },
+          { id: 'locks', label: 'ปลดล็อกบทเรียน', icon: <Lock size={16} /> },
+        ],
+      },
+      {
+        id: 'class-schedule', label: 'ตารางสอน', icon: <Clock size={16} />,
+        items: [{ id: 'schedule', label: 'จัดการตารางสอน', icon: <Clock size={16} /> }],
+      },
+    ],
   },
   {
     title: '📣 สื่อสารและกิจกรรม',
-    items: [
-      { id: 'announcements', label: 'ประกาศข่าวสาร', icon: <Megaphone size={16} /> },
-      { id: 'calendar', label: 'ปฏิทินกิจกรรม', icon: <CalIcon size={16} /> },
-      { id: 'homework', label: 'การบ้าน', icon: <Award size={16} /> },
-    ]
+    folders: [{
+      id: 'communication', label: 'ข่าวสาร ปฏิทิน และการบ้าน', icon: <Megaphone size={16} />,
+      items: [
+        { id: 'announcements', label: 'ประกาศข่าวสาร', icon: <Megaphone size={16} /> },
+        { id: 'calendar', label: 'ปฏิทินกิจกรรม', icon: <CalIcon size={16} /> },
+        { id: 'homework', label: 'การบ้าน', icon: <Award size={16} /> },
+      ],
+    }],
   },
   {
     title: '⚙️ ตั้งค่าระบบ',
-    items: [
-      { id: 'theme', label: 'ธีม & สำรองข้อมูล', icon: <Activity size={16} /> },
-      { id: 'audit', label: 'ประวัติการแก้ไข', icon: <Clock size={16} /> },
-      { id: 'site', label: 'ข้อมูลเว็บ', icon: <Activity size={16} /> },
-      { id: 'errors', label: 'Error Log', icon: <Bug size={16} /> },
-    ]
+    folders: [{
+      id: 'settings', label: 'ตั้งค่าและตรวจสอบระบบ', icon: <Activity size={16} />,
+      items: [
+        { id: 'theme', label: 'ธีมและสำรองข้อมูล', icon: <Activity size={16} /> },
+        { id: 'audit', label: 'ประวัติการแก้ไข', icon: <Clock size={16} /> },
+        { id: 'site', label: 'ข้อมูลเว็บ', icon: <Activity size={16} /> },
+        { id: 'errors', label: 'Error Log', icon: <Bug size={16} /> },
+      ],
+    }],
   }
 ];
+
+const findNavigationFolder = (tab: Tab) => (
+  NAVIGATION_GROUPS
+    .flatMap((group) => group.folders)
+    .find((folder) => folder.items.some((item) => item.id === tab))
+);
 
 const todayKey = () => {
   const d = new Date();
@@ -144,13 +203,16 @@ const fmtDateTime = (ts?: number) =>
 const getInitialAdminTab = (): Tab => {
   const requested = new URLSearchParams(window.location.search).get('tab') as Tab | null;
   const exists = requested && NAVIGATION_GROUPS.some((group) => (
-    group.items.some((item) => item.id === requested)
+    group.folders.some((folder) => folder.items.some((item) => item.id === requested))
   ));
   return exists ? requested : 'today';
 };
 
 const AdminDashboardInner: React.FC = () => {
   const [tab, setTab] = useState<Tab>(getInitialAdminTab);
+  const [openNavigationFolder, setOpenNavigationFolder] = useState<string | null>(() => (
+    findNavigationFolder(getInitialAdminTab())?.id ?? null
+  ));
   const session = getAdminSession();
   const visibleNavigationGroups = useMemo(() => {
     if (session?.role !== 'viewer') return NAVIGATION_GROUPS;
@@ -158,10 +220,20 @@ const AdminDashboardInner: React.FC = () => {
     return NAVIGATION_GROUPS
       .map((group) => ({
         ...group,
-        items: group.items.filter((item) => viewerTabs.includes(item.id)),
+        folders: group.folders
+          .map((folder) => ({
+            ...folder,
+            items: folder.items.filter((item) => viewerTabs.includes(item.id)),
+          }))
+          .filter((folder) => folder.items.length > 0),
       }))
-      .filter((group) => group.items.length > 0);
+      .filter((group) => group.folders.length > 0);
   }, [session?.role]);
+
+  const navigateToTab = (nextTab: Tab) => {
+    setTab(nextTab);
+    setOpenNavigationFolder(findNavigationFolder(nextTab)?.id ?? null);
+  };
   const handleLogout = () => {
     if (confirm('ออกจากระบบ Admin?')) {
       adminLogout();
@@ -201,6 +273,11 @@ const AdminDashboardInner: React.FC = () => {
     }
     return undefined;
   }, [session?.role, tab]);
+
+  useEffect(() => {
+    const activeFolder = findNavigationFolder(tab);
+    if (activeFolder) setOpenNavigationFolder(activeFolder.id);
+  }, [tab]);
 
   const stats = useMemo(() => getSiteStats(students), [students]);
 
@@ -280,16 +357,54 @@ const AdminDashboardInner: React.FC = () => {
               <div key={g.title} className="sidebar-group">
                 <h4 className="sidebar-group-title">{g.title}</h4>
                 <div className="sidebar-group-items">
-                  {g.items.map((item) => (
-                    <button
-                      key={item.id}
-                      className={`sidebar-item ${tab === item.id ? 'active' : ''}`}
-                      onClick={() => setTab(item.id)}
-                    >
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
+                  {g.folders.map((folder) => {
+                    const isSingleItem = folder.items.length === 1;
+                    const containsActiveTab = folder.items.some((item) => item.id === tab);
+                    const isOpen = openNavigationFolder === folder.id;
+
+                    if (isSingleItem) {
+                      const item = folder.items[0];
+                      return (
+                        <button
+                          key={folder.id}
+                          className={`sidebar-item ${tab === item.id ? 'active' : ''}`}
+                          onClick={() => navigateToTab(item.id)}
+                        >
+                          {folder.icon}
+                          <span>{folder.label}</span>
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <div key={folder.id} className={`sidebar-folder ${isOpen ? 'open' : ''}`}>
+                        <button
+                          className={`sidebar-folder-button ${containsActiveTab ? 'current' : ''}`}
+                          onClick={() => setOpenNavigationFolder(isOpen ? null : folder.id)}
+                          aria-expanded={isOpen}
+                          aria-controls={`sidebar-folder-${folder.id}`}
+                        >
+                          {folder.icon}
+                          <span>{folder.label}</span>
+                          <ChevronDown className="sidebar-folder-chevron" size={16} />
+                        </button>
+                        {isOpen && (
+                          <div id={`sidebar-folder-${folder.id}`} className="sidebar-folder-items">
+                            {folder.items.map((item) => (
+                              <button
+                                key={item.id}
+                                className={`sidebar-subitem ${tab === item.id ? 'active' : ''}`}
+                                onClick={() => navigateToTab(item.id)}
+                              >
+                                {item.icon}
+                                <span>{item.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -301,16 +416,16 @@ const AdminDashboardInner: React.FC = () => {
             <select
               id="admin-menu-select"
               value={tab}
-              onChange={(e) => setTab(e.target.value as Tab)}
+              onChange={(e) => navigateToTab(e.target.value as Tab)}
               className="admin2-mobile-select"
             >
               {visibleNavigationGroups.map((g) => (
                 <optgroup key={g.title} label={g.title}>
-                  {g.items.map((item) => (
+                  {g.folders.flatMap((folder) => folder.items.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.label}
+                      {folder.items.length > 1 ? `${folder.label} — ${item.label}` : folder.label}
                     </option>
-                  ))}
+                  )))}
                 </optgroup>
               ))}
             </select>
@@ -321,7 +436,7 @@ const AdminDashboardInner: React.FC = () => {
             {/* TAB: TODAY'S CLASS */}
             {tab === 'today' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
-                <TeacherClassroomHub onNavigate={(nextTab) => setTab(nextTab)} />
+                <TeacherClassroomHub onNavigate={(nextTab) => navigateToTab(nextTab)} />
               </motion.div>
             )}
 
@@ -602,6 +717,13 @@ const AdminDashboardInner: React.FC = () => {
                   isOpen={true}
                   onClose={() => setTab('gradebook')}
                 />
+              </motion.div>
+            )}
+
+            {/* TAB: MEDIA REPORTS (แบบบันทึกข้อมูลการผลิตสื่อการสอน Canva A4) */}
+            {tab === 'media-reports' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <MediaReportHub />
               </motion.div>
             )}
 

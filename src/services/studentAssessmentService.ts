@@ -1,6 +1,8 @@
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import type { StudentAssessmentKind } from '../data/studentAssessmentTemplates';
+import { calculateAssessmentResult } from '../data/studentAssessmentTemplates';
+import { requireTeacherGradeAccess } from './teacherGradeAccess';
 
 export interface StudentAssessmentEntry {
   studentCode: string;
@@ -91,6 +93,21 @@ const readLocalAssessment = (id: string): ClassroomAssessment | null => {
   }
 };
 
+/** Only complete, teacher-confirmed results from the selected period may enter reports. */
+export const getConfirmedAssessmentScore = (
+  classroom: string, academicYear: string, term: string, kind: StudentAssessmentKind, studentCode: string,
+): 0 | 1 | 2 | 3 | null => {
+  const assessment = readLocalAssessment(makeClassroomAssessmentId(classroom, academicYear, term, kind));
+  if (!assessment || assessment.archived || assessment.provisional || !assessment.confirmedByTeacher || assessment.meta.status !== 'complete') return null;
+  if (assessment.classroom !== classroom || assessment.academicYear !== academicYear || assessment.term !== term || assessment.kind !== kind) return null;
+  const entry = assessment.entries[studentCode];
+  if (!entry || entry.studentCode !== studentCode) return null;
+  const result = calculateAssessmentResult(kind, entry.scores);
+  if (result.completed !== result.categoryCount) return null;
+  if (Object.values(entry.scores).some(value => !Number.isFinite(value) || value < 0 || value > 3)) return null;
+  return result.level === 'ดีเยี่ยม' ? 3 : result.level === 'ดี' ? 2 : result.level === 'ผ่าน' ? 1 : 0;
+};
+
 const writeLocalAssessment = (assessment: ClassroomAssessment): void => {
   try {
     localStorage.setItem(getLocalKey(assessment.id), JSON.stringify(assessment));
@@ -135,15 +152,18 @@ export const saveClassroomAssessment = async (
     ...assessment,
     updatedAt: Date.now(),
   };
-  writeLocalAssessment(next);
+  // A failed cloud write must not create a confirmed result for official export.
+  writeLocalAssessment({ ...next, confirmedByTeacher: false });
 
   if (!firebaseAvailable()) {
     throw new Error('ยังไม่ได้ตั้งค่า Firebase ระบบเก็บสำรองไว้ในเครื่องนี้แล้ว');
   }
 
+  if (next.confirmedByTeacher) await requireTeacherGradeAccess();
   await setDoc(doc(db, COLLECTION, next.id), {
     ...next,
     syncedAt: serverTimestamp(),
   }, { merge: true });
+  writeLocalAssessment(next);
   return next;
 };

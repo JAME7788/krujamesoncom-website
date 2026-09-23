@@ -65,7 +65,6 @@ const PCBuilderGame = React.lazy(() => import('./pages/games/PCBuilderGame'));
 const StroopColorGame = React.lazy(() => import('./pages/games/StroopColorGame'));
 const SpaceTreasureGame = React.lazy(() => import('./pages/games/SpaceTreasureGame'));
 const CyberCopGame = React.lazy(() => import('./pages/games/CyberCopGame'));
-const KruComArcadeGame = React.lazy(() => import('./pages/games/KruComArcadeGame'));
 const FlowchartBingoGame = React.lazy(() => import('./pages/games/FlowchartBingoGame'));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -145,7 +144,6 @@ function App() {
                   <Route path="/games/stroop-color" element={<LoginPromptOverlay><StroopColorGame /></LoginPromptOverlay>} />
                   <Route path="/games/space-treasure" element={<LoginPromptOverlay><SpaceTreasureGame /></LoginPromptOverlay>} />
                   <Route path="/games/cyber-cop" element={<LoginPromptOverlay><CyberCopGame /></LoginPromptOverlay>} />
-                  <Route path="/games/krucom-arcade" element={<LoginPromptOverlay><KruComArcadeGame /></LoginPromptOverlay>} />
                   <Route path="/games/flowchart-bingo" element={<LoginPromptOverlay><FlowchartBingoGame /></LoginPromptOverlay>} />
                   <Route path="/tools" element={<Tools />} />
                   <Route path="/parent/:studentId" element={<ParentPortal />} />

@@ -1,16 +1,18 @@
+import { ExamScoreInput } from './ExamScoreInput';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Download, Users, RefreshCw, FileSpreadsheet, BookOpen, Calculator, Printer, Plus, Trash2, X } from 'lucide-react';
+import { Download, Users, RefreshCw, FileSpreadsheet, BookOpen, Calculator, Printer, Plus, Trash2, X, CalendarRange, LockKeyhole, CircleCheckBig } from 'lucide-react';
 import {
   loadGrades, initClassroom, updateStudentScore, updateFinalExam, updateMidtermExam,
   computeBreakdown, computeGrade, getIndicators, examMaxScores,
   syncAllFromProgressAsync, downloadCSV, fetchClassroomFromFirebase,
   getLinkedUnits, diagnoseProgress, getSubjectsForClassroom, cacheGradesLocally,
-  SCORE_WEIGHT, loadManualAssessments, loadManualAssessmentScores,
+  getGradingPolicy, getFinalExamScore, loadManualAssessments, loadManualAssessmentScores,
   createManualAssessment, deleteManualAssessment, updateManualAssessmentScore,
   updateManualAssessment, updateTeacherKnowledgeScore,
   updatePracticeCriteriaScores, getPracticeLevel, PRACTICE_MAX_SCORE,
   applyManualAssessmentsToGrades, COURSE_TEACHER_NAME,
   getGradingPeriodLabel, getExamPolicyLabel, mergeRemoteWithLocalGrades,
+  getGradeSaveStatus, subscribeGradeSaveStatus, retryGradeSaves,
 } from '../services/gradeService';
 import { findGrade } from '../data/curriculum';
 import { Link as LinkIcon, Info } from 'lucide-react';
@@ -23,6 +25,18 @@ import { OfficialGradeExportModal } from './OfficialGradeExportModal';
 import { StudentGradeSlipPrintLayout } from './StudentGradeSlipPrintLayout';
 import { getClassroomExportSummary } from '../services/gradeExportService';
 import { calculatePresetScore, type ScorePresetRatio } from '../utils/scorePresets';
+import { getActiveGradingPeriod, setActiveGradingPeriod, gradingPeriodKey, type GradingPeriod } from '../services/gradingPeriodService';
+import {
+  fetchGradebookWorkflowFromCloud,
+  finalizeGradebook,
+  getGradebookWorkflowCloudStatus,
+  loadGradebookWorkflow,
+  markGradebookForReview,
+  queueGradebookWorkflowCloudSync,
+  reopenGradebook,
+  retryGradebookWorkflowCloudSync,
+  subscribeGradebookWorkflowCloudStatus,
+} from '../services/gradebookWorkflowService';
 
 const withTimeout = async <T,>(promise: Promise<T>, milliseconds: number, label: string): Promise<T> => {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -88,27 +102,18 @@ const KScoreInput: React.FC<KScoreInputProps> = ({
     score !== undefined && score !== null ? String(score) : '',
   );
   const [isFocused, setIsFocused] = useState(false);
-
-  useEffect(() => {
-    if (!isFocused) {
-      setLocalVal(score !== undefined && score !== null ? String(score) : '');
-    }
-  }, [score, isFocused]);
+  const [isDirty, setIsDirty] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    setLocalVal(raw);
-    if (raw.trim() === '') {
-      return;
-    }
-    const num = Number(raw);
-    if (!Number.isNaN(num) && num >= 0 && num <= maxScore) {
-      onSave(raw);
-    }
+    setLocalVal(e.target.value);
+    setIsDirty(true);
   };
 
   const handleBlur = () => {
-    setIsFocused(false);
+    if (!isDirty) {
+      setIsFocused(false);
+      return;
+    }
     if (localVal.trim() === '') {
       onSave('');
       setLocalVal(webScore > 0 ? String(webScore) : '');
@@ -122,6 +127,8 @@ const KScoreInput: React.FC<KScoreInputProps> = ({
         setLocalVal(score !== undefined && score !== null ? String(score) : '');
       }
     }
+    setIsDirty(false);
+    setIsFocused(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -134,12 +141,16 @@ const KScoreInput: React.FC<KScoreInputProps> = ({
     <input
       type="number"
       className={`k-input ${hasTeacherScore ? 'teacher-override' : ''}`}
-      value={localVal}
+      value={isFocused ? localVal : score !== undefined && score !== null ? String(score) : ''}
       min={0}
       max={maxScore}
       step="any"
       placeholder={webScore > 0 ? String(webScore) : '-'}
-      onFocus={() => setIsFocused(true)}
+      onFocus={() => {
+        setLocalVal(score !== undefined && score !== null ? String(score) : '');
+        setIsDirty(false);
+        setIsFocused(true);
+      }}
       onChange={handleChange}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
@@ -148,9 +159,54 @@ const KScoreInput: React.FC<KScoreInputProps> = ({
   );
 };
 
+const TeacherKOverrideInput: React.FC<{
+  value: number | undefined;
+  maxScore: number;
+  onSave: (value: string) => void;
+}> = ({ value, maxScore, onSave }) => {
+  const [draft, setDraft] = useState(value == null ? '' : String(value));
+  const [focused, setFocused] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  const commit = () => {
+    if (dirty) {
+      const raw = draft.trim();
+      if (raw === '') onSave('');
+      else {
+        const number = Number(raw);
+        if (Number.isFinite(number)) {
+          onSave(String(Math.max(0, Math.min(maxScore, Math.round(number * 10) / 10))));
+        }
+      }
+    }
+    setFocused(false);
+    setDirty(false);
+  };
+
+  return (
+    <input
+      type="number"
+      min={0}
+      max={maxScore}
+      step="any"
+      value={focused ? draft : value ?? ''}
+      onFocus={() => { setDraft(value == null ? '' : String(value)); setFocused(true); setDirty(false); }}
+      onChange={(event) => { setDraft(event.target.value); setDirty(true); }}
+      onBlur={commit}
+      onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }}
+      aria-label="คะแนน K ที่ครูกรอกเอง"
+    />
+  );
+};
+
 const GradeBook: React.FC = () => {
+  const [period, setPeriod] = useState<GradingPeriod>(getActiveGradingPeriod);
   const [classroom, setClassroom] = useState<string>('ป.1');
+  const SCORE_WEIGHT = getGradingPolicy(classroom);
   const [subject, setSubject] = useState<Subject>('main');
+  const [, updateSaveStatus] = useState(0);
+  const saveStatus = getGradeSaveStatus(classroom, subject);
+  useEffect(() => subscribeGradeSaveStatus(() => updateSaveStatus(value => value + 1)), []);
   const [loading, setLoading] = useState(false);
   const [showLinkage, setShowLinkage] = useState(false);
   const [printableMode, setPrintableMode] = useState(false);
@@ -161,6 +217,8 @@ const GradeBook: React.FC = () => {
     maxScore: 10,
   });
   const [reloadKey, setReloadKey] = useState(0);
+  const [workflowKey, setWorkflowKey] = useState(0);
+  const [, setWorkflowCloudKey] = useState(0);
   const [loadedGradebookKey, setLoadedGradebookKey] = useState('');
   const [scoreDialog, setScoreDialog] = useState<{ studentCode: string; indicatorId: string } | null>(null);
   const [practiceDialog, setPracticeDialog] = useState<{ studentCode: string; indicatorId: string } | null>(null);
@@ -170,8 +228,27 @@ const GradeBook: React.FC = () => {
   const [showOfficialExportModal, setShowOfficialExportModal] = useState(false);
   const [showBatchSlipsModal, setShowBatchSlipsModal] = useState(false);
   const toast = useToast();
-  const gradebookKey = `${classroom}_${subject}`;
+  const gradebookKey = `${gradingPeriodKey(period)}_${classroom}_${subject}`;
   const gradebookReady = loadedGradebookKey === gradebookKey;
+  const workflow = useMemo(() => {
+    void workflowKey;
+    return loadGradebookWorkflow(classroom, subject, period);
+  }, [classroom, period, subject, workflowKey]);
+  const workflowCloudStatus = getGradebookWorkflowCloudStatus(classroom, subject);
+
+  useEffect(() => subscribeGradebookWorkflowCloudStatus(() => setWorkflowCloudKey((key) => key + 1)), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchGradebookWorkflowFromCloud(classroom, subject, period)
+      .then((remote) => {
+        if (!cancelled && remote) setWorkflowKey((key) => key + 1);
+      })
+      .catch(() => {
+        // Local workflow stays available when Firebase Auth/network is unavailable.
+      });
+    return () => { cancelled = true; };
+  }, [classroom, period, subject]);
 
   useEffect(() => {
     let cancelled = false;
@@ -230,6 +307,12 @@ const GradeBook: React.FC = () => {
     setReloadKey((k) => k + 1);
   };
 
+  const ensureGradebookEditable = (): boolean => {
+    if (workflow.state !== 'finalized') return true;
+    toast.show('ผลคะแนนถูกปิดแล้ว กรุณากด “เปิดแก้ไขใหม่” และระบุเหตุผลก่อนแก้คะแนน', 'error');
+    return false;
+  };
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (loadGrades(classroom, subject).length === 0 && students2569[classroom]) {
@@ -254,6 +337,7 @@ const GradeBook: React.FC = () => {
   }, [classroom, gradebookKey, students2569, subject]);
 
   const handleTeacherK = (studentCode: string, indicatorId: string, value: string) => {
+    if (!ensureGradebookEditable()) return;
     if (value.trim() === '') {
       updateTeacherKnowledgeScore(classroom, studentCode, indicatorId, null, subject);
       reload();
@@ -278,6 +362,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleCreateKnowledgeItem = () => {
+    if (!ensureGradebookEditable()) return;
     if (!scoreDialog || !newKnowledgeItem.title.trim()) {
       toast.show('กรุณาใส่ชื่อการบ้านหรืองานเพิ่มเติม', 'error');
       return;
@@ -294,6 +379,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleCreatePracticeItem = () => {
+    if (!ensureGradebookEditable()) return;
     if (!practiceDialog || !newPracticeItem.title.trim()) {
       toast.show('กรุณาใส่ชื่อการบ้านหรืองานปฏิบัติ', 'error');
       return;
@@ -310,6 +396,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handlePracticeCriterion = (index: number, score: number) => {
+    if (!ensureGradebookEditable()) return;
     if (!practiceDialog) return;
     const student = grades.find((grade) => grade.studentCode === practiceDialog.studentCode);
     const current = student?.indicators[practiceDialog.indicatorId]?.practiceCriteria
@@ -326,6 +413,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handlePracticePreset = (score: number) => {
+    if (!ensureGradebookEditable()) return;
     if (!practiceDialog) return;
     updatePracticeCriteriaScores(
       classroom,
@@ -343,6 +431,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleKnowledgeItemScore = (assessment: ManualAssessment, studentCode: string, raw: string) => {
+    if (!ensureGradebookEditable()) return;
     const score = raw.trim() === '' ? null : Number(raw);
     updateManualAssessmentScore(classroom, subject, assessment.id, studentCode, score);
     applyManualAssessmentsToGrades(classroom, subject);
@@ -353,12 +442,14 @@ const GradeBook: React.FC = () => {
     assessmentId: string,
     patch: Partial<Pick<ManualAssessment, 'title' | 'maxScore'>>,
   ) => {
+    if (!ensureGradebookEditable()) return;
     updateManualAssessment(classroom, subject, assessmentId, patch);
     applyManualAssessmentsToGrades(classroom, subject);
     reload();
   };
 
   const handleKnowledgeItemDelete = (assessmentId: string) => {
+    if (!ensureGradebookEditable()) return;
     if (!confirm('ลบช่องคะแนนนี้และคะแนนของนักเรียนทุกคนในงานนี้?')) return;
     deleteManualAssessment(classroom, subject, assessmentId);
     applyManualAssessmentsToGrades(classroom, subject);
@@ -366,6 +457,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleA = (studentCode: string, indicatorId: string, a: boolean) => {
+    if (!ensureGradebookEditable()) return;
     updateStudentScore(classroom, studentCode, indicatorId, { a }, subject);
     reload();
   };
@@ -374,6 +466,7 @@ const GradeBook: React.FC = () => {
   const gradeStats = useMemo(() => {
     const breakdowns = grades.map((grade) => computeBreakdown(grade, classroom, subject));
     const studentCount = grades.length || 1;
+    const evaluatedGrades = grades.map(grade => Number(computeGrade(grade, classroom, subject))).filter(Number.isFinite);
     const midtermEntered = grades.filter((grade) => (
       grade.midtermExam !== undefined && grade.midtermExam !== null
     )).length;
@@ -383,8 +476,8 @@ const GradeBook: React.FC = () => {
 
     return {
       averageTotal: breakdowns.reduce((sum, breakdown) => sum + breakdown.total, 0) / studentCount,
-      averageGrade: grades.reduce((sum, grade) => sum + parseFloat(computeGrade(grade, classroom, subject)), 0) / studentCount,
-      passCount: breakdowns.filter((breakdown) => breakdown.total >= 50).length,
+      averageGrade: evaluatedGrades.length ? evaluatedGrades.reduce((sum, grade) => sum + grade, 0) / evaluatedGrades.length : null,
+      passCount: evaluatedGrades.filter(grade => grade >= 1).length,
       midtermEntered,
       midtermMissing: Math.max(0, grades.length - midtermEntered),
       finalEntered,
@@ -392,7 +485,63 @@ const GradeBook: React.FC = () => {
     };
   }, [classroom, grades, subject]);
 
+  const gradebookComplete = useMemo(() => grades.length > 0 && grades.every((grade) => {
+    if (!Number.isFinite(getFinalExamScore(grade, classroom))) return false;
+    if (examMax.midterm > 0 && !Number.isFinite(grade.midtermExam)) return false;
+    return indicators.every((indicator) => {
+      const score = grade.indicators[indicator.id];
+      const hasK = score && (
+        score.teacherK !== undefined || score.webK !== undefined || score.manualK !== undefined || score.k > 0
+      );
+      return Boolean(hasK && score.pAssessed && score.aAssessed);
+    });
+  }), [classroom, examMax.midterm, grades, indicators]);
+
+  const changePeriod = (patch: Partial<GradingPeriod>) => {
+    const next = setActiveGradingPeriod({ ...period, ...patch });
+    setPeriod(next);
+    setLoadedGradebookKey('');
+    setReloadKey((key) => key + 1);
+  };
+
+  const handleReviewWorkflow = () => {
+    if (!gradebookComplete) {
+      toast.show('ยังส่งตรวจไม่ได้: กรุณากรอก K/P/A และคะแนนสอบให้ครบทุกคน', 'error');
+      return;
+    }
+    const next = markGradebookForReview(classroom, subject);
+    queueGradebookWorkflowCloudSync(next);
+    setWorkflowKey((key) => key + 1);
+    toast.show('เปลี่ยนสถานะเป็นรอยืนยันแล้ว', 'success');
+  };
+
+  const handleFinalizeWorkflow = () => {
+    if (!gradebookComplete) {
+      toast.show('ยังปิดผลไม่ได้: คะแนนยังไม่ครบ', 'error');
+      return;
+    }
+    const next = finalizeGradebook(classroom, subject, {
+      grades,
+      manualAssessments,
+      manualScores,
+      savedAt: Date.now(),
+    }, SCORE_WEIGHT.version);
+    queueGradebookWorkflowCloudSync(next);
+    setWorkflowKey((key) => key + 1);
+    toast.show('ปิดผลและเก็บสำเนาคะแนนรุ่นนี้แล้ว', 'success');
+  };
+
+  const handleReopenWorkflow = () => {
+    const reason = window.prompt('ระบุเหตุผลที่เปิดแก้ไขผลอีกครั้ง');
+    if (!reason?.trim()) return;
+    const next = reopenGradebook(classroom, subject, reason);
+    queueGradebookWorkflowCloudSync(next);
+    setWorkflowKey((key) => key + 1);
+    toast.show('เปิดสมุดคะแนนให้แก้ไขอีกครั้งแล้ว', 'success');
+  };
+
   const handleFinal = (studentCode: string, value: string) => {
+    if (!ensureGradebookEditable()) return;
     if (value.trim() === '') {
       updateFinalExam(classroom, studentCode, undefined, subject);
       reload();
@@ -406,6 +555,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleMidterm = (studentCode: string, value: string) => {
+    if (!ensureGradebookEditable()) return;
     if (value.trim() === '') {
       updateMidtermExam(classroom, studentCode, undefined, subject);
       reload();
@@ -419,6 +569,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleSync = async () => {
+    if (!ensureGradebookEditable()) return;
     setLoading(true);
     try {
       const r = await withTimeout(
@@ -486,6 +637,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleReset = () => {
+    if (!ensureGradebookEditable()) return;
     if (!confirm(`ลบคะแนนทั้งห้อง ${classroom} แล้วเริ่มใหม่จากรายชื่อ 2569?`)) return;
     initClassroom(classroom, subject);
     reload();
@@ -516,6 +668,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleCreateManualAssessment = () => {
+    if (!ensureGradebookEditable()) return;
     const title = draftAssessment.title.trim();
     const indicatorId = draftAssessment.indicatorId || indicators[0]?.id;
     if (!title) {
@@ -538,6 +691,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleManualScore = (assessment: ManualAssessment, studentCode: string, raw: string) => {
+    if (!ensureGradebookEditable()) return;
     const score = raw.trim() === '' ? null : Number(raw);
     updateManualAssessmentScore(classroom, subject, assessment.id, studentCode, score);
     applyManualAssessmentsToGrades(classroom, subject);
@@ -545,6 +699,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleApplyManualAssessments = () => {
+    if (!ensureGradebookEditable()) return;
     const result = applyManualAssessmentsToGrades(classroom, subject);
     reload();
     toast.show(
@@ -554,6 +709,7 @@ const GradeBook: React.FC = () => {
   };
 
   const handleDeleteManualAssessment = (assessmentId: string) => {
+    if (!ensureGradebookEditable()) return;
     if (!confirm('ลบงานนี้และคะแนนที่กรอกไว้ทั้งหมด?')) return;
     deleteManualAssessment(classroom, subject, assessmentId);
     applyManualAssessmentsToGrades(classroom, subject);
@@ -642,9 +798,33 @@ const GradeBook: React.FC = () => {
         <p style={{ marginTop: '0.25rem' }}>ครูประจำวิชา: {COURSE_TEACHER_NAME}</p>
       </div>
       {/* Toolbar */}
+      <div role="status" aria-live="polite" style={{ padding: '10px 14px', marginBottom: 12, background: saveStatus.state === 'error' ? '#fff1f2' : '#f1f5f9', borderRadius: 8 }}>
+        {saveStatus.state === 'idle' && 'ยังไม่มีรายการแก้คะแนนส่งขึ้นคลาวด์ในรอบนี้'}
+        {saveStatus.state === 'saving' && `กำลังบันทึกขึ้นคลาวด์ (${saveStatus.pending} รายการ)`}
+        {saveStatus.state === 'saved' && saveStatus.pending === 0 && 'บันทึกการแก้คะแนนขึ้นคลาวด์แล้ว'}
+        {saveStatus.state === 'error' && `ส่งไม่สำเร็จ — มี ${saveStatus.pending} รายการรอส่ง กรุณาเปิดหน้านี้ไว้`}
+        {saveStatus.error && <small style={{ display: 'block' }}>{saveStatus.error}</small>}
+        {saveStatus.pending > 0 && <button type="button" className="btn-secondary" onClick={() => void retryGradeSaves()} disabled={saveStatus.state === 'saving'}>ลองส่งใหม่</button>}
+        <small style={{ display: 'block' }}>สถานะนี้ครอบคลุมการแก้ K/P/A และคะแนนสอบในสมุดคะแนน</small>
+      </div>
       <div className="gb-toolbar">
         <div className="filter-group">
-          <label><Users size={14} /> ชั้นเรียน (ปีการศึกษา 2569)</label>
+          <label><CalendarRange size={14} /> ปีการศึกษา</label>
+          <select value={period.academicYear} onChange={(event) => changePeriod({ academicYear: event.target.value })}>
+            <option value="2568">2568</option>
+            <option value="2569">2569</option>
+            <option value="2570">2570</option>
+          </select>
+        </div>
+        <div className="filter-group">
+          <label>ภาคเรียน</label>
+          <select value={period.term} onChange={(event) => changePeriod({ term: event.target.value === '2' ? '2' : '1' })}>
+            <option value="1">ภาคเรียนที่ 1</option>
+            <option value="2">ภาคเรียนที่ 2</option>
+          </select>
+        </div>
+        <div className="filter-group">
+          <label><Users size={14} /> ชั้นเรียน</label>
           <select value={classroom} onChange={(e) => setClassroom(e.target.value)}>
             {allClassrooms2569.map((c) => (
               <option key={c} value={c}>
@@ -653,6 +833,21 @@ const GradeBook: React.FC = () => {
             ))}
           </select>
         </div>
+        {workflow.state === 'draft' && (
+          <button className="btn-secondary" onClick={handleReviewWorkflow} disabled={!gradebookComplete}>
+            <CircleCheckBig size={14} /> ส่งรอยืนยัน
+          </button>
+        )}
+        {workflow.state === 'review' && (
+          <button className="btn-primary" onClick={handleFinalizeWorkflow} disabled={!gradebookComplete}>
+            <LockKeyhole size={14} /> ปิดผล
+          </button>
+        )}
+        {workflow.state === 'finalized' && (
+          <button className="btn-secondary" onClick={handleReopenWorkflow}>
+            เปิดแก้ไขใหม่
+          </button>
+        )}
         <button className="btn-secondary" onClick={handleSync} disabled={loading}>
           <RefreshCw size={14} /> {loading ? 'กำลังดึงคะแนน...' : 'นำเข้า K/P/A จากเว็บ (Firebase)'}
         </button>
@@ -710,6 +905,22 @@ const GradeBook: React.FC = () => {
         <button className="btn-export" onClick={() => downloadCSV(classroom, subject)}>
           <Download size={16} /> Export CSV
         </button>
+      </div>
+      <div role="status" aria-live="polite" style={{ padding: '10px 14px', marginBottom: 12, borderRadius: 8, background: workflow.state === 'finalized' ? '#dcfce7' : workflow.state === 'review' ? '#fef3c7' : '#eff6ff' }}>
+        <strong>สถานะผลคะแนน: {workflow.state === 'finalized' ? 'ปิดผลแล้ว' : workflow.state === 'review' ? 'รอยืนยัน' : gradebookComplete ? 'คะแนนครบ — พร้อมส่งตรวจ' : 'ยังไม่ครบ'}</strong>
+        {workflow.finalizedAt && <small style={{ display: 'block' }}>เก็บสำเนาเมื่อ {new Date(workflow.finalizedAt).toLocaleString('th-TH')} • เกณฑ์ {workflow.policyVersion}</small>}
+        {workflow.reopenReason && workflow.state === 'draft' && <small style={{ display: 'block' }}>เหตุผลที่เปิดแก้ไข: {workflow.reopenReason}</small>}
+        <small style={{ display: 'block' }}>
+          {workflowCloudStatus.state === 'saving' && 'กำลังส่งสถานะปิดผลขึ้นคลาวด์'}
+          {workflowCloudStatus.state === 'saved' && workflowCloudStatus.pending === 0 && 'สถานะปิดผลขึ้นคลาวด์แล้ว'}
+          {workflowCloudStatus.state === 'error' && `ส่งสถานะปิดผลไม่สำเร็จ (${workflowCloudStatus.pending} รายการรอส่ง)`}
+          {workflowCloudStatus.state === 'idle' && 'ยังไม่มีการเปลี่ยนสถานะที่ต้องส่งขึ้นคลาวด์'}
+        </small>
+        {workflowCloudStatus.pending > 0 && (
+          <button type="button" className="btn-secondary" onClick={() => void retryGradebookWorkflowCloudSync()} disabled={workflowCloudStatus.state === 'saving'}>
+            ลองส่งสถานะปิดผลใหม่
+          </button>
+        )}
       </div>
 
       {/* Subject tabs — แสดงเฉพาะห้องที่มีหลายวิชา (ม.1-3) */}
@@ -960,14 +1171,15 @@ const GradeBook: React.FC = () => {
               </div>
               <p>
                 {gradeStats.midtermMissing === 0
-                  ? `ห้อง/วิชานี้กรอกคะแนนกลางภาคครบแล้ว เฉลี่ยรวมตอนนี้ ${gradeStats.averageTotal.toFixed(1)}/100`
+                  ? `ห้อง/วิชานี้กรอกคะแนนกลางภาคครบแล้ว เฉลี่ยรวมตอนนี้ ${gradeStats.averageTotal.toFixed(2)}/${SCORE_WEIGHT.TOTAL}`
                   : `ยังขาดคะแนนกลางภาค ${gradeStats.midtermMissing} คน คะแนนรวมตอนนี้จึงยังต่ำกว่าความจริง`}
               </p>
-              <small>ช่องว่าง = ยังไม่กรอกคะแนน, เลข 0 = ครูตั้งใจให้คะแนน 0 จริง</small>
+              <small>ช่องสอบว่าง = ยังไม่กรอกคะแนน, เลข 0 = ให้คะแนนศูนย์</small>
             </div>
           )}
 
           {/* Table */}
+          <p className="gb-input-help">คะแนน K และสอบ: กด Enter หรือคลิกนอกช่องเพื่อบันทึก · ล้าง K เพื่อกลับไปใช้คะแนนเว็บและงาน · ช่องสอบว่างคือยังไม่กรอก ส่วน 0 คือให้คะแนนศูนย์</p>
           <div className="gb-table-wrap">
             <table className="gb-table">
               <thead>
@@ -981,10 +1193,10 @@ const GradeBook: React.FC = () => {
                         key={ind.id}
                         colSpan={3}
                         className="ind-header"
-                        title={`${ind.title}\n— น้ำหนักในคะแนนเก็บ: ${weightPer.toFixed(1)} คะแนน`}
+                        title={`${ind.title}\n— น้ำหนักในคะแนนเก็บ: ${weightPer.toFixed(2)} คะแนน`}
                       >
                         {ind.code}
-                        <br/><small style={{ opacity: 0.85 }}>(เต็ม {weightPer.toFixed(1)})</small>
+                        <br/><small style={{ opacity: 0.85 }}>(เต็ม {weightPer.toFixed(2)})</small>
                       </th>
                     );
                   })}
@@ -995,7 +1207,7 @@ const GradeBook: React.FC = () => {
                     <th rowSpan={2}><Calculator size={12}/> กลางภาค<br/><small>(เต็ม {examMax.midterm})</small></th>
                   )}
                   <th rowSpan={2}><Calculator size={12}/> ปลายภาค<br/><small>(เต็ม {examMax.final})</small></th>
-                  <th rowSpan={2} className="total-col">รวม<br/><small>(เต็ม 100)</small></th>
+                  <th rowSpan={2} className="total-col">รวม<br/><small>(เต็ม {SCORE_WEIGHT.TOTAL})</small></th>
                   <th rowSpan={2} className="grade-col">เกรด</th>
                 </tr>
                 <tr>
@@ -1077,38 +1289,23 @@ const GradeBook: React.FC = () => {
                       })}
                       <td
                         className="text-center"
-                        title={`K=${breakdown.k}/${(SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.K_RATIO).toFixed(1)} • P=${breakdown.p}/${(SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.P_RATIO).toFixed(1)} • A=${breakdown.a}/${(SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.A_RATIO).toFixed(1)}`}
+                        title={`K=${breakdown.k}/${(SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.K_RATIO).toFixed(2)} • P=${breakdown.p}/${(SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.P_RATIO).toFixed(2)} • A=${breakdown.a}/${(SCORE_WEIGHT.COLLECTED * SCORE_WEIGHT.A_RATIO).toFixed(2)}`}
                         style={{ background: '#fef9c3', fontWeight: 700 }}
                       >
-                        {breakdown.collected.toFixed(1)}
+                        {breakdown.collected.toFixed(2)}
                       </td>
                       {examMax.midterm > 0 && (
                         <td className="text-center">
-                          <input
-                            type="number"
-                            className="k-input"
-                            value={g.midtermExam ?? ''}
-                            min={0}
-                            max={examMax.midterm}
-                            step="any"
-                            placeholder="-"
-                            onChange={(e) => handleMidterm(g.studentCode, e.target.value)}
-                          />
+                          <ExamScoreInput value={g.midtermExam} max={examMax.midterm} label={`คะแนนสอบกลางภาค เลขที่ ${g.studentNo}`} onSave={(value) => handleMidterm(g.studentCode, value)} />
                         </td>
                       )}
                       <td className="text-center">
-                        <input
-                          type="number"
-                          className="k-input"
-                          value={g.finalExam ?? ''}
-                          min={0}
-                          max={examMax.final}
-                          step="any"
-                          placeholder="-"
-                          onChange={(e) => handleFinal(g.studentCode, e.target.value)}
-                        />
+                        <ExamScoreInput value={getFinalExamScore(g, classroom)} max={examMax.final} label={`คะแนนสอบปลายภาค เลขที่ ${g.studentNo}`} onSave={(value) => handleFinal(g.studentCode, value)} />
+                        {g.finalExam !== undefined && (g.finalExamMax ?? 30) !== examMax.final && (
+                          <small style={{ display: 'block' }}>เทียบจากเดิม {g.finalExam}/{g.finalExamMax ?? 30}</small>
+                        )}
                       </td>
-                      <td className="text-center total-col"><strong>{breakdown.total.toFixed(1)}</strong></td>
+                      <td className="text-center total-col"><strong>{breakdown.total.toFixed(2)}</strong></td>
                       <td className={`text-center grade-col grade-${grade.replace('.', '_')}`}>
                         <strong>{grade}</strong>
                       </td>
@@ -1137,24 +1334,24 @@ const GradeBook: React.FC = () => {
               </div>
             )}
             <div>
-              <strong>คะแนนเฉลี่ย:</strong> {gradeStats.averageTotal.toFixed(1)} / 100
+              <strong>คะแนนเฉลี่ย:</strong> {gradeStats.averageTotal.toFixed(2)} / {SCORE_WEIGHT.TOTAL}
             </div>
             <div>
-              <strong>เกรดเฉลี่ย:</strong> {gradeStats.averageGrade.toFixed(2)}
+              <strong>เกรดเฉลี่ย:</strong> {gradeStats.averageGrade?.toFixed(2) ?? 'ยังไม่มีผลสรุป'}
             </div>
             <div>
-              <strong>ผ่านเกณฑ์ (≥ 50/100):</strong> {gradeStats.passCount} / {grades.length}
+              <strong>เกรดผ่านที่สรุปแล้ว:</strong> {gradeStats.passCount} / {grades.length}
             </div>
           </div>
 
           {/* คำอธิบายโครงสร้างคะแนน */}
           <div className="score-structure">
-            <strong>📐 โครงสร้างคะแนน (รวม 100):</strong>
+            <strong>📐 โครงสร้างคะแนน (รวม {SCORE_WEIGHT.TOTAL}):</strong>
             <span className="ss-pill ss-period">{getGradingPeriodLabel(classroom)}</span>
             <span className="ss-pill ss-collected">
               คะแนนเก็บ {SCORE_WEIGHT.COLLECTED}
               <small style={{ marginLeft: 4, opacity: 0.7 }}>
-                ÷ {indicators.length} ตัวชี้วัด = {(SCORE_WEIGHT.COLLECTED / indicators.length).toFixed(1)}/ตัว
+                ÷ {indicators.length} ตัวชี้วัด = {(SCORE_WEIGHT.COLLECTED / indicators.length).toFixed(2)}/ตัว
               </small>
             </span>
             <span style={{ color: '#9ca3af' }}>=</span>
@@ -1208,14 +1405,10 @@ const GradeBook: React.FC = () => {
               </div>
               <div className="gb-teacher-k-controls">
                 <label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={dialogIndicator.maxScore}
-                    step="any"
-                    value={dialogIndicatorScore?.teacherK ?? ''}
-                    onChange={(event) => handleTeacherK(dialogStudent.studentCode, dialogIndicator.id, event.target.value)}
-                    aria-label="คะแนน K ที่ครูกรอกเอง"
+                  <TeacherKOverrideInput
+                    value={dialogIndicatorScore?.teacherK}
+                    maxScore={dialogIndicator.maxScore}
+                    onSave={(value) => handleTeacherK(dialogStudent.studentCode, dialogIndicator.id, value)}
                   />
                   <span>/ {dialogIndicator.maxScore}</span>
                 </label>
@@ -1246,7 +1439,7 @@ const GradeBook: React.FC = () => {
             <div className="gb-score-items-heading">
               <div>
                 <h4>ช่องคะแนนการบ้านและงานเพิ่มเติม</h4>
-                <p>การบ้านที่ผูกกับตัวชี้วัดนี้จะปรากฏอัตโนมัติ ทุกช่องบันทึกทันทีเมื่อแก้คะแนน</p>
+                <p>การบ้านที่ผูกกับตัวชี้วัดนี้จะปรากฏอัตโนมัติ ช่องคะแนน K ที่ครูกรอกเองจะบันทึกเมื่อกด Enter หรือออกจากช่อง</p>
               </div>
               <span>{dialogKnowledgeItems.length} รายการ</span>
             </div>

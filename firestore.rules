@@ -1,16 +1,12 @@
 // ===================================================================
 // Firestore Security Rules — krujamesoncom-website
 //
-// ระบบเรียนออนไลน์ Kru James (ไม่มี Firebase Auth ล็อกอินหลังบ้าน)
+// ระบบคะแนนและ audit ใช้ Firebase Auth + บทบาทครู; ระบบ legacy อื่นยังต้องย้ายสิทธิ์
 //
-// ชั้นการป้องกัน (defense in depth):
-//   1. App Check (reCAPTCHA v3) — บล็อก client ที่ไม่ใช่เว็บจริง ★ ชั้นหลัก
-//      → ต้องเปิด "Enforce" ที่ Firestore ใน Firebase Console
-//   2. Rules ด้านล่าง — ตรวจ shape + จำกัดขนาด กันการยัด payload ระเบิด
-//      และกันการลบทั้ง collection
-//
-// หมายเหตุ: เพราะไม่มี Auth จึงแยก "แอปจริง" กับ "ผู้ไม่หวังดี" ไม่ได้จาก
-// ตัวตน — App Check คือชั้นที่ทำหน้าที่นั้น Rules ทำได้แค่ตรวจรูปร่างข้อมูล
+// คะแนนและ audit: Firebase Auth + teacherProfiles/custom claims เป็นขอบเขตสิทธิ์
+// เกมส่ง progress/learningEvidence; ครูนำเข้าหลักฐานเข้าสมุดคะแนน
+// App Check เสริมการตรวจแอป ไม่ทดแทนสิทธิ์ผู้ใช้
+// collection legacy อื่นยังมีสิทธิ์กว้างและต้องย้ายแยกต่างหาก
 // ===================================================================
 
 rules_version = '2';
@@ -45,8 +41,7 @@ service cloud.firestore {
     function isTeacher() {
       return request.auth != null
         && (
-          request.auth.token.role == 'admin'
-          || request.auth.token.role == 'teacher'
+          (('role' in request.auth.token) && (request.auth.token.role == 'admin' || request.auth.token.role == 'teacher'))
           || (
             exists(/databases/$(database)/documents/teacherProfiles/$(request.auth.uid))
             && get(/databases/$(database)/documents/teacherProfiles/$(request.auth.uid)).data.active == true
@@ -65,10 +60,9 @@ service cloud.firestore {
     }
 
     match /teacherAuditLogs/{id} {
-      // Legacy admin login has no Firebase Auth token yet. App Check remains the
-      // primary gate, so allow append-only audit entries during the migration.
-      allow read: if true;
-      allow create: if baseWrite(20)
+      // Audit snapshots can contain student marks and must share their access boundary.
+      allow read: if isTeacher();
+      allow create: if isTeacher() && baseWrite(20)
                     && strOk('actor', 300)
                     && strOk('action', 300)
                     && strOk('entityType', 100)
@@ -96,8 +90,19 @@ service cloud.firestore {
 
     // ====== Grades (K/P/A + ทักษะอาชีพ) ======
     match /grades/{docId} {
-      allow read: if true;
-      allow write: if baseWrite(30);
+      allow read: if isTeacher();
+      allow create, update: if isTeacher() && baseWrite(30);
+      allow delete: if false;
+    }
+
+    // ====== Grade closure snapshots and reopen history ======
+    match /gradeClosures/{docId} {
+      allow read: if isTeacher();
+      allow create, update: if isTeacher() && baseWrite(20)
+                    && strOk('classroom', 20)
+                    && strOk('subject', 50)
+                    && strOk('policyVersion', 100);
+      allow delete: if false;
     }
 
     // ====== Primary Technology Outcome 5 Assessments ======
@@ -151,14 +156,15 @@ service cloud.firestore {
 
     // ====== Student assessments and general post-lesson records ======
     match /studentAssessments/{recordId} {
-      allow read: if true;
-      allow write: if baseWrite(25)
+      allow read: if isTeacher();
+      allow create, update: if isTeacher() && baseWrite(25)
                    && strOk('classroom', 20)
                    && strOk('academicYear', 10)
                    && strOk('term', 20)
                    && strOk('kind', 50)
                    && strOk('contextKey', 120)
                    && strOk('updatedBy', 300);
+      allow delete: if false;
     }
 
     // ====== Announcements ======

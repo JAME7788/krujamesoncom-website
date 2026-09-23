@@ -6,6 +6,7 @@ import {
   p1TechnologyCourse,
 } from '../src/data/p1TechnologyPlan';
 import { buildP1TechnologyPlanDocumentHtml } from '../src/utils/p1TechnologyPlanDocument';
+import type { LessonRecord } from '../src/services/lessonRecordService';
 
 describe('P.1 hourly technology lesson plans', () => {
   it('contains 40 unique plans for 40 teaching periods', () => {
@@ -56,5 +57,50 @@ describe('P.1 hourly technology lesson plans', () => {
     expect(html).toContain('ภาคเรียนที่ 2 ปีการศึกษา 2569');
     expect(html).toContain('เวลา 1 ชั่วโมง');
     expect(html).toContain('วันที่สอน ......./........./...........');
+    expect(html).toContain('5. รูปแบบการสอน / วิธีการสอน');
+    expect(html).toContain('7. ทักษะ 4 Cs');
+    expect(html).toContain('11. การวัดและการประเมินผล');
+    expect(html).toContain('12. เกณฑ์การให้คะแนน');
+    expect(html).toContain('13. แบบสังเกตพฤติกรรมของนักเรียน');
+    expect(html).toContain('14. แบบประเมินใบงานและชิ้นงาน');
+    expect(html).toContain('15. บันทึกหลังสอน');
+    expect(html).toContain('font-family:"TH SarabunPSK"');
+    expect(html).toContain('margin: 2.54cm');
+  });
+
+  it('exports saved post-teaching records inside the same Word document', () => {
+    const record: LessonRecord = {
+      id: 'p1-plan-1-hour-1-2026-05-07',
+      classroom: 'ป.1',
+      subject: 'main',
+      courseName: 'เทคโนโลยี (วิทยาการคำนวณ)',
+      planNo: 1,
+      hourNo: 1,
+      teachingDate: '2026-05-07',
+      indicatorCodes: ['ว 4.2 ป.1/1'],
+      snapshot: { present: 10, absent: 1, totalStudents: 11, passed: 9, averageK: 12, averageP: 24, attitudePassed: 10 },
+      totalStudents: 11,
+      passedCount: 9,
+      failedCount: 2,
+      summary: 'ผู้เรียนทำกิจกรรมตามลำดับและผ่านจุดประสงค์ส่วนใหญ่',
+      strengths: 'ผู้เรียนช่วยกันอธิบายขั้นตอนได้ชัดเจน',
+      problems: 'นักเรียนบางคนยังสลับลำดับ',
+      causes: 'ต้องฝึกอ่านภาพสัญลักษณ์เพิ่ม',
+      improvements: 'เพิ่มบัตรภาพและฝึกเรียงทีละขั้น',
+      nextAction: 'ทบทวนก่อนเริ่มคาบถัดไป',
+      teacherName: 'นายอนันตชัย เพ็ชรรี่',
+      status: 'complete',
+      createdAt: 1,
+      updatedAt: 2,
+    };
+
+    const html = buildP1TechnologyPlanDocumentHtml([record]);
+
+    expect(html).toContain('วันที่สอน 07/05/2026');
+    expect(html).toContain('บันทึกสมบูรณ์');
+    expect(html).toContain('9 คน<br>ร้อยละ 81.8');
+    expect(html).toContain(record.summary);
+    expect(html).toContain(record.nextAction);
+    expect(html.match(/ยังไม่มีบันทึกหลังสอนในระบบ/g)).toHaveLength(39);
   });
 });

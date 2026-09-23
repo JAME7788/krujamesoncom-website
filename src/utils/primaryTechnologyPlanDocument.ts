@@ -31,16 +31,20 @@ export const buildPrimaryTechnologyPlanDocumentHtml = (
   return `<!doctype html>
 <html lang="th"><head><meta charset="utf-8"><title>แผนการจัดการเรียนรู้ ${escapeHtml(plan.grade)}</title>
 <style>
-@page { size: A4; margin: 1.5cm; }
-body { font-family: "TH Sarabun New", "Sarabun", Arial, sans-serif; color: #111; font-size: 16pt; line-height: 1.35; }
-h1,h2,h3,p { margin: 0; } h1 { font-size: 20pt; text-align: center; }
-.official { display: grid; grid-template-columns: 1.35fr .65fr; gap: 1pt 18pt; margin-top: 8pt; font-weight: 700; }
-.official-rule { height: 1.5pt; margin-top: 6pt; background: #111; }
-.source { margin-top: 4pt; color: #555; font-size: 12pt; }
-.grid { width: 100%; border-collapse: collapse; margin: 12pt 0; } .grid th,.grid td { border: 1px solid #444; padding: 6pt 7pt; vertical-align: top; }
-.grid th { background: #e8eef5; text-align: center; } .section { margin-top: 12pt; font-weight: bold; font-size: 17pt; }
-.outcome { border-left: 5px solid #1f4e79; background: #eef4f8; padding: 8pt 10pt; margin-top: 6pt; }
-ul { margin: 4pt 0 0 22pt; padding: 0; } li { margin-bottom: 3pt; } .signature { margin-top: 22pt; text-align: center; }
+@page { size: A4 portrait; margin: 2.54cm; }
+body { font-family:"TH SarabunPSK","TH Sarabun New",serif; color:#000; font-size:16pt; line-height:1.15; }
+h1 { margin:0 0 5pt; font-size:18pt; text-align:center; } h2 { margin:14pt 0 3pt; font-size:16pt; page-break-after:avoid; }
+h3 { margin:5pt 0 2pt 36pt; font-size:16pt; page-break-after:avoid; } p { margin:1pt 0; }
+.official { display:grid; grid-template-columns:68% 32%; margin-top:0; } .official p:nth-child(even) { text-align:right; }
+.official-rule { border-top:1.25pt solid #000; margin:3pt 0 10pt; }
+.indent { text-indent:36pt; text-align:justify; } .objective { margin-left:72pt; }
+.check-list { margin-left:52pt; } .check-list p { margin:1pt 0; }
+.check-grid { margin-left:52pt; } .check-grid p { display:inline-block; width:45%; }
+ul,ol { margin:2pt 0 4pt 54pt; padding-left:18pt; } li { margin:1pt 0; }
+table { width:100%; border-collapse:collapse; margin:5pt 0 10pt; } th,td { border:1px solid #000; padding:4pt 5pt; vertical-align:top; }
+th { background:#e7e7e7; text-align:center; vertical-align:middle; } thead { display:table-header-group; } tr { page-break-inside:avoid; }
+.quality { width:56%; margin-left:auto; margin-right:auto; page-break-inside:avoid; } .quality td { text-align:center; }
+.signature { width:48%; margin:22pt 0 0 auto; text-align:center; }
 </style></head><body>
 <h1>แผนการจัดการเรียนรู้ที่ 1</h1>
 <div class="official">
@@ -50,18 +54,21 @@ ul { margin: 4pt 0 0 22pt; padding: 0; } li { margin-bottom: 3pt; } .signature {
 <p>เรื่อง ${escapeHtml(plan.title)}</p><p>เวลา 4 ชั่วโมง</p>
 <p>ครูผู้สอน ${escapeHtml(COURSE_TEACHER_NAME)}</p><p>วันที่สอน ......./........./...........</p>
 </div><div class="official-rule"></div>
-<p class="section">คำอธิบายรายวิชาเทคโนโลยี</p><p>${escapeHtml(courseDescription)}</p>
-<p class="source">เรียบเรียงจาก ${escapeHtml(profile?.source || 'เอกสารคำอธิบายรายวิชาของโรงเรียน')} ซึ่งเป็นรายวิชาบูรณาการ ${profile?.hours || '-'} ชั่วโมง</p>
-<p class="section">1. ผลลัพธ์การเรียนรู้หลัก</p><div class="outcome"><b>ข้อ 5</b> ${escapeHtml(plan.mainOutcome)}</div>
-<p class="section">2. ตัวชี้วัดที่ใช้เป็นหลักฐาน</p>${listHtml(plan.subIndicators.map((item) => `${item.code} ${item.description}`))}
-<p class="section">3. จุดประสงค์การเรียนรู้</p><table class="grid"><tr><th style="width:12%">ด้าน</th><th>จุดประสงค์</th></tr><tr><td><b>K</b></td><td>${escapeHtml(plan.objectives.k)}</td></tr><tr><td><b>P</b></td><td>${escapeHtml(plan.objectives.p)}</td></tr><tr><td><b>A</b></td><td>${escapeHtml(plan.objectives.a)}</td></tr></table>
-<p class="section">4. สาระสำคัญ</p><p>${escapeHtml(plan.concept)}</p>
-<p class="section">5. สาระการเรียนรู้</p>${listHtml(plan.content)}
-<p class="section">6. สมรรถนะสำคัญและคุณลักษณะอันพึงประสงค์</p><table class="grid"><tr><th>สมรรถนะการใช้เทคโนโลยี</th><th>คุณลักษณะอันพึงประสงค์</th></tr><tr><td>${listHtml(technologyCompetencyCriteria)}</td><td>${listHtml(characteristicCriteria)}</td></tr></table>
-<p class="section">7. กิจกรรมการเรียนรู้</p><table class="grid"><tr><th style="width:18%">คาบ/เวลา</th><th>กิจกรรมการเรียนรู้</th><th style="width:24%">หลักฐาน</th></tr>${plan.phases.map((phase) => `<tr><td><b>${escapeHtml(phase.title)}</b><br>${escapeHtml(phase.period)}</td><td><b>บทบาทครู:</b> ${escapeHtml(phase.teacherRole)}<br><b>บทบาทผู้เรียน:</b> ${escapeHtml(phase.studentRole)}</td><td>${escapeHtml(phase.evidence)}</td></tr>`).join('')}</table>
-<p class="section">8. ชิ้นงาน ใบงาน และสื่อ</p><p><b>ชิ้นงาน:</b> ${escapeHtml(plan.product)}</p>${listHtml(plan.worksheet)}${listHtml(plan.resources)}
-<p class="section">9. การวัดและประเมินผล</p><table class="grid"><tr><th>สิ่งที่ประเมิน</th><th>วิธีการ/เครื่องมือ</th><th>เกณฑ์ผ่าน</th></tr><tr><td>K ความรู้</td><td>แบบทดสอบหลังเรียน 10 ข้อ</td><td>ตอบถูกอย่างน้อย 6 ข้อ แปลงเป็น K 0-15</td></tr><tr><td>P ทักษะปฏิบัติ</td><td>ชิ้นงานและรูบริกสมรรถนะ ระดับ 0-3</td><td>ค่าเฉลี่ยตั้งแต่ระดับ 2</td></tr><tr><td>A คุณลักษณะ</td><td>แบบสังเกตคุณลักษณะ ระดับ 0-3</td><td>ค่าเฉลี่ยตั้งแต่ระดับ 2</td></tr></table>
-<p class="section">10. บันทึกหลังสอน</p><p>ผู้เรียนผ่าน .......... คน คิดเป็นร้อยละ ..........</p><p>สิ่งที่ผู้เรียนทำได้ดี ....................................................................................................</p><p>ปัญหาและสาเหตุ .......................................................................................................</p><p>แนวทางปรับปรุง .........................................................................................................</p>
+<h2>1. มาตรฐานการเรียนรู้/ตัวชี้วัด</h2><p class="indent"><b>สาระที่ 4 เทคโนโลยี</b></p><p class="indent"><b>มาตรฐาน ว 4.2</b> เข้าใจและใช้แนวคิดเชิงคำนวณในการแก้ปัญหาที่พบในชีวิตจริงอย่างเป็นขั้นตอนและเป็นระบบ ใช้เทคโนโลยีสารสนเทศและการสื่อสารในการเรียนรู้ การทำงาน และการแก้ปัญหาได้อย่างมีประสิทธิภาพ รู้เท่าทัน และมีจริยธรรม</p>${listHtml(plan.subIndicators.map((item) => `${item.code} ${item.description}`))}
+<h2>2. สาระสำคัญ</h2><p class="indent">${escapeHtml(plan.concept)}</p><p class="indent">${escapeHtml(courseDescription)}</p>
+<h2>3. จุดประสงค์การเรียนรู้</h2><h3>3.1 ด้านพุทธิพิสัย (K)</h3><p class="objective">3.1.1 ${escapeHtml(plan.objectives.k)}</p><h3>3.2 ด้านทักษะพิสัย (P)</h3><p class="objective">3.2.1 ${escapeHtml(plan.objectives.p)}</p><h3>3.3 ด้านจิตพิสัย (A)</h3><p class="objective">3.3.1 ${escapeHtml(plan.objectives.a)}</p>
+<h2>4. สาระการเรียนรู้</h2>${listHtml(plan.content)}
+<h2>5. รูปแบบการสอน / วิธีการสอน</h2><ol><li>บทเรียนผ่านเว็บ (Web-based Instruction)</li><li>การจัดการเรียนรู้เชิงรุก (Active Learning)</li><li>การสาธิต การฝึกแบบมีผู้ชี้แนะ และการสะท้อนผล</li></ol>
+<h2>6. สมรรถนะสำคัญของผู้เรียน</h2><div class="check-list">${technologyCompetencyCriteria.map((item) => `<p>☑ ${escapeHtml(item)}</p>`).join('')}</div>
+<h2>7. ทักษะ 4 Cs</h2><div class="check-list"><p>☑ ทักษะการคิดวิจารณญาณ (Critical Thinking)</p><p>☑ ทักษะการทำงานร่วมกัน (Collaboration Skill)</p><p>☑ ทักษะการสื่อสาร (Communication Skill)</p><p>☑ ทักษะความคิดสร้างสรรค์ (Creative Thinking)</p></div>
+<h2>8. คุณลักษณะอันพึงประสงค์</h2><div class="check-grid">${characteristicCriteria.map((item) => `<p>☑ ${escapeHtml(item)}</p>`).join('')}</div>
+<h2>9. การจัดกระบวนการเรียนรู้</h2>${plan.phases.map((phase) => `<h3>${escapeHtml(phase.title)} (${escapeHtml(phase.period)})</h3><ol><li><b>บทบาทครู:</b> ${escapeHtml(phase.teacherRole)}</li><li><b>บทบาทผู้เรียน:</b> ${escapeHtml(phase.studentRole)}</li><li><b>หลักฐาน:</b> ${escapeHtml(phase.evidence)}</li></ol>`).join('')}
+<h2>10. สื่อและแหล่งการเรียนรู้</h2>${listHtml(plan.resources)}<p><b>ใบงาน:</b> ${escapeHtml(plan.worksheet.join(' / '))}</p><p><b>ชิ้นงาน:</b> ${escapeHtml(plan.product)}</p>
+<h2>11. การวัดและการประเมินผล</h2><table><tr><th>จุดประสงค์</th><th>วิธีการประเมิน</th><th>เครื่องมือการประเมิน</th><th>เกณฑ์การประเมิน</th></tr><tr><td>${escapeHtml(plan.objectives.k)} (K)</td><td>ตรวจคำตอบหลังเรียน</td><td>แบบทดสอบ 10 ข้อ</td><td>ตอบถูกอย่างน้อย 6 ข้อ</td></tr><tr><td>${escapeHtml(plan.objectives.p)} (P)</td><td>ประเมินการปฏิบัติและชิ้นงาน</td><td>รูบริกชิ้นงาน 3 ระดับ</td><td>คุณภาพระดับพอใช้ขึ้นไป</td></tr><tr><td>${escapeHtml(plan.objectives.a)} (A)</td><td>สังเกตพฤติกรรม</td><td>แบบสังเกตพฤติกรรม</td><td>คุณภาพระดับพอใช้ขึ้นไป</td></tr></table>
+<h2>12. เกณฑ์การให้คะแนน</h2><table><tr><th>ประเด็นการประเมินชิ้นงาน</th><th>ดี (3 คะแนน)</th><th>พอใช้ (2 คะแนน)</th><th>ปรับปรุง (1 คะแนน)</th></tr><tr><td>ความถูกต้องและสอดคล้องกับโจทย์</td><td>ถูกต้องครบถ้วนและอธิบายได้</td><td>ถูกต้องเป็นส่วนใหญ่</td><td>ถูกต้องบางส่วนเมื่อได้รับคำแนะนำ</td></tr><tr><td>การใช้เทคโนโลยีและกระบวนการทำงาน</td><td>ทำตามขั้นตอนได้ด้วยตนเอง</td><td>ทำได้เมื่อมีคำแนะนำเล็กน้อย</td><td>ต้องได้รับการช่วยเหลือใกล้ชิด</td></tr><tr><td>ความรับผิดชอบ</td><td>รับผิดชอบและร่วมมือสม่ำเสมอ</td><td>รับผิดชอบเป็นส่วนใหญ่</td><td>ต้องได้รับการเตือนและดูแล</td></tr></table>
+<h2>13. แบบสังเกตพฤติกรรมของนักเรียน</h2><p><b>คำชี้แจง:</b> 3 = มาก  2 = ปานกลาง  1 = น้อย</p><table><tr><th>พฤติกรรมที่สังเกต</th><th>3</th><th>2</th><th>1</th></tr>${characteristicCriteria.map((item, index) => `<tr><td>${index + 1}. ${escapeHtml(item)}</td><td></td><td></td><td></td></tr>`).join('')}<tr><td><b>รวมคะแนน</b></td><td colspan="3"></td></tr></table><table class="quality"><tr><th>ช่วงคะแนน</th><th>ระดับคุณภาพ</th></tr><tr><td>13 - 15</td><td>ดีมาก</td></tr><tr><td>10 - 12</td><td>ดี</td></tr><tr><td>7 - 9</td><td>พอใช้</td></tr><tr><td>1 - 6</td><td>ปรับปรุง</td></tr></table>
+<h2>14. แบบประเมินใบงานและชิ้นงาน</h2><table><tr><th>ประเด็นการประเมิน</th><th>3 คะแนน</th><th>2 คะแนน</th><th>1 คะแนน</th></tr><tr><td>ความสอดคล้องกับเนื้อหา</td><td></td><td></td><td></td></tr><tr><td>ความถูกต้องของขั้นตอน</td><td></td><td></td><td></td></tr><tr><td>การอธิบายเหตุผล</td><td></td><td></td><td></td></tr><tr><td>ความเรียบร้อยและความรับผิดชอบ</td><td></td><td></td><td></td></tr><tr><td><b>รวมคะแนน</b></td><td colspan="3"></td></tr></table>
+<h2>15. บันทึกหลังสอน</h2><p>นักเรียนทั้งหมด .......... คน ผ่านจุดประสงค์ .......... คน คิดเป็นร้อยละ ..........</p><p><b>สรุปผลการจัดการเรียนรู้</b> ............................................................................................................................</p><p><b>สิ่งที่ผู้เรียนทำได้ดี</b> ....................................................................................................................................</p><p><b>ปัญหาและสาเหตุ</b> ........................................................................................................................................</p><p><b>แนวทางปรับปรุงและสิ่งที่จะทำในคาบถัดไป</b> ...............................................................................................</p>
 <div class="signature"><p>ลงชื่อ ........................................................ ครูผู้สอน</p><p>(${escapeHtml(COURSE_TEACHER_NAME)})</p></div>
 </body></html>`;
 };

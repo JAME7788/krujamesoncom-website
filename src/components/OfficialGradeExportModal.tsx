@@ -12,7 +12,7 @@ import {
   type ClassroomExportSummary,
 } from '../services/gradeExportService';
 import { allClassrooms2569 } from '../data/students2569';
-import { getSubjectsForClassroom, type Subject } from '../services/gradeService';
+import { getSubjectsForClassroom, getGradingPolicy, type Subject } from '../services/gradeService';
 import { OfficialPp5PrintLayout } from './OfficialPp5PrintLayout';
 import { StudentGradeSlipPrintLayout } from './StudentGradeSlipPrintLayout';
 import { useToast } from './Toast';
@@ -35,6 +35,7 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
   const [printMode, setPrintMode] = useState<'none' | 'pp5' | 'slips'>('none');
   const [selectedStudentForSlip, setSelectedStudentForSlip] = useState<string | undefined>(undefined);
   const toast = useToast();
+  const weights = getGradingPolicy(selectedClassroom);
 
   const subjects = useMemo(() => getSubjectsForClassroom(selectedClassroom), [selectedClassroom]);
 
@@ -90,8 +91,12 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
   };
 
   const handleDownloadSchoolMis = () => {
-    downloadSchoolMisCsvFile(selectedClassroom, activeSubject);
-    toast.show(`ดาวน์โหลดไฟล์ SchoolMIS (${selectedClassroom}) สำเร็จ`, 'success');
+    try {
+      downloadSchoolMisCsvFile(selectedClassroom, activeSubject);
+      toast.show(`ดาวน์โหลดไฟล์ SchoolMIS (${selectedClassroom}) สำเร็จ`, 'success');
+    } catch (error) {
+      toast.show(error instanceof Error ? error.message : String(error), 'error');
+    }
   };
 
   return (
@@ -258,9 +263,9 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
                   <th>เลขที่</th>
                   <th>รหัส</th>
                   <th>ชื่อ - นามสกุล</th>
-                  <th>คะแนนเก็บ (70)</th>
-                  <th>สอบ (30)</th>
-                  <th>รวม (100)</th>
+                  <th>คะแนนเก็บ ({weights.COLLECTED})</th>
+                  <th>สอบ ({weights.EXAM})</th>
+                  <th>รวม ({weights.TOTAL})</th>
                   <th>เกรด</th>
                   <th>ผลการตัดสิน</th>
                   <th>พิมพ์รายคน</th>

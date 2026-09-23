@@ -6,7 +6,7 @@ import {
   COURSE_TEACHER_NAME,
   SCHOOL_DIRECTOR_NAME,
 } from '../services/gradeExportService';
-import { examMaxScores } from '../services/gradeService';
+import { examMaxScores, getGradingPolicy } from '../services/gradeService';
 
 interface StudentGradeSlipPrintLayoutProps {
   summary: ClassroomExportSummary;
@@ -24,6 +24,7 @@ export const StudentGradeSlipPrintLayout: React.FC<StudentGradeSlipPrintLayoutPr
     : summary.rows;
 
   const exam = examMaxScores(summary.classroom);
+  const weights = getGradingPolicy(summary.classroom);
 
   const handlePrint = () => {
     window.print();
@@ -67,7 +68,7 @@ export const StudentGradeSlipPrintLayout: React.FC<StudentGradeSlipPrintLayoutPr
                 <div className="slip-school-badge">🏫 {summary.schoolName}</div>
                 <h2 className="slip-doc-title">ใบแจ้งผลการเรียนรายบุคคลประจำวิชา</h2>
                 <div className="slip-sub-info">
-                  กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี • ภาคเรียนที่ 1 ปีการศึกษา {summary.academicYear}
+                  กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี • ภาคเรียนที่ {summary.term} ปีการศึกษา {summary.academicYear}
                 </div>
               </div>
 
@@ -84,10 +85,10 @@ export const StudentGradeSlipPrintLayout: React.FC<StudentGradeSlipPrintLayoutPr
                 <thead>
                   <tr>
                     <th>รายวิชา</th>
-                    <th>คะแนนเก็บ (70)</th>
+                    <th>คะแนนเก็บ ({weights.COLLECTED})</th>
                     {exam.midterm > 0 && <th>กลางภาค ({exam.midterm})</th>}
                     <th>ปลายภาค ({exam.final})</th>
-                    <th>คะแนนรวม (100)</th>
+                    <th>คะแนนรวม ({weights.TOTAL})</th>
                     <th>ระดับผลการเรียน</th>
                     <th>ผลการตัดสิน</th>
                   </tr>
@@ -114,19 +115,19 @@ export const StudentGradeSlipPrintLayout: React.FC<StudentGradeSlipPrintLayoutPr
                 <div className="attr-item">
                   <span className="attr-label">คุณลักษณะอันพึงประสงค์:</span>
                   <span className="attr-val">
-                    {student.characteristicsScore === 3 ? 'ดีเยี่ยม (3)' : student.characteristicsScore === 2 ? 'ดี (2)' : 'ผ่าน (1)'}
+                    {student.characteristicsScore === null ? 'ยังไม่ประเมิน/รอยืนยัน' : student.characteristicsScore === 3 ? 'ดีเยี่ยม (3)' : student.characteristicsScore === 2 ? 'ดี (2)' : student.characteristicsScore === 1 ? 'ผ่าน (1)' : 'ไม่ผ่าน (0)'}
                   </span>
                 </div>
                 <div className="attr-item">
                   <span className="attr-label">การอ่าน คิดวิเคราะห์ และเขียน:</span>
                   <span className="attr-val">
-                    {student.readingThinkingScore === 3 ? 'ดีเยี่ยม (3)' : student.readingThinkingScore === 2 ? 'ดี (2)' : 'ผ่าน (1)'}
+                    {student.readingThinkingScore === null ? 'ยังไม่ประเมิน/รอยืนยัน' : student.readingThinkingScore === 3 ? 'ดีเยี่ยม (3)' : student.readingThinkingScore === 2 ? 'ดี (2)' : student.readingThinkingScore === 1 ? 'ผ่าน (1)' : 'ไม่ผ่าน (0)'}
                   </span>
                 </div>
                 <div className="attr-item">
                   <span className="attr-label">สมรรถนะสำคัญของผู้เรียน:</span>
                   <span className="attr-val">
-                    {student.competencyScore === 3 ? 'ดีเยี่ยม (3)' : student.competencyScore === 2 ? 'ดี (2)' : 'ผ่าน (1)'}
+                    {student.competencyScore === null ? 'ยังไม่ประเมิน/รอยืนยัน' : student.competencyScore === 3 ? 'ดีเยี่ยม (3)' : student.competencyScore === 2 ? 'ดี (2)' : student.competencyScore === 1 ? 'ผ่าน (1)' : 'ไม่ผ่าน (0)'}
                   </span>
                 </div>
               </div>
