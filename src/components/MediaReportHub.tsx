@@ -192,10 +192,10 @@ export const MediaReportHub: React.FC = () => {
       <div className="media-hub-header">
         <div className="media-hub-title-group">
           <h2>
-            <FileText className="text-primary" size={24} /> แบบบันทึกข้อมูลการผลิตสื่อการสอน (สไตล์ Canva A4)
+            <FileText className="text-primary" size={24} /> แบบบันทึกการใช้สื่อและรายงานผลิตสื่อ (A4)
           </h2>
           <p>
-            แม่แบบรายงานการใช้และผลิตสื่อ นวัตกรรมทางการศึกษา ตามมาตรฐาน Canva • รองรับพิมพ์ A4 และบันทึกเป็น PDF รวมไฟล์หรือแยกไฟล์
+            ใช้แบบโรงเรียนบ้านคลองมดแดง พร้อมภาพจริงจาก Canva และสื่อเกม • รองรับพิมพ์ A4 และดาวน์โหลด Word รวมไฟล์
           </p>
         </div>
 
@@ -213,9 +213,9 @@ export const MediaReportHub: React.FC = () => {
             className="btn-hub btn-hub-word"
             href="/downloads/media-reports-canva62-games36-98.docx"
             download
-            title="ดาวน์โหลดไฟล์ Word A4 รวมสื่อ Canva 62 รายการ และเกม 36 เกม"
+            title="ดาวน์โหลดไฟล์ Word A4 ตามแบบบันทึกการใช้สื่อของโรงเรียน รวม Canva 62 รายการ และเกม 36 เกม"
           >
-            <FileText size={16} /> ดาวน์โหลด Word พร้อมพิมพ์ (98)
+            <FileText size={16} /> ดาวน์โหลด Word ตามแบบโรงเรียน (98)
           </a>
           <button type="button" className="btn-hub btn-hub-success" onClick={handlePrintSelected}>
             <Printer size={16} /> พิมพ์ที่เลือก ({items.filter((i) => selectedIds.has(i.id)).length})
