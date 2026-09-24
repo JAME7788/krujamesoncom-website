@@ -94,6 +94,19 @@
   transform: translateY(-1px);
 }
 
+.btn-hub-word {
+  background: linear-gradient(135deg, #0f6cbd, #185abd);
+  color: #ffffff;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(15, 108, 189, 0.28);
+}
+.btn-hub-word:hover {
+  background: linear-gradient(135deg, #115ea3, #0f548c);
+  color: #ffffff;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
 .btn-hub-secondary {
   background: #ffffff;
   color: #374151;

@@ -91,6 +91,11 @@ describe('ระบบแบบบันทึกข้อมูลการผ�
     });
   });
 
+  it('มีไฟล์ Word A4 รวม Canva 62 รายการและเกม 36 เกมพร้อมดาวน์โหลด', () => {
+    const wordBundle = 'public/downloads/media-reports-canva62-games36-98.docx';
+    expect(existsSync(wordBundle)).toBe(true);
+  });
+
   it('ทุกรายการสื่อต้องมี id ไม่ซ้ำกัน และกรอกข้อมูลฟิลด์สำคัญครบถ้วน', () => {
     const ids = DEFAULT_MEDIA_REPORTS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);

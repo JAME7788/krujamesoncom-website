@@ -209,6 +209,14 @@ export const MediaReportHub: React.FC = () => {
           <button type="button" className="btn-hub btn-hub-canva" onClick={handlePrintCanvaAll} title="สั่งพิมพ์เอกสารรายงานสไตล์ Canva ทั้งหมด 62 หน้า">
             <Palette size={16} /> พิมพ์ชุด Canva ({items.filter((i) => i.category === 'canva-slide').length} แผ่น)
           </button>
+          <a
+            className="btn-hub btn-hub-word"
+            href="/downloads/media-reports-canva62-games36-98.docx"
+            download
+            title="ดาวน์โหลดไฟล์ Word A4 รวมสื่อ Canva 62 รายการ และเกม 36 เกม"
+          >
+            <FileText size={16} /> ดาวน์โหลด Word พร้อมพิมพ์ (98)
+          </a>
           <button type="button" className="btn-hub btn-hub-success" onClick={handlePrintSelected}>
             <Printer size={16} /> พิมพ์ที่เลือก ({items.filter((i) => selectedIds.has(i.id)).length})
           </button>

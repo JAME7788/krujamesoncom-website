@@ -43,6 +43,7 @@ SSS*/
 sss*/
 แผน*/
 *.docx
+!public/downloads/media-reports-canva62-games36-98.docx
 
 # Temporary & scratch
 .codex-remote-attachments/
