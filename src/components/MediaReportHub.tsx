@@ -211,7 +211,7 @@ export const MediaReportHub: React.FC = () => {
           </button>
           <a
             className="btn-hub btn-hub-word"
-            href="/downloads/media-reports-canva62-games36-98.docx"
+            href="/downloads/media-use-record-school-template-98.docx"
             download
             title="ดาวน์โหลดไฟล์ Word A4 ตามแบบบันทึกการใช้สื่อของโรงเรียน รวม Canva 62 รายการ และเกม 36 เกม"
           >
