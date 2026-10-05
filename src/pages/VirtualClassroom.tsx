@@ -42,12 +42,15 @@ import {
   UserCheck,
   UserX,
   Users,
+  Volume2,
+  VolumeX,
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { findGrade } from '../data/curriculum';
 import { gamesCatalog } from '../data/gamesCatalog';
 import { celebrate } from '../utils/celebrate';
+import { virtualAudioService } from '../services/virtualAudioService';
 import { getRichSlides } from '../data/richSlides';
 import type { RichSlide } from '../data/richSlides';
 import { unitExtras } from '../data/unitExtras';
@@ -397,6 +400,8 @@ const VirtualClassroom: React.FC = () => {
     localStorage.getItem(`kj_world_avatar_${playerId}`) || playerColor(playerId)
   ));
   const [thirdPerson, setThirdPerson] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => virtualAudioService.isSoundEnabled());
+  const [currentObbyStep, setCurrentObbyStep] = useState<number>(-1);
   const [graphicsQuality, setGraphicsQuality] = useState<GraphicsQuality>(initialGraphicsQuality);
   const [avatarPanelOpen, setAvatarPanelOpen] = useState(false);
   const [teacherPanelOpen, setTeacherPanelOpen] = useState(false);
@@ -781,6 +786,10 @@ const VirtualClassroom: React.FC = () => {
   useEffect(() => {
     thirdPersonRef.current = thirdPerson;
   }, [thirdPerson]);
+
+  useEffect(() => {
+    virtualAudioService.setSoundEnabled(soundEnabled);
+  }, [soundEnabled]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -1186,6 +1195,324 @@ const VirtualClassroom: React.FC = () => {
       return star;
     });
 
+    // =========================================================================
+    // ลานกระโดดฝึกคิดเป็นลำดับ (Computational Algorithm Parkour / Obby)
+    // 4 ขั้นตอนการคิดเชิงคำนวณ (Decomposition, Algorithm, Execution, Debugging) + Goal Summit
+    // =========================================================================
+    const obbyPlatformData = [
+      {
+        step: 0,
+        label: 'ขั้นที่ 1: แยกย่อยปัญหา',
+        sub: 'Decomposition',
+        x: 18.5,
+        z: 20.5,
+        sizeX: 2.4,
+        sizeZ: 2.4,
+        topY: 0.65,
+        color: 0x2563eb,
+        lightColor: 0x3b82f6,
+      },
+      {
+        step: 1,
+        label: 'ขั้นที่ 2: วางแผนขั้นตอน',
+        sub: 'Algorithm Design',
+        x: 21.2,
+        z: 16.8,
+        sizeX: 2.4,
+        sizeZ: 2.4,
+        topY: 1.30,
+        color: 0x0284c7,
+        lightColor: 0x38bdf8,
+      },
+      {
+        step: 2,
+        label: 'ขั้นที่ 3: ทำตามลำดับ',
+        sub: 'Sequencing & Execution',
+        x: 18.2,
+        z: 13.1,
+        sizeX: 2.4,
+        sizeZ: 2.4,
+        topY: 1.95,
+        color: 0x10b981,
+        lightColor: 0x34d399,
+      },
+      {
+        step: 3,
+        label: 'ขั้นที่ 4: ตรวจสอบและแก้ไข',
+        sub: 'Testing & Debugging',
+        x: 21.2,
+        z: 9.4,
+        sizeX: 2.4,
+        sizeZ: 2.4,
+        topY: 2.60,
+        color: 0xf59e0b,
+        lightColor: 0xfbbf24,
+      },
+    ];
+
+    const makeObbyStepBadge = (stepNum: number, title: string, sub: string, bgColor: string) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 160;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = bgColor;
+      ctx.beginPath();
+      ctx.roundRect(8, 8, 496, 144, 20);
+      ctx.fill();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 40px "Segoe UI", Tahoma, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${stepNum}. ${title}`, 256, 68);
+
+      ctx.fillStyle = '#fef08a';
+      ctx.font = '600 26px "Segoe UI", Tahoma, sans-serif';
+      ctx.fillText(sub, 256, 118);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(2.4, 0.75, 1);
+      return sprite;
+    };
+
+    const obbyMeshes: THREE.Object3D[] = [];
+    const obbyGems: THREE.Mesh[] = [];
+
+    obbyPlatformData.forEach((p, idx) => {
+      // 1. ฐานเสารองรับจากพื้นดินถึงใต้แผ่น
+      const slabThick = 0.32;
+      const pillarHeight = p.topY - slabThick;
+      if (pillarHeight > 0.05) {
+        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, pillarHeight, 16), pillarMat);
+        pillar.position.set(p.x, pillarHeight / 2, p.z);
+        pillar.castShadow = true;
+        scene.add(pillar);
+        obbyMeshes.push(pillar);
+      }
+
+      // 2. แผ่นเหยียบกระโดด (Platform Slab)
+      const slabMat = new THREE.MeshStandardMaterial({
+        color: p.color,
+        emissive: p.lightColor,
+        emissiveIntensity: 0.28,
+        roughness: 0.4,
+      });
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(p.sizeX, slabThick, p.sizeZ), slabMat);
+      slab.position.set(p.x, p.topY - slabThick / 2, p.z);
+      slab.castShadow = true;
+      slab.receiveShadow = true;
+      scene.add(slab);
+      obbyMeshes.push(slab);
+
+      // 3. ป้ายข้อความลอยหน้าแท่น
+      const badge = makeObbyStepBadge(
+        idx + 1,
+        p.label.replace(/^ขั้นที่ \d+: /, ''),
+        p.sub,
+        p.color === 0x2563eb ? '#1d4ed8' : p.color === 0x0284c7 ? '#0369a1' : p.color === 0x10b981 ? '#047857' : '#b45309',
+      );
+      badge.position.set(p.x, p.topY + 0.9, p.z);
+      scene.add(badge);
+      obbyMeshes.push(badge);
+
+      // 4. อัญมณีหมุนได้ที่มุมแท่น (Spinning Gem Marker)
+      const gemMat = new THREE.MeshStandardMaterial({
+        color: p.lightColor,
+        emissive: p.color,
+        emissiveIntensity: 0.55,
+        roughness: 0.2,
+      });
+      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.2, 0), gemMat);
+      gem.position.set(p.x + (p.sizeX / 2 - 0.25), p.topY + 0.5, p.z + (p.sizeZ / 2 - 0.25));
+      scene.add(gem);
+      obbyGems.push(gem);
+
+      // ลงทะเบียนเข้าแพลตฟอร์มยืนเหยียบ AABB
+      platforms.push({
+        minX: p.x - p.sizeX / 2,
+        maxX: p.x + p.sizeX / 2,
+        minZ: p.z - p.sizeZ / 2,
+        maxZ: p.z + p.sizeZ / 2,
+        top: p.topY,
+      });
+    });
+
+    // ---------------------------------------------------------
+    // แท่นยอดเขาแห่งปัญญา (Goal Podium - Platform 5)
+    // ---------------------------------------------------------
+    const goalX = 18.5;
+    const goalZ = 5.5;
+    const goalTopY = 3.20;
+    const goalSize = 3.4;
+    const goalSlabThick = 0.4;
+    const goalPillarH = goalTopY - goalSlabThick;
+
+    // ฐานเสารองรับยอดเขา
+    const goalPillarMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+    const goalPillar = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.9, goalPillarH, 20), goalPillarMat);
+    goalPillar.position.set(goalX, goalPillarH / 2, goalZ);
+    goalPillar.castShadow = true;
+    scene.add(goalPillar);
+    obbyMeshes.push(goalPillar);
+
+    // แผ่นเหยียบยอดเขา (สีม่วง-ทอง เมทัลลิก)
+    const goalSlabMat = new THREE.MeshStandardMaterial({
+      color: 0x6d28d9,
+      emissive: 0x7c3aed,
+      emissiveIntensity: 0.35,
+      metalness: 0.3,
+      roughness: 0.35,
+    });
+    const goalSlab = new THREE.Mesh(new THREE.BoxGeometry(goalSize, goalSlabThick, goalSize), goalSlabMat);
+    goalSlab.position.set(goalX, goalTopY - goalSlabThick / 2, goalZ);
+    goalSlab.castShadow = true;
+    goalSlab.receiveShadow = true;
+    scene.add(goalSlab);
+    obbyMeshes.push(goalSlab);
+
+    // ขอบทองบนแท่น
+    const goalRimMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.7, roughness: 0.25 });
+    const goalRim = new THREE.Mesh(new THREE.BoxGeometry(goalSize + 0.15, 0.08, goalSize + 0.15), goalRimMat);
+    goalRim.position.set(goalX, goalTopY, goalZ);
+    scene.add(goalRim);
+    obbyMeshes.push(goalRim);
+
+    // ลงทะเบียนยอดเขาเข้าแพลตฟอร์มยืนเหยียบ
+    platforms.push({
+      minX: goalX - goalSize / 2,
+      maxX: goalX + goalSize / 2,
+      minZ: goalZ - goalSize / 2,
+      maxZ: goalZ + goalSize / 2,
+      top: goalTopY,
+    });
+
+    // ---------------------------------------------------------
+    // โมเดลถ้วยรางวัลทองคำ 3D (Golden Trophy) บนยอดเขา
+    // ---------------------------------------------------------
+    const trophyGroup = new THREE.Group();
+    trophyGroup.position.set(goalX, goalTopY, goalZ);
+
+    const trophyMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.3,
+      metalness: 0.85,
+      roughness: 0.18,
+    });
+    const trophyBaseMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+
+    const tBase = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.18, 16), trophyBaseMat);
+    tBase.position.y = 0.09;
+    trophyGroup.add(tBase);
+
+    const tStem = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.35, 16), trophyMat);
+    tStem.position.y = 0.35;
+    trophyGroup.add(tStem);
+
+    const tCup = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.18, 0.55, 18), trophyMat);
+    tCup.position.y = 0.75;
+    trophyGroup.add(tCup);
+
+    const handleGeo = new THREE.TorusGeometry(0.18, 0.045, 8, 16);
+    const tHandleL = new THREE.Mesh(handleGeo, trophyMat);
+    tHandleL.position.set(-0.44, 0.75, 0);
+    tHandleL.rotation.y = Math.PI / 2;
+    const tHandleR = new THREE.Mesh(handleGeo, trophyMat);
+    tHandleR.position.set(0.44, 0.75, 0);
+    tHandleR.rotation.y = Math.PI / 2;
+    trophyGroup.add(tHandleL, tHandleR);
+
+    const trophyStar = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.24, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0xfef08a,
+        emissive: 0xf59e0b,
+        emissiveIntensity: 0.8,
+        metalness: 0.6,
+        roughness: 0.15,
+      }),
+    );
+    trophyStar.position.y = 1.35;
+    trophyGroup.add(trophyStar);
+
+    // ลำแสงบีคอนขึ้นสู่ท้องฟ้า (Translucent Beacon Light)
+    const beaconMat = new THREE.MeshBasicMaterial({
+      color: 0xfde047,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.75, 20, 16), beaconMat);
+    beacon.position.y = 10;
+    trophyGroup.add(beacon);
+
+    scene.add(trophyGroup);
+    obbyMeshes.push(trophyGroup);
+
+    const summitBadge = makeObbyStepBadge(5, 'ยอดเขาแห่งปัญญา', 'Computational Mastery 🏆', '#581c87');
+    summitBadge.position.set(goalX, goalTopY + 2.2, goalZ);
+    scene.add(summitBadge);
+    obbyMeshes.push(summitBadge);
+
+    // ---------------------------------------------------------
+    // ซุ้มประตูเริ่มต้นลานกระโดด (Entrance Archway)
+    // ---------------------------------------------------------
+    const archGroup = new THREE.Group();
+    archGroup.position.set(18.5, 0, 23.5);
+    const archWoodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
+
+    const archPoleL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.2, 0.4), archWoodMat);
+    archPoleL.position.set(-1.8, 1.6, 0);
+    const archPoleR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.2, 0.4), archWoodMat);
+    archPoleR.position.set(1.8, 1.6, 0);
+    const archBeam = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.45, 0.45), archWoodMat);
+    archBeam.position.set(0, 3.0, 0);
+    archGroup.add(archPoleL, archPoleR, archBeam);
+
+    const archCanvas = document.createElement('canvas');
+    archCanvas.width = 512;
+    archCanvas.height = 140;
+    const archCtx = archCanvas.getContext('2d')!;
+    archCtx.fillStyle = '#0f172a';
+    archCtx.beginPath();
+    archCtx.roundRect(8, 8, 496, 124, 16);
+    archCtx.fill();
+    archCtx.lineWidth = 5;
+    archCtx.strokeStyle = '#facc15';
+    archCtx.stroke();
+    archCtx.fillStyle = '#facc15';
+    archCtx.font = 'bold 36px "Segoe UI", Tahoma, sans-serif';
+    archCtx.textAlign = 'center';
+    archCtx.fillText('ลานกระโดดฝึกคิดเป็นลำดับ', 256, 56);
+    archCtx.fillStyle = '#ffffff';
+    archCtx.font = '500 24px "Segoe UI", Tahoma, sans-serif';
+    archCtx.fillText('Algorithm Parkour 🏃‍♂️💨', 256, 100);
+
+    const archTex = new THREE.CanvasTexture(archCanvas);
+    archTex.colorSpace = THREE.SRGBColorSpace;
+    const archSign = new THREE.Sprite(new THREE.SpriteMaterial({ map: archTex, transparent: true }));
+    archSign.scale.set(3.4, 0.95, 1);
+    archSign.position.set(0, 3.8, 0);
+    archGroup.add(archSign);
+
+    scene.add(archGroup);
+    obbyMeshes.push(archGroup);
+
+    staticColliders.push(
+      { minX: 18.5 - 1.8 - 0.25, maxX: 18.5 - 1.8 + 0.25, minZ: 23.5 - 0.25, maxZ: 23.5 + 0.25, minY: 0, maxY: 3.2 },
+      { minX: 18.5 + 1.8 - 0.25, maxX: 18.5 + 1.8 + 0.25, minZ: 23.5 - 0.25, maxZ: 23.5 + 0.25, minY: 0, maxY: 3.2 },
+    );
+
+    let lastObbyStep = -1;
+    let lastGoalRewardTime = 0;
+
     const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
     const blockMaterials: Record<BlockMaterial, THREE.MeshStandardMaterial> = {
       grass: new THREE.MeshStandardMaterial({ map: makePixelTexture(0x65a30d), roughness: 0.92 }),
@@ -1459,6 +1786,7 @@ const VirtualClassroom: React.FC = () => {
           setStatus('ช่องนี้มีบล็อกอยู่แล้ว ลองเล็งช่องข้าง ๆ');
           return;
         }
+        virtualAudioService.playBlockPlace();
         setStatus(`วางบล็อก${MATERIALS.find((item) => item.id === block.material)?.label || ''}แล้ว`);
         const unitNo = boards[0]?.unitNo || 1;
         void recordActivity(
@@ -1479,6 +1807,7 @@ const VirtualClassroom: React.FC = () => {
       const block = blockData.get(hit.object.userData.blockId as string);
       if (!block) return;
       void removeWorldBlock(roomId, block);
+      virtualAudioService.playBlockRemove();
       setStatus('ลบบล็อกแล้ว');
     };
 
@@ -1514,6 +1843,7 @@ const VirtualClassroom: React.FC = () => {
       if (!grounded) return;
       grounded = false;
       verticalVelocity = 8.2;
+      virtualAudioService.playJump();
       setStatus('กระโดด!');
     };
     summonRef.current = () => {
@@ -1780,6 +2110,9 @@ const VirtualClassroom: React.FC = () => {
       playerPosition.x = THREE.MathUtils.clamp(playerPosition.x, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
       playerPosition.z = THREE.MathUtils.clamp(playerPosition.z, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
       const isMoving = Math.abs(forwardAmount) + Math.abs(sideAmount) > 0;
+      if (grounded && isMoving) {
+        virtualAudioService.playStep();
+      }
       localAvatar.visible = thirdPersonRef.current;
       localAvatar.position.set(playerPosition.x, playerPosition.y - 1.7, playerPosition.z);
       localAvatar.rotation.y = yaw;
@@ -1807,6 +2140,71 @@ const VirtualClassroom: React.FC = () => {
         prop.position.y = prop.userData.baseY + Math.sin(now * 0.0018 + index) * 0.08;
       });
 
+      // หมุนอัญมณีและดาวถ้วยรางวัลลานกระโดด Obby
+      obbyGems.forEach((gem) => {
+        gem.rotation.y += delta * 2.2;
+        gem.rotation.x += delta * 1.1;
+      });
+      trophyStar.rotation.y += delta * 2.4;
+      trophyStar.rotation.x += delta * 0.8;
+      beacon.rotation.y += delta * 0.6;
+
+      // ตรวจสอบขั้นบันไดลานกระโดดฝึกคิดเป็นลำดับ
+      let detectedObbyStep = -1;
+      const curX = playerPosition.x;
+      const curZ = playerPosition.z;
+      const curFeetY = playerPosition.y - 1.7;
+
+      for (let sIdx = 0; sIdx < obbyPlatformData.length; sIdx++) {
+        const p = obbyPlatformData[sIdx];
+        if (
+          curX >= p.x - p.sizeX / 2
+          && curX <= p.x + p.sizeX / 2
+          && curZ >= p.z - p.sizeZ / 2
+          && curZ <= p.z + p.sizeZ / 2
+          && Math.abs(curFeetY - p.topY) < 0.28
+        ) {
+          detectedObbyStep = sIdx;
+          break;
+        }
+      }
+
+      if (
+        curX >= goalX - goalSize / 2
+        && curX <= goalX + goalSize / 2
+        && curZ >= goalZ - goalSize / 2
+        && curZ <= goalZ + goalSize / 2
+        && Math.abs(curFeetY - goalTopY) < 0.28
+      ) {
+        detectedObbyStep = 4;
+      }
+
+      if (detectedObbyStep !== lastObbyStep) {
+        lastObbyStep = detectedObbyStep;
+        setCurrentObbyStep(detectedObbyStep);
+
+        if (detectedObbyStep >= 0 && detectedObbyStep <= 3) {
+          virtualAudioService.playObbyStep(detectedObbyStep);
+          const p = obbyPlatformData[detectedObbyStep];
+          setStatus(`🎯 ${p.label} (${p.sub})`);
+        } else if (detectedObbyStep === 4) {
+          if (now - lastGoalRewardTime > 15_000) {
+            lastGoalRewardTime = now;
+            virtualAudioService.playVictory();
+            celebrate();
+            setWorldStars((c) => c + 5);
+            setStatus('🏆 ยอดเยี่ยมมาก! พิชิตลานกระโดดฝึกคิดเป็นลำดับสำเร็จ (+5 ⭐)');
+            const unitNo = boards[0]?.unitNo || 1;
+            void recordActivity(
+              'game',
+              `u${unitNo}-game-algorithm-parkour`,
+              unitNo,
+              'พิชิตลานกระโดดฝึกคิดเป็นลำดับ (4 ขั้นตอนการคิดเชิงคำนวณ)',
+            );
+          }
+        }
+      }
+
       collectibles.forEach((star, index) => {
         star.rotation.y += delta * 1.8;
         star.rotation.x += delta * 0.7;
@@ -1816,6 +2214,7 @@ const VirtualClassroom: React.FC = () => {
         if (horizontal > 1.1 || vertical > 1) return;
         star.visible = false;
         star.userData.collected = true;
+        virtualAudioService.playStar();
         setWorldStars((current) => current + 1);
         setStatus('เก็บดาวสำเร็จ +1');
         if (!worldGameRecorded) {
@@ -1884,6 +2283,7 @@ const VirtualClassroom: React.FC = () => {
       starMaterial.dispose();
       Object.values(blockMaterials).forEach((item) => item.dispose());
       pixelTextures.forEach((texture) => texture.dispose());
+      obbyMeshes.forEach((mesh) => scene.remove(mesh));
       mount.removeChild(renderer.domElement);
     };
   }, [activeClassroom, avatarColor, boards, displayName, gameStations, graphicsQuality, isTeacher, openLessonBoard, playerId, recordActivity, roomClassroom, roomId]);
@@ -2023,6 +2423,20 @@ const VirtualClassroom: React.FC = () => {
               </button>
             ))}
           </div>
+          <label className="world-sound-toggle">
+            <input
+              type="checkbox"
+              checked={soundEnabled}
+              onChange={(event) => {
+                const next = event.target.checked;
+                setSoundEnabled(next);
+                virtualAudioService.setSoundEnabled(next);
+                if (next) virtualAudioService.playStar();
+              }}
+            />
+            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            <span>เสียงเอฟเฟกต์ 3D (SFX)</span>
+          </label>
           {!isTeacher && (
             <label className="world-follow-toggle">
               <input type="checkbox" checked={followTeacher} onChange={(event) => setFollowTeacher(event.target.checked)} />
@@ -2152,6 +2566,22 @@ const VirtualClassroom: React.FC = () => {
 
       <div className="world-star-score" title="ดาวจากเกมเก็บดาว"><Star size={18} fill="currentColor" /> {worldStars}</div>
 
+      {currentObbyStep >= 0 && (
+        <div className="world-obby-hud" aria-label="ความคืบหน้าลานกระโดดคิดเป็นลำดับ">
+          <div className="world-obby-hud-title">
+            <span>🏃 ลานฝึกคิดเป็นลำดับ</span>
+            <small>{currentObbyStep === 4 ? '🏆 พิชิตยอดเขา!' : `ขั้นที่ ${currentObbyStep + 1}/4`}</small>
+          </div>
+          <div className="world-obby-hud-track">
+            <span className={`world-obby-node ${currentObbyStep >= 0 ? 'active' : ''}`} title="1. แยกย่อยปัญหา">1. แยกย่อย</span>
+            <span className={`world-obby-node ${currentObbyStep >= 1 ? 'active' : ''}`} title="2. วางแผนขั้นตอน">2. วางแผน</span>
+            <span className={`world-obby-node ${currentObbyStep >= 2 ? 'active' : ''}`} title="3. ทำตามลำดับ">3. ลำดับ</span>
+            <span className={`world-obby-node ${currentObbyStep >= 3 ? 'active' : ''}`} title="4. ตรวจสอบแก้ไข">4. ตรวจสอบ</span>
+            <span className={`world-obby-node goal ${currentObbyStep >= 4 ? 'active' : ''}`} title="ยอดเขาแห่งปัญญา">🏆 ยอดเขา</span>
+          </div>
+        </div>
+      )}
+
       {mode === 'build' && (
         <div className="world-build-capacity" aria-label={`ใช้บล็อก ${worldBlockCount} จาก ${MAX_WORLD_BLOCKS} ชิ้น`}>
           <BrickWall size={17} />
@@ -2218,6 +2648,21 @@ const VirtualClassroom: React.FC = () => {
         </button>
         <button onClick={() => setGamesPanelOpen(true)} title="เปิดแผงเกมทั้งหมด" aria-label="เปิดแผงเกมทั้งหมด" className={gamesPanelOpen ? 'active' : ''}>
           <Gamepad2 size={20} />
+        </button>
+        <button
+          onClick={() => {
+            setSoundEnabled((prev) => {
+              const next = !prev;
+              virtualAudioService.setSoundEnabled(next);
+              if (next) virtualAudioService.playStar();
+              return next;
+            });
+          }}
+          title={soundEnabled ? 'ปิดเสียงเอฟเฟกต์ (SFX)' : 'เปิดเสียงเอฟเฟกต์ (SFX)'}
+          aria-label={soundEnabled ? 'ปิดเสียงเอฟเฟกต์ (SFX)' : 'เปิดเสียงเอฟเฟกต์ (SFX)'}
+          className={soundEnabled ? 'active' : ''}
+        >
+          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
         </button>
         {mode === 'build' && (
           <>
