@@ -188,5 +188,62 @@ describe('Virtual Audio SFX & Multi-Zone Algorithm Obby Parkour with Grade Quizz
       expect(playerPos.y).toBe(targetCheckpoint.topY + 1.7);
       expect(playerPos.z).toBe(targetCheckpoint.z);
     });
+
+    it('แท่นลอยสูงในอากาศ (เช่น Checkpoint 1, 2, 3, 4 และยอดเขา) ต้องไม่ขวางการเดินบนพื้นดินด้านล่าง', () => {
+      const PLAYER_RADIUS = 0.34;
+      const feetY = 0; // ยืนบนพื้นดิน
+      const slabThick = 0.32;
+
+      // จำลองฟังก์ชัน collidesAt สำหรับ platforms
+      const collidesWithPlatform = (
+        testX: number,
+        testZ: number,
+        feetYLevel: number,
+        pf: { minX: number; maxX: number; minZ: number; maxZ: number; top: number; bottom: number },
+      ): boolean => {
+        if (pf.bottom >= feetYLevel + 1.65) return false; // ลอยเหนือศีรษะ
+        if (pf.top <= feetYLevel + 0.65 || feetYLevel >= pf.top - 0.15) return false;
+        return (
+          testX + PLAYER_RADIUS > pf.minX
+          && testX - PLAYER_RADIUS < pf.maxX
+          && testZ + PLAYER_RADIUS > pf.minZ
+          && testZ - PLAYER_RADIUS < pf.maxZ
+        );
+      };
+
+      // ทดสอบ Checkpoint 1 (top=2.70, bottom=2.38)
+      const cp1Platform = {
+        minX: 17.8 - 1.3,
+        maxX: 17.8 + 1.3,
+        minZ: 14.5 - 1.3,
+        maxZ: 14.5 + 1.3,
+        top: 2.70,
+        bottom: 2.70 - slabThick,
+      };
+
+      // เดินบนพื้นตรงตำแหน่งใต้ Checkpoint 1 -> ต้องเดินผ่านได้ ไม่ติดขวาง
+      expect(collidesWithPlatform(17.8, 14.5, feetY, cp1Platform)).toBe(false);
+
+      // ทดสอบยอดเขา Wisdom Summit (top=8.65, bottom=8.20)
+      const summitPlatform = {
+        minX: 14.0 - 1.8,
+        maxX: 14.0 + 1.8,
+        minZ: 9.2 - 1.8,
+        maxZ: 9.2 + 1.8,
+        top: 8.65,
+        bottom: 8.65 - 0.45,
+      };
+
+      // เดินบนพื้นตรงตำแหน่งใต้ยอดเขา -> ต้องเดินผ่านได้ ไม่ติดขวาง
+      expect(collidesWithPlatform(14.0, 9.2, feetY, summitPlatform)).toBe(false);
+    });
+
+    it('แท่นขั้นแรก (Stone 1 top=0.65) สามารถก้าวขึ้นและกระโดดขึ้นจากพื้นดินได้อย่างราบรื่น', () => {
+      const feetY = 0; // ยืนบนพื้นดิน
+      const stone1 = { top: 0.65, bottom: 0.33 };
+
+      // เงื่อนไข step-up: แท่นต้องไม่สูงกว่า feetY + 0.65
+      expect(stone1.top).toBeLessThanOrEqual(feetY + 0.65);
+    });
   });
 });

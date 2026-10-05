@@ -1264,10 +1264,18 @@ const VirtualClassroom: React.FC = () => {
     });
 
     const tableMaterial = new THREE.MeshStandardMaterial({ color: 0xc58b4c, roughness: 0.75 });
-    // แพลตฟอร์มที่ยืน/กระโดดขึ้นไปเหยียบได้ (เช่น ผิวโต๊ะ) — AABB + ความสูงผิวด้านบน
-    const platforms: { minX: number; maxX: number; minZ: number; maxZ: number; top: number }[] = [];
-    // ผิวพื้นห้องเรียนสูง 0.205m จากระดับลานดิน
-    platforms.push({ minX: -10, maxX: 10, minZ: -8.5, maxZ: 8.5, top: 0.205 });
+    // แพลตฟอร์มที่ยืน/กระโดดขึ้นไปเหยียบได้ (เช่น ผิวโต๊ะ, ลานกระโดด) — AABB + ความสูงผิวด้านบนและล่าง
+    interface WorldPlatform {
+      minX: number;
+      maxX: number;
+      minZ: number;
+      maxZ: number;
+      top: number;
+      bottom?: number;
+    }
+    const platforms: WorldPlatform[] = [];
+    // ผิวพื้นห้องเรียนสูง 0.205m จากระดับลานดิน (ความหนา 0.25m)
+    platforms.push({ minX: -10, maxX: 10, minZ: -8.5, maxZ: 8.5, top: 0.205, bottom: 0 });
     [-5.2, 0, 5.2].forEach((x) => {
       [0, 4.3].forEach((z) => {
         const table = new THREE.Group();
@@ -1284,7 +1292,7 @@ const VirtualClassroom: React.FC = () => {
         table.position.set(x, 0, z);
         scene.add(table);
         // ผิวโต๊ะ: y = 1.05 + 0.18/2 = 1.14, กว้าง 3.6 (x) ลึก 1.45 (z)
-        platforms.push({ minX: x - 1.8, maxX: x + 1.8, minZ: z - 0.725, maxZ: z + 0.725, top: 1.14 });
+        platforms.push({ minX: x - 1.8, maxX: x + 1.8, minZ: z - 0.725, maxZ: z + 0.725, top: 1.14, bottom: 0.96 });
       });
     });
 
@@ -1388,7 +1396,7 @@ const VirtualClassroom: React.FC = () => {
       { name: 'ยอดเขาแห่งปัญญา', zone: 4, type: 'summit', x: 14.0, z: 9.2, sizeX: 3.6, sizeZ: 3.6, topY: 8.65, color: 0x4f46e5, emissive: 0x3730a3 },
     ];
 
-    const floatingIslandMeshes: { mesh: THREE.Mesh; baseTopY: number; pfIndex: number }[] = [];
+    const floatingIslandMeshes: { mesh: THREE.Mesh; baseTopY: number; slabThick: number; pfIndex: number }[] = [];
 
     // ฟังก์ชันสร้างป้ายลอย 3D Canvas
     const makeTextSprite = (text: string, subText: string, bgColor: string, w = 480, h = 150) => {
@@ -1464,10 +1472,11 @@ const VirtualClassroom: React.FC = () => {
         minZ: p.z - p.sizeZ / 2,
         maxZ: p.z + p.sizeZ / 2,
         top: p.topY,
+        bottom: p.topY - slabThick,
       });
 
       if (p.type === 'floating') {
-        floatingIslandMeshes.push({ mesh: slab, baseTopY: p.topY, pfIndex });
+        floatingIslandMeshes.push({ mesh: slab, baseTopY: p.topY, slabThick, pfIndex });
       }
 
       // 3. ป้ายและโทเทมประจำเช็คพอยต์ (Checkpoint Totem)
@@ -2092,7 +2101,7 @@ const VirtualClassroom: React.FC = () => {
           const blockBottom = block.y - 0.5;
           const blockTop = block.y + 0.5;
           // ถ้าบล็อกอยู่ต่ำกว่าระดับก้าวขึ้นได้ หรืออยู่เหนือศีรษะ -> ไม่ขวางแนวระนาบ
-          if (blockTop <= feetYLevel + 0.35 || blockBottom >= feetYLevel + 1.7) continue;
+          if (blockTop <= feetYLevel + 0.60 || blockBottom >= feetYLevel + 1.65) continue;
           if (
             testX + PLAYER_RADIUS > block.x - 0.5
             && testX - PLAYER_RADIUS < block.x + 0.5
@@ -2102,9 +2111,16 @@ const VirtualClassroom: React.FC = () => {
             return true;
           }
         }
-        // 2. ตรวจสอบโต๊ะเรียน (platforms)
+        // 2. ตรวจสอบโต๊ะเรียน และแท่นกระโดดผจญภัย (platforms)
         for (const pf of platforms) {
-          if (pf.top <= feetYLevel + 0.35) continue;
+          const pfBottom = pf.bottom !== undefined ? pf.bottom : 0;
+          // ถ้าแท่นลอยอยู่เหนือศีรษะของผู้เล่น -> เดินลอดใต้แท่นได้สบาย ไม่ติดขวาง
+          if (pfBottom >= feetYLevel + 1.65) continue;
+          // ถ้าแท่นอยู่ต่ำกว่าระดับที่ก้าวขึ้นได้ หรือผู้เล่นยืนอยู่บนผิวแท่นแล้ว -> ไม่ขวางแนวระนาบ
+          if (pf.top <= feetYLevel + 0.65 || feetYLevel >= pf.top - 0.15) continue;
+          // ถ้ากำลังกระโดดลอยตัวในอากาศ และความสูงใกล้เคียงผิวแท่น -> ยอมให้ผ่านเพื่อลงสู่ผิวแท่นได้
+          if (!grounded && feetYLevel + 0.85 >= pf.top) continue;
+
           if (
             testX + PLAYER_RADIUS > pf.minX
             && testX - PLAYER_RADIUS < pf.maxX
@@ -2116,7 +2132,7 @@ const VirtualClassroom: React.FC = () => {
         }
         // 3. ตรวจสอบวัตถุกายภาพคงที่ (ผนังห้องเรียน ฐานกระดาน เสาต้นไม้ ตู้เกม พอร์ทัล)
         for (const col of staticColliders) {
-          if (col.maxY <= feetYLevel + 0.35 || col.minY >= feetYLevel + 1.7) continue;
+          if (col.maxY <= feetYLevel + 0.60 || col.minY >= feetYLevel + 1.65) continue;
           if (
             testX + PLAYER_RADIUS > col.minX
             && testX - PLAYER_RADIUS < col.maxX
@@ -2192,7 +2208,7 @@ const VirtualClassroom: React.FC = () => {
       verticalVelocity -= 20 * delta;
       playerPosition.y += verticalVelocity * delta;
 
-      // ตรวจสอบการชนศีรษะด้านบน (Ceiling Overhead Collision ป้องกันกระโดดทะลุเพดาน/บล็อก)
+      // ตรวจสอบการชนศีรษะด้านบน (Ceiling Overhead Collision ป้องกันกระโดดทะลุเพดาน/บล็อก/แท่นลอย)
       if (verticalVelocity > 0) {
         const headY = playerPosition.y + 0.1;
         for (const block of blockData.values()) {
@@ -2200,6 +2216,15 @@ const VirtualClassroom: React.FC = () => {
           const bBottom = block.y - 0.5;
           if (headY >= bBottom && playerPosition.y - 1.7 < bBottom) {
             playerPosition.y = bBottom - 0.1;
+            verticalVelocity = 0;
+            break;
+          }
+        }
+        for (const pf of platforms) {
+          if (pf.bottom === undefined) continue;
+          if (playerPosition.x < pf.minX || playerPosition.x > pf.maxX || playerPosition.z < pf.minZ || playerPosition.z > pf.maxZ) continue;
+          if (headY >= pf.bottom && playerPosition.y - 1.7 < pf.bottom) {
+            playerPosition.y = pf.bottom - 0.1;
             verticalVelocity = 0;
             break;
           }
@@ -2218,18 +2243,20 @@ const VirtualClassroom: React.FC = () => {
       blockData.forEach((b) => {
         if (Math.abs(b.x - playerPosition.x) >= 0.72 || Math.abs(b.z - playerPosition.z) >= 0.72) return;
         const top = b.y + 0.5;
-        if (top > floorTop && top <= feetY + 0.35) floorTop = top;
+        if (top > floorTop && top <= feetY + 0.60) floorTop = top;
       });
-      // ยืน/กระโดดขึ้นเหยียบผิวโต๊ะ (และแพลตฟอร์มอื่น) ได้
+      // ยืน/กระโดดขึ้นเหยียบผิวโต๊ะ และแพลตฟอร์มลานกระโดดได้
       platforms.forEach((pf) => {
         if (playerPosition.x < pf.minX || playerPosition.x > pf.maxX || playerPosition.z < pf.minZ || playerPosition.z > pf.maxZ) return;
-        if (pf.top > floorTop && pf.top <= feetY + 0.35) floorTop = pf.top;
+        if (pf.top > floorTop && pf.top <= feetY + 0.65) floorTop = pf.top;
       });
       const floorCamera = floorTop + 1.7;
       if (playerPosition.y <= floorCamera) {
-        playerPosition.y = floorCamera;
-        verticalVelocity = 0;
-        grounded = true;
+        if (verticalVelocity <= 0) {
+          playerPosition.y = floorCamera;
+          verticalVelocity = 0;
+          grounded = true;
+        }
       }
 
       // ป้องกันการตกแมพลงเหว/Void Fall Guard
@@ -2285,9 +2312,10 @@ const VirtualClassroom: React.FC = () => {
       // ปรับความสูงของเกาะลอยน้ำที่ขยับขึ้น-ลง (Oscillating Floating Islands)
       floatingIslandMeshes.forEach((item, idx) => {
         const floatOffset = Math.sin(now * 0.0018 + idx * 1.5) * 0.16;
-        item.mesh.position.y = item.baseTopY - 0.16 + floatOffset;
+        item.mesh.position.y = item.baseTopY - item.slabThick / 2 + floatOffset;
         if (platforms[item.pfIndex]) {
           platforms[item.pfIndex].top = item.baseTopY + floatOffset;
+          platforms[item.pfIndex].bottom = item.baseTopY - item.slabThick + floatOffset;
         }
       });
 
@@ -2297,9 +2325,9 @@ const VirtualClassroom: React.FC = () => {
       const curFeetY = playerPosition.y - 1.7;
 
       if (
-        Math.abs(curX - 20.5) < 0.95
-        && Math.abs(curZ - 8.0) < 0.95
-        && Math.abs(curFeetY - 4.05) < 0.35
+        Math.abs(curX - 20.5) < 1.15
+        && Math.abs(curZ - 8.0) < 1.15
+        && Math.abs(curFeetY - 4.05) < 0.55
         && now - lastLaunchPadTime > 800
       ) {
         lastLaunchPadTime = now;
@@ -2311,9 +2339,9 @@ const VirtualClassroom: React.FC = () => {
 
       // ตรวจสอบการเหยียบแท่นวาร์ปกลับเช็คพอยต์ (Respawn Return Pad)
       if (
-        Math.abs(curX - 18.5) < 1.1
-        && Math.abs(curZ - 24.5) < 1.1
-        && Math.abs(curFeetY - 0.15) < 0.35
+        Math.abs(curX - 18.5) < 1.25
+        && Math.abs(curZ - 24.5) < 1.25
+        && Math.abs(curFeetY - 0.15) < 0.55
         && now - lastTeleportTime > 1500
       ) {
         lastTeleportTime = now;
@@ -2337,7 +2365,7 @@ const VirtualClassroom: React.FC = () => {
         if (
           Math.abs(curX - cp.x) <= cp.size / 2
           && Math.abs(curZ - cp.z) <= cp.size / 2
-          && Math.abs(curFeetY - cp.topY) < 0.28
+          && Math.abs(curFeetY - cp.topY) < 0.55
         ) {
           detectedObbyStep = cIdx;
           if (!unlockedCheckpointsRef.current[cIdx] && !activeCheckpointQuizRef.current) {
@@ -2351,7 +2379,7 @@ const VirtualClassroom: React.FC = () => {
       if (
         Math.abs(curX - summit.x) <= summit.sizeX / 2
         && Math.abs(curZ - summit.z) <= summit.sizeZ / 2
-        && Math.abs(curFeetY - summit.topY) < 0.3
+        && Math.abs(curFeetY - summit.topY) < 0.55
       ) {
         detectedObbyStep = 4;
       }
