@@ -15,7 +15,6 @@ import {
   DoorOpen,
   Eraser,
   Eye,
-  Flag,
   Gauge,
   Gamepad2,
   Hammer,
@@ -39,23 +38,16 @@ import {
   ScanFace,
   Settings2,
   ShieldCheck,
-  Sparkles,
   Star,
   UserCheck,
   UserX,
   Users,
-  Volume2,
-  VolumeX,
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { findGrade } from '../data/curriculum';
 import { gamesCatalog } from '../data/gamesCatalog';
 import { celebrate } from '../utils/celebrate';
-import { virtualAudioService } from '../services/virtualAudioService';
-import { QUESTION_BANK } from '../data/ctBoardGame';
-import type { CTQuestion, CTPillar } from '../data/ctBoardGame';
-import { ageTierFromClassroom, ageTierLabel } from '../data/gameLessons';
 import { getRichSlides } from '../data/richSlides';
 import type { RichSlide } from '../data/richSlides';
 import { unitExtras } from '../data/unitExtras';
@@ -373,23 +365,6 @@ const requestPointerLockSafely = (element: HTMLElement) => {
   }
 };
 
-export interface ObbyCheckpointData {
-  index: number;
-  x: number;
-  z: number;
-  topY: number;
-  size: number;
-  pillar: CTPillar;
-  title: string;
-}
-
-export const OBBY_CHECKPOINTS: ObbyCheckpointData[] = [
-  { index: 0, x: 17.8, z: 14.5, topY: 2.70, size: 2.6, pillar: 'decompose', title: 'ด่าน 1: แยกย่อยปัญหา' },
-  { index: 1, x: 17.0, z: 8.0, topY: 4.05, size: 2.6, pillar: 'pattern', title: 'ด่าน 2: หารูปแบบ' },
-  { index: 2, x: 21.5, z: 18.0, topY: 6.25, size: 2.6, pillar: 'abstract', title: 'ด่าน 3: คิดเชิงนามธรรม' },
-  { index: 3, x: 14.0, z: 15.5, topY: 7.85, size: 2.6, pillar: 'algorithm', title: 'ด่าน 4: อัลกอริทึม' },
-];
-
 const VirtualClassroom: React.FC = () => {
   const { user } = useAuth();
   const qaId = new URLSearchParams(window.location.search).get('qa') || '';
@@ -422,53 +397,6 @@ const VirtualClassroom: React.FC = () => {
     localStorage.getItem(`kj_world_avatar_${playerId}`) || playerColor(playerId)
   ));
   const [thirdPerson, setThirdPerson] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(() => virtualAudioService.isSoundEnabled());
-  const [currentObbyStep, setCurrentObbyStep] = useState<number>(-1);
-  const teleportRef = useRef<(x: number, y: number, z: number) => void>(() => undefined);
-  const [activeCheckpointQuiz, setActiveCheckpointQuiz] = useState<{
-    checkpointIndex: number;
-    question: CTQuestion;
-    title: string;
-    pillar: CTPillar;
-  } | null>(null);
-  const [checkpointAnswer, setCheckpointAnswer] = useState<number | null>(null);
-  const [unlockedCheckpoints, setUnlockedCheckpoints] = useState<boolean[]>(() => {
-    try {
-      const saved = localStorage.getItem(`kj_world_obby_unlocked_${playerId}`);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return [false, false, false, false];
-  });
-  const [highestCheckpoint, setHighestCheckpoint] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem(`kj_world_obby_unlocked_${playerId}`);
-      if (saved) {
-        const arr = JSON.parse(saved) as boolean[];
-        let h = -1;
-        arr.forEach((v, idx) => { if (v) h = Math.max(h, idx); });
-        return h;
-      }
-    } catch {
-      // ignore
-    }
-    return -1;
-  });
-
-  const markCheckpointUnlocked = (index: number) => {
-    setUnlockedCheckpoints((prev) => {
-      const next = [...prev];
-      next[index] = true;
-      try {
-        localStorage.setItem(`kj_world_obby_unlocked_${playerId}`, JSON.stringify(next));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-    setHighestCheckpoint((prev) => Math.max(prev, index));
-  };
   const [graphicsQuality, setGraphicsQuality] = useState<GraphicsQuality>(initialGraphicsQuality);
   const [avatarPanelOpen, setAvatarPanelOpen] = useState(false);
   const [teacherPanelOpen, setTeacherPanelOpen] = useState(false);
@@ -502,80 +430,6 @@ const VirtualClassroom: React.FC = () => {
   const grade = gradeId ? findGrade(gradeId) : undefined;
   const roomId = `class-${activeClassroom.replace(/[^0-9ก-๙]/g, '')}${qaMode ? `-qa-${qaId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32)}` : ''}`;
   const gameStations = useMemo(() => gamesForClassroom(activeClassroom), [activeClassroom]);
-
-  const unlockedCheckpointsRef = useRef(unlockedCheckpoints);
-  useEffect(() => {
-    unlockedCheckpointsRef.current = unlockedCheckpoints;
-  }, [unlockedCheckpoints]);
-
-  const highestCheckpointRef = useRef(highestCheckpoint);
-  useEffect(() => {
-    highestCheckpointRef.current = highestCheckpoint;
-  }, [highestCheckpoint]);
-
-  const activeCheckpointQuizRef = useRef<boolean>(false);
-  useEffect(() => {
-    activeCheckpointQuizRef.current = activeCheckpointQuiz !== null;
-  }, [activeCheckpointQuiz]);
-
-  const teleportToCheckpoint = useCallback((targetIndex: number) => {
-    const cp = OBBY_CHECKPOINTS[targetIndex];
-    if (!cp) return;
-    teleportRef.current(cp.x, cp.topY + 0.7, cp.z);
-    virtualAudioService.playStar();
-    setStatus(`🚩 วาร์ปมายัง${cp.title}`);
-  }, []);
-
-  const openCheckpointQuizRef = useRef<(index: number) => void>(() => undefined);
-
-  const openCheckpointQuiz = useCallback((index: number) => {
-    const tier = ageTierFromClassroom(activeClassroom);
-    const pillars: CTPillar[] = ['decompose', 'pattern', 'abstract', 'algorithm'];
-    const titles = [
-      'ด่านที่ 1: การแยกส่วนประกอบ (Decomposition)',
-      'ด่านที่ 2: การหารูปแบบ (Pattern Recognition)',
-      'ด่านที่ 3: การคิดเชิงนามธรรม (Abstraction)',
-      'ด่านที่ 4: การออกแบบอัลกอริทึม (Algorithm Design)',
-    ];
-    const pillar = pillars[index] || 'decompose';
-    const pool = QUESTION_BANK[tier].filter((q) => q.pillar === pillar);
-    const q = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : QUESTION_BANK[tier][0];
-
-    activeCheckpointQuizRef.current = true;
-    if (document.pointerLockElement) document.exitPointerLock();
-    setCheckpointAnswer(null);
-    setActiveCheckpointQuiz({
-      checkpointIndex: index,
-      question: q,
-      title: titles[index],
-      pillar,
-    });
-  }, [activeClassroom]);
-
-  useEffect(() => {
-    openCheckpointQuizRef.current = openCheckpointQuiz;
-  }, [openCheckpointQuiz]);
-
-  const handleAnswerCheckpoint = (chosenIndex: number) => {
-    if (!activeCheckpointQuiz || checkpointAnswer !== null) return;
-    setCheckpointAnswer(chosenIndex);
-    const isCorrect = chosenIndex === activeCheckpointQuiz.question.answer;
-    if (isCorrect) {
-      virtualAudioService.playStar();
-      celebrate();
-      setWorldStars((c) => c + 2);
-      markCheckpointUnlocked(activeCheckpointQuiz.checkpointIndex);
-      const unitNo = boards[0]?.unitNo || 1;
-      void recordActivity(
-        'question',
-        `u${unitNo}-obby-checkpoint-${activeCheckpointQuiz.checkpointIndex}`,
-        unitNo,
-        `ตอบคำถามด่าน ${activeCheckpointQuiz.checkpointIndex + 1}: ${activeCheckpointQuiz.title}`,
-      );
-    } else {
-      virtualAudioService.playBlockRemove();
-    }
-  };
   const [roomState, setRoomState] = useState<VirtualRoomState>(() => (
     defaultVirtualRoomState(roomId, roomClassroom)
   ));
@@ -929,10 +783,6 @@ const VirtualClassroom: React.FC = () => {
   }, [thirdPerson]);
 
   useEffect(() => {
-    virtualAudioService.setSoundEnabled(soundEnabled);
-  }, [soundEnabled]);
-
-  useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
@@ -1264,18 +1114,10 @@ const VirtualClassroom: React.FC = () => {
     });
 
     const tableMaterial = new THREE.MeshStandardMaterial({ color: 0xc58b4c, roughness: 0.75 });
-    // แพลตฟอร์มที่ยืน/กระโดดขึ้นไปเหยียบได้ (เช่น ผิวโต๊ะ, ลานกระโดด) — AABB + ความสูงผิวด้านบนและล่าง
-    interface WorldPlatform {
-      minX: number;
-      maxX: number;
-      minZ: number;
-      maxZ: number;
-      top: number;
-      bottom?: number;
-    }
-    const platforms: WorldPlatform[] = [];
-    // ผิวพื้นห้องเรียนสูง 0.205m จากระดับลานดิน (ความหนา 0.25m)
-    platforms.push({ minX: -10, maxX: 10, minZ: -8.5, maxZ: 8.5, top: 0.205, bottom: 0 });
+    // แพลตฟอร์มที่ยืน/กระโดดขึ้นไปเหยียบได้ (เช่น ผิวโต๊ะ) — AABB + ความสูงผิวด้านบน
+    const platforms: { minX: number; maxX: number; minZ: number; maxZ: number; top: number }[] = [];
+    // ผิวพื้นห้องเรียนสูง 0.205m จากระดับลานดิน
+    platforms.push({ minX: -10, maxX: 10, minZ: -8.5, maxZ: 8.5, top: 0.205 });
     [-5.2, 0, 5.2].forEach((x) => {
       [0, 4.3].forEach((z) => {
         const table = new THREE.Group();
@@ -1292,7 +1134,7 @@ const VirtualClassroom: React.FC = () => {
         table.position.set(x, 0, z);
         scene.add(table);
         // ผิวโต๊ะ: y = 1.05 + 0.18/2 = 1.14, กว้าง 3.6 (x) ลึก 1.45 (z)
-        platforms.push({ minX: x - 1.8, maxX: x + 1.8, minZ: z - 0.725, maxZ: z + 0.725, top: 1.14, bottom: 0.96 });
+        platforms.push({ minX: x - 1.8, maxX: x + 1.8, minZ: z - 0.725, maxZ: z + 0.725, top: 1.14 });
       });
     });
 
@@ -1343,311 +1185,6 @@ const VirtualClassroom: React.FC = () => {
       scene.add(star);
       return star;
     });
-
-    // =========================================================================
-    // ลานกระโดดผจญภัยฝึกคิดเป็นลำดับ (Multi-Zone Algorithm Obby Adventure)
-    // 4 โซนท้าทาย + 4 ประตูทดสอบคำถามประจำชั้นเรียน + แท่นสปริง + สะพานบาลานซ์ + ยอดเขาแห่งปัญญา
-    // =========================================================================
-    const obbyMeshes: THREE.Object3D[] = [];
-    const checkpointTotemGems: THREE.Mesh[] = [];
-
-    // โครงสร้างด่านและแท่นกระโดดทั้งหมด 18 แท่น
-    interface CoursePlatform {
-      name: string;
-      zone: 1 | 2 | 3 | 4;
-      type: 'stone' | 'checkpoint' | 'beam' | 'pad' | 'launch' | 'floating' | 'summit';
-      x: number;
-      z: number;
-      sizeX: number;
-      sizeZ: number;
-      topY: number;
-      color: number;
-      emissive?: number;
-      checkpointIndex?: number;
-    }
-
-    const checkpointsData = OBBY_CHECKPOINTS;
-
-    const allCoursePlatforms: CoursePlatform[] = [
-      // 🌟 โซน 1: ลานบันไดหินวน (Spiral Stepping Stones)
-      { name: 'หินก้าวที่ 1', zone: 1, type: 'stone', x: 18.5, z: 22.5, sizeX: 1.6, sizeZ: 1.6, topY: 0.65, color: 0x3b82f6, emissive: 0x1d4ed8 },
-      { name: 'หินก้าวที่ 2', zone: 1, type: 'stone', x: 21.0, z: 20.2, sizeX: 1.5, sizeZ: 1.5, topY: 1.20, color: 0x2563eb, emissive: 0x1e40af },
-      { name: 'หินก้าวที่ 3', zone: 1, type: 'stone', x: 23.2, z: 17.8, sizeX: 1.5, sizeZ: 1.5, topY: 1.75, color: 0x1d4ed8, emissive: 0x172554 },
-      { name: 'หินก้าวที่ 4', zone: 1, type: 'stone', x: 21.0, z: 15.2, sizeX: 1.5, sizeZ: 1.5, topY: 2.30, color: 0x38bdf8, emissive: 0x0284c7 },
-      { name: 'เช็คพอยต์ 1', zone: 1, type: 'checkpoint', x: 17.8, z: 14.5, sizeX: 2.6, sizeZ: 2.6, topY: 2.70, color: 0xe11d48, emissive: 0x9f1239, checkpointIndex: 0 },
-
-      // 🌟 โซน 2: สะพานคานแคบทรงตัว & แท่นก้าวทแยง (Balance Beam & Diagonal Leap)
-      { name: 'สะพานคานแคบทรงตัว', zone: 2, type: 'beam', x: 14.5, z: 14.5, sizeX: 3.8, sizeZ: 0.8, topY: 2.70, color: 0xa16207, emissive: 0x713f12 },
-      { name: 'แท่นทแยงที่ 1', zone: 2, type: 'pad', x: 11.5, z: 12.0, sizeX: 1.4, sizeZ: 1.4, topY: 3.15, color: 0x0891b2, emissive: 0x155e75 },
-      { name: 'แท่นทแยงที่ 2', zone: 2, type: 'pad', x: 13.5, z: 9.2, sizeX: 1.4, sizeZ: 1.4, topY: 3.65, color: 0x0284c7, emissive: 0x075985 },
-      { name: 'เช็คพอยต์ 2', zone: 2, type: 'checkpoint', x: 17.0, z: 8.0, sizeX: 2.6, sizeZ: 2.6, topY: 4.05, color: 0x0891b2, emissive: 0x164e63, checkpointIndex: 1 },
-
-      // 🌟 โซน 3: แท่นสปริงผลักตัว & เกาะลอยน้ำพริ้วไหว (Super Launch Pad & Floating Islands)
-      { name: 'สปริงบอร์ดกระโดดสูง', zone: 3, type: 'launch', x: 20.5, z: 8.0, sizeX: 1.8, sizeZ: 1.8, topY: 4.05, color: 0xfacc15, emissive: 0xd97706 },
-      { name: 'เกาะลอยน้ำที่ 1', zone: 3, type: 'floating', x: 23.5, z: 11.2, sizeX: 1.7, sizeZ: 1.7, topY: 5.20, color: 0x10b981, emissive: 0x047857 },
-      { name: 'เกาะลอยน้ำที่ 2', zone: 3, type: 'floating', x: 24.0, z: 14.8, sizeX: 1.6, sizeZ: 1.6, topY: 5.75, color: 0x059669, emissive: 0x065f46 },
-      { name: 'เช็คพอยต์ 3', zone: 3, type: 'checkpoint', x: 21.5, z: 18.0, sizeX: 2.6, sizeZ: 2.6, topY: 6.25, color: 0xf59e0b, emissive: 0xb45309, checkpointIndex: 2 },
-
-      // 🌟 โซน 4: บันไดลอยฟ้าสู่ยอดเขาแห่งปัญญา (Sky Stairway to Wisdom Summit)
-      { name: 'บันไดลอยฟ้า 1', zone: 4, type: 'pad', x: 18.5, z: 20.2, sizeX: 1.5, sizeZ: 1.5, topY: 6.80, color: 0x8b5cf6, emissive: 0x6d28d9 },
-      { name: 'บันไดลอยฟ้า 2', zone: 4, type: 'pad', x: 15.5, z: 18.5, sizeX: 1.5, sizeZ: 1.5, topY: 7.35, color: 0x7c3aed, emissive: 0x5b21b6 },
-      { name: 'เช็คพอยต์ 4', zone: 4, type: 'checkpoint', x: 14.0, z: 15.5, sizeX: 2.6, sizeZ: 2.6, topY: 7.85, color: 0x7c3aed, emissive: 0x4c1d95, checkpointIndex: 3 },
-      { name: 'บันไดสู่ยอดเขา', zone: 4, type: 'pad', x: 14.0, z: 12.6, sizeX: 1.6, sizeZ: 1.6, topY: 8.25, color: 0x6366f1, emissive: 0x4338ca },
-      { name: 'ยอดเขาแห่งปัญญา', zone: 4, type: 'summit', x: 14.0, z: 9.2, sizeX: 3.6, sizeZ: 3.6, topY: 8.65, color: 0x4f46e5, emissive: 0x3730a3 },
-    ];
-
-    const floatingIslandMeshes: { mesh: THREE.Mesh; baseTopY: number; slabThick: number; pfIndex: number }[] = [];
-
-    // ฟังก์ชันสร้างป้ายลอย 3D Canvas
-    const makeTextSprite = (text: string, subText: string, bgColor: string, w = 480, h = 150) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d')!;
-      ctx.fillStyle = bgColor;
-      ctx.beginPath();
-      ctx.roundRect(8, 8, w - 16, h - 16, 18);
-      ctx.fill();
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 36px "Segoe UI", Tahoma, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(text, w / 2, 60);
-
-      ctx.fillStyle = '#fef08a';
-      ctx.font = '600 24px "Segoe UI", Tahoma, sans-serif';
-      ctx.fillText(subText, w / 2, 110);
-
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
-      sprite.scale.set(2.4, 0.75, 1);
-      return sprite;
-    };
-
-    allCoursePlatforms.forEach((p) => {
-      const slabThick = p.type === 'summit' ? 0.45 : p.type === 'beam' ? 0.28 : 0.32;
-      const pillarH = p.topY - slabThick;
-
-      // 1. เสาค้ำฐาน (ถ้าสูงจากพื้นดิน)
-      if (pillarH > 0.05 && p.type !== 'floating') {
-        const pillarGeo = p.type === 'beam'
-          ? new THREE.BoxGeometry(0.35, pillarH, 0.35)
-          : new THREE.CylinderGeometry(0.55, 0.75, pillarH, 16);
-        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
-        const pillar = new THREE.Mesh(pillarGeo, pillarMat);
-        pillar.position.set(p.x, pillarH / 2, p.z);
-        pillar.castShadow = true;
-        scene.add(pillar);
-        obbyMeshes.push(pillar);
-      }
-
-      // 2. แผ่นเหยียบกระโดด (Platform Mesh)
-      const slabMat = new THREE.MeshStandardMaterial({
-        color: p.color,
-        emissive: p.emissive || 0x000000,
-        emissiveIntensity: p.type === 'launch' ? 0.7 : p.type === 'checkpoint' ? 0.4 : 0.25,
-        roughness: p.type === 'beam' ? 0.75 : 0.35,
-        metalness: p.type === 'summit' ? 0.6 : 0.2,
-      });
-
-      const slabGeo = p.type === 'launch'
-        ? new THREE.CylinderGeometry(p.sizeX / 2, p.sizeX / 2 + 0.1, slabThick, 24)
-        : new THREE.BoxGeometry(p.sizeX, slabThick, p.sizeZ);
-      const slab = new THREE.Mesh(slabGeo, slabMat);
-      slab.position.set(p.x, p.topY - slabThick / 2, p.z);
-      slab.castShadow = true;
-      slab.receiveShadow = true;
-      scene.add(slab);
-      obbyMeshes.push(slab);
-
-      // ลงทะเบียนเข้าแพลตฟอร์มยืนเหยียบ AABB
-      const pfIndex = platforms.length;
-      platforms.push({
-        minX: p.x - p.sizeX / 2,
-        maxX: p.x + p.sizeX / 2,
-        minZ: p.z - p.sizeZ / 2,
-        maxZ: p.z + p.sizeZ / 2,
-        top: p.topY,
-        bottom: p.topY - slabThick,
-      });
-
-      if (p.type === 'floating') {
-        floatingIslandMeshes.push({ mesh: slab, baseTopY: p.topY, slabThick, pfIndex });
-      }
-
-      // 3. ป้ายและโทเทมประจำเช็คพอยต์ (Checkpoint Totem)
-      if (p.type === 'checkpoint' && p.checkpointIndex !== undefined) {
-        const cpIdx = p.checkpointIndex;
-        const totemPole = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.18, 0.22, 1.8, 12),
-          new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 }),
-        );
-        totemPole.position.set(p.x, p.topY + 0.9, p.z - (p.sizeZ / 2 - 0.4));
-        scene.add(totemPole);
-        obbyMeshes.push(totemPole);
-
-        const gemMat = new THREE.MeshStandardMaterial({
-          color: p.color,
-          emissive: p.emissive || p.color,
-          emissiveIntensity: 0.75,
-          roughness: 0.15,
-        });
-        const totemGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.35, 0), gemMat);
-        totemGem.position.set(p.x, p.topY + 2.0, p.z - (p.sizeZ / 2 - 0.4));
-        scene.add(totemGem);
-        obbyMeshes.push(totemGem);
-        checkpointTotemGems.push(totemGem);
-
-        const cpData = checkpointsData[cpIdx];
-        const badge = makeTextSprite(
-          cpData.title,
-          'คลิกหรือเหยียบเพื่อตอบคำถาม 💡',
-          cpIdx === 0 ? '#9f1239' : cpIdx === 1 ? '#0e7490' : cpIdx === 2 ? '#b45309' : '#6b21a8',
-        );
-        badge.position.set(p.x, p.topY + 2.8, p.z - (p.sizeZ / 2 - 0.4));
-        scene.add(badge);
-        obbyMeshes.push(badge);
-      }
-
-      // ป้ายสัญลักษณ์บนสปริงบอร์ด (Launch Pad Icon)
-      if (p.type === 'launch') {
-        const launchRing = new THREE.Mesh(
-          new THREE.TorusGeometry(0.65, 0.08, 12, 24),
-          new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x22d3ee, emissiveIntensity: 0.9 }),
-        );
-        launchRing.rotation.x = Math.PI / 2;
-        launchRing.position.set(p.x, p.topY + 0.05, p.z);
-        scene.add(launchRing);
-        obbyMeshes.push(launchRing);
-
-        const launchSprite = makeTextSprite('🚀 สปริงบอร์ดซูเปอร์จัมป์', 'ดีดตัวลอยฟ้าสู่เกาะลอยน้ำ!', '#0369a1', 400, 130);
-        launchSprite.position.set(p.x, p.topY + 1.2, p.z);
-        scene.add(launchSprite);
-        obbyMeshes.push(launchSprite);
-      }
-    });
-
-    // ---------------------------------------------------------
-    // โมเดลถ้วยรางวัลทองคำ 3D (Golden Trophy) บนยอดเขาแห่งปัญญา
-    // ---------------------------------------------------------
-    const summitP = allCoursePlatforms[allCoursePlatforms.length - 1];
-    const trophyGroup = new THREE.Group();
-    trophyGroup.position.set(summitP.x, summitP.topY, summitP.z);
-
-    const trophyMat = new THREE.MeshStandardMaterial({
-      color: 0xfbbf24,
-      emissive: 0xd97706,
-      emissiveIntensity: 0.35,
-      metalness: 0.88,
-      roughness: 0.16,
-    });
-    const trophyBaseMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
-
-    const tBase = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.55, 0.22, 16), trophyBaseMat);
-    tBase.position.y = 0.11;
-    trophyGroup.add(tBase);
-
-    const tStem = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.45, 16), trophyMat);
-    tStem.position.y = 0.44;
-    trophyGroup.add(tStem);
-
-    const tCup = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.22, 0.72, 18), trophyMat);
-    tCup.position.y = 0.95;
-    trophyGroup.add(tCup);
-
-    const handleGeo = new THREE.TorusGeometry(0.24, 0.055, 8, 16);
-    const tHandleL = new THREE.Mesh(handleGeo, trophyMat);
-    tHandleL.position.set(-0.58, 0.95, 0);
-    tHandleL.rotation.y = Math.PI / 2;
-    const tHandleR = new THREE.Mesh(handleGeo, trophyMat);
-    tHandleR.position.set(0.58, 0.95, 0);
-    tHandleR.rotation.y = Math.PI / 2;
-    trophyGroup.add(tHandleL, tHandleR);
-
-    const trophyStar = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.32, 0),
-      new THREE.MeshStandardMaterial({
-        color: 0xfef08a,
-        emissive: 0xf59e0b,
-        emissiveIntensity: 0.85,
-        metalness: 0.6,
-        roughness: 0.15,
-      }),
-    );
-    trophyStar.position.y = 1.75;
-    trophyGroup.add(trophyStar);
-
-    // ลำแสงบีคอนขึ้นสู่ท้องฟ้า (Beacon of Wisdom) สูง 25 เมตร
-    const beaconMat = new THREE.MeshBasicMaterial({
-      color: 0xfde047,
-      transparent: true,
-      opacity: 0.25,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-    });
-    const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.95, 25, 16), beaconMat);
-    beacon.position.y = 13.5;
-    trophyGroup.add(beacon);
-
-    scene.add(trophyGroup);
-    obbyMeshes.push(trophyGroup);
-
-    const summitSign = makeTextSprite('🏆 ยอดเขาแห่งปัญญา', 'Computational Master Summit ✨', '#312e81', 480, 150);
-    summitSign.position.set(summitP.x, summitP.topY + 3.0, summitP.z);
-    scene.add(summitSign);
-    obbyMeshes.push(summitSign);
-
-    // ---------------------------------------------------------
-    // ซุ้มประตูเริ่มต้น & แท่นวาร์ปกลับเช็คพอยต์ (Respawn Pad)
-    // ---------------------------------------------------------
-    const archGroup = new THREE.Group();
-    archGroup.position.set(18.5, 0, 26.0);
-    const archWoodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
-
-    const archPoleL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.4, 0.4), archWoodMat);
-    archPoleL.position.set(-2.0, 1.7, 0);
-    const archPoleR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.4, 0.4), archWoodMat);
-    archPoleR.position.set(2.0, 1.7, 0);
-    const archBeam = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.45, 0.45), archWoodMat);
-    archBeam.position.set(0, 3.2, 0);
-    archGroup.add(archPoleL, archPoleR, archBeam);
-
-    const archSign = makeTextSprite('🏃 ลานผจญภัยคิดเป็นลำดับ', 'พิชิต 4 ด่านคำถาม & ยอดเขาแห่งปัญญา 🏆', '#0f172a', 520, 150);
-    archSign.scale.set(3.6, 1.05, 1);
-    archSign.position.set(0, 4.0, 0);
-    archGroup.add(archSign);
-
-    scene.add(archGroup);
-    obbyMeshes.push(archGroup);
-
-    // แท่นวาร์ปกลับเช็คพอยต์ล่าสุด (Respawn Return Pad)
-    const returnPadMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.0, 1.15, 0.18, 20),
-      new THREE.MeshStandardMaterial({ color: 0x6366f1, emissive: 0x818cf8, emissiveIntensity: 0.65 }),
-    );
-    returnPadMesh.position.set(18.5, 0.09, 24.5);
-    scene.add(returnPadMesh);
-    obbyMeshes.push(returnPadMesh);
-
-    const returnSign = makeTextSprite('🚩 วาร์ปสู่เช็คพอยต์', 'เหยียบเพื่อขึ้นสู่ด่านล่าสุด', '#4338ca', 380, 120);
-    returnSign.scale.set(2.2, 0.7, 1);
-    returnSign.position.set(18.5, 1.1, 24.5);
-    scene.add(returnSign);
-    obbyMeshes.push(returnSign);
-
-    staticColliders.push(
-      { minX: 18.5 - 2.0 - 0.25, maxX: 18.5 - 2.0 + 0.25, minZ: 26.0 - 0.25, maxZ: 26.0 + 0.25, minY: 0, maxY: 3.4 },
-      { minX: 18.5 + 2.0 - 0.25, maxX: 18.5 + 2.0 + 0.25, minZ: 26.0 - 0.25, maxZ: 26.0 + 0.25, minY: 0, maxY: 3.4 },
-    );
-
-    let lastObbyStep = -1;
-    let lastGoalRewardTime = 0;
-    let lastLaunchPadTime = 0;
-    let lastTeleportTime = 0;
 
     const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
     const blockMaterials: Record<BlockMaterial, THREE.MeshStandardMaterial> = {
@@ -1922,7 +1459,6 @@ const VirtualClassroom: React.FC = () => {
           setStatus('ช่องนี้มีบล็อกอยู่แล้ว ลองเล็งช่องข้าง ๆ');
           return;
         }
-        virtualAudioService.playBlockPlace();
         setStatus(`วางบล็อก${MATERIALS.find((item) => item.id === block.material)?.label || ''}แล้ว`);
         const unitNo = boards[0]?.unitNo || 1;
         void recordActivity(
@@ -1943,7 +1479,6 @@ const VirtualClassroom: React.FC = () => {
       const block = blockData.get(hit.object.userData.blockId as string);
       if (!block) return;
       void removeWorldBlock(roomId, block);
-      virtualAudioService.playBlockRemove();
       setStatus('ลบบล็อกแล้ว');
     };
 
@@ -1979,7 +1514,6 @@ const VirtualClassroom: React.FC = () => {
       if (!grounded) return;
       grounded = false;
       verticalVelocity = 8.2;
-      virtualAudioService.playJump();
       setStatus('กระโดด!');
     };
     summonRef.current = () => {
@@ -1987,12 +1521,6 @@ const VirtualClassroom: React.FC = () => {
       playerPosition.set(state?.summonX || 0, 1.7, state?.summonZ || 10);
       verticalVelocity = 0;
       yaw = Math.PI;
-    };
-    teleportRef.current = (targetX: number, targetY: number, targetZ: number) => {
-      playerPosition.set(targetX, targetY, targetZ);
-      verticalVelocity = 0;
-      grounded = true;
-      virtualAudioService.playStar();
     };
 
     const onPointerLock = () => setPointerLocked(document.pointerLockElement === renderer.domElement);
@@ -2101,7 +1629,7 @@ const VirtualClassroom: React.FC = () => {
           const blockBottom = block.y - 0.5;
           const blockTop = block.y + 0.5;
           // ถ้าบล็อกอยู่ต่ำกว่าระดับก้าวขึ้นได้ หรืออยู่เหนือศีรษะ -> ไม่ขวางแนวระนาบ
-          if (blockTop <= feetYLevel + 0.60 || blockBottom >= feetYLevel + 1.65) continue;
+          if (blockTop <= feetYLevel + 0.35 || blockBottom >= feetYLevel + 1.7) continue;
           if (
             testX + PLAYER_RADIUS > block.x - 0.5
             && testX - PLAYER_RADIUS < block.x + 0.5
@@ -2111,16 +1639,9 @@ const VirtualClassroom: React.FC = () => {
             return true;
           }
         }
-        // 2. ตรวจสอบโต๊ะเรียน และแท่นกระโดดผจญภัย (platforms)
+        // 2. ตรวจสอบโต๊ะเรียน (platforms)
         for (const pf of platforms) {
-          const pfBottom = pf.bottom !== undefined ? pf.bottom : 0;
-          // ถ้าแท่นลอยอยู่เหนือศีรษะของผู้เล่น -> เดินลอดใต้แท่นได้สบาย ไม่ติดขวาง
-          if (pfBottom >= feetYLevel + 1.65) continue;
-          // ถ้าแท่นอยู่ต่ำกว่าระดับที่ก้าวขึ้นได้ หรือผู้เล่นยืนอยู่บนผิวแท่นแล้ว -> ไม่ขวางแนวระนาบ
-          if (pf.top <= feetYLevel + 0.65 || feetYLevel >= pf.top - 0.15) continue;
-          // ถ้ากำลังกระโดดลอยตัวในอากาศ และความสูงใกล้เคียงผิวแท่น -> ยอมให้ผ่านเพื่อลงสู่ผิวแท่นได้
-          if (!grounded && feetYLevel + 0.85 >= pf.top) continue;
-
+          if (pf.top <= feetYLevel + 0.35) continue;
           if (
             testX + PLAYER_RADIUS > pf.minX
             && testX - PLAYER_RADIUS < pf.maxX
@@ -2132,7 +1653,7 @@ const VirtualClassroom: React.FC = () => {
         }
         // 3. ตรวจสอบวัตถุกายภาพคงที่ (ผนังห้องเรียน ฐานกระดาน เสาต้นไม้ ตู้เกม พอร์ทัล)
         for (const col of staticColliders) {
-          if (col.maxY <= feetYLevel + 0.60 || col.minY >= feetYLevel + 1.65) continue;
+          if (col.maxY <= feetYLevel + 0.35 || col.minY >= feetYLevel + 1.7) continue;
           if (
             testX + PLAYER_RADIUS > col.minX
             && testX - PLAYER_RADIUS < col.maxX
@@ -2208,7 +1729,7 @@ const VirtualClassroom: React.FC = () => {
       verticalVelocity -= 20 * delta;
       playerPosition.y += verticalVelocity * delta;
 
-      // ตรวจสอบการชนศีรษะด้านบน (Ceiling Overhead Collision ป้องกันกระโดดทะลุเพดาน/บล็อก/แท่นลอย)
+      // ตรวจสอบการชนศีรษะด้านบน (Ceiling Overhead Collision ป้องกันกระโดดทะลุเพดาน/บล็อก)
       if (verticalVelocity > 0) {
         const headY = playerPosition.y + 0.1;
         for (const block of blockData.values()) {
@@ -2216,15 +1737,6 @@ const VirtualClassroom: React.FC = () => {
           const bBottom = block.y - 0.5;
           if (headY >= bBottom && playerPosition.y - 1.7 < bBottom) {
             playerPosition.y = bBottom - 0.1;
-            verticalVelocity = 0;
-            break;
-          }
-        }
-        for (const pf of platforms) {
-          if (pf.bottom === undefined) continue;
-          if (playerPosition.x < pf.minX || playerPosition.x > pf.maxX || playerPosition.z < pf.minZ || playerPosition.z > pf.maxZ) continue;
-          if (headY >= pf.bottom && playerPosition.y - 1.7 < pf.bottom) {
-            playerPosition.y = pf.bottom - 0.1;
             verticalVelocity = 0;
             break;
           }
@@ -2243,20 +1755,18 @@ const VirtualClassroom: React.FC = () => {
       blockData.forEach((b) => {
         if (Math.abs(b.x - playerPosition.x) >= 0.72 || Math.abs(b.z - playerPosition.z) >= 0.72) return;
         const top = b.y + 0.5;
-        if (top > floorTop && top <= feetY + 0.60) floorTop = top;
+        if (top > floorTop && top <= feetY + 0.35) floorTop = top;
       });
-      // ยืน/กระโดดขึ้นเหยียบผิวโต๊ะ และแพลตฟอร์มลานกระโดดได้
+      // ยืน/กระโดดขึ้นเหยียบผิวโต๊ะ (และแพลตฟอร์มอื่น) ได้
       platforms.forEach((pf) => {
         if (playerPosition.x < pf.minX || playerPosition.x > pf.maxX || playerPosition.z < pf.minZ || playerPosition.z > pf.maxZ) return;
-        if (pf.top > floorTop && pf.top <= feetY + 0.65) floorTop = pf.top;
+        if (pf.top > floorTop && pf.top <= feetY + 0.35) floorTop = pf.top;
       });
       const floorCamera = floorTop + 1.7;
       if (playerPosition.y <= floorCamera) {
-        if (verticalVelocity <= 0) {
-          playerPosition.y = floorCamera;
-          verticalVelocity = 0;
-          grounded = true;
-        }
+        playerPosition.y = floorCamera;
+        verticalVelocity = 0;
+        grounded = true;
       }
 
       // ป้องกันการตกแมพลงเหว/Void Fall Guard
@@ -2270,9 +1780,6 @@ const VirtualClassroom: React.FC = () => {
       playerPosition.x = THREE.MathUtils.clamp(playerPosition.x, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
       playerPosition.z = THREE.MathUtils.clamp(playerPosition.z, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
       const isMoving = Math.abs(forwardAmount) + Math.abs(sideAmount) > 0;
-      if (grounded && isMoving) {
-        virtualAudioService.playStep();
-      }
       localAvatar.visible = thirdPersonRef.current;
       localAvatar.position.set(playerPosition.x, playerPosition.y - 1.7, playerPosition.z);
       localAvatar.rotation.y = yaw;
@@ -2300,117 +1807,6 @@ const VirtualClassroom: React.FC = () => {
         prop.position.y = prop.userData.baseY + Math.sin(now * 0.0018 + index) * 0.08;
       });
 
-      // หมุนอัญมณีโทเทมและดาวถ้วยรางวัลลานกระโดดผจญภัย
-      checkpointTotemGems.forEach((gem) => {
-        gem.rotation.y += delta * 2.2;
-        gem.rotation.x += delta * 1.1;
-      });
-      trophyStar.rotation.y += delta * 2.5;
-      trophyStar.rotation.x += delta * 0.8;
-      beacon.rotation.y += delta * 0.5;
-
-      // ปรับความสูงของเกาะลอยน้ำที่ขยับขึ้น-ลง (Oscillating Floating Islands)
-      floatingIslandMeshes.forEach((item, idx) => {
-        const floatOffset = Math.sin(now * 0.0018 + idx * 1.5) * 0.16;
-        item.mesh.position.y = item.baseTopY - item.slabThick / 2 + floatOffset;
-        if (platforms[item.pfIndex]) {
-          platforms[item.pfIndex].top = item.baseTopY + floatOffset;
-          platforms[item.pfIndex].bottom = item.baseTopY - item.slabThick + floatOffset;
-        }
-      });
-
-      // ตรวจสอบการเหยียบสปริงบอร์ดกระโดดสูง (Super Launch Pad)
-      const curX = playerPosition.x;
-      const curZ = playerPosition.z;
-      const curFeetY = playerPosition.y - 1.7;
-
-      if (
-        Math.abs(curX - 20.5) < 1.15
-        && Math.abs(curZ - 8.0) < 1.15
-        && Math.abs(curFeetY - 4.05) < 0.55
-        && now - lastLaunchPadTime > 800
-      ) {
-        lastLaunchPadTime = now;
-        verticalVelocity = 12.0;
-        grounded = false;
-        virtualAudioService.playJump();
-        setStatus('🚀 สปริงบอร์ดส่งตัวลอยฟ้าข้ามสู่เกาะลอยน้ำ!');
-      }
-
-      // ตรวจสอบการเหยียบแท่นวาร์ปกลับเช็คพอยต์ (Respawn Return Pad)
-      if (
-        Math.abs(curX - 18.5) < 1.25
-        && Math.abs(curZ - 24.5) < 1.25
-        && Math.abs(curFeetY - 0.15) < 0.55
-        && now - lastTeleportTime > 1500
-      ) {
-        lastTeleportTime = now;
-        const highest = highestCheckpointRef.current;
-        if (highest >= 0 && checkpointsData[highest]) {
-          const cp = checkpointsData[highest];
-          playerPosition.set(cp.x, cp.topY + 1.7, cp.z);
-          verticalVelocity = 0;
-          grounded = true;
-          virtualAudioService.playStar();
-          setStatus(`🚩 วาร์ปกลับสู่เช็คพอยต์ด่านที่ ${highest + 1}: ${cp.title}`);
-        } else {
-          setStatus('🚩 เดินหน้ากระโดดพิชิตเช็คพอยต์ด่านแรกเพื่อบันทึกจุดวาร์ป!');
-        }
-      }
-
-      // ตรวจสอบตำแหน่งผู้เล่นบนลานกระโดดผจญภัย
-      let detectedObbyStep = -1;
-      for (let cIdx = 0; cIdx < checkpointsData.length; cIdx++) {
-        const cp = checkpointsData[cIdx];
-        if (
-          Math.abs(curX - cp.x) <= cp.size / 2
-          && Math.abs(curZ - cp.z) <= cp.size / 2
-          && Math.abs(curFeetY - cp.topY) < 0.55
-        ) {
-          detectedObbyStep = cIdx;
-          if (!unlockedCheckpointsRef.current[cIdx] && !activeCheckpointQuizRef.current) {
-            openCheckpointQuizRef.current(cIdx);
-          }
-          break;
-        }
-      }
-
-      const summit = allCoursePlatforms[allCoursePlatforms.length - 1];
-      if (
-        Math.abs(curX - summit.x) <= summit.sizeX / 2
-        && Math.abs(curZ - summit.z) <= summit.sizeZ / 2
-        && Math.abs(curFeetY - summit.topY) < 0.55
-      ) {
-        detectedObbyStep = 4;
-      }
-
-      if (detectedObbyStep !== lastObbyStep) {
-        lastObbyStep = detectedObbyStep;
-        setCurrentObbyStep(detectedObbyStep);
-
-        if (detectedObbyStep >= 0 && detectedObbyStep <= 3) {
-          virtualAudioService.playObbyStep(detectedObbyStep);
-          const cp = checkpointsData[detectedObbyStep];
-          const isDone = unlockedCheckpointsRef.current[detectedObbyStep];
-          setStatus(`🎯 ${cp.title} ${isDone ? '(ผ่านด่านแล้ว ✓)' : '(ตอบคำถามเพื่อปลดล็อก)'}`);
-        } else if (detectedObbyStep === 4) {
-          if (now - lastGoalRewardTime > 15_000) {
-            lastGoalRewardTime = now;
-            virtualAudioService.playVictory();
-            celebrate();
-            setWorldStars((c) => c + 10);
-            setStatus('🏆 ยินดีด้วยอย่างยิ่ง! พิชิตยอดเขาแห่งปัญญาสำเร็จ (+10 ⭐)');
-            const unitNo = boards[0]?.unitNo || 1;
-            void recordActivity(
-              'game',
-              `u${unitNo}-game-algorithm-mastery`,
-              unitNo,
-              'พิชิตยอดเขาแห่งปัญญา (ลานผจญภัยคิดเป็นลำดับและตอบคำถาม 4 ด่าน)',
-            );
-          }
-        }
-      }
-
       collectibles.forEach((star, index) => {
         star.rotation.y += delta * 1.8;
         star.rotation.x += delta * 0.7;
@@ -2420,7 +1816,6 @@ const VirtualClassroom: React.FC = () => {
         if (horizontal > 1.1 || vertical > 1) return;
         star.visible = false;
         star.userData.collected = true;
-        virtualAudioService.playStar();
         setWorldStars((current) => current + 1);
         setStatus('เก็บดาวสำเร็จ +1');
         if (!worldGameRecorded) {
@@ -2473,7 +1868,6 @@ const VirtualClassroom: React.FC = () => {
       unsubscribePlayers();
       void removeWorldPlayer(roomId, playerId);
       summonRef.current = () => undefined;
-      teleportRef.current = () => undefined;
       document.removeEventListener('pointerlockchange', onPointerLock);
       document.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('keydown', onKeyDown);
@@ -2490,7 +1884,6 @@ const VirtualClassroom: React.FC = () => {
       starMaterial.dispose();
       Object.values(blockMaterials).forEach((item) => item.dispose());
       pixelTextures.forEach((texture) => texture.dispose());
-      obbyMeshes.forEach((mesh) => scene.remove(mesh));
       mount.removeChild(renderer.domElement);
     };
   }, [activeClassroom, avatarColor, boards, displayName, gameStations, graphicsQuality, isTeacher, openLessonBoard, playerId, recordActivity, roomClassroom, roomId]);
@@ -2630,20 +2023,6 @@ const VirtualClassroom: React.FC = () => {
               </button>
             ))}
           </div>
-          <label className="world-sound-toggle">
-            <input
-              type="checkbox"
-              checked={soundEnabled}
-              onChange={(event) => {
-                const next = event.target.checked;
-                setSoundEnabled(next);
-                virtualAudioService.setSoundEnabled(next);
-                if (next) virtualAudioService.playStar();
-              }}
-            />
-            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            <span>เสียงเอฟเฟกต์ 3D (SFX)</span>
-          </label>
           {!isTeacher && (
             <label className="world-follow-toggle">
               <input type="checkbox" checked={followTeacher} onChange={(event) => setFollowTeacher(event.target.checked)} />
@@ -2773,48 +2152,6 @@ const VirtualClassroom: React.FC = () => {
 
       <div className="world-star-score" title="ดาวจากเกมเก็บดาว"><Star size={18} fill="currentColor" /> {worldStars}</div>
 
-      {(currentObbyStep >= 0 || highestCheckpoint >= 0) && (
-        <div className="world-obby-hud" aria-label="ความคืบหน้าลานกระโดดคิดเป็นลำดับ">
-          <div className="world-obby-hud-title">
-            <span>🏃 ลานฝึกคิดเป็นลำดับ ({activeClassroom})</span>
-            <small>{currentObbyStep === 4 ? '🏆 พิชิตยอดเขา!' : `ขั้นที่ ${Math.max(1, currentObbyStep + 1)}/4`}</small>
-          </div>
-          <div className="world-obby-hud-track">
-            {OBBY_CHECKPOINTS.map((cp, idx) => {
-              const isUnlocked = unlockedCheckpoints[idx];
-              const isCurrent = currentObbyStep === idx;
-              return (
-                <button
-                  key={cp.index}
-                  type="button"
-                  className={`world-obby-node ${isCurrent ? 'current' : ''} ${isUnlocked ? 'unlocked' : ''}`}
-                  onClick={() => {
-                    if (isUnlocked) teleportToCheckpoint(idx);
-                  }}
-                  title={isUnlocked ? `คลิกเพื่อวาร์ปไป${cp.title} (ผ่านแล้ว)` : `${cp.title} (ยังไม่ผ่าน)`}
-                  disabled={!isUnlocked}
-                >
-                  {isUnlocked ? '✓ ' : ''}{idx + 1}. {cp.pillar === 'decompose' ? 'แยกย่อย' : cp.pillar === 'pattern' ? 'รูปแบบ' : cp.pillar === 'abstract' ? 'นามธรรม' : 'อัลกอริทึม'}
-                </button>
-              );
-            })}
-            <span className={`world-obby-node goal ${currentObbyStep === 4 ? 'active' : ''}`} title="ยอดเขาแห่งปัญญา">
-              🏆 ยอดเขา
-            </span>
-          </div>
-          {highestCheckpoint >= 0 && (
-            <button
-              type="button"
-              className="world-obby-teleport-chip"
-              onClick={() => teleportToCheckpoint(highestCheckpoint)}
-              title={`วาร์ปกลับสู่เช็คพอยต์สูงสุดที่ปลดล็อก (ด่าน ${highestCheckpoint + 1})`}
-            >
-              <Flag size={13} /> วาร์ปกลับด่าน {highestCheckpoint + 1}
-            </button>
-          )}
-        </div>
-      )}
-
       {mode === 'build' && (
         <div className="world-build-capacity" aria-label={`ใช้บล็อก ${worldBlockCount} จาก ${MAX_WORLD_BLOCKS} ชิ้น`}>
           <BrickWall size={17} />
@@ -2881,21 +2218,6 @@ const VirtualClassroom: React.FC = () => {
         </button>
         <button onClick={() => setGamesPanelOpen(true)} title="เปิดแผงเกมทั้งหมด" aria-label="เปิดแผงเกมทั้งหมด" className={gamesPanelOpen ? 'active' : ''}>
           <Gamepad2 size={20} />
-        </button>
-        <button
-          onClick={() => {
-            setSoundEnabled((prev) => {
-              const next = !prev;
-              virtualAudioService.setSoundEnabled(next);
-              if (next) virtualAudioService.playStar();
-              return next;
-            });
-          }}
-          title={soundEnabled ? 'ปิดเสียงเอฟเฟกต์ (SFX)' : 'เปิดเสียงเอฟเฟกต์ (SFX)'}
-          aria-label={soundEnabled ? 'ปิดเสียงเอฟเฟกต์ (SFX)' : 'เปิดเสียงเอฟเฟกต์ (SFX)'}
-          className={soundEnabled ? 'active' : ''}
-        >
-          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
         </button>
         {mode === 'build' && (
           <>
@@ -3440,148 +2762,6 @@ const VirtualClassroom: React.FC = () => {
                 ยกเลิก
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal คำถามประจำด่านตามระดับชั้น */}
-      {activeCheckpointQuiz && (
-        <div
-          className="world-quiz-modal-backdrop"
-          onClick={() => {
-            if (checkpointAnswer !== null) {
-              activeCheckpointQuizRef.current = false;
-              setActiveCheckpointQuiz(null);
-            }
-          }}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="checkpoint-quiz-title"
-        >
-          <div className="world-quiz-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="world-quiz-header">
-              <div className="world-quiz-header-info">
-                <div className="world-quiz-badge">
-                  <Sparkles size={16} />
-                  <span>ทดสอบแนวคิดเชิงคำนวณ • ได้รับ +2 ⭐</span>
-                </div>
-                <h3 id="checkpoint-quiz-title">{activeCheckpointQuiz.title}</h3>
-                <span className="world-quiz-tier">
-                  ระดับชั้น {activeClassroom} ({ageTierLabel[ageTierFromClassroom(activeClassroom)]})
-                </span>
-              </div>
-              <button
-                type="button"
-                className="world-modal-close-btn"
-                onClick={() => {
-                  activeCheckpointQuizRef.current = false;
-                  setActiveCheckpointQuiz(null);
-                }}
-                aria-label="ปิดคำถาม"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="world-quiz-prompt">
-              <h4>คำถามประจำด่าน:</h4>
-              <p>{activeCheckpointQuiz.question.q}</p>
-            </div>
-
-            <div className="world-quiz-choices">
-              {activeCheckpointQuiz.question.choices.map((opt, idx) => {
-                const isSelected = checkpointAnswer === idx;
-                const isCorrect = idx === activeCheckpointQuiz.question.answer;
-                let choiceState = '';
-                if (checkpointAnswer !== null) {
-                  if (isCorrect) choiceState = 'correct';
-                  else if (isSelected) choiceState = 'wrong';
-                  else choiceState = 'dimmed';
-                }
-
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    className={`world-quiz-choice ${choiceState}`}
-                    onClick={() => handleAnswerCheckpoint(idx)}
-                    disabled={checkpointAnswer !== null}
-                  >
-                    <span className="choice-number">{['ก', 'ข', 'ค', 'ง'][idx] || idx + 1}</span>
-                    <span className="choice-text">{opt}</span>
-                    {checkpointAnswer !== null && isCorrect && (
-                      <CheckCircle2 size={20} className="choice-feedback-icon correct" />
-                    )}
-                    {checkpointAnswer !== null && isSelected && !isCorrect && (
-                      <X size={20} className="choice-feedback-icon wrong" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {checkpointAnswer !== null && (
-              <div
-                className={`world-quiz-feedback ${
-                  checkpointAnswer === activeCheckpointQuiz.question.answer ? 'success' : 'retry'
-                }`}
-              >
-                {checkpointAnswer === activeCheckpointQuiz.question.answer ? (
-                  <>
-                    <div className="world-quiz-feedback-banner">
-                      <Sparkles size={20} />
-                      <strong>ถูกต้องยอดเยี่ยม! ปลดล็อกด่านแล้ว (+2 ⭐)</strong>
-                    </div>
-                    {activeCheckpointQuiz.question.why && (
-                      <p className="world-quiz-explanation">
-                        💡 <strong>คำอธิบาย:</strong> {activeCheckpointQuiz.question.why}
-                      </p>
-                    )}
-                    <button
-                      type="button"
-                      className="world-quiz-btn-primary"
-                      onClick={() => {
-                        activeCheckpointQuizRef.current = false;
-                        setActiveCheckpointQuiz(null);
-                      }}
-                    >
-                      🚀 ลุยกระโดดด่านถัดไป!
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="world-quiz-feedback-banner retry">
-                      <RotateCcw size={20} />
-                      <strong>ยังไม่ถูกต้องนะ ลองคิดใหม่อีกครั้ง!</strong>
-                    </div>
-                    {activeCheckpointQuiz.question.why && (
-                      <p className="world-quiz-explanation">
-                        💡 <strong>คำใบ้ / แนวคิด:</strong> {activeCheckpointQuiz.question.why}
-                      </p>
-                    )}
-                    <div className="world-quiz-retry-actions">
-                      <button
-                        type="button"
-                        className="world-quiz-btn-retry"
-                        onClick={() => setCheckpointAnswer(null)}
-                      >
-                        <RotateCcw size={16} /> ลองตอบใหม่อีกครั้ง
-                      </button>
-                      <button
-                        type="button"
-                        className="world-quiz-btn-cancel"
-                        onClick={() => {
-                          activeCheckpointQuizRef.current = false;
-                          setActiveCheckpointQuiz(null);
-                        }}
-                      >
-                        ปิดหน้าต่าง
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
           </div>
         </div>
       )}
