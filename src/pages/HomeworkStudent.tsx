@@ -5,12 +5,9 @@ import {
   getAssignmentsForStudent, submitWork, getStudentSubmissionForAssignment,
   fetchAssignmentsFromFirebase, fetchSubmissionsFromFirebase,
   recommendAssignment,
+  validateSubmissionContent,
   type Assignment,
 } from '../services/homeworkService';
-import { trackMediaClick } from '../services/progressService';
-import { syncStudentGradesFromProgress } from '../services/gameProgressService';
-import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
-import { getLinkedUnits } from '../services/gradeService';
 import { isScoreEligibleUser } from '../services/userAccessService';
 
 const HomeworkStudent: React.FC = () => {
@@ -142,17 +139,12 @@ const HomeworkStudent: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!selected) return;
-    let validUrl = false;
-    let finalUrl = contentUrl.trim();
+    const finalUrl = contentUrl.trim();
     let finalComment = comment.trim();
     let dtSteps = undefined;
 
     if (selected.isDesignThinking) {
       let proto = dtPrototypeUrl.trim();
-      if (proto && !/^https?:\/\//i.test(proto)) {
-        proto = `https://${proto}`;
-      }
-      if (proto) finalUrl = proto;
       dtSteps = {
         define: dtDefine.trim(),
         ideate: dtIdeate.trim(),
@@ -164,22 +156,20 @@ const HomeworkStudent: React.FC = () => {
       }
     }
 
-    if (finalUrl) {
-      if (!/^https?:\/\//i.test(finalUrl)) {
-        finalUrl = `https://${finalUrl}`;
-      }
-      try {
-        validUrl = ['http:', 'https:'].includes(new URL(finalUrl).protocol);
-      } catch { /* Invalid link. */ }
-      if (!validUrl) {
-        alert('กรุณาใส่ลิงก์ผลงานที่ถูกต้อง เช่น https://www.canva.com/... หรือ https://scratch.mit.edu/...');
-        return;
-      }
-    }
-    if (!finalUrl && !finalComment && (!selected.isDesignThinking || (!dtDefine.trim() && !dtIdeate.trim()))) {
-      alert('กรุณาพิมพ์คำตอบหรือแนบลิงก์ผลงาน');
+    const validation = validateSubmissionContent({
+      contentUrl: finalUrl,
+      comment: finalComment,
+      isDesignThinking: selected.isDesignThinking,
+      dtDefine,
+      dtIdeate,
+      dtPrototypeUrl,
+    });
+
+    if (!validation.valid) {
+      alert(validation.error || 'ข้อมูลการส่งงานไม่ถูกต้อง');
       return;
     }
+
     setSyncing(true);
     try {
       await submitWork({
@@ -193,28 +183,12 @@ const HomeworkStudent: React.FC = () => {
         designThinkingSteps: dtSteps,
       });
 
-      let progressSaved = true;
-      const linkedTarget = selected.indicatorId && selected.subject
-        ? getLinkedUnits(user.classroom, selected.subject)
-            .find((item) => item.indicator.id === selected.indicatorId)?.units[0]
-        : undefined;
-      const gradeId = linkedTarget?.gradeId || getDefaultProgressGradeIdForClassroom(user.classroom);
-      const unitNo = linkedTarget?.unitNo || 1;
-      if (gradeId) {
-        progressSaved = await trackMediaClick(user.id, gradeId, unitNo, 'fun', `[Homework] ${selected.title}`);
-        if (progressSaved) await syncStudentGradesFromProgress({
-          id: user.id,
-          name: user.name,
-          classroom: user.classroom,
-          studentNumber: user.studentNumber,
-        });
-      }
       setDataVersion((version) => version + 1);
-      alert(progressSaved ? 'ส่งงานสำเร็จ ✓ +5 XP' : 'ส่งงานสำเร็จ แต่ยังบันทึก XP ไม่สำเร็จ กรุณาแจ้งครู');
+      alert('ส่งงานสำเร็จเรียบร้อยแล้ว! 📋 ชิ้นงานถูกส่งให้คุณครูแล้ว อยู่ในสถานะ "รอคุณครูตรวจและให้คะแนน" ครับ');
       closeSubmission();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('ส่งงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
+      alert(error?.message || 'ส่งงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
     } finally {
       setSyncing(false);
     }

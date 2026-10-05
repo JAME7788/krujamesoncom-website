@@ -20,6 +20,8 @@ import {
   loadAssignments,
   loadSubmissions,
   normalizeHomeworkUrl,
+  isValidSubmissionUrl,
+  validateSubmissionContent,
   type Assignment,
 } from '../src/services/homeworkService';
 
@@ -274,6 +276,86 @@ describe('ระบบรับงานผ่านลิงก์และต�
           comment: 'พยายามส่งแก้ทับ',
         }),
       ).rejects.toThrow('ครูตรวจงานนี้แล้ว กรุณาติดต่อครูก่อนแก้ไข');
+    });
+  });
+
+  describe('4. การตรวจสอบความถูกต้องของลิงก์และเนื้อหาก่อนส่ง (Validation Guard)', () => {
+    it('isValidSubmissionUrl ตรวจจับและปฏิเสธ URL ที่ไม่ถูกต้องอย่างเข้มงวด', () => {
+      // ตัวอย่างคำมั่ว / คำโดดๆ ที่ไม่ใช่เว็บจริง
+      expect(isValidSubmissionUrl('asdasd')).toBe(false);
+      expect(isValidSubmissionUrl('http://asdasd')).toBe(false);
+      expect(isValidSubmissionUrl('https://asdasd')).toBe(false);
+      expect(isValidSubmissionUrl('test')).toBe(false);
+      expect(isValidSubmissionUrl('localhost')).toBe(false);
+      expect(isValidSubmissionUrl('')).toBe(false);
+      expect(isValidSubmissionUrl(undefined)).toBe(false);
+      expect(isValidSubmissionUrl('12345')).toBe(false);
+
+      // URL เว็บไซต์จริง
+      expect(isValidSubmissionUrl('canva.com/design/DAF123')).toBe(true);
+      expect(isValidSubmissionUrl('https://scratch.mit.edu/projects/987654')).toBe(true);
+      expect(isValidSubmissionUrl('drive.google.com/drive/folders/abc')).toBe(true);
+      expect(isValidSubmissionUrl('http://myschool.ac.th/work')).toBe(true);
+    });
+
+    it('validateSubmissionContent ปฏิเสธเมื่อนักเรียนพิมพ์คำมั่ว asdasd', () => {
+      // กรณีพิมพ์ asdasd ในช่องลิงก์ และ asdasd ในช่องคำตอบ (ตามภาพที่ผู้ใช้พบ)
+      const res1 = validateSubmissionContent({
+        contentUrl: 'asdasd',
+        comment: 'asdasd',
+      });
+      expect(res1.valid).toBe(false);
+      expect(res1.error).toContain('ลิงก์ผลงานไม่ถูกต้อง');
+
+      // กรณีไม่ใส่ลิงก์ แต่พิมพ์คำตอบเป็นสแปมแป้นพิมพ์
+      const res2 = validateSubmissionContent({
+        comment: 'asdasdasd',
+      });
+      expect(res2.valid).toBe(false);
+      expect(res2.error).toContain('ข้อความไม่ถูกต้อง');
+
+      // กรณีไม่ใส่ลิงก์ และพิมพ์สั้นเกินไป (< 10 ตัวอักษร)
+      const res3 = validateSubmissionContent({
+        comment: 'ส่งงาน',
+      });
+      expect(res3.valid).toBe(false);
+      expect(res3.error).toContain('ข้อความสั้นเกินไป');
+
+      // กรณีส่งลิงก์ Canva หรือ Scratch ที่ถูกต้อง
+      const res4 = validateSubmissionContent({
+        contentUrl: 'canva.com/design/DAFabc/view',
+      });
+      expect(res4.valid).toBe(true);
+
+      // กรณีตอบคำถามอย่างตั้งใจ (> 10 ตัวอักษร)
+      const res5 = validateSubmissionContent({
+        comment: 'กลุ่มของผมได้ออกแบบอัลกอริทึมการแปรงฟัน 5 ขั้นตอนครับ',
+      });
+      expect(res5.valid).toBe(true);
+    });
+
+    it('submitWork ปฏิเสธและโยน Exception หากส่ง URL ที่ไม่ใช่เว็บไซต์จริง', async () => {
+      const task = await createAssignment({
+        title: 'ทดสอบส่ง URL ปลอม',
+        description: 'ทดสอบความปลอดภัย',
+        classroom: 'ป.1',
+        dueDate: '2026-10-31',
+        maxScore: 10,
+        createdBy: 'teacher',
+        targetType: 'all',
+      });
+
+      await expect(
+        submitWork({
+          assignmentId: task.id,
+          studentId: 'p1_01_fake',
+          studentName: 'เด็กชายทดสอบ',
+          classroom: 'ป.1',
+          studentNo: 1,
+          contentUrl: 'asdasd',
+          comment: 'งานส่งครับ',
+        }),
+      ).rejects.toThrow('ลิงก์ผลงานไม่ถูกต้อง');
     });
   });
 });

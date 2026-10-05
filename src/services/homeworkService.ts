@@ -526,6 +526,110 @@ export const normalizeHomeworkUrl = (url?: string): string => {
   return `https://${trimmed}`;
 };
 
+/** ตรวจสอบความถูกต้องของ URL ลิงก์ผลงาน (ต้องเป็น http/https, มี hostname โดเมนที่ถูกต้อง เช่น canva.com, scratch.mit.edu) */
+export const isValidSubmissionUrl = (url?: string): boolean => {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  const normalized = normalizeHomeworkUrl(trimmed);
+  try {
+    const parsed = new URL(normalized);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+    const hostname = parsed.hostname.toLowerCase();
+    // ป้องกัน localhost หรือคำโดดๆ เช่น asdasd, test
+    if (!hostname.includes('.') || hostname === 'localhost') return false;
+    const parts = hostname.split('.');
+    if (parts.length < 2) return false;
+    const tld = parts[parts.length - 1];
+    // TLD ต้องเป็นตัวอักษรอย่างน้อย 2 ตัว และส่วนประกอบชื่อโดเมนไม่ว่างเปล่า
+    if (!tld || tld.length < 2 || !/^[a-z]{2,}$/i.test(tld)) return false;
+    if (parts.some((p) => p.length === 0)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/** ตรวจสอบความสมบูรณ์ของเนื้อหางานก่อนส่ง (ป้องกันลิงก์ปลอมและข้อความพิมพ์เล่น) */
+export const validateSubmissionContent = (data: {
+  contentUrl?: string;
+  comment?: string;
+  isDesignThinking?: boolean;
+  dtDefine?: string;
+  dtIdeate?: string;
+  dtPrototypeUrl?: string;
+}): { valid: boolean; error?: string } => {
+  const url = data.contentUrl?.trim();
+  const comment = data.comment?.trim();
+
+  if (data.isDesignThinking) {
+    const define = data.dtDefine?.trim() || '';
+    const ideate = data.dtIdeate?.trim() || '';
+    const proto = data.dtPrototypeUrl?.trim() || '';
+    if (define.length < 10) {
+      return { valid: false, error: 'กรุณาระบุปัญหาและกลุ่มผู้ใช้ในขั้นที่ 1 อย่างน้อย 10 ตัวอักษร' };
+    }
+    if (ideate.length < 10) {
+      return { valid: false, error: 'กรุณาระบุแนวทางแก้ปัญหาในขั้นที่ 2 อย่างน้อย 10 ตัวอักษร' };
+    }
+    if (proto && !isValidSubmissionUrl(proto)) {
+      return { valid: false, error: 'ลิงก์ต้นแบบ (Prototype) ในขั้นที่ 3 ไม่ถูกต้อง กรุณาใส่ URL เว็บไซต์จริง เช่น Canva หรือ Scratch' };
+    }
+    return { valid: true };
+  }
+
+  // ถ้ามีการกรอกลิงก์มา ต้องตรวจความถูกต้องของโดเมน
+  if (url && !isValidSubmissionUrl(url)) {
+    return {
+      valid: false,
+      error: '❌ ลิงก์ผลงานไม่ถูกต้อง: กรุณาใส่ URL เว็บไซต์จริง (เช่น https://www.canva.com/... หรือ https://scratch.mit.edu/...) ไม่สามารถใส่ข้อความทั่วไปได้ครับ',
+    };
+  }
+
+  // ตรวจจับข้อความพิมพ์เล่น / สแปมคีย์บอร์ด
+  const isSpamText = (text: string) => {
+    const clean = text.trim().toLowerCase();
+    if (/(.)\1{4,}/.test(clean)) return true; // พิมพ์ตัวเดิมซ้ำ 5 ครั้งขึ้นไป เช่น aaaaa
+    if (/^(asd|asdf|qwe|qwer|zxc|zxcv|123)+$/i.test(clean)) return true; // แป้นเหย้า/ตัวเลขซ้ำ
+    const unique = new Set(clean.replace(/\s/g, '').split(''));
+    if (clean.length >= 6 && unique.size <= 2) return true;
+    return false;
+  };
+
+  // กรณีไม่มีลิงก์ ส่งเฉพาะข้อความตอบคำถาม
+  if (!url) {
+    if (comment && isSpamText(comment)) {
+      return {
+        valid: false,
+        error: '❌ ข้อความไม่ถูกต้อง: กรุณาพิมพ์คำตอบหรืออธิบายงานจริง ไม่พิมพ์ตัวอักษรซ้ำหรือพิมพ์เล่นครับ',
+      };
+    }
+    if (!comment || comment.length < 10) {
+      return {
+        valid: false,
+        error: '❌ ข้อความสั้นเกินไป: กรุณาพิมพ์คำตอบหรืออธิบายผลงานอย่างน้อย 10 ตัวอักษร',
+      };
+    }
+  }
+
+  // กรณีมีลิงก์และมีข้อความด้วย แต่ข้อความเป็นสแปม
+  if (comment && isSpamText(comment)) {
+    return {
+      valid: false,
+      error: '❌ ข้อความคำอธิบายไม่ถูกต้อง: ไม่พิมพ์ตัวอักษรซ้ำหรือพิมพ์เล่นครับ',
+    };
+  }
+
+  if (!url && !comment) {
+    return {
+      valid: false,
+      error: '❌ กรุณาแนบลิงก์ผลงาน หรือพิมพ์คำตอบ/คำอธิบายผลงาน',
+    };
+  }
+
+  return { valid: true };
+};
+
 export const submitWork = async (
   data: Omit<Submission, 'id' | 'submittedAt'>,
 ): Promise<Submission> => {
@@ -534,6 +638,17 @@ export const submitWork = async (
   const alternatives = new Set(loadAssignments().filter(a => a.id === assignment.id || (assignment.personalizedPackId && a.personalizedPackId === assignment.personalizedPackId)).map(a => a.id));
   const previous = loadSubmissions().find(s => alternatives.has(s.assignmentId) && s.studentId === data.studentId);
   if (previous?.reviewedAt) throw new Error('ครูตรวจงานนี้แล้ว กรุณาติดต่อครูก่อนแก้ไข');
+
+  if (data.contentUrl?.trim() && !isValidSubmissionUrl(data.contentUrl)) {
+    throw new Error('ลิงก์ผลงานไม่ถูกต้อง กรุณาใส่ URL เว็บไซต์จริง เช่น Canva หรือ Scratch');
+  }
+  if (data.designThinkingSteps?.prototypeUrl?.trim() && !isValidSubmissionUrl(data.designThinkingSteps.prototypeUrl)) {
+    throw new Error('ลิงก์ผลงานต้นแบบไม่ถูกต้อง กรุณาใส่ URL เว็บไซต์จริง');
+  }
+  if (!data.contentUrl?.trim() && !data.comment?.trim() && !data.designThinkingSteps) {
+    throw new Error('กรุณาระบุลิงก์ผลงานหรือคำตอบของงาน');
+  }
+
   const normalizedContentUrl = normalizeHomeworkUrl(data.contentUrl);
   const normalizedDtSteps = data.designThinkingSteps ? {
     ...data.designThinkingSteps,
