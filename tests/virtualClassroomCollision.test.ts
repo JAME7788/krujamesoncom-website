@@ -96,4 +96,145 @@ describe('3D Voxel Collision Detection & Wall Sliding', () => {
     expect(playerX).toBeCloseTo(0.7);
     // เมื่อเดินเฉียงชนกำแพง ตัวละครจะสไลด์ไปตามแกน X อย่างราบรื่น
   });
+
+  interface StaticCollider {
+    minX: number;
+    maxX: number;
+    minZ: number;
+    maxZ: number;
+    minY: number;
+    maxY: number;
+  }
+
+  const checkStaticCollision = (
+    testX: number,
+    testZ: number,
+    feetY: number,
+    colliders: StaticCollider[],
+  ): boolean => {
+    for (const col of colliders) {
+      if (col.maxY <= feetY + 0.35 || col.minY >= feetY + 1.7) continue;
+      if (
+        testX + PLAYER_RADIUS > col.minX
+        && testX - PLAYER_RADIUS < col.maxX
+        && testZ + PLAYER_RADIUS > col.minZ
+        && testZ - PLAYER_RADIUS < col.maxZ
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  it('กำแพงห้องเรียน (ผนังหลัง, ผนังซ้าย, ผนังขวา) ต้องขวางไม่ให้ผู้เล่นเดินทะลุออกนอกห้อง', () => {
+    const classroomWalls: StaticCollider[] = [
+      // ผนังหลัง z = -8.4
+      { minX: -10, maxX: 10, minZ: -8.4 - 0.175, maxZ: -8.4 + 0.175, minY: 0, maxY: 5.5 },
+      // ผนังซ้าย x = -10
+      { minX: -10 - 0.175, maxX: -10 + 0.175, minZ: -8.5, maxZ: 8.5, minY: 0, maxY: 5.5 },
+      // ผนังขวา x = 10
+      { minX: 10 - 0.175, maxX: 10 + 0.175, minZ: -8.5, maxZ: 8.5, minY: 0, maxY: 5.5 },
+    ];
+    const feetY = 0.205; // ยืนบนพื้นห้องเรียน
+
+    // เดินเข้าหากำแพงหลัง (z = -8.0 พยายามเดินไป z = -8.3)
+    expect(checkStaticCollision(0, -8.3, feetY, classroomWalls)).toBe(true);
+
+    // เดินเข้าหากำแพงซ้าย (x = -9.5 พยายามเดินไป x = -9.8)
+    expect(checkStaticCollision(-9.8, 0, feetY, classroomWalls)).toBe(true);
+
+    // เดินเข้าหากำแพงขวา (x = 9.5 พยายามเดินไป x = 9.8)
+    expect(checkStaticCollision(9.8, 0, feetY, classroomWalls)).toBe(true);
+
+    // เดินอยู่กลางห้องเรียน ไม่ชนกำแพง
+    expect(checkStaticCollision(0, 0, feetY, classroomWalls)).toBe(false);
+  });
+
+  it('ระบบ Anti-Stuck Depenetration สามารถผลักผู้เล่นออกจากกำแพงหรือบล็อกได้เมื่อเกิดการซ้อนทับ', () => {
+    const col: StaticCollider = { minX: -10.175, maxX: -9.825, minZ: -8.5, maxZ: 8.5, minY: 0, maxY: 5.5 };
+    // ผู้เล่นถูกผลักหรือแว้งเข้าไปที่ x = -9.75 (ซ้อนทับขอบกำแพง x=-9.825 เล็กน้อย)
+    const player = { x: -9.75, z: 0, y: 1.905 };
+    const feet = player.y - 1.7;
+
+    const overlapMinX = (player.x + PLAYER_RADIUS) - col.minX; // (-9.75 + 0.34) - (-10.175) = 0.765
+    const overlapMaxX = col.maxX - (player.x - PLAYER_RADIUS); // -9.825 - (-9.75 - 0.34) = 0.265
+    const overlapMinZ = (player.z + PLAYER_RADIUS) - col.minZ;
+    const overlapMaxZ = col.maxZ - (player.z - PLAYER_RADIUS);
+
+    expect(overlapMinX > 0 && overlapMaxX > 0 && overlapMinZ > 0 && overlapMaxZ > 0).toBe(true);
+
+    const penX = overlapMinX < overlapMaxX ? -overlapMinX : overlapMaxX;
+    const penZ = overlapMinZ < overlapMaxZ ? -overlapMinZ : overlapMaxZ;
+
+    // แกนที่แทรกน้อยที่สุดคือแกน X ขวา (ดันออกจากกำแพงกลับเข้าห้องเรียน)
+    expect(penX).toBeGreaterThan(0);
+    player.x += penX * 1.05;
+
+    // หลังถูกผลักออกมา ขอบซ้ายของผู้เล่น (player.x - PLAYER_RADIUS) ต้องอยู่นอกกำแพง (>= col.maxX)
+    expect(player.x - PLAYER_RADIUS).toBeGreaterThanOrEqual(col.maxX);
+  });
+
+  it('ระบบป้องกันวางบล็อกทับตัว (placeBlock) ปฏิเสธการวางบล็อกเมื่อระยะห่างต่ำกว่า 0.88m', () => {
+    const playerPosition = { x: 0, y: 1.7, z: 0 };
+    const playerFeet = playerPosition.y - 1.7; // 0
+    const playerHead = playerPosition.y + 0.1; // 1.8
+
+    const canPlaceBlock = (x: number, y: number, z: number): boolean => {
+      const blockMinY = y - 0.5;
+      const blockMaxY = y + 0.5;
+      const inPlayerCellX = Math.abs(x - playerPosition.x) < 0.88;
+      const inPlayerCellZ = Math.abs(z - playerPosition.z) < 0.88;
+      const inPlayerHeight = blockMaxY > playerFeet + 0.05 && blockMinY < playerHead;
+      if (inPlayerCellX && inPlayerCellZ && inPlayerHeight) {
+        return false; // ปฏิเสธการวางทับตัว
+      }
+      return true;
+    };
+
+    // พยายามวางบล็อกที่ระยะ 0.70m (ซึ่งถ้าใช้ 0.65 เดิมจะผ่าน และทำให้บล็อกจมเข้าตัว)
+    expect(canPlaceBlock(0.70, 0.5, 0)).toBe(false);
+    expect(canPlaceBlock(0, 0.5, 0.70)).toBe(false);
+
+    // วางบล็อกที่ระยะ 1.0m (ปลอดภัย อยู่นอกรัศมีชน)
+    expect(canPlaceBlock(1.0, 0.5, 0)).toBe(true);
+
+    // วางบล็อกใต้ฝ่าเท้า (y = -0.5, blockMaxY = 0)
+    expect(canPlaceBlock(0, -0.5, 0)).toBe(true);
+  });
+
+  it('ระบบ Ceiling Overhead Collision ตัดความเร็วแนวดิ่งเมื่อศีรษะชนบล็อกหรือคานเพดาน', () => {
+    let verticalVelocity = 8.2; // กระโดดขึ้น
+    const playerPosition = { x: 0, y: 3.0, z: 0 }; // กำลังลอยขึ้น
+    const headY = playerPosition.y + 0.1; // 3.1
+
+    // มีบล็อกอยู่ที่ระดับ y = 3.6 (blockBottom = 3.1)
+    const block = { x: 0, y: 3.6, z: 0 };
+    const bBottom = block.y - 0.5; // 3.1
+
+    if (verticalVelocity > 0 && headY >= bBottom && playerPosition.y - 1.7 < bBottom) {
+      playerPosition.y = bBottom - 0.1;
+      verticalVelocity = 0;
+    }
+
+    expect(verticalVelocity).toBe(0);
+    expect(playerPosition.y).toBeCloseTo(3.0);
+  });
+
+  it('ระบบ Void Fall Guard รีเซ็ตตำแหน่งผู้เล่นหากตกหลุดระนาบต่ำกว่า -2m', () => {
+    let playerY = -2.5;
+    let verticalVelocity = -15;
+    let grounded = false;
+    let summonX = 0;
+    let summonZ = 10;
+
+    if (playerY < -2.0) {
+      playerY = 1.7;
+      verticalVelocity = 0;
+      grounded = true;
+    }
+
+    expect(playerY).toBe(1.7);
+    expect(verticalVelocity).toBe(0);
+    expect(grounded).toBe(true);
+  });
 });

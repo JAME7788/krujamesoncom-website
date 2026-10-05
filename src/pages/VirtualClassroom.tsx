@@ -999,6 +999,16 @@ const VirtualClassroom: React.FC = () => {
     classroomFloor.receiveShadow = true;
     scene.add(classroomFloor);
 
+    interface StaticCollider {
+      minX: number;
+      maxX: number;
+      minZ: number;
+      maxZ: number;
+      minY: number;
+      maxY: number;
+    }
+    const staticColliders: StaticCollider[] = [];
+
     const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.9 });
     const addWall = (x: number, y: number, z: number, w: number, h: number, d: number) => {
       const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMaterial);
@@ -1006,6 +1016,14 @@ const VirtualClassroom: React.FC = () => {
       wall.castShadow = true;
       wall.receiveShadow = true;
       scene.add(wall);
+      staticColliders.push({
+        minX: x - w / 2,
+        maxX: x + w / 2,
+        minZ: z - d / 2,
+        maxZ: z + d / 2,
+        minY: y - h / 2,
+        maxY: y + h / 2,
+      });
     };
     addWall(0, 2.75, -8.4, 20, 5.5, 0.35);
     addWall(-10, 2.75, 0, 0.35, 5.5, 17);
@@ -1081,6 +1099,14 @@ const VirtualClassroom: React.FC = () => {
       scene.add(frame, mesh, rug, pedestal, prop);
       boardMeshes.push(frame, mesh, pedestal, prop);
       lessonProps.push(prop);
+      staticColliders.push({
+        minX: boardPositions[index][0] - 0.75,
+        maxX: boardPositions[index][0] + 0.75,
+        minZ: -6.35 - 0.75,
+        maxZ: -6.35 + 0.75,
+        minY: 0,
+        maxY: 0.8,
+      });
     });
 
     gameStations.forEach((game, index) => {
@@ -1108,6 +1134,14 @@ const VirtualClassroom: React.FC = () => {
       scene.add(station);
       gameMeshes.push(screen, consoleBody, button);
       [consoleBody, button].forEach((part) => { part.userData = { kind: 'game', game }; });
+      staticColliders.push({
+        minX: 9.25 - 0.75 / 2,
+        maxX: 9.25 + 0.75 / 2,
+        minZ: -4.6 + index * 4.6 - 2.3 / 2,
+        maxZ: -4.6 + index * 4.6 + 2.3 / 2,
+        minY: 0,
+        maxY: 1.5,
+      });
     });
 
     // 🎮 พอร์ทัลรวมเกม — เดินมาคลิก (หรือกดปุ่ม 🎮) เพื่อเปิดแผงเกมทั้งหมด (ผนังซ้าย)
@@ -1158,10 +1192,20 @@ const VirtualClassroom: React.FC = () => {
     portalScreen.userData = { kind: 'portal' };
     scene.add(portalBase, portalArch, portalScreen);
     portalMeshes.push(portalBase, portalArch, portalScreen);
+    staticColliders.push({
+      minX: -9.3 - 1.35,
+      maxX: -9.3 + 1.35,
+      minZ: -1.35,
+      maxZ: 1.35,
+      minY: 0,
+      maxY: 0.6,
+    });
 
     const tableMaterial = new THREE.MeshStandardMaterial({ color: 0xc58b4c, roughness: 0.75 });
     // แพลตฟอร์มที่ยืน/กระโดดขึ้นไปเหยียบได้ (เช่น ผิวโต๊ะ) — AABB + ความสูงผิวด้านบน
     const platforms: { minX: number; maxX: number; minZ: number; maxZ: number; top: number }[] = [];
+    // ผิวพื้นห้องเรียนสูง 0.205m จากระดับลานดิน
+    platforms.push({ minX: -10, maxX: 10, minZ: -8.5, maxZ: 8.5, top: 0.205 });
     [-5.2, 0, 5.2].forEach((x) => {
       [0, 4.3].forEach((z) => {
         const table = new THREE.Group();
@@ -1199,6 +1243,14 @@ const VirtualClassroom: React.FC = () => {
       tree.add(trunk, crown);
       tree.position.set(x, 0, z);
       scene.add(tree);
+      staticColliders.push({
+        minX: x - 0.45,
+        maxX: x + 0.45,
+        minZ: z - 0.45,
+        maxZ: z + 0.45,
+        minY: 0,
+        maxY: 2.8,
+      });
     };
     [[-15, -9], [15, -9], [-15, 8], [15, 8]].forEach(([x, z]) => makeTree(x, z));
 
@@ -1615,9 +1667,9 @@ const VirtualClassroom: React.FC = () => {
       const playerHead = playerPosition.y + 0.1;
       const blockMinY = y - 0.5;
       const blockMaxY = y + 0.5;
-      const inPlayerCellX = Math.abs(x - playerPosition.x) < 0.65;
-      const inPlayerCellZ = Math.abs(z - playerPosition.z) < 0.65;
-      const inPlayerHeight = blockMaxY > playerFeet + 0.1 && blockMinY < playerHead;
+      const inPlayerCellX = Math.abs(x - playerPosition.x) < 0.88;
+      const inPlayerCellZ = Math.abs(z - playerPosition.z) < 0.88;
+      const inPlayerHeight = blockMaxY > playerFeet + 0.05 && blockMinY < playerHead;
       if (inPlayerCellX && inPlayerCellZ && inPlayerHeight) {
         setStatus('ไม่สามารถวางบล็อกทับตัวเราได้ ถอยหลังออกมานิดนึงนะ');
         return;
@@ -1829,7 +1881,19 @@ const VirtualClassroom: React.FC = () => {
             return true;
           }
         }
-        // 3. ตรวจสอบสิ่งกีดขวางในแผนที่พรางตัว (party map)
+        // 3. ตรวจสอบวัตถุกายภาพคงที่ (ผนังห้องเรียน ฐานกระดาน เสาต้นไม้ ตู้เกม พอร์ทัล)
+        for (const col of staticColliders) {
+          if (col.maxY <= feetYLevel + 0.35 || col.minY >= feetYLevel + 1.7) continue;
+          if (
+            testX + PLAYER_RADIUS > col.minX
+            && testX - PLAYER_RADIUS < col.maxX
+            && testZ + PLAYER_RADIUS > col.minZ
+            && testZ - PLAYER_RADIUS < col.maxZ
+          ) {
+            return true;
+          }
+        }
+        // 4. ตรวจสอบสิ่งกีดขวางในแผนที่พรางตัว (party map)
         if (partyMap) {
           for (const box of camouflageColliders) {
             if (box.max.y <= feetYLevel + 0.35 || box.min.y >= feetYLevel + 1.7) continue;
@@ -1864,8 +1928,71 @@ const VirtualClassroom: React.FC = () => {
         }
       }
 
+      // ระบบดันตัวออกจากวัตถุ (Anti-Stuck Depenetration) ป้องกันตัวละครจมหรือทะลุติดในกำแพงหรือบล็อก
+      const feetForDepen = playerPosition.y - 1.7;
+      for (const col of staticColliders) {
+        if (col.maxY <= feetForDepen + 0.1 || col.minY >= feetForDepen + 1.7) continue;
+        const overlapMinX = (playerPosition.x + PLAYER_RADIUS) - col.minX;
+        const overlapMaxX = col.maxX - (playerPosition.x - PLAYER_RADIUS);
+        const overlapMinZ = (playerPosition.z + PLAYER_RADIUS) - col.minZ;
+        const overlapMaxZ = col.maxZ - (playerPosition.z - PLAYER_RADIUS);
+        if (overlapMinX > 0 && overlapMaxX > 0 && overlapMinZ > 0 && overlapMaxZ > 0) {
+          const penX = overlapMinX < overlapMaxX ? -overlapMinX : overlapMaxX;
+          const penZ = overlapMinZ < overlapMaxZ ? -overlapMinZ : overlapMaxZ;
+          if (Math.abs(penX) < Math.abs(penZ)) {
+            playerPosition.x += penX * 1.05;
+          } else {
+            playerPosition.z += penZ * 1.05;
+          }
+        }
+      }
+      for (const block of blockData.values()) {
+        if (Math.abs(block.x - playerPosition.x) > 1.2 || Math.abs(block.z - playerPosition.z) > 1.2) continue;
+        const bMinY = block.y - 0.5;
+        const bMaxY = block.y + 0.5;
+        if (bMaxY <= feetForDepen + 0.1 || bMinY >= feetForDepen + 1.7) continue;
+        const bMinX = block.x - 0.5;
+        const bMaxX = block.x + 0.5;
+        const bMinZ = block.z - 0.5;
+        const bMaxZ = block.z + 0.5;
+        const overlapMinX = (playerPosition.x + PLAYER_RADIUS) - bMinX;
+        const overlapMaxX = bMaxX - (playerPosition.x - PLAYER_RADIUS);
+        const overlapMinZ = (playerPosition.z + PLAYER_RADIUS) - bMinZ;
+        const overlapMaxZ = bMaxZ - (playerPosition.z - PLAYER_RADIUS);
+        if (overlapMinX > 0 && overlapMaxX > 0 && overlapMinZ > 0 && overlapMaxZ > 0) {
+          const penX = overlapMinX < overlapMaxX ? -overlapMinX : overlapMaxX;
+          const penZ = overlapMinZ < overlapMaxZ ? -overlapMinZ : overlapMaxZ;
+          if (Math.abs(penX) < Math.abs(penZ)) {
+            playerPosition.x += penX * 1.05;
+          } else {
+            playerPosition.z += penZ * 1.05;
+          }
+        }
+      }
+
       verticalVelocity -= 20 * delta;
       playerPosition.y += verticalVelocity * delta;
+
+      // ตรวจสอบการชนศีรษะด้านบน (Ceiling Overhead Collision ป้องกันกระโดดทะลุเพดาน/บล็อก)
+      if (verticalVelocity > 0) {
+        const headY = playerPosition.y + 0.1;
+        for (const block of blockData.values()) {
+          if (Math.abs(block.x - playerPosition.x) >= 0.72 || Math.abs(block.z - playerPosition.z) >= 0.72) continue;
+          const bBottom = block.y - 0.5;
+          if (headY >= bBottom && playerPosition.y - 1.7 < bBottom) {
+            playerPosition.y = bBottom - 0.1;
+            verticalVelocity = 0;
+            break;
+          }
+        }
+        if (playerPosition.x >= -10 && playerPosition.x <= 10 && playerPosition.z >= -8.5 && playerPosition.z <= 8.5) {
+          if (headY >= 5.4) {
+            playerPosition.y = 5.4 - 0.1;
+            verticalVelocity = 0;
+          }
+        }
+      }
+
       // ยืนบนพื้น (0) หรือบนบล็อกที่วางไว้ในช่องนี้ — Minecraft: กระโดดขึ้นไปเหยียบบล็อกได้
       const feetY = playerPosition.y - 1.7;
       let floorTop = 0;
@@ -1884,6 +2011,15 @@ const VirtualClassroom: React.FC = () => {
         playerPosition.y = floorCamera;
         verticalVelocity = 0;
         grounded = true;
+      }
+
+      // ป้องกันการตกแมพลงเหว/Void Fall Guard
+      if (playerPosition.y < -2.0) {
+        const state = roomStateRef.current;
+        playerPosition.set(state?.summonX || 0, 1.7, state?.summonZ || 10);
+        verticalVelocity = 0;
+        grounded = true;
+        setStatus('รีเซ็ตตำแหน่งกลับสู่ลานกิจกรรม');
       }
       playerPosition.x = THREE.MathUtils.clamp(playerPosition.x, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
       playerPosition.z = THREE.MathUtils.clamp(playerPosition.z, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
