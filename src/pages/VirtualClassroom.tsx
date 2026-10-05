@@ -15,6 +15,7 @@ import {
   DoorOpen,
   Eraser,
   Eye,
+  Flag,
   Gauge,
   Gamepad2,
   Hammer,
@@ -38,6 +39,7 @@ import {
   ScanFace,
   Settings2,
   ShieldCheck,
+  Sparkles,
   Star,
   UserCheck,
   UserX,
@@ -51,6 +53,9 @@ import { findGrade } from '../data/curriculum';
 import { gamesCatalog } from '../data/gamesCatalog';
 import { celebrate } from '../utils/celebrate';
 import { virtualAudioService } from '../services/virtualAudioService';
+import { QUESTION_BANK } from '../data/ctBoardGame';
+import type { CTQuestion, CTPillar } from '../data/ctBoardGame';
+import { ageTierFromClassroom, ageTierLabel } from '../data/gameLessons';
 import { getRichSlides } from '../data/richSlides';
 import type { RichSlide } from '../data/richSlides';
 import { unitExtras } from '../data/unitExtras';
@@ -368,6 +373,23 @@ const requestPointerLockSafely = (element: HTMLElement) => {
   }
 };
 
+export interface ObbyCheckpointData {
+  index: number;
+  x: number;
+  z: number;
+  topY: number;
+  size: number;
+  pillar: CTPillar;
+  title: string;
+}
+
+export const OBBY_CHECKPOINTS: ObbyCheckpointData[] = [
+  { index: 0, x: 17.8, z: 14.5, topY: 2.70, size: 2.6, pillar: 'decompose', title: 'ด่าน 1: แยกย่อยปัญหา' },
+  { index: 1, x: 17.0, z: 8.0, topY: 4.05, size: 2.6, pillar: 'pattern', title: 'ด่าน 2: หารูปแบบ' },
+  { index: 2, x: 21.5, z: 18.0, topY: 6.25, size: 2.6, pillar: 'abstract', title: 'ด่าน 3: คิดเชิงนามธรรม' },
+  { index: 3, x: 14.0, z: 15.5, topY: 7.85, size: 2.6, pillar: 'algorithm', title: 'ด่าน 4: อัลกอริทึม' },
+];
+
 const VirtualClassroom: React.FC = () => {
   const { user } = useAuth();
   const qaId = new URLSearchParams(window.location.search).get('qa') || '';
@@ -402,6 +424,51 @@ const VirtualClassroom: React.FC = () => {
   const [thirdPerson, setThirdPerson] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(() => virtualAudioService.isSoundEnabled());
   const [currentObbyStep, setCurrentObbyStep] = useState<number>(-1);
+  const teleportRef = useRef<(x: number, y: number, z: number) => void>(() => undefined);
+  const [activeCheckpointQuiz, setActiveCheckpointQuiz] = useState<{
+    checkpointIndex: number;
+    question: CTQuestion;
+    title: string;
+    pillar: CTPillar;
+  } | null>(null);
+  const [checkpointAnswer, setCheckpointAnswer] = useState<number | null>(null);
+  const [unlockedCheckpoints, setUnlockedCheckpoints] = useState<boolean[]>(() => {
+    try {
+      const saved = localStorage.getItem(`kj_world_obby_unlocked_${playerId}`);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return [false, false, false, false];
+  });
+  const [highestCheckpoint, setHighestCheckpoint] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(`kj_world_obby_unlocked_${playerId}`);
+      if (saved) {
+        const arr = JSON.parse(saved) as boolean[];
+        let h = -1;
+        arr.forEach((v, idx) => { if (v) h = Math.max(h, idx); });
+        return h;
+      }
+    } catch {
+      // ignore
+    }
+    return -1;
+  });
+
+  const markCheckpointUnlocked = (index: number) => {
+    setUnlockedCheckpoints((prev) => {
+      const next = [...prev];
+      next[index] = true;
+      try {
+        localStorage.setItem(`kj_world_obby_unlocked_${playerId}`, JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+    setHighestCheckpoint((prev) => Math.max(prev, index));
+  };
   const [graphicsQuality, setGraphicsQuality] = useState<GraphicsQuality>(initialGraphicsQuality);
   const [avatarPanelOpen, setAvatarPanelOpen] = useState(false);
   const [teacherPanelOpen, setTeacherPanelOpen] = useState(false);
@@ -435,6 +502,80 @@ const VirtualClassroom: React.FC = () => {
   const grade = gradeId ? findGrade(gradeId) : undefined;
   const roomId = `class-${activeClassroom.replace(/[^0-9ก-๙]/g, '')}${qaMode ? `-qa-${qaId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32)}` : ''}`;
   const gameStations = useMemo(() => gamesForClassroom(activeClassroom), [activeClassroom]);
+
+  const unlockedCheckpointsRef = useRef(unlockedCheckpoints);
+  useEffect(() => {
+    unlockedCheckpointsRef.current = unlockedCheckpoints;
+  }, [unlockedCheckpoints]);
+
+  const highestCheckpointRef = useRef(highestCheckpoint);
+  useEffect(() => {
+    highestCheckpointRef.current = highestCheckpoint;
+  }, [highestCheckpoint]);
+
+  const activeCheckpointQuizRef = useRef<boolean>(false);
+  useEffect(() => {
+    activeCheckpointQuizRef.current = activeCheckpointQuiz !== null;
+  }, [activeCheckpointQuiz]);
+
+  const teleportToCheckpoint = useCallback((targetIndex: number) => {
+    const cp = OBBY_CHECKPOINTS[targetIndex];
+    if (!cp) return;
+    teleportRef.current(cp.x, cp.topY + 0.7, cp.z);
+    virtualAudioService.playStar();
+    setStatus(`🚩 วาร์ปมายัง${cp.title}`);
+  }, []);
+
+  const openCheckpointQuizRef = useRef<(index: number) => void>(() => undefined);
+
+  const openCheckpointQuiz = useCallback((index: number) => {
+    const tier = ageTierFromClassroom(activeClassroom);
+    const pillars: CTPillar[] = ['decompose', 'pattern', 'abstract', 'algorithm'];
+    const titles = [
+      'ด่านที่ 1: การแยกส่วนประกอบ (Decomposition)',
+      'ด่านที่ 2: การหารูปแบบ (Pattern Recognition)',
+      'ด่านที่ 3: การคิดเชิงนามธรรม (Abstraction)',
+      'ด่านที่ 4: การออกแบบอัลกอริทึม (Algorithm Design)',
+    ];
+    const pillar = pillars[index] || 'decompose';
+    const pool = QUESTION_BANK[tier].filter((q) => q.pillar === pillar);
+    const q = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : QUESTION_BANK[tier][0];
+
+    activeCheckpointQuizRef.current = true;
+    if (document.pointerLockElement) document.exitPointerLock();
+    setCheckpointAnswer(null);
+    setActiveCheckpointQuiz({
+      checkpointIndex: index,
+      question: q,
+      title: titles[index],
+      pillar,
+    });
+  }, [activeClassroom]);
+
+  useEffect(() => {
+    openCheckpointQuizRef.current = openCheckpointQuiz;
+  }, [openCheckpointQuiz]);
+
+  const handleAnswerCheckpoint = (chosenIndex: number) => {
+    if (!activeCheckpointQuiz || checkpointAnswer !== null) return;
+    setCheckpointAnswer(chosenIndex);
+    const isCorrect = chosenIndex === activeCheckpointQuiz.question.answer;
+    if (isCorrect) {
+      virtualAudioService.playStar();
+      celebrate();
+      setWorldStars((c) => c + 2);
+      markCheckpointUnlocked(activeCheckpointQuiz.checkpointIndex);
+      const unitNo = boards[0]?.unitNo || 1;
+      void recordActivity(
+        'question',
+        `u${unitNo}-obby-checkpoint-${activeCheckpointQuiz.checkpointIndex}`,
+        unitNo,
+        `ตอบคำถามด่าน ${activeCheckpointQuiz.checkpointIndex + 1}: ${activeCheckpointQuiz.title}`,
+      );
+    } else {
+      virtualAudioService.playBlockRemove();
+    }
+  };
   const [roomState, setRoomState] = useState<VirtualRoomState>(() => (
     defaultVirtualRoomState(roomId, roomClassroom)
   ));
@@ -1196,144 +1337,127 @@ const VirtualClassroom: React.FC = () => {
     });
 
     // =========================================================================
-    // ลานกระโดดฝึกคิดเป็นลำดับ (Computational Algorithm Parkour / Obby)
-    // 4 ขั้นตอนการคิดเชิงคำนวณ (Decomposition, Algorithm, Execution, Debugging) + Goal Summit
+    // ลานกระโดดผจญภัยฝึกคิดเป็นลำดับ (Multi-Zone Algorithm Obby Adventure)
+    // 4 โซนท้าทาย + 4 ประตูทดสอบคำถามประจำชั้นเรียน + แท่นสปริง + สะพานบาลานซ์ + ยอดเขาแห่งปัญญา
     // =========================================================================
-    const obbyPlatformData = [
-      {
-        step: 0,
-        label: 'ขั้นที่ 1: แยกย่อยปัญหา',
-        sub: 'Decomposition',
-        x: 18.5,
-        z: 20.5,
-        sizeX: 2.4,
-        sizeZ: 2.4,
-        topY: 0.65,
-        color: 0x2563eb,
-        lightColor: 0x3b82f6,
-      },
-      {
-        step: 1,
-        label: 'ขั้นที่ 2: วางแผนขั้นตอน',
-        sub: 'Algorithm Design',
-        x: 21.2,
-        z: 16.8,
-        sizeX: 2.4,
-        sizeZ: 2.4,
-        topY: 1.30,
-        color: 0x0284c7,
-        lightColor: 0x38bdf8,
-      },
-      {
-        step: 2,
-        label: 'ขั้นที่ 3: ทำตามลำดับ',
-        sub: 'Sequencing & Execution',
-        x: 18.2,
-        z: 13.1,
-        sizeX: 2.4,
-        sizeZ: 2.4,
-        topY: 1.95,
-        color: 0x10b981,
-        lightColor: 0x34d399,
-      },
-      {
-        step: 3,
-        label: 'ขั้นที่ 4: ตรวจสอบและแก้ไข',
-        sub: 'Testing & Debugging',
-        x: 21.2,
-        z: 9.4,
-        sizeX: 2.4,
-        sizeZ: 2.4,
-        topY: 2.60,
-        color: 0xf59e0b,
-        lightColor: 0xfbbf24,
-      },
+    const obbyMeshes: THREE.Object3D[] = [];
+    const checkpointTotemGems: THREE.Mesh[] = [];
+
+    // โครงสร้างด่านและแท่นกระโดดทั้งหมด 18 แท่น
+    interface CoursePlatform {
+      name: string;
+      zone: 1 | 2 | 3 | 4;
+      type: 'stone' | 'checkpoint' | 'beam' | 'pad' | 'launch' | 'floating' | 'summit';
+      x: number;
+      z: number;
+      sizeX: number;
+      sizeZ: number;
+      topY: number;
+      color: number;
+      emissive?: number;
+      checkpointIndex?: number;
+    }
+
+    const checkpointsData = OBBY_CHECKPOINTS;
+
+    const allCoursePlatforms: CoursePlatform[] = [
+      // 🌟 โซน 1: ลานบันไดหินวน (Spiral Stepping Stones)
+      { name: 'หินก้าวที่ 1', zone: 1, type: 'stone', x: 18.5, z: 22.5, sizeX: 1.6, sizeZ: 1.6, topY: 0.65, color: 0x3b82f6, emissive: 0x1d4ed8 },
+      { name: 'หินก้าวที่ 2', zone: 1, type: 'stone', x: 21.0, z: 20.2, sizeX: 1.5, sizeZ: 1.5, topY: 1.20, color: 0x2563eb, emissive: 0x1e40af },
+      { name: 'หินก้าวที่ 3', zone: 1, type: 'stone', x: 23.2, z: 17.8, sizeX: 1.5, sizeZ: 1.5, topY: 1.75, color: 0x1d4ed8, emissive: 0x172554 },
+      { name: 'หินก้าวที่ 4', zone: 1, type: 'stone', x: 21.0, z: 15.2, sizeX: 1.5, sizeZ: 1.5, topY: 2.30, color: 0x38bdf8, emissive: 0x0284c7 },
+      { name: 'เช็คพอยต์ 1', zone: 1, type: 'checkpoint', x: 17.8, z: 14.5, sizeX: 2.6, sizeZ: 2.6, topY: 2.70, color: 0xe11d48, emissive: 0x9f1239, checkpointIndex: 0 },
+
+      // 🌟 โซน 2: สะพานคานแคบทรงตัว & แท่นก้าวทแยง (Balance Beam & Diagonal Leap)
+      { name: 'สะพานคานแคบทรงตัว', zone: 2, type: 'beam', x: 14.5, z: 14.5, sizeX: 3.8, sizeZ: 0.8, topY: 2.70, color: 0xa16207, emissive: 0x713f12 },
+      { name: 'แท่นทแยงที่ 1', zone: 2, type: 'pad', x: 11.5, z: 12.0, sizeX: 1.4, sizeZ: 1.4, topY: 3.15, color: 0x0891b2, emissive: 0x155e75 },
+      { name: 'แท่นทแยงที่ 2', zone: 2, type: 'pad', x: 13.5, z: 9.2, sizeX: 1.4, sizeZ: 1.4, topY: 3.65, color: 0x0284c7, emissive: 0x075985 },
+      { name: 'เช็คพอยต์ 2', zone: 2, type: 'checkpoint', x: 17.0, z: 8.0, sizeX: 2.6, sizeZ: 2.6, topY: 4.05, color: 0x0891b2, emissive: 0x164e63, checkpointIndex: 1 },
+
+      // 🌟 โซน 3: แท่นสปริงผลักตัว & เกาะลอยน้ำพริ้วไหว (Super Launch Pad & Floating Islands)
+      { name: 'สปริงบอร์ดกระโดดสูง', zone: 3, type: 'launch', x: 20.5, z: 8.0, sizeX: 1.8, sizeZ: 1.8, topY: 4.05, color: 0xfacc15, emissive: 0xd97706 },
+      { name: 'เกาะลอยน้ำที่ 1', zone: 3, type: 'floating', x: 23.5, z: 11.2, sizeX: 1.7, sizeZ: 1.7, topY: 5.20, color: 0x10b981, emissive: 0x047857 },
+      { name: 'เกาะลอยน้ำที่ 2', zone: 3, type: 'floating', x: 24.0, z: 14.8, sizeX: 1.6, sizeZ: 1.6, topY: 5.75, color: 0x059669, emissive: 0x065f46 },
+      { name: 'เช็คพอยต์ 3', zone: 3, type: 'checkpoint', x: 21.5, z: 18.0, sizeX: 2.6, sizeZ: 2.6, topY: 6.25, color: 0xf59e0b, emissive: 0xb45309, checkpointIndex: 2 },
+
+      // 🌟 โซน 4: บันไดลอยฟ้าสู่ยอดเขาแห่งปัญญา (Sky Stairway to Wisdom Summit)
+      { name: 'บันไดลอยฟ้า 1', zone: 4, type: 'pad', x: 18.5, z: 20.2, sizeX: 1.5, sizeZ: 1.5, topY: 6.80, color: 0x8b5cf6, emissive: 0x6d28d9 },
+      { name: 'บันไดลอยฟ้า 2', zone: 4, type: 'pad', x: 15.5, z: 18.5, sizeX: 1.5, sizeZ: 1.5, topY: 7.35, color: 0x7c3aed, emissive: 0x5b21b6 },
+      { name: 'เช็คพอยต์ 4', zone: 4, type: 'checkpoint', x: 14.0, z: 15.5, sizeX: 2.6, sizeZ: 2.6, topY: 7.85, color: 0x7c3aed, emissive: 0x4c1d95, checkpointIndex: 3 },
+      { name: 'บันไดสู่ยอดเขา', zone: 4, type: 'pad', x: 14.0, z: 12.6, sizeX: 1.6, sizeZ: 1.6, topY: 8.25, color: 0x6366f1, emissive: 0x4338ca },
+      { name: 'ยอดเขาแห่งปัญญา', zone: 4, type: 'summit', x: 14.0, z: 9.2, sizeX: 3.6, sizeZ: 3.6, topY: 8.65, color: 0x4f46e5, emissive: 0x3730a3 },
     ];
 
-    const makeObbyStepBadge = (stepNum: number, title: string, sub: string, bgColor: string) => {
+    const floatingIslandMeshes: { mesh: THREE.Mesh; baseTopY: number; pfIndex: number }[] = [];
+
+    // ฟังก์ชันสร้างป้ายลอย 3D Canvas
+    const makeTextSprite = (text: string, subText: string, bgColor: string, w = 480, h = 150) => {
       const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 160;
+      canvas.width = w;
+      canvas.height = h;
       const ctx = canvas.getContext('2d')!;
       ctx.fillStyle = bgColor;
       ctx.beginPath();
-      ctx.roundRect(8, 8, 496, 144, 20);
+      ctx.roundRect(8, 8, w - 16, h - 16, 18);
       ctx.fill();
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 5;
       ctx.strokeStyle = '#ffffff';
       ctx.stroke();
 
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 40px "Segoe UI", Tahoma, sans-serif';
+      ctx.font = 'bold 36px "Segoe UI", Tahoma, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`${stepNum}. ${title}`, 256, 68);
+      ctx.fillText(text, w / 2, 60);
 
       ctx.fillStyle = '#fef08a';
-      ctx.font = '600 26px "Segoe UI", Tahoma, sans-serif';
-      ctx.fillText(sub, 256, 118);
+      ctx.font = '600 24px "Segoe UI", Tahoma, sans-serif';
+      ctx.fillText(subText, w / 2, 110);
 
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
-      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
-      const sprite = new THREE.Sprite(spriteMat);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
       sprite.scale.set(2.4, 0.75, 1);
       return sprite;
     };
 
-    const obbyMeshes: THREE.Object3D[] = [];
-    const obbyGems: THREE.Mesh[] = [];
+    allCoursePlatforms.forEach((p) => {
+      const slabThick = p.type === 'summit' ? 0.45 : p.type === 'beam' ? 0.28 : 0.32;
+      const pillarH = p.topY - slabThick;
 
-    obbyPlatformData.forEach((p, idx) => {
-      // 1. ฐานเสารองรับจากพื้นดินถึงใต้แผ่น
-      const slabThick = 0.32;
-      const pillarHeight = p.topY - slabThick;
-      if (pillarHeight > 0.05) {
-        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
-        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, pillarHeight, 16), pillarMat);
-        pillar.position.set(p.x, pillarHeight / 2, p.z);
+      // 1. เสาค้ำฐาน (ถ้าสูงจากพื้นดิน)
+      if (pillarH > 0.05 && p.type !== 'floating') {
+        const pillarGeo = p.type === 'beam'
+          ? new THREE.BoxGeometry(0.35, pillarH, 0.35)
+          : new THREE.CylinderGeometry(0.55, 0.75, pillarH, 16);
+        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
+        const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+        pillar.position.set(p.x, pillarH / 2, p.z);
         pillar.castShadow = true;
         scene.add(pillar);
         obbyMeshes.push(pillar);
       }
 
-      // 2. แผ่นเหยียบกระโดด (Platform Slab)
+      // 2. แผ่นเหยียบกระโดด (Platform Mesh)
       const slabMat = new THREE.MeshStandardMaterial({
         color: p.color,
-        emissive: p.lightColor,
-        emissiveIntensity: 0.28,
-        roughness: 0.4,
+        emissive: p.emissive || 0x000000,
+        emissiveIntensity: p.type === 'launch' ? 0.7 : p.type === 'checkpoint' ? 0.4 : 0.25,
+        roughness: p.type === 'beam' ? 0.75 : 0.35,
+        metalness: p.type === 'summit' ? 0.6 : 0.2,
       });
-      const slab = new THREE.Mesh(new THREE.BoxGeometry(p.sizeX, slabThick, p.sizeZ), slabMat);
+
+      const slabGeo = p.type === 'launch'
+        ? new THREE.CylinderGeometry(p.sizeX / 2, p.sizeX / 2 + 0.1, slabThick, 24)
+        : new THREE.BoxGeometry(p.sizeX, slabThick, p.sizeZ);
+      const slab = new THREE.Mesh(slabGeo, slabMat);
       slab.position.set(p.x, p.topY - slabThick / 2, p.z);
       slab.castShadow = true;
       slab.receiveShadow = true;
       scene.add(slab);
       obbyMeshes.push(slab);
 
-      // 3. ป้ายข้อความลอยหน้าแท่น
-      const badge = makeObbyStepBadge(
-        idx + 1,
-        p.label.replace(/^ขั้นที่ \d+: /, ''),
-        p.sub,
-        p.color === 0x2563eb ? '#1d4ed8' : p.color === 0x0284c7 ? '#0369a1' : p.color === 0x10b981 ? '#047857' : '#b45309',
-      );
-      badge.position.set(p.x, p.topY + 0.9, p.z);
-      scene.add(badge);
-      obbyMeshes.push(badge);
-
-      // 4. อัญมณีหมุนได้ที่มุมแท่น (Spinning Gem Marker)
-      const gemMat = new THREE.MeshStandardMaterial({
-        color: p.lightColor,
-        emissive: p.color,
-        emissiveIntensity: 0.55,
-        roughness: 0.2,
-      });
-      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.2, 0), gemMat);
-      gem.position.set(p.x + (p.sizeX / 2 - 0.25), p.topY + 0.5, p.z + (p.sizeZ / 2 - 0.25));
-      scene.add(gem);
-      obbyGems.push(gem);
-
       // ลงทะเบียนเข้าแพลตฟอร์มยืนเหยียบ AABB
+      const pfIndex = platforms.length;
       platforms.push({
         minX: p.x - p.sizeX / 2,
         maxX: p.x + p.sizeX / 2,
@@ -1341,177 +1465,180 @@ const VirtualClassroom: React.FC = () => {
         maxZ: p.z + p.sizeZ / 2,
         top: p.topY,
       });
+
+      if (p.type === 'floating') {
+        floatingIslandMeshes.push({ mesh: slab, baseTopY: p.topY, pfIndex });
+      }
+
+      // 3. ป้ายและโทเทมประจำเช็คพอยต์ (Checkpoint Totem)
+      if (p.type === 'checkpoint' && p.checkpointIndex !== undefined) {
+        const cpIdx = p.checkpointIndex;
+        const totemPole = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.18, 0.22, 1.8, 12),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 }),
+        );
+        totemPole.position.set(p.x, p.topY + 0.9, p.z - (p.sizeZ / 2 - 0.4));
+        scene.add(totemPole);
+        obbyMeshes.push(totemPole);
+
+        const gemMat = new THREE.MeshStandardMaterial({
+          color: p.color,
+          emissive: p.emissive || p.color,
+          emissiveIntensity: 0.75,
+          roughness: 0.15,
+        });
+        const totemGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.35, 0), gemMat);
+        totemGem.position.set(p.x, p.topY + 2.0, p.z - (p.sizeZ / 2 - 0.4));
+        scene.add(totemGem);
+        obbyMeshes.push(totemGem);
+        checkpointTotemGems.push(totemGem);
+
+        const cpData = checkpointsData[cpIdx];
+        const badge = makeTextSprite(
+          cpData.title,
+          'คลิกหรือเหยียบเพื่อตอบคำถาม 💡',
+          cpIdx === 0 ? '#9f1239' : cpIdx === 1 ? '#0e7490' : cpIdx === 2 ? '#b45309' : '#6b21a8',
+        );
+        badge.position.set(p.x, p.topY + 2.8, p.z - (p.sizeZ / 2 - 0.4));
+        scene.add(badge);
+        obbyMeshes.push(badge);
+      }
+
+      // ป้ายสัญลักษณ์บนสปริงบอร์ด (Launch Pad Icon)
+      if (p.type === 'launch') {
+        const launchRing = new THREE.Mesh(
+          new THREE.TorusGeometry(0.65, 0.08, 12, 24),
+          new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x22d3ee, emissiveIntensity: 0.9 }),
+        );
+        launchRing.rotation.x = Math.PI / 2;
+        launchRing.position.set(p.x, p.topY + 0.05, p.z);
+        scene.add(launchRing);
+        obbyMeshes.push(launchRing);
+
+        const launchSprite = makeTextSprite('🚀 สปริงบอร์ดซูเปอร์จัมป์', 'ดีดตัวลอยฟ้าสู่เกาะลอยน้ำ!', '#0369a1', 400, 130);
+        launchSprite.position.set(p.x, p.topY + 1.2, p.z);
+        scene.add(launchSprite);
+        obbyMeshes.push(launchSprite);
+      }
     });
 
     // ---------------------------------------------------------
-    // แท่นยอดเขาแห่งปัญญา (Goal Podium - Platform 5)
+    // โมเดลถ้วยรางวัลทองคำ 3D (Golden Trophy) บนยอดเขาแห่งปัญญา
     // ---------------------------------------------------------
-    const goalX = 18.5;
-    const goalZ = 5.5;
-    const goalTopY = 3.20;
-    const goalSize = 3.4;
-    const goalSlabThick = 0.4;
-    const goalPillarH = goalTopY - goalSlabThick;
-
-    // ฐานเสารองรับยอดเขา
-    const goalPillarMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
-    const goalPillar = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.9, goalPillarH, 20), goalPillarMat);
-    goalPillar.position.set(goalX, goalPillarH / 2, goalZ);
-    goalPillar.castShadow = true;
-    scene.add(goalPillar);
-    obbyMeshes.push(goalPillar);
-
-    // แผ่นเหยียบยอดเขา (สีม่วง-ทอง เมทัลลิก)
-    const goalSlabMat = new THREE.MeshStandardMaterial({
-      color: 0x6d28d9,
-      emissive: 0x7c3aed,
-      emissiveIntensity: 0.35,
-      metalness: 0.3,
-      roughness: 0.35,
-    });
-    const goalSlab = new THREE.Mesh(new THREE.BoxGeometry(goalSize, goalSlabThick, goalSize), goalSlabMat);
-    goalSlab.position.set(goalX, goalTopY - goalSlabThick / 2, goalZ);
-    goalSlab.castShadow = true;
-    goalSlab.receiveShadow = true;
-    scene.add(goalSlab);
-    obbyMeshes.push(goalSlab);
-
-    // ขอบทองบนแท่น
-    const goalRimMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.7, roughness: 0.25 });
-    const goalRim = new THREE.Mesh(new THREE.BoxGeometry(goalSize + 0.15, 0.08, goalSize + 0.15), goalRimMat);
-    goalRim.position.set(goalX, goalTopY, goalZ);
-    scene.add(goalRim);
-    obbyMeshes.push(goalRim);
-
-    // ลงทะเบียนยอดเขาเข้าแพลตฟอร์มยืนเหยียบ
-    platforms.push({
-      minX: goalX - goalSize / 2,
-      maxX: goalX + goalSize / 2,
-      minZ: goalZ - goalSize / 2,
-      maxZ: goalZ + goalSize / 2,
-      top: goalTopY,
-    });
-
-    // ---------------------------------------------------------
-    // โมเดลถ้วยรางวัลทองคำ 3D (Golden Trophy) บนยอดเขา
-    // ---------------------------------------------------------
+    const summitP = allCoursePlatforms[allCoursePlatforms.length - 1];
     const trophyGroup = new THREE.Group();
-    trophyGroup.position.set(goalX, goalTopY, goalZ);
+    trophyGroup.position.set(summitP.x, summitP.topY, summitP.z);
 
     const trophyMat = new THREE.MeshStandardMaterial({
       color: 0xfbbf24,
       emissive: 0xd97706,
-      emissiveIntensity: 0.3,
-      metalness: 0.85,
-      roughness: 0.18,
+      emissiveIntensity: 0.35,
+      metalness: 0.88,
+      roughness: 0.16,
     });
     const trophyBaseMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
 
-    const tBase = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.18, 16), trophyBaseMat);
-    tBase.position.y = 0.09;
+    const tBase = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.55, 0.22, 16), trophyBaseMat);
+    tBase.position.y = 0.11;
     trophyGroup.add(tBase);
 
-    const tStem = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.35, 16), trophyMat);
-    tStem.position.y = 0.35;
+    const tStem = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.45, 16), trophyMat);
+    tStem.position.y = 0.44;
     trophyGroup.add(tStem);
 
-    const tCup = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.18, 0.55, 18), trophyMat);
-    tCup.position.y = 0.75;
+    const tCup = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.22, 0.72, 18), trophyMat);
+    tCup.position.y = 0.95;
     trophyGroup.add(tCup);
 
-    const handleGeo = new THREE.TorusGeometry(0.18, 0.045, 8, 16);
+    const handleGeo = new THREE.TorusGeometry(0.24, 0.055, 8, 16);
     const tHandleL = new THREE.Mesh(handleGeo, trophyMat);
-    tHandleL.position.set(-0.44, 0.75, 0);
+    tHandleL.position.set(-0.58, 0.95, 0);
     tHandleL.rotation.y = Math.PI / 2;
     const tHandleR = new THREE.Mesh(handleGeo, trophyMat);
-    tHandleR.position.set(0.44, 0.75, 0);
+    tHandleR.position.set(0.58, 0.95, 0);
     tHandleR.rotation.y = Math.PI / 2;
     trophyGroup.add(tHandleL, tHandleR);
 
     const trophyStar = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.24, 0),
+      new THREE.OctahedronGeometry(0.32, 0),
       new THREE.MeshStandardMaterial({
         color: 0xfef08a,
         emissive: 0xf59e0b,
-        emissiveIntensity: 0.8,
+        emissiveIntensity: 0.85,
         metalness: 0.6,
         roughness: 0.15,
       }),
     );
-    trophyStar.position.y = 1.35;
+    trophyStar.position.y = 1.75;
     trophyGroup.add(trophyStar);
 
-    // ลำแสงบีคอนขึ้นสู่ท้องฟ้า (Translucent Beacon Light)
+    // ลำแสงบีคอนขึ้นสู่ท้องฟ้า (Beacon of Wisdom) สูง 25 เมตร
     const beaconMat = new THREE.MeshBasicMaterial({
       color: 0xfde047,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.25,
       depthWrite: false,
       side: THREE.DoubleSide,
     });
-    const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.75, 20, 16), beaconMat);
-    beacon.position.y = 10;
+    const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.95, 25, 16), beaconMat);
+    beacon.position.y = 13.5;
     trophyGroup.add(beacon);
 
     scene.add(trophyGroup);
     obbyMeshes.push(trophyGroup);
 
-    const summitBadge = makeObbyStepBadge(5, 'ยอดเขาแห่งปัญญา', 'Computational Mastery 🏆', '#581c87');
-    summitBadge.position.set(goalX, goalTopY + 2.2, goalZ);
-    scene.add(summitBadge);
-    obbyMeshes.push(summitBadge);
+    const summitSign = makeTextSprite('🏆 ยอดเขาแห่งปัญญา', 'Computational Master Summit ✨', '#312e81', 480, 150);
+    summitSign.position.set(summitP.x, summitP.topY + 3.0, summitP.z);
+    scene.add(summitSign);
+    obbyMeshes.push(summitSign);
 
     // ---------------------------------------------------------
-    // ซุ้มประตูเริ่มต้นลานกระโดด (Entrance Archway)
+    // ซุ้มประตูเริ่มต้น & แท่นวาร์ปกลับเช็คพอยต์ (Respawn Pad)
     // ---------------------------------------------------------
     const archGroup = new THREE.Group();
-    archGroup.position.set(18.5, 0, 23.5);
+    archGroup.position.set(18.5, 0, 26.0);
     const archWoodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
 
-    const archPoleL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.2, 0.4), archWoodMat);
-    archPoleL.position.set(-1.8, 1.6, 0);
-    const archPoleR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.2, 0.4), archWoodMat);
-    archPoleR.position.set(1.8, 1.6, 0);
-    const archBeam = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.45, 0.45), archWoodMat);
-    archBeam.position.set(0, 3.0, 0);
+    const archPoleL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.4, 0.4), archWoodMat);
+    archPoleL.position.set(-2.0, 1.7, 0);
+    const archPoleR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.4, 0.4), archWoodMat);
+    archPoleR.position.set(2.0, 1.7, 0);
+    const archBeam = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.45, 0.45), archWoodMat);
+    archBeam.position.set(0, 3.2, 0);
     archGroup.add(archPoleL, archPoleR, archBeam);
 
-    const archCanvas = document.createElement('canvas');
-    archCanvas.width = 512;
-    archCanvas.height = 140;
-    const archCtx = archCanvas.getContext('2d')!;
-    archCtx.fillStyle = '#0f172a';
-    archCtx.beginPath();
-    archCtx.roundRect(8, 8, 496, 124, 16);
-    archCtx.fill();
-    archCtx.lineWidth = 5;
-    archCtx.strokeStyle = '#facc15';
-    archCtx.stroke();
-    archCtx.fillStyle = '#facc15';
-    archCtx.font = 'bold 36px "Segoe UI", Tahoma, sans-serif';
-    archCtx.textAlign = 'center';
-    archCtx.fillText('ลานกระโดดฝึกคิดเป็นลำดับ', 256, 56);
-    archCtx.fillStyle = '#ffffff';
-    archCtx.font = '500 24px "Segoe UI", Tahoma, sans-serif';
-    archCtx.fillText('Algorithm Parkour 🏃‍♂️💨', 256, 100);
-
-    const archTex = new THREE.CanvasTexture(archCanvas);
-    archTex.colorSpace = THREE.SRGBColorSpace;
-    const archSign = new THREE.Sprite(new THREE.SpriteMaterial({ map: archTex, transparent: true }));
-    archSign.scale.set(3.4, 0.95, 1);
-    archSign.position.set(0, 3.8, 0);
+    const archSign = makeTextSprite('🏃 ลานผจญภัยคิดเป็นลำดับ', 'พิชิต 4 ด่านคำถาม & ยอดเขาแห่งปัญญา 🏆', '#0f172a', 520, 150);
+    archSign.scale.set(3.6, 1.05, 1);
+    archSign.position.set(0, 4.0, 0);
     archGroup.add(archSign);
 
     scene.add(archGroup);
     obbyMeshes.push(archGroup);
 
+    // แท่นวาร์ปกลับเช็คพอยต์ล่าสุด (Respawn Return Pad)
+    const returnPadMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.0, 1.15, 0.18, 20),
+      new THREE.MeshStandardMaterial({ color: 0x6366f1, emissive: 0x818cf8, emissiveIntensity: 0.65 }),
+    );
+    returnPadMesh.position.set(18.5, 0.09, 24.5);
+    scene.add(returnPadMesh);
+    obbyMeshes.push(returnPadMesh);
+
+    const returnSign = makeTextSprite('🚩 วาร์ปสู่เช็คพอยต์', 'เหยียบเพื่อขึ้นสู่ด่านล่าสุด', '#4338ca', 380, 120);
+    returnSign.scale.set(2.2, 0.7, 1);
+    returnSign.position.set(18.5, 1.1, 24.5);
+    scene.add(returnSign);
+    obbyMeshes.push(returnSign);
+
     staticColliders.push(
-      { minX: 18.5 - 1.8 - 0.25, maxX: 18.5 - 1.8 + 0.25, minZ: 23.5 - 0.25, maxZ: 23.5 + 0.25, minY: 0, maxY: 3.2 },
-      { minX: 18.5 + 1.8 - 0.25, maxX: 18.5 + 1.8 + 0.25, minZ: 23.5 - 0.25, maxZ: 23.5 + 0.25, minY: 0, maxY: 3.2 },
+      { minX: 18.5 - 2.0 - 0.25, maxX: 18.5 - 2.0 + 0.25, minZ: 26.0 - 0.25, maxZ: 26.0 + 0.25, minY: 0, maxY: 3.4 },
+      { minX: 18.5 + 2.0 - 0.25, maxX: 18.5 + 2.0 + 0.25, minZ: 26.0 - 0.25, maxZ: 26.0 + 0.25, minY: 0, maxY: 3.4 },
     );
 
     let lastObbyStep = -1;
     let lastGoalRewardTime = 0;
+    let lastLaunchPadTime = 0;
+    let lastTeleportTime = 0;
 
     const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
     const blockMaterials: Record<BlockMaterial, THREE.MeshStandardMaterial> = {
@@ -1852,6 +1979,12 @@ const VirtualClassroom: React.FC = () => {
       verticalVelocity = 0;
       yaw = Math.PI;
     };
+    teleportRef.current = (targetX: number, targetY: number, targetZ: number) => {
+      playerPosition.set(targetX, targetY, targetZ);
+      verticalVelocity = 0;
+      grounded = true;
+      virtualAudioService.playStar();
+    };
 
     const onPointerLock = () => setPointerLocked(document.pointerLockElement === renderer.domElement);
     const onMouseMove = (event: MouseEvent) => {
@@ -2140,41 +2273,85 @@ const VirtualClassroom: React.FC = () => {
         prop.position.y = prop.userData.baseY + Math.sin(now * 0.0018 + index) * 0.08;
       });
 
-      // หมุนอัญมณีและดาวถ้วยรางวัลลานกระโดด Obby
-      obbyGems.forEach((gem) => {
+      // หมุนอัญมณีโทเทมและดาวถ้วยรางวัลลานกระโดดผจญภัย
+      checkpointTotemGems.forEach((gem) => {
         gem.rotation.y += delta * 2.2;
         gem.rotation.x += delta * 1.1;
       });
-      trophyStar.rotation.y += delta * 2.4;
+      trophyStar.rotation.y += delta * 2.5;
       trophyStar.rotation.x += delta * 0.8;
-      beacon.rotation.y += delta * 0.6;
+      beacon.rotation.y += delta * 0.5;
 
-      // ตรวจสอบขั้นบันไดลานกระโดดฝึกคิดเป็นลำดับ
-      let detectedObbyStep = -1;
+      // ปรับความสูงของเกาะลอยน้ำที่ขยับขึ้น-ลง (Oscillating Floating Islands)
+      floatingIslandMeshes.forEach((item, idx) => {
+        const floatOffset = Math.sin(now * 0.0018 + idx * 1.5) * 0.16;
+        item.mesh.position.y = item.baseTopY - 0.16 + floatOffset;
+        if (platforms[item.pfIndex]) {
+          platforms[item.pfIndex].top = item.baseTopY + floatOffset;
+        }
+      });
+
+      // ตรวจสอบการเหยียบสปริงบอร์ดกระโดดสูง (Super Launch Pad)
       const curX = playerPosition.x;
       const curZ = playerPosition.z;
       const curFeetY = playerPosition.y - 1.7;
 
-      for (let sIdx = 0; sIdx < obbyPlatformData.length; sIdx++) {
-        const p = obbyPlatformData[sIdx];
+      if (
+        Math.abs(curX - 20.5) < 0.95
+        && Math.abs(curZ - 8.0) < 0.95
+        && Math.abs(curFeetY - 4.05) < 0.35
+        && now - lastLaunchPadTime > 800
+      ) {
+        lastLaunchPadTime = now;
+        verticalVelocity = 12.0;
+        grounded = false;
+        virtualAudioService.playJump();
+        setStatus('🚀 สปริงบอร์ดส่งตัวลอยฟ้าข้ามสู่เกาะลอยน้ำ!');
+      }
+
+      // ตรวจสอบการเหยียบแท่นวาร์ปกลับเช็คพอยต์ (Respawn Return Pad)
+      if (
+        Math.abs(curX - 18.5) < 1.1
+        && Math.abs(curZ - 24.5) < 1.1
+        && Math.abs(curFeetY - 0.15) < 0.35
+        && now - lastTeleportTime > 1500
+      ) {
+        lastTeleportTime = now;
+        const highest = highestCheckpointRef.current;
+        if (highest >= 0 && checkpointsData[highest]) {
+          const cp = checkpointsData[highest];
+          playerPosition.set(cp.x, cp.topY + 1.7, cp.z);
+          verticalVelocity = 0;
+          grounded = true;
+          virtualAudioService.playStar();
+          setStatus(`🚩 วาร์ปกลับสู่เช็คพอยต์ด่านที่ ${highest + 1}: ${cp.title}`);
+        } else {
+          setStatus('🚩 เดินหน้ากระโดดพิชิตเช็คพอยต์ด่านแรกเพื่อบันทึกจุดวาร์ป!');
+        }
+      }
+
+      // ตรวจสอบตำแหน่งผู้เล่นบนลานกระโดดผจญภัย
+      let detectedObbyStep = -1;
+      for (let cIdx = 0; cIdx < checkpointsData.length; cIdx++) {
+        const cp = checkpointsData[cIdx];
         if (
-          curX >= p.x - p.sizeX / 2
-          && curX <= p.x + p.sizeX / 2
-          && curZ >= p.z - p.sizeZ / 2
-          && curZ <= p.z + p.sizeZ / 2
-          && Math.abs(curFeetY - p.topY) < 0.28
+          Math.abs(curX - cp.x) <= cp.size / 2
+          && Math.abs(curZ - cp.z) <= cp.size / 2
+          && Math.abs(curFeetY - cp.topY) < 0.28
         ) {
-          detectedObbyStep = sIdx;
+          detectedObbyStep = cIdx;
+          if (!unlockedCheckpointsRef.current[cIdx] && !activeCheckpointQuizRef.current) {
+            openCheckpointQuizRef.current(cIdx);
+          }
           break;
         }
       }
 
+      const summit = allCoursePlatforms[allCoursePlatforms.length - 1];
       if (
-        curX >= goalX - goalSize / 2
-        && curX <= goalX + goalSize / 2
-        && curZ >= goalZ - goalSize / 2
-        && curZ <= goalZ + goalSize / 2
-        && Math.abs(curFeetY - goalTopY) < 0.28
+        Math.abs(curX - summit.x) <= summit.sizeX / 2
+        && Math.abs(curZ - summit.z) <= summit.sizeZ / 2
+        && Math.abs(curFeetY - summit.topY) < 0.3
       ) {
         detectedObbyStep = 4;
       }
@@ -2185,21 +2362,22 @@ const VirtualClassroom: React.FC = () => {
 
         if (detectedObbyStep >= 0 && detectedObbyStep <= 3) {
           virtualAudioService.playObbyStep(detectedObbyStep);
-          const p = obbyPlatformData[detectedObbyStep];
-          setStatus(`🎯 ${p.label} (${p.sub})`);
+          const cp = checkpointsData[detectedObbyStep];
+          const isDone = unlockedCheckpointsRef.current[detectedObbyStep];
+          setStatus(`🎯 ${cp.title} ${isDone ? '(ผ่านด่านแล้ว ✓)' : '(ตอบคำถามเพื่อปลดล็อก)'}`);
         } else if (detectedObbyStep === 4) {
           if (now - lastGoalRewardTime > 15_000) {
             lastGoalRewardTime = now;
             virtualAudioService.playVictory();
             celebrate();
-            setWorldStars((c) => c + 5);
-            setStatus('🏆 ยอดเยี่ยมมาก! พิชิตลานกระโดดฝึกคิดเป็นลำดับสำเร็จ (+5 ⭐)');
+            setWorldStars((c) => c + 10);
+            setStatus('🏆 ยินดีด้วยอย่างยิ่ง! พิชิตยอดเขาแห่งปัญญาสำเร็จ (+10 ⭐)');
             const unitNo = boards[0]?.unitNo || 1;
             void recordActivity(
               'game',
-              `u${unitNo}-game-algorithm-parkour`,
+              `u${unitNo}-game-algorithm-mastery`,
               unitNo,
-              'พิชิตลานกระโดดฝึกคิดเป็นลำดับ (4 ขั้นตอนการคิดเชิงคำนวณ)',
+              'พิชิตยอดเขาแห่งปัญญา (ลานผจญภัยคิดเป็นลำดับและตอบคำถาม 4 ด่าน)',
             );
           }
         }
@@ -2267,6 +2445,7 @@ const VirtualClassroom: React.FC = () => {
       unsubscribePlayers();
       void removeWorldPlayer(roomId, playerId);
       summonRef.current = () => undefined;
+      teleportRef.current = () => undefined;
       document.removeEventListener('pointerlockchange', onPointerLock);
       document.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('keydown', onKeyDown);
@@ -2566,19 +2745,45 @@ const VirtualClassroom: React.FC = () => {
 
       <div className="world-star-score" title="ดาวจากเกมเก็บดาว"><Star size={18} fill="currentColor" /> {worldStars}</div>
 
-      {currentObbyStep >= 0 && (
+      {(currentObbyStep >= 0 || highestCheckpoint >= 0) && (
         <div className="world-obby-hud" aria-label="ความคืบหน้าลานกระโดดคิดเป็นลำดับ">
           <div className="world-obby-hud-title">
-            <span>🏃 ลานฝึกคิดเป็นลำดับ</span>
-            <small>{currentObbyStep === 4 ? '🏆 พิชิตยอดเขา!' : `ขั้นที่ ${currentObbyStep + 1}/4`}</small>
+            <span>🏃 ลานฝึกคิดเป็นลำดับ ({activeClassroom})</span>
+            <small>{currentObbyStep === 4 ? '🏆 พิชิตยอดเขา!' : `ขั้นที่ ${Math.max(1, currentObbyStep + 1)}/4`}</small>
           </div>
           <div className="world-obby-hud-track">
-            <span className={`world-obby-node ${currentObbyStep >= 0 ? 'active' : ''}`} title="1. แยกย่อยปัญหา">1. แยกย่อย</span>
-            <span className={`world-obby-node ${currentObbyStep >= 1 ? 'active' : ''}`} title="2. วางแผนขั้นตอน">2. วางแผน</span>
-            <span className={`world-obby-node ${currentObbyStep >= 2 ? 'active' : ''}`} title="3. ทำตามลำดับ">3. ลำดับ</span>
-            <span className={`world-obby-node ${currentObbyStep >= 3 ? 'active' : ''}`} title="4. ตรวจสอบแก้ไข">4. ตรวจสอบ</span>
-            <span className={`world-obby-node goal ${currentObbyStep >= 4 ? 'active' : ''}`} title="ยอดเขาแห่งปัญญา">🏆 ยอดเขา</span>
+            {OBBY_CHECKPOINTS.map((cp, idx) => {
+              const isUnlocked = unlockedCheckpoints[idx];
+              const isCurrent = currentObbyStep === idx;
+              return (
+                <button
+                  key={cp.index}
+                  type="button"
+                  className={`world-obby-node ${isCurrent ? 'current' : ''} ${isUnlocked ? 'unlocked' : ''}`}
+                  onClick={() => {
+                    if (isUnlocked) teleportToCheckpoint(idx);
+                  }}
+                  title={isUnlocked ? `คลิกเพื่อวาร์ปไป${cp.title} (ผ่านแล้ว)` : `${cp.title} (ยังไม่ผ่าน)`}
+                  disabled={!isUnlocked}
+                >
+                  {isUnlocked ? '✓ ' : ''}{idx + 1}. {cp.pillar === 'decompose' ? 'แยกย่อย' : cp.pillar === 'pattern' ? 'รูปแบบ' : cp.pillar === 'abstract' ? 'นามธรรม' : 'อัลกอริทึม'}
+                </button>
+              );
+            })}
+            <span className={`world-obby-node goal ${currentObbyStep === 4 ? 'active' : ''}`} title="ยอดเขาแห่งปัญญา">
+              🏆 ยอดเขา
+            </span>
           </div>
+          {highestCheckpoint >= 0 && (
+            <button
+              type="button"
+              className="world-obby-teleport-chip"
+              onClick={() => teleportToCheckpoint(highestCheckpoint)}
+              title={`วาร์ปกลับสู่เช็คพอยต์สูงสุดที่ปลดล็อก (ด่าน ${highestCheckpoint + 1})`}
+            >
+              <Flag size={13} /> วาร์ปกลับด่าน {highestCheckpoint + 1}
+            </button>
+          )}
         </div>
       )}
 
@@ -3207,6 +3412,148 @@ const VirtualClassroom: React.FC = () => {
                 ยกเลิก
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal คำถามประจำด่านตามระดับชั้น */}
+      {activeCheckpointQuiz && (
+        <div
+          className="world-quiz-modal-backdrop"
+          onClick={() => {
+            if (checkpointAnswer !== null) {
+              activeCheckpointQuizRef.current = false;
+              setActiveCheckpointQuiz(null);
+            }
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="checkpoint-quiz-title"
+        >
+          <div className="world-quiz-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="world-quiz-header">
+              <div className="world-quiz-header-info">
+                <div className="world-quiz-badge">
+                  <Sparkles size={16} />
+                  <span>ทดสอบแนวคิดเชิงคำนวณ • ได้รับ +2 ⭐</span>
+                </div>
+                <h3 id="checkpoint-quiz-title">{activeCheckpointQuiz.title}</h3>
+                <span className="world-quiz-tier">
+                  ระดับชั้น {activeClassroom} ({ageTierLabel[ageTierFromClassroom(activeClassroom)]})
+                </span>
+              </div>
+              <button
+                type="button"
+                className="world-modal-close-btn"
+                onClick={() => {
+                  activeCheckpointQuizRef.current = false;
+                  setActiveCheckpointQuiz(null);
+                }}
+                aria-label="ปิดคำถาม"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="world-quiz-prompt">
+              <h4>คำถามประจำด่าน:</h4>
+              <p>{activeCheckpointQuiz.question.q}</p>
+            </div>
+
+            <div className="world-quiz-choices">
+              {activeCheckpointQuiz.question.choices.map((opt, idx) => {
+                const isSelected = checkpointAnswer === idx;
+                const isCorrect = idx === activeCheckpointQuiz.question.answer;
+                let choiceState = '';
+                if (checkpointAnswer !== null) {
+                  if (isCorrect) choiceState = 'correct';
+                  else if (isSelected) choiceState = 'wrong';
+                  else choiceState = 'dimmed';
+                }
+
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`world-quiz-choice ${choiceState}`}
+                    onClick={() => handleAnswerCheckpoint(idx)}
+                    disabled={checkpointAnswer !== null}
+                  >
+                    <span className="choice-number">{['ก', 'ข', 'ค', 'ง'][idx] || idx + 1}</span>
+                    <span className="choice-text">{opt}</span>
+                    {checkpointAnswer !== null && isCorrect && (
+                      <CheckCircle2 size={20} className="choice-feedback-icon correct" />
+                    )}
+                    {checkpointAnswer !== null && isSelected && !isCorrect && (
+                      <X size={20} className="choice-feedback-icon wrong" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {checkpointAnswer !== null && (
+              <div
+                className={`world-quiz-feedback ${
+                  checkpointAnswer === activeCheckpointQuiz.question.answer ? 'success' : 'retry'
+                }`}
+              >
+                {checkpointAnswer === activeCheckpointQuiz.question.answer ? (
+                  <>
+                    <div className="world-quiz-feedback-banner">
+                      <Sparkles size={20} />
+                      <strong>ถูกต้องยอดเยี่ยม! ปลดล็อกด่านแล้ว (+2 ⭐)</strong>
+                    </div>
+                    {activeCheckpointQuiz.question.why && (
+                      <p className="world-quiz-explanation">
+                        💡 <strong>คำอธิบาย:</strong> {activeCheckpointQuiz.question.why}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      className="world-quiz-btn-primary"
+                      onClick={() => {
+                        activeCheckpointQuizRef.current = false;
+                        setActiveCheckpointQuiz(null);
+                      }}
+                    >
+                      🚀 ลุยกระโดดด่านถัดไป!
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="world-quiz-feedback-banner retry">
+                      <RotateCcw size={20} />
+                      <strong>ยังไม่ถูกต้องนะ ลองคิดใหม่อีกครั้ง!</strong>
+                    </div>
+                    {activeCheckpointQuiz.question.why && (
+                      <p className="world-quiz-explanation">
+                        💡 <strong>คำใบ้ / แนวคิด:</strong> {activeCheckpointQuiz.question.why}
+                      </p>
+                    )}
+                    <div className="world-quiz-retry-actions">
+                      <button
+                        type="button"
+                        className="world-quiz-btn-retry"
+                        onClick={() => setCheckpointAnswer(null)}
+                      >
+                        <RotateCcw size={16} /> ลองตอบใหม่อีกครั้ง
+                      </button>
+                      <button
+                        type="button"
+                        className="world-quiz-btn-cancel"
+                        onClick={() => {
+                          activeCheckpointQuizRef.current = false;
+                          setActiveCheckpointQuiz(null);
+                        }}
+                      >
+                        ปิดหน้าต่าง
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

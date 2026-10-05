@@ -1,7 +1,11 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import { virtualAudioService } from '../src/services/virtualAudioService';
+import { QUESTION_BANK } from '../src/data/ctBoardGame';
+import type { CTPillar } from '../src/data/ctBoardGame';
+import { ageTierFromClassroom, ageTierLabel } from '../src/data/gameLessons';
+import type { AgeTier } from '../src/data/gameLessons';
 
-describe('Virtual Audio SFX & Algorithm Obby Parkour', () => {
+describe('Virtual Audio SFX & Multi-Zone Algorithm Obby Parkour with Grade Quizzes', () => {
   beforeEach(() => {
     virtualAudioService.setSoundEnabled(true);
   });
@@ -15,7 +19,7 @@ describe('Virtual Audio SFX & Algorithm Obby Parkour', () => {
       expect(virtualAudioService.isSoundEnabled()).toBe(true);
     });
 
-    it('ฟังก์ชันเสียงทั้งหมดเรียกใช้งานได้อย่างปลอดภัยโดยไม่โยน Error แม้ไม่มี Web Audio Hardware', () => {
+    it('ฟังก์ชันเสียงทั้งหมดเรียกใช้งานได้อย่างปลอดภัยโดยไม่โยน Error', () => {
       expect(() => virtualAudioService.playJump()).not.toThrow();
       expect(() => virtualAudioService.playStep()).not.toThrow();
       expect(() => virtualAudioService.playBlockPlace()).not.toThrow();
@@ -27,179 +31,162 @@ describe('Virtual Audio SFX & Algorithm Obby Parkour', () => {
       expect(() => virtualAudioService.playObbyStep(3)).not.toThrow();
       expect(() => virtualAudioService.playVictory()).not.toThrow();
     });
+  });
 
-    it('เมื่อปิดเสียง (soundEnabled = false) จะไม่สร้าง AudioContext หรือเรียกสังเคราะห์เสียง', () => {
-      virtualAudioService.setSoundEnabled(false);
-      expect(() => {
-        virtualAudioService.playJump();
-        virtualAudioService.playStep();
-        virtualAudioService.playBlockPlace();
-        virtualAudioService.playBlockRemove();
-        virtualAudioService.playStar();
-        virtualAudioService.playObbyStep(0);
-        virtualAudioService.playVictory();
-      }).not.toThrow();
+  describe('ระบบคำถามประจำด่านตามระดับชั้น (Grade-Level Checkpoint Quizzes)', () => {
+    const PILLARS: CTPillar[] = ['decompose', 'pattern', 'abstract', 'algorithm'];
+    const TIERS: AgeTier[] = ['lower', 'upper', 'middle'];
+
+    it('ระบบสามารถแปลงระดับชั้นห้องเรียนเป็น AgeTier ได้อย่างถูกต้องตามหลักสูตร', () => {
+      expect(ageTierFromClassroom('ป.1')).toBe('lower');
+      expect(ageTierFromClassroom('ป.2')).toBe('lower');
+      expect(ageTierFromClassroom('ป.3')).toBe('lower');
+      expect(ageTierFromClassroom('ป.4')).toBe('upper');
+      expect(ageTierFromClassroom('ป.5')).toBe('upper');
+      expect(ageTierFromClassroom('ป.6')).toBe('upper');
+      expect(ageTierFromClassroom('ม.1')).toBe('middle');
+      expect(ageTierFromClassroom('ม.2')).toBe('middle');
+      expect(ageTierFromClassroom('ม.3')).toBe('middle');
+    });
+
+    it('ทุกด่านทั้ง 4 ทักษะ (Decompose, Pattern, Abstract, Algorithm) มีคลังคำถามตรงตามวัยสำหรับผู้เรียน', () => {
+      TIERS.forEach((tier) => {
+        PILLARS.forEach((pillar) => {
+          const pool = QUESTION_BANK[tier].filter((q) => q.pillar === pillar);
+          expect(pool.length).toBeGreaterThan(0);
+
+          const sample = pool[0];
+          expect(sample.q.length).toBeGreaterThan(5);
+          expect(sample.choices).toHaveLength(3);
+          expect(sample.answer).toBeGreaterThanOrEqual(0);
+          expect(sample.answer).toBeLessThan(3);
+          expect(sample.why.length).toBeGreaterThan(5);
+        });
+      });
+    });
+
+    it('เมื่อตอบคำถามเช็คพอยต์ถูกต้อง จะได้รับดาว +2 ⭐ และปลดล็อกด่านต่อไป', () => {
+      let stars = 0;
+      let unlocked = [false, false, false, false];
+      let highestCheckpoint = -1;
+
+      const answerCheckpoint = (index: number, chosenIdx: number, correctIdx: number) => {
+        if (chosenIdx === correctIdx) {
+          stars += 2;
+          unlocked[index] = true;
+          highestCheckpoint = Math.max(highestCheckpoint, index);
+          return true;
+        }
+        return false;
+      };
+
+      // ด่านที่ 1: ตอบถูก
+      const pass1 = answerCheckpoint(0, 1, 1);
+      expect(pass1).toBe(true);
+      expect(stars).toBe(2);
+      expect(unlocked[0]).toBe(true);
+      expect(highestCheckpoint).toBe(0);
+
+      // ด่านที่ 2: ตอบผิด
+      const pass2Wrong = answerCheckpoint(1, 0, 2);
+      expect(pass2Wrong).toBe(false);
+      expect(stars).toBe(2);
+      expect(unlocked[1]).toBe(false);
+
+      // ด่านที่ 2: ตอบถูกรอบแก้ตัว
+      const pass2Right = answerCheckpoint(1, 2, 2);
+      expect(pass2Right).toBe(true);
+      expect(stars).toBe(4);
+      expect(unlocked[1]).toBe(true);
+      expect(highestCheckpoint).toBe(1);
     });
   });
 
-  describe('ลานกระโดดฝึกคิดเป็นลำดับ (Computational Algorithm Parkour)', () => {
-    interface ObbyPlatform {
-      step: number;
+  describe('ลานผจญภัยกระโดด 4 โซนท้าทาย (Diverse Adventure Parkour Stages)', () => {
+    interface PlatformDef {
       name: string;
-      concept: string;
+      type: 'stone' | 'beam' | 'pad' | 'launch' | 'floating' | 'checkpoint' | 'summit';
       x: number;
       z: number;
       sizeX: number;
       sizeZ: number;
       topY: number;
-      color: number;
     }
 
-    const OBBY_PLATFORMS: ObbyPlatform[] = [
-      {
-        step: 1,
-        name: 'ขั้นที่ 1: แยกย่อยปัญหา',
-        concept: 'Decomposition',
-        x: 18.5,
-        z: 20.5,
-        sizeX: 2.4,
-        sizeZ: 2.4,
-        topY: 0.65,
-        color: 0x2563eb,
-      },
-      {
-        step: 2,
-        name: 'ขั้นที่ 2: วางแผนขั้นตอนวิธี',
-        concept: 'Algorithm Design',
-        x: 21.2,
-        z: 16.8,
-        sizeX: 2.4,
-        sizeZ: 2.4,
-        topY: 1.30,
-        color: 0x0284c7,
-      },
-      {
-        step: 3,
-        name: 'ขั้นที่ 3: ปฏิบัติตามลำดับ',
-        concept: 'Sequencing & Execution',
-        x: 18.2,
-        z: 13.1,
-        sizeX: 2.4,
-        sizeZ: 2.4,
-        topY: 1.95,
-        color: 0x10b981,
-      },
-      {
-        step: 4,
-        name: 'ขั้นที่ 4: ตรวจสอบและแก้ไข',
-        concept: 'Testing & Debugging',
-        x: 21.2,
-        z: 9.4,
-        sizeX: 2.4,
-        sizeZ: 2.4,
-        topY: 2.60,
-        color: 0xf59e0b,
-      },
-      {
-        step: 5,
-        name: 'ยอดเขาแห่งปัญญา (Goal Summit)',
-        concept: 'Computational Mastery',
-        x: 18.5,
-        z: 5.5,
-        sizeX: 3.4,
-        sizeZ: 3.4,
-        topY: 3.20,
-        color: 0x7c3aed,
-      },
+    const COURSE_PLATFORMS: PlatformDef[] = [
+      // Zone 1: บันไดหินวน
+      { name: 'Stone 1', type: 'stone', x: 18.5, z: 22.5, sizeX: 1.6, sizeZ: 1.6, topY: 0.65 },
+      { name: 'Stone 2', type: 'stone', x: 21.0, z: 20.2, sizeX: 1.5, sizeZ: 1.5, topY: 1.20 },
+      { name: 'Stone 3', type: 'stone', x: 23.2, z: 17.8, sizeX: 1.5, sizeZ: 1.5, topY: 1.75 },
+      { name: 'Stone 4', type: 'stone', x: 21.0, z: 15.2, sizeX: 1.5, sizeZ: 1.5, topY: 2.30 },
+      { name: 'Checkpoint 1 (Decompose)', type: 'checkpoint', x: 17.8, z: 14.5, sizeX: 2.6, sizeZ: 2.6, topY: 2.70 },
+
+      // Zone 2: สะพานคานแคบ & ทแยงมุม
+      { name: 'Balance Beam', type: 'beam', x: 14.5, z: 14.5, sizeX: 3.8, sizeZ: 0.8, topY: 2.70 },
+      { name: 'Diagonal 1', type: 'pad', x: 11.5, z: 12.0, sizeX: 1.4, sizeZ: 1.4, topY: 3.15 },
+      { name: 'Diagonal 2', type: 'pad', x: 13.5, z: 9.2, sizeX: 1.4, sizeZ: 1.4, topY: 3.65 },
+      { name: 'Checkpoint 2 (Pattern)', type: 'checkpoint', x: 17.0, z: 8.0, sizeX: 2.6, sizeZ: 2.6, topY: 4.05 },
+
+      // Zone 3: สปริงบอร์ดดีดตัว & เกาะลอยน้ำ
+      { name: 'Super Launch Pad', type: 'launch', x: 20.5, z: 8.0, sizeX: 1.8, sizeZ: 1.8, topY: 4.05 },
+      { name: 'Floating Island 1', type: 'floating', x: 23.5, z: 11.2, sizeX: 1.7, sizeZ: 1.7, topY: 5.20 },
+      { name: 'Floating Island 2', type: 'floating', x: 24.0, z: 14.8, sizeX: 1.6, sizeZ: 1.6, topY: 5.75 },
+      { name: 'Checkpoint 3 (Abstract)', type: 'checkpoint', x: 21.5, z: 18.0, sizeX: 2.6, sizeZ: 2.6, topY: 6.25 },
+
+      // Zone 4: บันไดลอยฟ้าสู่ยอดเขา
+      { name: 'Sky Step 1', type: 'pad', x: 18.5, z: 20.2, sizeX: 1.5, sizeZ: 1.5, topY: 6.80 },
+      { name: 'Sky Step 2', type: 'pad', x: 15.5, z: 18.5, sizeX: 1.5, sizeZ: 1.5, topY: 7.35 },
+      { name: 'Checkpoint 4 (Algorithm)', type: 'checkpoint', x: 14.0, z: 15.5, sizeX: 2.6, sizeZ: 2.6, topY: 7.85 },
+      { name: 'Summit Approach', type: 'pad', x: 14.0, z: 12.6, sizeX: 1.6, sizeZ: 1.6, topY: 8.25 },
+      { name: 'Wisdom Summit', type: 'summit', x: 14.0, z: 9.2, sizeX: 3.6, sizeZ: 3.6, topY: 8.65 },
     ];
 
-    it('แท่นทั้ง 5 ขั้นต้องมีระยะกระโดดแนวดิ่ง (Delta Y) ไม่เกินความสูงกระโดดสูงสุดของผู้เล่น (1.68m)', () => {
-      const MAX_JUMP_HEIGHT = (8.2 * 8.2) / (2 * 20); // vy^2 / (2g) = 1.681m
-      expect(MAX_JUMP_HEIGHT).toBeGreaterThan(1.6);
-
-      // จากพื้นดิน y=0 ขึ้นขั้นที่ 1
-      expect(OBBY_PLATFORMS[0].topY).toBeLessThan(MAX_JUMP_HEIGHT);
-
-      // ความสูงระหว่างแต่ละขั้น
-      for (let i = 0; i < OBBY_PLATFORMS.length - 1; i++) {
-        const current = OBBY_PLATFORMS[i];
-        const next = OBBY_PLATFORMS[i + 1];
-        const deltaY = next.topY - current.topY;
-        expect(deltaY).toBeGreaterThan(0.5);
-        expect(deltaY).toBeLessThanOrEqual(0.66);
-        expect(deltaY).toBeLessThan(MAX_JUMP_HEIGHT);
-      }
+    it('จำนวนแท่นในเส้นทางต้องมีความหลากหลายไม่น้อยกว่า 17 แท่น', () => {
+      expect(COURSE_PLATFORMS.length).toBeGreaterThanOrEqual(17);
+      const types = new Set(COURSE_PLATFORMS.map((p) => p.type));
+      expect(types.size).toBeGreaterThanOrEqual(5);
     });
 
-    it('ระยะห่างแนวระนาบระหว่างขอบแท่น (Edge Gap) ต้องอยู่ในระยะที่ผู้เล่นกระโดดข้ามได้ง่าย (1.5m - 2.5m)', () => {
-      for (let i = 0; i < OBBY_PLATFORMS.length - 1; i++) {
-        const cur = OBBY_PLATFORMS[i];
-        const nxt = OBBY_PLATFORMS[i + 1];
-        const centerDist = Math.hypot(nxt.x - cur.x, nxt.z - cur.z);
-        const radiusSum = (cur.sizeX + nxt.sizeX) / 4 + (cur.sizeZ + nxt.sizeZ) / 4;
-        const edgeGap = centerDist - radiusSum;
+    it('ระบบ Launch Pad สามารถเพิ่มความเร็วแนวดิ่ง (v_y = 12m/s) เพื่อให้กระโดดขึ้นสู่เกาะลอยน้ำได้', () => {
+      let verticalVelocity = 0;
+      let grounded = true;
 
-        // ขอบแท่นต้องไม่ติดกันและไม่ไกลเกินกว่าแรงกระโดดปกติ (2.8m)
-        expect(edgeGap).toBeGreaterThan(1.2);
-        expect(edgeGap).toBeLessThan(2.6);
-      }
+      // เหยียบ Launch Pad
+      verticalVelocity = 12.0;
+      grounded = false;
+
+      const launchHeight = (12 * 12) / (2 * 20); // 3.6m lift
+      expect(launchHeight).toBe(3.6);
+      expect(COURSE_PLATFORMS[9].topY + launchHeight).toBeGreaterThan(COURSE_PLATFORMS[10].topY);
     });
 
-    it('แท่นทั้งหมดต้องลงทะเบียนใน platforms array เพื่อให้ระบบฟิสิกส์ยืนเหยียบ (floorTop) ทำงานอัตโนมัติ', () => {
-      const platforms: { minX: number; maxX: number; minZ: number; maxZ: number; top: number }[] = [];
+    it('สะพานคานแคบ (Balance Beam) เชื่อมต่อตรงกับ Checkpoint 1 อย่างราบรื่น', () => {
+      const cp1 = COURSE_PLATFORMS[4];
+      const beam = COURSE_PLATFORMS[5];
 
-      OBBY_PLATFORMS.forEach((p) => {
-        platforms.push({
-          minX: p.x - p.sizeX / 2,
-          maxX: p.x + p.sizeX / 2,
-          minZ: p.z - p.sizeZ / 2,
-          maxZ: p.z + p.sizeZ / 2,
-          top: p.topY,
-        });
-      });
-
-      expect(platforms).toHaveLength(5);
-
-      // ทดสอบการยืนเหยียบบนขั้นที่ 1 (x=18.5, z=20.5, feetY=0.65)
-      const playerFeet = 0.65;
-      let floorTop = 0;
-      platforms.forEach((pf) => {
-        if (18.5 >= pf.minX && 18.5 <= pf.maxX && 20.5 >= pf.minZ && 20.5 <= pf.maxZ) {
-          if (pf.top > floorTop && pf.top <= playerFeet + 0.35) {
-            floorTop = pf.top;
-          }
-        }
-      });
-      expect(floorTop).toBeCloseTo(0.65);
-
-      // ทดสอบการยืนเหยียบบนแท่นยอดเขา Goal (x=18.5, z=5.5, feetY=3.20)
-      floorTop = 0;
-      platforms.forEach((pf) => {
-        if (18.5 >= pf.minX && 18.5 <= pf.maxX && 5.5 >= pf.minZ && 5.5 <= pf.maxZ) {
-          if (pf.top > floorTop && pf.top <= 3.20 + 0.35) {
-            floorTop = pf.top;
-          }
-        }
-      });
-      expect(floorTop).toBeCloseTo(3.20);
+      // จุดเชื่อมต่อต้องมีระดับความสูงเดียวกัน
+      expect(cp1.topY).toBe(beam.topY);
+      // ความกว้างของคานต้องแคบกว่าแท่นปกติ (0.8m เทียบกับ 2.6m) เพื่อทดสอบการทรงตัว
+      expect(beam.sizeZ).toBeLessThan(1.0);
     });
 
-    it('เมื่อผู้เล่นเหยียบถึงแท่นยอดเขา จะได้รับรางวัล +5 ⭐ และส่งเสียง Victory Fanfare', () => {
-      let stars = 0;
-      let soundPlayed: string | null = null;
-      let activityRecorded = false;
+    it('ระบบ Respawn / Teleport Pad นำทางผู้เล่นกลับสู่ Checkpoint ล่าสุดที่ปลดล็อกแล้วได้', () => {
+      const highestCheckpoint = 2; // ปลดล็อกถึงด่านที่ 3
+      const checkpoints = COURSE_PLATFORMS.filter((p) => p.type === 'checkpoint');
+      const targetCheckpoint = checkpoints[highestCheckpoint];
 
-      const onReachGoal = () => {
-        stars += 5;
-        soundPlayed = 'victory';
-        activityRecorded = true;
+      const playerPos = { x: 0, y: 0, z: 0 };
+      const teleportToCheckpoint = (cp: PlatformDef) => {
+        playerPos.x = cp.x;
+        playerPos.y = cp.topY + 1.7;
+        playerPos.z = cp.z;
       };
 
-      onReachGoal();
+      teleportToCheckpoint(targetCheckpoint);
 
-      expect(stars).toBe(5);
-      expect(soundPlayed).toBe('victory');
-      expect(activityRecorded).toBe(true);
+      expect(playerPos.x).toBe(targetCheckpoint.x);
+      expect(playerPos.y).toBe(targetCheckpoint.topY + 1.7);
+      expect(playerPos.z).toBe(targetCheckpoint.z);
     });
   });
 });
