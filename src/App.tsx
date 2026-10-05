@@ -7,8 +7,6 @@ import Loading from './components/Loading';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPromptOverlay from './components/LoginPromptOverlay';
-import GameLearningJourney from './components/GameLearningJourney';
-import { gamesCatalog } from './data/gamesCatalog';
 
 // Code-splitting: โหลดเฉพาะหน้าที่เปิดใช้งาน → first paint เร็วขึ้น
 const Home = React.lazy(() => import('./pages/Home'));
@@ -81,8 +79,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const PageBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const game = gamesCatalog.find((item) => item.path === location.pathname.replace(/\/$/, ''));
-  return <ErrorBoundary key={location.pathname}>{game ? <GameLearningJourney key={game.id} game={game}>{children}</GameLearningJourney> : children}</ErrorBoundary>;
+  return <ErrorBoundary key={location.pathname}>{children}</ErrorBoundary>;
 };
 
 function App() {

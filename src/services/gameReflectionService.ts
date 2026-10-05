@@ -60,7 +60,8 @@ export const saveGameReflection = async (input: GameReflectionInput): Promise<Ga
 
   // 2. บันทึกลง Firestore หากเชื่อมต่อได้
   try {
-    if (db && typeof navigator !== 'undefined' && navigator.onLine) {
+    const isTest = (globalThis as unknown as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV === 'test';
+    if (db && typeof navigator !== 'undefined' && navigator.onLine && !isTest) {
       await addDoc(collection(db, FIRESTORE_COLLECTION), newRecord);
     }
   } catch (error) {
