@@ -131,7 +131,7 @@ const CyberShieldGame: React.FC = () => {
   // Spawning Queue Reference
   const spawnQueueRef = useRef<Array<{ type: ThreatType; delay: number }>>([]);
   const lastSpawnTimeRef = useRef<number>(0);
-  const lastFrameTimeRef = useRef<number>(performance.now());
+  const lastFrameTimeRef = useRef<number>(0);
   const reqAnimationRef = useRef<number | null>(null);
 
   // Calculate coordinates along multi-point path
@@ -284,7 +284,9 @@ const CyberShieldGame: React.FC = () => {
   // Main Game Loop (Physics, Combat, Pathing)
   useEffect(() => {
     const loop = (time: number) => {
-      const deltaSec = Math.min(0.1, (time - lastFrameTimeRef.current) / 1000) * gameSpeed;
+      const deltaSec = lastFrameTimeRef.current === 0
+        ? 0
+        : Math.min(0.1, (time - lastFrameTimeRef.current) / 1000) * gameSpeed;
       lastFrameTimeRef.current = time;
 
       // 1. Spawning from queue

@@ -39,7 +39,7 @@ const ROUTES = [
     mustInclude: 'แบบประเมินและบันทึกหลังสอน',
     mustExclude: 'กำลังดึงรายชื่อและผลประเมิน',
   },
-  { path: '/admin?tab=p1-plan', auth: 'admin', wait: 4000, mustInclude: 'แผนพร้อมสอน' },
+  { path: '/admin?tab=p1-plan', auth: 'admin', wait: 4000, mustInclude: 'แผนเทคโนโลยีและบันทึกหลังสอน' },
   { path: '/admin?tab=research', auth: 'admin', mustInclude: 'รายงานการวิจัยปฏิบัติการในชั้นเรียน' },
 ];
 

@@ -141,9 +141,69 @@ const generatePattern = (level: number): Pattern => {
         hint: 'เพิ่มทีละ 1, 2, 3, 4 และ 5',
       };
     },
+    () => {
+      // Prime numbers: 2, 3, 5, 7, 11 -> 13
+      const seq = ['2', '3', '5', '7', '11'];
+      return {
+        sequence: seq,
+        options: shuffle(['13', '15', '17', '12']),
+        answer: '13',
+        hint: 'จำนวนเฉพาะ (Prime Number: มีตัวหารแค่ 1 และตัวเอง)',
+      };
+    },
+    () => {
+      // Powers of 2: 2, 4, 8, 16, 32 -> 64
+      const seq = ['2', '4', '8', '16', '32'];
+      return {
+        sequence: seq,
+        options: shuffle(['64', '48', '128', '36']),
+        answer: '64',
+        hint: 'เลขยกกำลังสองในคอมพิวเตอร์ (คูณ 2 เพิ่มขึ้นเรื่อยๆ)',
+      };
+    },
+    () => {
+      // Triangular numbers: 1, 3, 6, 10, 15 -> 21
+      const seq = ['1', '3', '6', '10', '15'];
+      return {
+        sequence: seq,
+        options: shuffle(['21', '20', '25', '18']),
+        answer: '21',
+        hint: 'จำนวนเชิงสามเหลี่ยม (+2, +3, +4, +5, +6)',
+      };
+    },
+    () => {
+      // Alternating operations: +3, *2, +3, *2...
+      const seq = ['3', '6', '9', '18', '21'];
+      return {
+        sequence: seq,
+        options: shuffle(['42', '24', '36', '40']),
+        answer: '42',
+        hint: 'สลับระหว่าง *2 แล้ว +3 (3*2=6, 6+3=9, 9*2=18, 18+3=21, 21*2=42)',
+      };
+    },
+    () => {
+      // Binary sequence pattern: 001, 010, 011, 100 -> 101
+      const seq = ['001', '010', '011', '100'];
+      return {
+        sequence: seq,
+        options: shuffle(['101', '110', '111', '000']),
+        answer: '101',
+        hint: 'การนับเลขฐานสอง (1, 2, 3, 4, ต่อไปคือ 5 = 101)',
+      };
+    },
+    () => {
+      // Rotational direction arrows
+      const seq = ['⬆️', '➡️', '⬇️', '⬅️'];
+      return {
+        sequence: seq,
+        options: shuffle(['⬆️', '↗️', '↘️', '🔄']),
+        answer: '⬆️',
+        hint: 'หมุนตามเข็มนาฬิกาทีละ 90 องศา ครบหนึ่งรอบกลับมาทิศเดิม',
+      };
+    },
   ];
   // Higher level → harder patterns
-  const availableByLevel = [3, 5, 7, 9, types.length];
+  const availableByLevel = [4, 7, 10, 13, types.length];
   const fnIdx = Math.floor(Math.random() * availableByLevel[Math.min(level, availableByLevel.length - 1)]);
   return types[fnIdx]();
 };

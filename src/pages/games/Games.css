@@ -678,3 +678,144 @@
     transform: none;
   }
 }
+
+/* Quality Enhancement: CT Pillar Filters & Recommendation */
+.games-recommendation-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.95), rgba(15, 23, 42, 0.95));
+  border: 2px solid #10b981;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  flex-wrap: wrap;
+}
+
+.rec-icon {
+  font-size: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.rec-text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.rec-text strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #a7f3d0;
+  margin-bottom: 0.2rem;
+}
+
+.rec-text p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #e2e8f0;
+}
+
+.rec-action-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #10b981;
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rec-action-btn:hover {
+  background: #059669;
+  transform: translateY(-2px);
+}
+
+.games-ct-filter {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.ct-filter-pill {
+  padding: 0.45rem 0.9rem;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  background: rgba(6, 39, 32, 0.7);
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ct-filter-pill:hover {
+  border-color: #f9d86a;
+  color: #fff;
+}
+
+.ct-filter-pill.active {
+  background: #f9d86a;
+  color: #172033;
+  border-color: #f9d86a;
+  box-shadow: 0 2px 8px rgba(249, 216, 106, 0.3);
+}
+
+.gc-ct-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  margin-top: 0.35rem;
+}
+
+.gc-speak-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.gc-speak-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.gc-speak-btn.speaking {
+  background: #10b981;
+  color: white;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.15); }
+}

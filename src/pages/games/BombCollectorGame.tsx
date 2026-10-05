@@ -303,6 +303,201 @@ const BombCollectorGame: React.FC = () => {
     };
   }, []);
 
+  // Canvas drawing function
+  const renderCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear background
+    ctx.fillStyle = '#0a0e1a';
+    ctx.fillRect(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
+
+    // Draw Cyber Grid Lines
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+    ctx.lineWidth = 1;
+    const gridSize = 40;
+    for (let x = 0; x <= ARENA_WIDTH; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, ARENA_HEIGHT);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= ARENA_HEIGHT; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(ARENA_WIDTH, y);
+      ctx.stroke();
+    }
+
+    // Draw Arena Border Glow
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(2, 2, ARENA_WIDTH - 4, ARENA_HEIGHT - 4);
+
+    // 1. Draw Bombs
+    for (const bomb of bombsRef.current) {
+      if (bomb.state === 'ticking') {
+        const progress = 1 - bomb.fuseRemaining / bomb.totalFuse;
+
+        // Warning Radius Circle Fill
+        ctx.fillStyle = `rgba(239, 68, 68, ${0.12 + progress * 0.18})`;
+        ctx.beginPath();
+        ctx.arc(bomb.x, bomb.y, bomb.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Warning Outer Ring (Pulsing)
+        ctx.strokeStyle = progress > 0.7 ? '#ef4444' : 'rgba(239, 68, 68, 0.6)';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath();
+        ctx.arc(bomb.x, bomb.y, bomb.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Depleting Countdown Ring
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(
+          bomb.x,
+          bomb.y,
+          24,
+          -Math.PI / 2,
+          -Math.PI / 2 + Math.PI * 2 * (1 - progress),
+          false,
+        );
+        ctx.stroke();
+
+        // Bomb Core Icon
+        ctx.font = '22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('💣', bomb.x, bomb.y);
+
+        // Countdown Text
+        const secs = (bomb.fuseRemaining / 1000).toFixed(1);
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 12px Kanit, sans-serif';
+        ctx.fillText(`${secs}s`, bomb.x, bomb.y + 36);
+      } else if (bomb.state === 'exploding') {
+        // Explosion shockwave
+        const blastRatio = bomb.explodeElapsed / bomb.explodeDuration;
+        const currentRadius = bomb.radius * (0.6 + 0.5 * blastRatio);
+        const alpha = Math.max(0, 1 - blastRatio);
+
+        const grad = ctx.createRadialGradient(
+          bomb.x,
+          bomb.y,
+          10,
+          bomb.x,
+          bomb.y,
+          currentRadius,
+        );
+        grad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+        grad.addColorStop(0.3, `rgba(251, 191, 36, ${alpha * 0.9})`);
+        grad.addColorStop(0.7, `rgba(239, 68, 68, ${alpha * 0.8})`);
+        grad.addColorStop(1, `rgba(239, 68, 68, 0)`);
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(bomb.x, bomb.y, currentRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Fiery center
+        ctx.font = `${26 + blastRatio * 10}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('💥', bomb.x, bomb.y);
+      }
+    }
+
+    // 2. Draw Collectible Data Chips
+    for (const chip of chipsRef.current) {
+      // Glow circle
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+      ctx.beginPath();
+      ctx.arc(chip.x, chip.y, 20, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Emoji icon
+      ctx.font = '20px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const icon = chip.type === 'core' ? '🔋' : chip.type === 'gem' ? '💎' : '💾';
+      ctx.fillText(icon, chip.x, chip.y);
+    }
+
+    // 3. Draw Power-Ups
+    for (const pu of powerUpsRef.current) {
+      // Pulsing circle
+      ctx.strokeStyle = '#a855f7';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(pu.x, pu.y, 22, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.2)';
+      ctx.beginPath();
+      ctx.arc(pu.x, pu.y, 20, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = '22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pu.icon, pu.x, pu.y);
+    }
+
+    // 4. Draw Player Character
+    const p = playerRef.current;
+    const isFlashing = p.iframe > 0 && Math.floor(p.iframe / 100) % 2 === 0;
+
+    if (!isFlashing) {
+      // Shield aura
+      if (hasShield) {
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, PLAYER_SIZE + 8, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, PLAYER_SIZE + 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Speed aura
+      if (speedBoostTimer > 0) {
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, PLAYER_SIZE + 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Player body
+      ctx.font = '28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🤖', p.x, p.y);
+    }
+
+    // 5. Draw Floating Texts
+    for (const ft of floatingTextsRef.current) {
+      ctx.save();
+      ctx.font = 'bold 15px Kanit, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = ft.color;
+      ctx.globalAlpha = ft.opacity;
+      ctx.fillText(ft.text, ft.x, ft.y);
+      ctx.restore();
+    }
+  }, [hasShield, speedBoostTimer]);
+
   // Main Canvas & Game Loop
   useEffect(() => {
     if (gameState !== 'playing') {
@@ -525,213 +720,24 @@ const BombCollectorGame: React.FC = () => {
     return () => {
       if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
     };
-  }, [gameState, spawnBomb, spawnChip, spawnPowerUp, playExplosionSound, playSfxTone]);
+  }, [gameState, spawnBomb, spawnChip, spawnPowerUp, playExplosionSound, playSfxTone, renderCanvas]);
 
   // Handle game over hook registration
   useEffect(() => {
     if (gameState === 'gameover' && score > 0) {
       void recordGame(score);
-      if (score > highScore) {
-        setHighScore(score);
-        localStorage.setItem('kj_bomb_collector_best', String(score));
-      }
+      const timer = window.setTimeout(() => {
+        setHighScore((prev) => {
+          if (score > prev) {
+            localStorage.setItem('kj_bomb_collector_best', String(score));
+            return score;
+          }
+          return prev;
+        });
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
-  }, [gameState, score, highScore, recordGame]);
-
-  // Canvas drawing function
-  const renderCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Clear background
-    ctx.fillStyle = '#0a0e1a';
-    ctx.fillRect(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
-
-    // Draw Cyber Grid Lines
-    ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
-    ctx.lineWidth = 1;
-    const gridSize = 40;
-    for (let x = 0; x <= ARENA_WIDTH; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, ARENA_HEIGHT);
-      ctx.stroke();
-    }
-    for (let y = 0; y <= ARENA_HEIGHT; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(ARENA_WIDTH, y);
-      ctx.stroke();
-    }
-
-    // Draw Arena Border Glow
-    ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(2, 2, ARENA_WIDTH - 4, ARENA_HEIGHT - 4);
-
-    // 1. Draw Bombs
-    for (const bomb of bombsRef.current) {
-      if (bomb.state === 'ticking') {
-        const progress = 1 - bomb.fuseRemaining / bomb.totalFuse;
-
-        // Warning Radius Circle Fill
-        ctx.fillStyle = `rgba(239, 68, 68, ${0.12 + progress * 0.18})`;
-        ctx.beginPath();
-        ctx.arc(bomb.x, bomb.y, bomb.radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Warning Outer Ring (Pulsing)
-        ctx.strokeStyle = progress > 0.7 ? '#ef4444' : 'rgba(239, 68, 68, 0.6)';
-        ctx.lineWidth = 2.5;
-        ctx.setLineDash([8, 6]);
-        ctx.beginPath();
-        ctx.arc(bomb.x, bomb.y, bomb.radius, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Depleting Countdown Ring
-        ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(
-          bomb.x,
-          bomb.y,
-          24,
-          -Math.PI / 2,
-          -Math.PI / 2 + Math.PI * 2 * (1 - progress),
-          false,
-        );
-        ctx.stroke();
-
-        // Bomb Core Icon
-        ctx.font = '22px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('💣', bomb.x, bomb.y);
-
-        // Countdown Text
-        const secs = (bomb.fuseRemaining / 1000).toFixed(1);
-        ctx.fillStyle = '#f8fafc';
-        ctx.font = 'bold 12px Kanit, sans-serif';
-        ctx.fillText(`${secs}s`, bomb.x, bomb.y + 36);
-      } else if (bomb.state === 'exploding') {
-        // Explosion shockwave
-        const blastRatio = bomb.explodeElapsed / bomb.explodeDuration;
-        const currentRadius = bomb.radius * (0.6 + 0.5 * blastRatio);
-        const alpha = Math.max(0, 1 - blastRatio);
-
-        const grad = ctx.createRadialGradient(
-          bomb.x,
-          bomb.y,
-          10,
-          bomb.x,
-          bomb.y,
-          currentRadius,
-        );
-        grad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-        grad.addColorStop(0.3, `rgba(251, 191, 36, ${alpha * 0.9})`);
-        grad.addColorStop(0.7, `rgba(239, 68, 68, ${alpha * 0.8})`);
-        grad.addColorStop(1, `rgba(239, 68, 68, 0)`);
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(bomb.x, bomb.y, currentRadius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Fiery center
-        ctx.font = `${26 + blastRatio * 10}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('💥', bomb.x, bomb.y);
-      }
-    }
-
-    // 2. Draw Collectible Data Chips
-    for (const chip of chipsRef.current) {
-      // Glow circle
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
-      ctx.beginPath();
-      ctx.arc(chip.x, chip.y, 20, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Emoji icon
-      ctx.font = '20px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const icon = chip.type === 'core' ? '🔋' : chip.type === 'gem' ? '💎' : '💾';
-      ctx.fillText(icon, chip.x, chip.y);
-    }
-
-    // 3. Draw Power-Ups
-    for (const pu of powerUpsRef.current) {
-      // Pulsing circle
-      ctx.strokeStyle = '#a855f7';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(pu.x, pu.y, 22, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.fillStyle = 'rgba(168, 85, 247, 0.2)';
-      ctx.beginPath();
-      ctx.arc(pu.x, pu.y, 20, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.font = '22px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(pu.icon, pu.x, pu.y);
-    }
-
-    // 4. Draw Player Character
-    const p = playerRef.current;
-    const isFlashing = p.iframe > 0 && Math.floor(p.iframe / 100) % 2 === 0;
-
-    if (!isFlashing) {
-      // Shield aura
-      if (hasShield) {
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, PLAYER_SIZE + 8, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, PLAYER_SIZE + 6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Speed aura
-      if (speedBoostTimer > 0) {
-        ctx.strokeStyle = '#fbbf24';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, PLAYER_SIZE + 4, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-
-      // Player body
-      ctx.font = '28px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('🤖', p.x, p.y);
-    }
-
-    // 5. Draw Floating Texts
-    for (const ft of floatingTextsRef.current) {
-      ctx.save();
-      ctx.font = 'bold 15px Kanit, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = ft.color;
-      ctx.globalAlpha = ft.opacity;
-      ctx.fillText(ft.text, ft.x, ft.y);
-      ctx.restore();
-    }
-  };
+  }, [gameState, score, recordGame]);
 
   // Virtual directional button handlers for mobile
   const handleVirtualDir = (dir: 'up' | 'down' | 'left' | 'right', pressed: boolean) => {
@@ -858,6 +864,12 @@ const BombCollectorGame: React.FC = () => {
                 <div className="bc-result-key">คะแนนสุทธิ</div>
                 <div className="bc-result-val" style={{ color: '#fbbf24' }}>
                   {score.toLocaleString()}
+                </div>
+              </div>
+              <div className="bc-result-item">
+                <div className="bc-result-key">สถิติสูงสุด</div>
+                <div className="bc-result-val" style={{ color: '#38bdf8' }}>
+                  {Math.max(highScore, score).toLocaleString()}
                 </div>
               </div>
               <div className="bc-result-item">

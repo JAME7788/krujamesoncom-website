@@ -34,9 +34,12 @@ import TeacherClassroomHub from '../components/TeacherClassroomHub';
 import ExternalVisitorManager from '../components/ExternalVisitorManager';
 import QuestionBankManager from '../components/QuestionBankManager';
 import AuditLogViewer from '../components/AuditLogViewer';
+import StudentReflectionJournal from '../components/StudentReflectionJournal';
 import { loadErrors, clearErrors } from '../services/errorLogger';
 import { Megaphone, Calendar as CalIcon, Bug } from 'lucide-react';
 import { adminLogout, getAdminSession } from '../services/authAdmin';
+import { getActiveWeeklyGoal } from '../services/srlService';
+import { loadStudentReflections } from '../services/gameReflectionService';
 import {
   fetchAllStudents, computeAttendance, getSiteStats, getStudentDevelopment,
 } from '../services/adminService';
@@ -46,10 +49,11 @@ import {
   fetchScheduleFromFirebase, syncScheduleToFirebase,
 } from '../data/schedule';
 import type { ClassSlot } from '../data/schedule';
+import type { ActivityLog } from '../services/progressService';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'export-grades' | 'media-reports' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
+type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'export-grades' | 'media-reports' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'reflections' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -128,6 +132,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
         items: [
           { id: 'media-reports', label: 'รายงานผลิตสื่อ (A4)', icon: <Layers size={16} /> },
           { id: 'research', label: 'วิจัย ๕ บท และ ว.PA', icon: <FileText size={16} /> },
+          { id: 'reflections', label: 'บันทึกสะท้อนคิด (GBL)', icon: <BookOpen size={16} /> },
         ],
       },
     ],
@@ -163,7 +168,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
       items: [
         { id: 'announcements', label: 'ประกาศข่าวสาร', icon: <Megaphone size={16} /> },
         { id: 'calendar', label: 'ปฏิทินกิจกรรม', icon: <CalIcon size={16} /> },
-        { id: 'homework', label: 'การบ้าน', icon: <Award size={16} /> },
+        { id: 'homework', label: 'การบ้าน / งานเฉพาะบุคคล', icon: <Award size={16} /> },
       ],
     }],
   },
@@ -197,6 +202,83 @@ const fmtTime = (ts?: number) =>
 
 const fmtDateTime = (ts?: number) =>
   ts ? new Date(ts).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+
+const getTimeAgo = (timestamp?: number): string => {
+  if (!timestamp) return '—';
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  if (diffSec < 60) return 'เมื่อสักครู่';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} ชม.ที่แล้ว`;
+  const diffDay = Math.floor(diffHour / 24);
+  return `${diffDay} วันที่แล้ว`;
+};
+
+const describeActivity = (act: ActivityLog): { icon: string; text: string; time: string } => {
+  const time = fmtTime(act.timestamp);
+  const gradeLabel = act.gradeId === 'login' ? '' : `${act.gradeId.toUpperCase()} น.${act.unitNo}`;
+  switch (act.type) {
+    case 'slide':
+      return {
+        icon: '📖',
+        text: `อ่านสไลด์บทเรียน หน้า ${(act.index ?? 0) + 1} ${gradeLabel ? `(${gradeLabel})` : ''}`,
+        time,
+      };
+    case 'video':
+      return {
+        icon: '🎬',
+        text: `ดูวิดีโอ: ${act.detail || 'วิดีโอการสอน'} ${gradeLabel ? `(${gradeLabel})` : ''}`,
+        time,
+      };
+    case 'fun':
+      if (act.gradeId === 'login') {
+        return { icon: '🔑', text: 'เข้าสู่ระบบ', time };
+      }
+      return {
+        icon: '🎮',
+        text: `เล่นเกม/กิจกรรม: ${act.detail || 'เกมการเรียนรู้'} ${gradeLabel ? `(${gradeLabel})` : ''}`,
+        time,
+      };
+    case 'practice':
+      return {
+        icon: '🛠️',
+        text: `ปฏิบัติภารกิจ: ${act.detail || 'แบบฝึกปฏิบัติ'} ${gradeLabel ? `(${gradeLabel})` : ''}`,
+        time,
+      };
+    case 'article':
+      return {
+        icon: '📄',
+        text: `อ่านบทความ: ${act.detail || 'เอกสารความรู้'} ${gradeLabel ? `(${gradeLabel})` : ''}`,
+        time,
+      };
+    case 'quiz':
+      return {
+        icon: '📝',
+        text: `ทำแบบทดสอบ ${gradeLabel ? `(${gradeLabel})` : ''} ${act.detail ? `- ${act.detail}` : ''}`,
+        time,
+      };
+    default:
+      return {
+        icon: '⚡',
+        text: act.detail || 'กิจกรรมในระบบ',
+        time,
+      };
+  }
+};
+
+const getStudentLiveStatus = (lastActive?: number): { status: 'online' | 'today' | 'offline'; label: string } => {
+  if (!lastActive) return { status: 'offline', label: '⚪ ออฟไลน์' };
+  const diffMin = (Date.now() - lastActive) / (1000 * 60);
+  if (diffMin <= 15) {
+    return { status: 'online', label: '🟢 กำลังออนไลน์' };
+  }
+  const isToday = new Date(lastActive).toDateString() === new Date().toDateString();
+  if (isToday) {
+    return { status: 'today', label: '🟡 ใช้งานวันนี้' };
+  }
+  return { status: 'offline', label: '⚪ ออฟไลน์' };
+};
 
 const getInitialAdminTab = (): Tab => {
   const requested = new URLSearchParams(window.location.search).get('tab') as Tab | null;
@@ -246,6 +328,25 @@ const AdminDashboardInner: React.FC = () => {
   const [date, setDate] = useState(todayKey());
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+  const [devClassroom, setDevClassroom] = useState('all');
+
+  const devStudents = useMemo(() => {
+    return students.filter((s) => devClassroom === 'all' || s.classroom === devClassroom);
+  }, [students, devClassroom]);
+
+  const currentDevIndex = devStudents.findIndex((s) => s.id === selectedStudent);
+  const handlePrevStudent = () => {
+    if (currentDevIndex > 0) {
+      setSelectedStudent(devStudents[currentDevIndex - 1].id);
+    }
+  };
+  const handleNextStudent = () => {
+    if (currentDevIndex < devStudents.length - 1) {
+      setSelectedStudent(devStudents[currentDevIndex + 1].id);
+    } else if (currentDevIndex === -1 && devStudents.length > 0) {
+      setSelectedStudent(devStudents[0].id);
+    }
+  };
 
   const refresh = async () => {
     setLoading(true);
@@ -273,10 +374,12 @@ const AdminDashboardInner: React.FC = () => {
     return undefined;
   }, [session?.role, tab]);
 
-  useEffect(() => {
+  const [prevTab, setPrevTab] = useState(tab);
+  if (tab !== prevTab) {
+    setPrevTab(tab);
     const activeFolder = findNavigationFolder(tab);
     if (activeFolder) setOpenNavigationFolder(activeFolder.id);
-  }, [tab]);
+  }
 
   const stats = useMemo(() => getSiteStats(students), [students]);
 
@@ -290,7 +393,9 @@ const AdminDashboardInner: React.FC = () => {
     [students, classroom, schedule, dateMs]
   );
 
-  const filteredStudents = useMemo(
+  const [activityFilter, setActivityFilter] = useState<'all' | 'activeNow' | 'activeToday'>('all');
+
+  const baseFilteredStudents = useMemo(
     () =>
       students.filter(
         (s) =>
@@ -299,6 +404,48 @@ const AdminDashboardInner: React.FC = () => {
       ),
     [students, search, classroom]
   );
+
+  const countOnline = useMemo(
+    () => baseFilteredStudents.filter((s) => (Date.now() - (s.progress?.lastActive || 0)) <= 15 * 60 * 1000).length,
+    [baseFilteredStudents]
+  );
+
+  const countToday = useMemo(
+    () => baseFilteredStudents.filter((s) => s.progress?.lastActive && new Date(s.progress.lastActive).toDateString() === new Date().toDateString()).length,
+    [baseFilteredStudents]
+  );
+
+  const filteredStudents = useMemo(() => {
+    if (activityFilter === 'activeNow') {
+      return baseFilteredStudents.filter((s) => (Date.now() - (s.progress?.lastActive || 0)) <= 15 * 60 * 1000);
+    }
+    if (activityFilter === 'activeToday') {
+      return baseFilteredStudents.filter((s) => s.progress?.lastActive && new Date(s.progress.lastActive).toDateString() === new Date().toDateString());
+    }
+    return baseFilteredStudents;
+  }, [baseFilteredStudents, activityFilter]);
+
+  const recentActivitiesAcrossAll = useMemo(() => {
+    const list: Array<{
+      studentId: string;
+      studentName: string;
+      classroom: string;
+      studentNumber: string;
+      activity: ActivityLog;
+    }> = [];
+    students.forEach((s) => {
+      (s.progress?.activities || []).slice(0, 5).forEach((act) => {
+        list.push({
+          studentId: s.id,
+          studentName: s.name,
+          classroom: s.classroom,
+          studentNumber: s.studentNumber,
+          activity: act,
+        });
+      });
+    });
+    return list.sort((a, b) => b.activity.timestamp - a.activity.timestamp).slice(0, 10);
+  }, [students]);
 
   const exportAttendanceCSV = () => {
     let csv = 'เลขที่,ชื่อ,สถานะ,เข้าในเวลาเรียน,เข้านอกเวลาเรียน,เข้าครั้งแรก,เข้าครั้งสุดท้าย\n';
@@ -309,13 +456,16 @@ const AdminDashboardInner: React.FC = () => {
   };
 
   const exportScoresCSV = () => {
-    let csv = 'เลขที่,ชื่อ,ห้อง,หน่วยที่เริ่ม,หน่วยที่จบ,สไลด์ที่อ่าน,วิดีโอ,กิจกรรม,ครั้งทำควิซ,คะแนนรวม,ใช้งานล่าสุด\n';
+    let csv = 'เลขที่,ชื่อ,ห้อง,สถานะ,กิจกรรมล่าสุด,หน่วยที่เริ่ม,หน่วยที่จบ,สไลด์ที่อ่าน,วิดีโอ,กิจกรรม,ครั้งทำควิซ,คะแนนรวม,ใช้งานล่าสุด\n';
     filteredStudents.forEach((s) => {
       const p = s.progress;
       const videos = p ? Object.values(p.units || {}).reduce((a, u: { videosClicked?: string[] }) => a + (u.videosClicked?.length || 0), 0) : 0;
       const fun = p ? Object.values(p.units || {}).reduce((a, u: { funClicked?: string[] }) => a + (u.funClicked?.length || 0), 0) : 0;
       const attempts = p ? Object.values(p.units || {}).reduce((a, u: { quizAttempts?: number }) => a + (u.quizAttempts || 0), 0) : 0;
-      csv += `${s.studentNumber},${s.name},${s.classroom},${Object.keys(p?.units || {}).length},${p?.unitsCompleted || 0},${p?.totalSlidesViewed || 0},${videos},${fun},${attempts},${p?.totalPoints || 0},${fmtDateTime(p?.lastActive)}\n`;
+      const liveStatus = getStudentLiveStatus(p?.lastActive);
+      const lastAct = p?.activities?.[0];
+      const actDesc = lastAct ? describeActivity(lastAct).text.replace(/,/g, ' ') : '-';
+      csv += `${s.studentNumber},"${s.name}",${s.classroom},"${liveStatus.label}","${actDesc}",${Object.keys(p?.units || {}).length},${p?.unitsCompleted || 0},${p?.totalSlidesViewed || 0},${videos},${fun},${attempts},${p?.totalPoints || 0},${fmtDateTime(p?.lastActive)}\n`;
     });
     download(csv, `คะแนน_${classroom}_${date}.csv`);
   };
@@ -500,6 +650,66 @@ const AdminDashboardInner: React.FC = () => {
                     })
                   )}
                 </div>
+
+                <h3 style={{ marginTop: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                  <span>⚡ ความเคลื่อนไหวนักเรียนล่าสุดในระบบ (Live Student Activity Stream)</span>
+                  <button
+                    type="button"
+                    onClick={() => navigateToTab('scores')}
+                    style={{ fontSize: '0.82rem', color: '#6366f1', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    ดูนักเรียนทั้งหมด ({stats.total} คน) →
+                  </button>
+                </h3>
+                {recentActivitiesAcrossAll.length === 0 ? (
+                  <p style={{ color: '#6b7280' }}>ยังไม่มีบันทึกกิจกรรมล่าสุดของนักเรียน</p>
+                ) : (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: '0.75rem',
+                  }}>
+                    {recentActivitiesAcrossAll.map((item, idx) => {
+                      const desc = describeActivity(item.activity);
+                      return (
+                        <div
+                          key={`${item.studentId}_${item.activity.timestamp}_${idx}`}
+                          onClick={() => {
+                            setSelectedStudent(item.studentId);
+                            navigateToTab('development');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            padding: '0.75rem 1rem',
+                            background: '#f8fafc',
+                            borderRadius: 12,
+                            border: '1px solid #e2e8f0',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                          title="คลิกเพื่อดูพัฒนาการของนักเรียนคนนี้"
+                        >
+                          <span style={{ fontSize: '1.4rem' }}>{desc.icon}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>
+                                {item.classroom} เลขที่ {item.studentNumber} {item.studentName}
+                              </span>
+                              <span style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                                {getTimeAgo(item.activity.timestamp)}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: '#334155', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                              {desc.text}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -593,6 +803,79 @@ const AdminDashboardInner: React.FC = () => {
                   </button>
                 </div>
 
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.25rem', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>สถานะการใช้งาน:</span>
+                  <button
+                    type="button"
+                    onClick={() => setActivityFilter('all')}
+                    style={{
+                      padding: '4px 12px',
+                      fontSize: '0.82rem',
+                      borderRadius: 999,
+                      background: activityFilter === 'all' ? '#6366f1' : '#f1f5f9',
+                      color: activityFilter === 'all' ? '#fff' : '#475569',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                    }}
+                  >
+                    ทั้งหมด ({baseFilteredStudents.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActivityFilter('activeNow')}
+                    style={{
+                      padding: '4px 12px',
+                      fontSize: '0.82rem',
+                      borderRadius: 999,
+                      background: activityFilter === 'activeNow' ? '#10b981' : '#ecfdf5',
+                      color: activityFilter === 'activeNow' ? '#fff' : '#047857',
+                      border: '1px solid #a7f3d0',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                    }}
+                  >
+                    🟢 กำลังออนไลน์ ({countOnline})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActivityFilter('activeToday')}
+                    style={{
+                      padding: '4px 12px',
+                      fontSize: '0.82rem',
+                      borderRadius: 999,
+                      background: activityFilter === 'activeToday' ? '#f59e0b' : '#fffbeb',
+                      color: activityFilter === 'activeToday' ? '#fff' : '#b45309',
+                      border: '1px solid #fde68a',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                    }}
+                  >
+                    🟡 ใช้งานวันนี้ ({countToday})
+                  </button>
+                  <div style={{ flex: 1 }} />
+                  <button
+                    type="button"
+                    onClick={refresh}
+                    disabled={loading}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 12px',
+                      fontSize: '0.82rem',
+                      borderRadius: 8,
+                      background: '#f8fafc',
+                      border: '1px solid #cbd5e1',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      color: '#334155',
+                    }}
+                  >
+                    <RefreshCw size={13} className={loading ? 'spin' : ''} /> ดึงข้อมูลสด
+                  </button>
+                </div>
+
                 <div className="att-table-wrap">
                   <table className="att-table">
                     <thead>
@@ -600,6 +883,7 @@ const AdminDashboardInner: React.FC = () => {
                         <th>เลขที่</th>
                         <th>ห้อง</th>
                         <th>ชื่อ-นามสกุล</th>
+                        <th>สถานะ & กิจกรรมล่าสุด</th>
                         <th>หน่วยที่เริ่ม</th>
                         <th>หน่วยที่จบ</th>
                         <th><FileText size={12}/> สไลด์</th>
@@ -613,7 +897,7 @@ const AdminDashboardInner: React.FC = () => {
                     </thead>
                     <tbody>
                       {filteredStudents.length === 0 ? (
-                        <tr><td colSpan={12} style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                        <tr><td colSpan={13} style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
                           ไม่พบข้อมูลนักเรียน
                         </td></tr>
                       ) : filteredStudents.map((s) => {
@@ -621,11 +905,39 @@ const AdminDashboardInner: React.FC = () => {
                         const videos = p ? Object.values(p.units || {}).reduce((a, u) => a + (u.videosClicked?.length || 0), 0) : 0;
                         const fun = p ? Object.values(p.units || {}).reduce((a, u) => a + (u.funClicked?.length || 0), 0) : 0;
                         const attempts = p ? Object.values(p.units || {}).reduce((a, u) => a + (u.quizAttempts || 0), 0) : 0;
+                        const liveStatus = getStudentLiveStatus(p?.lastActive);
+                        const lastAct = p?.activities?.[0];
+                        const actDesc = lastAct ? describeActivity(lastAct) : null;
                         return (
                           <tr key={s.id}>
                             <td>{s.studentNumber}</td>
                             <td>{s.classroom}</td>
                             <td>{s.name}</td>
+                            <td>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  color: liveStatus.status === 'online' ? '#047857' : liveStatus.status === 'today' ? '#b45309' : '#64748b',
+                                  background: liveStatus.status === 'online' ? '#d1fae5' : liveStatus.status === 'today' ? '#fef3c7' : '#f1f5f9',
+                                  padding: '2px 8px',
+                                  borderRadius: 999,
+                                  width: 'fit-content',
+                                }}>
+                                  {liveStatus.label}
+                                </span>
+                                {actDesc ? (
+                                  <span style={{ fontSize: '0.78rem', color: '#1e293b', fontWeight: 500, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={actDesc.text}>
+                                    {actDesc.icon} {actDesc.text}
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>ยังไม่มีกิจกรรม</span>
+                                )}
+                              </div>
+                            </td>
                             <td className="text-center">{Object.keys(p?.units || {}).length}</td>
                             <td className="text-center" style={{ color: '#22c55e', fontWeight: 700 }}>{p?.unitsCompleted || 0}</td>
                             <td className="text-center">{p?.totalSlidesViewed || 0}</td>
@@ -651,17 +963,54 @@ const AdminDashboardInner: React.FC = () => {
             {/* TAB: DEVELOPMENT */}
             {tab === 'development' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
-                <div className="filter-row">
-                  <div className="filter-group" style={{ flex: 1 }}>
-                    <label>เลือกนักเรียน</label>
+                <div className="filter-row" style={{ alignItems: 'flex-end', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                  <div className="filter-group">
+                    <label>ชั้นเรียน</label>
+                    <select
+                      value={devClassroom}
+                      onChange={(e) => {
+                        setDevClassroom(e.target.value);
+                      }}
+                    >
+                      <option value="all">ทุกห้อง ({students.length} คน)</option>
+                      {allClassrooms.map((c) => {
+                        const count = students.filter(s => s.classroom === c).length;
+                        return <option key={c} value={c}>{c} ({count} คน)</option>;
+                      })}
+                    </select>
+                  </div>
+                  <div className="filter-group" style={{ flex: 1, minWidth: 220 }}>
+                    <label>เลือกนักเรียน ({devStudents.length} คน)</label>
                     <select value={selectedStudent || ''} onChange={(e) => setSelectedStudent(e.target.value)}>
                       <option value="">— เลือกนักเรียน —</option>
-                      {students.map((s) => (
+                      {devStudents.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.classroom} เลขที่ {s.studentNumber} — {s.name}
                         </option>
                       ))}
                     </select>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handlePrevStudent}
+                      disabled={currentDevIndex <= 0}
+                      title="นักเรียนคนก่อนหน้า"
+                      style={{ padding: '0.55rem 0.85rem', fontSize: '0.82rem', fontWeight: 600 }}
+                    >
+                      ◀ ก่อนหน้า
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleNextStudent}
+                      disabled={currentDevIndex < 0 || currentDevIndex >= devStudents.length - 1}
+                      title="นักเรียนคนถัดไป"
+                      style={{ padding: '0.55rem 0.85rem', fontSize: '0.82rem', fontWeight: 600 }}
+                    >
+                      ถัดไป ▶
+                    </button>
                   </div>
                 </div>
 
@@ -789,6 +1138,13 @@ const AdminDashboardInner: React.FC = () => {
                   </p>
                 </div>
                 <ResearchGenerator />
+              </motion.div>
+            )}
+
+            {/* TAB: REFLECTIONS — บันทึกสะท้อนคิดของผู้เรียน (GBL) */}
+            {tab === 'reflections' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <StudentReflectionJournal />
               </motion.div>
             )}
 
@@ -1036,8 +1392,30 @@ const StatusChip: React.FC<{ status: AttendanceRecord['status'] }> = ({ status }
 };
 
 const StudentDetail: React.FC<{ student: StudentRecord }> = ({ student }) => {
+  const [actTypeFilter, setActTypeFilter] = useState<'all' | 'slide' | 'fun' | 'quiz' | 'video'>('all');
   const dev = getStudentDevelopment(student);
   const p = student.progress;
+  const liveStatus = getStudentLiveStatus(p?.lastActive);
+  const srlGoal = getActiveWeeklyGoal(student.id);
+  const reflections = loadStudentReflections(student.id);
+
+  const filteredActivities = useMemo(() => {
+    const list = p?.activities || [];
+    if (actTypeFilter === 'all') return list;
+    return list.filter((act) => {
+      if (actTypeFilter === 'slide') return act.type === 'slide';
+      if (actTypeFilter === 'fun') return act.type === 'fun' || act.type === 'practice';
+      if (actTypeFilter === 'quiz') return act.type === 'quiz';
+      if (actTypeFilter === 'video') return act.type === 'video';
+      return true;
+    });
+  }, [p?.activities, actTypeFilter]);
+
+  const slideCount = useMemo(() => (p?.activities || []).filter(a => a.type === 'slide').length, [p?.activities]);
+  const funCount = useMemo(() => (p?.activities || []).filter(a => a.type === 'fun' || a.type === 'practice').length, [p?.activities]);
+  const quizCount = useMemo(() => (p?.activities || []).filter(a => a.type === 'quiz').length, [p?.activities]);
+  const videoCount = useMemo(() => (p?.activities || []).filter(a => a.type === 'video').length, [p?.activities]);
+
   const maxPct = 100;
   const points = (_date: string, pct: number, i: number, total: number) => {
     const x = total > 1 ? (i / (total - 1)) * 100 : 50;
@@ -1048,14 +1426,41 @@ const StudentDetail: React.FC<{ student: StudentRecord }> = ({ student }) => {
 
   return (
     <div className="student-detail">
-      <div className="sd-header">
+      <div className="sd-header" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
         <div className="sd-avatar">{student.name.charAt(0)}</div>
-        <div>
-          <h2>{student.name}</h2>
-          <p>ชั้น {student.classroom} • เลขที่ {student.studentNumber}</p>
-          <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-            ใช้งานล่าสุด: {fmtDateTime(p?.lastActive)}
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <h2 style={{ margin: 0 }}>{student.name}</h2>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              color: liveStatus.status === 'online' ? '#047857' : liveStatus.status === 'today' ? '#b45309' : '#64748b',
+              background: liveStatus.status === 'online' ? '#d1fae5' : liveStatus.status === 'today' ? '#fef3c7' : '#f1f5f9',
+              padding: '3px 10px',
+              borderRadius: 999,
+            }}>
+              {liveStatus.label}
+            </span>
+          </div>
+          <p style={{ margin: '4px 0 0', color: '#475569', fontSize: '0.92rem' }}>
+            ชั้น {student.classroom} • เลขที่ {student.studentNumber}
           </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 4, fontSize: '0.82rem', color: '#64748b' }}>
+            <span>🕒 ใช้งานล่าสุด: {fmtDateTime(p?.lastActive)} ({getTimeAgo(p?.lastActive)})</span>
+            {srlGoal && (
+              <span style={{ color: '#6366f1', fontWeight: 600 }}>
+                🎯 เป้าหมายสัปดาห์: {srlGoal.goal.title} ({srlGoal.currentCount}/{srlGoal.goal.targetCount} {srlGoal.goal.unit})
+              </span>
+            )}
+            {reflections.length > 0 && (
+              <span style={{ color: '#0d9488', fontWeight: 600 }}>
+                📖 บันทึกสะท้อนคิด: {reflections.length} รายการ
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1128,6 +1533,140 @@ const StudentDetail: React.FC<{ student: StudentRecord }> = ({ student }) => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      <h3 style={{ marginTop: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <span>🕒 ไทม์ไลน์กิจกรรมล่าสุด (Recent Activity Log: นักเรียนทำอะไรไปบ้าง)</span>
+        <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 400 }}>แสดงตามลำดับเวลาล่าสุด</span>
+      </h3>
+
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.85rem', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#475569' }}>กรองประเภท:</span>
+        <button
+          type="button"
+          onClick={() => setActTypeFilter('all')}
+          style={{
+            padding: '3px 10px',
+            fontSize: '0.78rem',
+            borderRadius: 999,
+            background: actTypeFilter === 'all' ? '#6366f1' : '#f1f5f9',
+            color: actTypeFilter === 'all' ? '#fff' : '#475569',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 700,
+          }}
+        >
+          ทั้งหมด ({(p?.activities || []).length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActTypeFilter('slide')}
+          style={{
+            padding: '3px 10px',
+            fontSize: '0.78rem',
+            borderRadius: 999,
+            background: actTypeFilter === 'slide' ? '#0284c7' : '#f0f9ff',
+            color: actTypeFilter === 'slide' ? '#fff' : '#0369a1',
+            border: '1px solid #bae6fd',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          📖 สไลด์ ({slideCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActTypeFilter('fun')}
+          style={{
+            padding: '3px 10px',
+            fontSize: '0.78rem',
+            borderRadius: 999,
+            background: actTypeFilter === 'fun' ? '#ec4899' : '#fdf2f8',
+            color: actTypeFilter === 'fun' ? '#fff' : '#be185d',
+            border: '1px solid #fbcfe8',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          🎮 เกม/กิจกรรม ({funCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActTypeFilter('quiz')}
+          style={{
+            padding: '3px 10px',
+            fontSize: '0.78rem',
+            borderRadius: 999,
+            background: actTypeFilter === 'quiz' ? '#ea580c' : '#fff7ed',
+            color: actTypeFilter === 'quiz' ? '#fff' : '#c2410c',
+            border: '1px solid #fed7aa',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          📝 ข้อสอบ ({quizCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActTypeFilter('video')}
+          style={{
+            padding: '3px 10px',
+            fontSize: '0.78rem',
+            borderRadius: 999,
+            background: actTypeFilter === 'video' ? '#8b5cf6' : '#f5f3ff',
+            color: actTypeFilter === 'video' ? '#fff' : '#6d28d9',
+            border: '1px solid #ddd6fe',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          🎬 วิดีโอ ({videoCount})
+        </button>
+      </div>
+
+      {filteredActivities.length === 0 ? (
+        <p style={{ color: '#6b7280', fontSize: '0.88rem' }}>ไม่มีประวัติกิจกรรมในหมวดหมู่นี้</p>
+      ) : (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: 12,
+          padding: '1rem',
+          maxHeight: 380,
+          overflowY: 'auto',
+        }}>
+          {filteredActivities.slice(0, 30).map((act, i) => {
+            const desc = describeActivity(act);
+            return (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  background: 'white',
+                  padding: '9px 14px',
+                  borderRadius: 10,
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                }}
+              >
+                <span style={{ fontSize: '1.3rem' }}>{desc.icon}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#1e293b' }}>
+                    {desc.text}
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: 2 }}>
+                    {fmtDateTime(act.timestamp)} • ({getTimeAgo(act.timestamp)})
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -7,7 +7,8 @@ import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
-type Gate = 'AND' | 'OR' | 'NOT' | 'XOR' | 'NAND' | 'NOR' | 'COMBO';
+type Gate = 'AND' | 'OR' | 'NOT' | 'XOR' | 'NAND' | 'NOR' | 'COMBO' | 'XNOR' | 'MAJORITY';
+export type LogicMode = 'all' | 'basic' | 'intermediate' | 'advanced';
 const SESSION_ROUNDS = 12;
 
 const GATE_INFO: Record<Gate, { th: string; desc: string; inputs: number; formula: string }> = {
@@ -18,6 +19,8 @@ const GATE_INFO: Record<Gate, { th: string; desc: string; inputs: number; formul
   NAND: { th: 'NAND', desc: 'ดับเฉพาะเมื่อ A และ B เป็น 1 ทั้งคู่', inputs: 2, formula: 'ไม่ (A และ B)' },
   NOR: { th: 'NOR', desc: 'ติดเฉพาะเมื่อ A และ B เป็น 0 ทั้งคู่', inputs: 2, formula: 'ไม่ (A หรือ B)' },
   COMBO: { th: 'AND + OR', desc: '(A และ B) หรือ C', inputs: 3, formula: '(A และ B) หรือ C' },
+  XNOR: { th: 'XNOR (ตรงกัน)', desc: 'ติดเมื่ออินพุต A และ B มีค่าเท่ากัน (0 0 หรือ 1 1)', inputs: 2, formula: 'A เท่ากับ B' },
+  MAJORITY: { th: 'เสียงข้างมาก (3 ทาง)', desc: 'ติดเมื่อมีอินพุตเป็น 1 อย่างน้อย 2 ตัวขึ้นไป', inputs: 3, formula: 'A+B+C ≥ 2' },
 };
 
 const evaluate = (gate: Gate, s: number[]): number => {
@@ -29,13 +32,24 @@ const evaluate = (gate: Gate, s: number[]): number => {
     case 'NAND': return (s[0] & s[1]) === 1 ? 0 : 1;
     case 'NOR': return (s[0] | s[1]) === 1 ? 0 : 1;
     case 'COMBO': return (s[0] & s[1]) | s[2];
+    case 'XNOR': return s[0] === s[1] ? 1 : 0;
+    case 'MAJORITY': return (s[0] + s[1] + s[2]) >= 2 ? 1 : 0;
   }
 };
 
-const makeRound = (streak: number) => {
-  const pool: Gate[] = streak >= 3
-    ? ['AND', 'OR', 'NOT', 'XOR', 'NAND', 'NOR', 'COMBO']
-    : ['AND', 'OR', 'NOT', 'XOR'];
+const makeRound = (streak: number, mode: LogicMode = 'all') => {
+  let pool: Gate[];
+  if (mode === 'basic') {
+    pool = ['AND', 'OR', 'NOT'];
+  } else if (mode === 'intermediate') {
+    pool = ['AND', 'OR', 'NOT', 'XOR', 'NAND', 'NOR'];
+  } else if (mode === 'advanced') {
+    pool = ['XOR', 'NAND', 'NOR', 'COMBO', 'XNOR', 'MAJORITY'];
+  } else {
+    pool = streak >= 3
+      ? ['AND', 'OR', 'NOT', 'XOR', 'NAND', 'NOR', 'COMBO', 'XNOR', 'MAJORITY']
+      : ['AND', 'OR', 'NOT', 'XOR'];
+  }
   const gate = pool[Math.floor(Math.random() * pool.length)];
   const n = GATE_INFO[gate].inputs;
   let switches: number[];
@@ -48,7 +62,8 @@ const makeRound = (streak: number) => {
 };
 
 const LogicGatesGame: React.FC = () => {
-  const [round, setRound] = useState(() => makeRound(0));
+  const [mode, setMode] = useState<LogicMode>('all');
+  const [round, setRound] = useState(() => makeRound(0, 'all'));
   const [checked, setChecked] = useState<'correct' | 'wrong' | null>(null);
   const [showTable, setShowTable] = useState(false);
   const [score, setScore] = useState(0);
@@ -63,6 +78,17 @@ const LogicGatesGame: React.FC = () => {
   const output = evaluate(round.gate, round.switches);
   const labels = ['A', 'B', 'C'];
 
+  const changeMode = (nextMode: LogicMode) => {
+    roundGuard.reset();
+    setMode(nextMode);
+    setRound(makeRound(0, nextMode));
+    setChecked(null);
+    setScore(0);
+    setStreak(0);
+    setRoundNumber(1);
+    setDone(false);
+  };
+
   const flip = (i: number) => {
     if (checked === 'correct') return;
     setChecked(null);
@@ -76,14 +102,14 @@ const LogicGatesGame: React.FC = () => {
       void recordGame(score, undefined, SESSION_ROUNDS * 10);
       return;
     }
-    setRound(makeRound(streak));
+    setRound(makeRound(streak, mode));
     setRoundNumber((value) => value + 1);
     setChecked(null);
   };
 
   const restart = () => {
     roundGuard.reset();
-    setRound(makeRound(0));
+    setRound(makeRound(0, mode));
     setChecked(null);
     setScore(0);
     setStreak(0);
@@ -109,8 +135,8 @@ const LogicGatesGame: React.FC = () => {
 
   const truthRows = round.gate === 'NOT'
     ? [[0], [1]]
-    : round.gate === 'COMBO'
-      ? [[0, 0, 0], [1, 1, 0], [0, 0, 1], [1, 1, 1]]
+    : (round.gate === 'COMBO' || round.gate === 'MAJORITY')
+      ? [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 1, 1]]
       : [[0, 0], [0, 1], [1, 0], [1, 1]];
 
   return (
@@ -129,6 +155,33 @@ const LogicGatesGame: React.FC = () => {
         <button className="gstat" onClick={() => setShowTable((s) => !s)}>
           <Lightbulb size={16} /> {showTable ? 'ซ่อนตารางค่าความจริง' : 'ดูตารางค่าความจริง'}
         </button>
+      </div>
+
+      {/* Difficulty switcher */}
+      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', margin: '0.75rem 0' }}>
+        <span style={{ fontSize: '0.88rem', fontWeight: 'bold', color: '#475569' }}>ระดับความยาก:</span>
+        {(['all', 'basic', 'intermediate', 'advanced'] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            style={{
+              padding: '6px 12px',
+              borderRadius: '8px',
+              border: mode === m ? '2px solid #6366f1' : '1px solid #cbd5e1',
+              background: mode === m ? '#6366f1' : '#fff',
+              color: mode === m ? '#fff' : '#1e293b',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              fontSize: '0.82rem',
+            }}
+            onClick={() => changeMode(m)}
+          >
+            {m === 'all' && 'ทุกประตูตรรกะ'}
+            {m === 'basic' && '🟢 ขั้นพื้นฐาน (AND, OR, NOT)'}
+            {m === 'intermediate' && '🔵 ขั้นกลาง (+XOR, NAND, NOR)'}
+            {m === 'advanced' && '🟣 ขั้นสูง (+XNOR, เสียงข้างมาก)'}
+          </button>
+        ))}
       </div>
 
       <div className="binary-card logic-card">

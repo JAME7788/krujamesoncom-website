@@ -18,12 +18,66 @@ import {
 } from './gradeService';
 import { allClassrooms2569 } from '../data/students2569';
 import { loadRoster } from './rosterService';
+import { officialStudents2569 } from '../data/studentsOfficialInfo2569';
 
 export const SCHOOL_NAME = 'โรงเรียนบ้านคลองมดแดง';
 export const SCHOOL_AFFILIATION = 'สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2';
 export const SCHOOL_DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 export const ACADEMIC_HEAD_NAME = 'หัวหน้าฝ่ายวิชาการและงานวัดผลประเมินผล';
 export { COURSE_TEACHER_NAME, ACADEMIC_YEAR } from './gradeService';
+
+export const CLASSROOM_ADVISORS: Record<string, string> = {
+  'ป.1': 'ครูประจำชั้นประถมศึกษาปีที่ 1',
+  'ป.2': 'ครูประจำชั้นประถมศึกษาปีที่ 2',
+  'ป.3': 'ครูประจำชั้นประถมศึกษาปีที่ 3',
+  'ป.4': 'ครูประจำชั้นประถมศึกษาปีที่ 4',
+  'ป.5': 'ครูประจำชั้นประถมศึกษาปีที่ 5',
+  'ป.6': 'ครูประจำชั้นประถมศึกษาปีที่ 6',
+  'ม.1': 'นางสาวจิราภา พานชัย, นายอนันตชัย เพ็ชรรี่',
+  'ม.2': 'นายอนันตชัย เพ็ชรรี่',
+  'ม.3': 'ครูประจำชั้นมัธยมศึกษาปีที่ 3',
+};
+
+/** คำนวณสถิติเวลาเรียนรายคน */
+export const calculateStudentAttendanceStats = (
+  classroom: string,
+  studentCode: string,
+  totalHours = 20,
+) => {
+  let absent = 0;
+  let sick = 0;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('krujames_attendance_') && key.includes(`_${classroom}`)) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const status = parsed?.records?.[studentCode];
+            if (status === 'absent') absent += 1;
+            else if (status === 'sick') sick += 1;
+          }
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const present = Math.max(0, totalHours - absent - sick);
+  const percentage = Math.round((present / totalHours) * 1000) / 10;
+  const status: 'ผ่าน' | 'มส' = percentage >= 80 ? 'ผ่าน' : 'มส';
+
+  return {
+    present,
+    absent,
+    sick,
+    totalHours,
+    percentage,
+    status,
+  };
+};
 
 export type GradeLevel = '4' | '3.5' | '3' | '2.5' | '2' | '1.5' | '1' | '0';
 
@@ -56,6 +110,21 @@ export interface StudentExportRow {
   classroom: string;
   subjectTitle: string;
   subjectCode: string;
+
+  // ข้อมูลทางการ (เลขบัตร ปชช., วันเกิด, บิดา, มารดา)
+  citizenId: string;
+  birthDate: string;
+  fatherName: string;
+  motherName: string;
+
+  // เวลาเรียน (Attendance)
+  attendancePresent: number;
+  attendanceAbsent: number;
+  attendanceSick: number;
+  attendanceTotalHours: number;
+  attendancePercentage: number;
+  attendanceStatus: 'ผ่าน' | 'มส';
+
   indicatorScores: Record<string, { k: number; p: string; a: boolean }>;
   collectedK: number;
   collectedP: number;
@@ -78,6 +147,9 @@ export interface ClassroomExportSummary {
   subject: Subject;
   subjectTitle: string;
   subjectCode: string;
+  credit: number;
+  totalHours: number;
+  advisorName: string;
   teacherName: string;
   schoolName: string;
   affiliation: string;
@@ -87,6 +159,11 @@ export interface ClassroomExportSummary {
   indicators: IndicatorDef[];
   rows: StudentExportRow[];
   stats: GradeStatistics;
+  attendanceSummary: {
+    averagePercentage: number;
+    passCount: number;
+    failCount: number;
+  };
 }
 
 /** แยกคำนำหน้า ชื่อ นามสกุล จากชื่อภาษาไทย */
@@ -230,11 +307,23 @@ export const getClassroomExportSummary = (
     code: subject === 'dt' ? 'ว 4.1' : 'ว 4.2',
   };
 
+  const totalHours = classroom.startsWith('ม.') ? 20 : 20;
+  const credit = classroom.startsWith('ม.') ? 0.5 : 1.0;
+  const advisorName = CLASSROOM_ADVISORS[classroom] || 'ครูประจำชั้น';
+
   const rows: StudentExportRow[] = grades.map((g) => {
     const { prefix, firstName, lastName } = parseThaiName(g.name);
     const b = computeBreakdown(g, classroom, subject);
     const grade = computeGrade(g, classroom, subject);
     const isPassed = ['1', '1.5', '2', '2.5', '3', '3.5', '4'].includes(grade);
+
+    const official = officialStudents2569[g.studentCode];
+    const citizenId = official?.citizenId || '';
+    const birthDate = official?.birthDate || '';
+    const fatherName = official?.fatherName || '-';
+    const motherName = official?.motherName || '-';
+
+    const att = calculateStudentAttendanceStats(classroom, g.studentCode, totalHours);
 
     const indicatorScores: Record<string, { k: number; p: string; a: boolean }> = {};
     indicators.forEach((ind) => {
@@ -260,6 +349,16 @@ export const getClassroomExportSummary = (
       classroom,
       subjectTitle: currentSubj.title,
       subjectCode: currentSubj.code,
+      citizenId,
+      birthDate,
+      fatherName,
+      motherName,
+      attendancePresent: att.present,
+      attendanceAbsent: att.absent,
+      attendanceSick: att.sick,
+      attendanceTotalHours: att.totalHours,
+      attendancePercentage: att.percentage,
+      attendanceStatus: att.status,
       indicatorScores,
       collectedK: b.k,
       collectedP: b.p,
@@ -283,11 +382,19 @@ export const getClassroomExportSummary = (
 
   const stats = calculateGradeStatistics(rows);
 
+  const totalAttPct = rows.reduce((acc, r) => acc + r.attendancePercentage, 0);
+  const averagePercentage = rows.length > 0 ? Math.round((totalAttPct / rows.length) * 10) / 10 : 100;
+  const passAttCount = rows.filter((r) => r.attendanceStatus === 'ผ่าน').length;
+  const failAttCount = rows.length - passAttCount;
+
   return {
     classroom,
     subject,
     subjectTitle: currentSubj.title,
     subjectCode: currentSubj.code,
+    credit,
+    totalHours,
+    advisorName,
     teacherName: COURSE_TEACHER_NAME,
     schoolName: SCHOOL_NAME,
     affiliation: SCHOOL_AFFILIATION,
@@ -297,6 +404,11 @@ export const getClassroomExportSummary = (
     indicators,
     rows,
     stats,
+    attendanceSummary: {
+      averagePercentage,
+      passCount: passAttCount,
+      failCount: failAttCount,
+    },
   };
 };
 

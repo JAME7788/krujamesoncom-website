@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   FileSpreadsheet, Download, Printer, Users,
-  BarChart3, FileText, X, Layers
+  BarChart3, FileText, X, Layers, Award
 } from 'lucide-react';
 import {
   getClassroomExportSummary,
@@ -11,6 +11,10 @@ import {
   downloadSchoolMisCsvFile,
   type ClassroomExportSummary,
 } from '../services/gradeExportService';
+import {
+  downloadClassroomPp5Docx,
+  downloadClassroomPp5CompleteExcel,
+} from '../services/pp5CompleteGeneratorService';
 import { allClassrooms2569 } from '../data/students2569';
 import { getSubjectsForClassroom, getGradingPolicy, type Subject } from '../services/gradeService';
 import { OfficialPp5PrintLayout } from './OfficialPp5PrintLayout';
@@ -74,6 +78,16 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
       />
     );
   }
+
+  const handleDownloadCompleteDocx = () => {
+    downloadClassroomPp5Docx(summary);
+    toast.show(`ดาวน์โหลดเล่มรายงาน Word ปพ.5 (${selectedClassroom}) สำเร็จ`, 'success');
+  };
+
+  const handleDownloadCompleteExcel = () => {
+    downloadClassroomPp5CompleteExcel(summary);
+    toast.show(`ดาวน์โหลดเล่ม Excel ปพ.5 สมบูรณ์ 7 ชีต (${selectedClassroom}) สำเร็จ`, 'success');
+  };
 
   const handleDownloadExcel = () => {
     downloadClassroomExcelFile(selectedClassroom, activeSubject);
@@ -155,15 +169,34 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
           )}
         </div>
 
+        {/* Hero Banner: เล่ม ปพ.5 ฉบับสมบูรณ์ (Excel & Word) */}
+        <div className="official-complete-banner">
+          <div className="banner-left">
+            <div className="banner-badge"><Award size={15} /> มาตรฐาน สพฐ. 2569</div>
+            <h3>เล่มรายงาน ปพ.5 ฉบับสมบูรณ์ (Excel &amp; Word)</h3>
+            <p>
+              ดึงข้อมูลสดจาก Gradebook + เช็คชื่อ 20 สัปดาห์ ครบ 7 หมวด: หน้าปก (สูตร COUNTIF), ข้อมูลนักเรียน (เลข ปชช. 13 หลัก, วันเกิด, บิดา/มารดา), ตัวชี้วัด, เวลาเรียน, สรุปคะแนน K/P/A, คุณลักษณะ, อ่านคิดเขียน และลายมือชื่อ 4 ฝ่าย
+            </p>
+          </div>
+          <div className="banner-actions">
+            <button type="button" className="btn-banner-action btn-banner-word" onClick={handleDownloadCompleteDocx}>
+              <FileText size={18} /> ดาวน์โหลดเล่ม Word (.doc/.docx)
+            </button>
+            <button type="button" className="btn-banner-action btn-banner-excel" onClick={handleDownloadCompleteExcel}>
+              <FileSpreadsheet size={18} /> ดาวน์โหลดเล่ม Excel (7 ชีต สพฐ.)
+            </button>
+          </div>
+        </div>
+
         {/* Main Action Grid */}
         <div className="export-action-grid">
           {/* Card 1: Excel Format */}
           <div className="action-card primary-card">
             <div className="action-card-top">
               <div className="action-icon excel-icon"><FileSpreadsheet size={22} /></div>
-              <span className="card-badge">ยอดนิยมสำหรับ รร.</span>
+              <span className="card-badge">ตารางคะแนน</span>
             </div>
-            <h3>สเปรดชีต Excel ปพ.5</h3>
+            <h3>สเปรดชีตสรุปคะแนน</h3>
             <p>ไฟล์ .xls จัดหัวตาราง สีสัน ขอบเส้น และสถิติวัดผล เปิดใน Microsoft Excel หรือ Google Sheets ได้ทันที</p>
             <div className="action-btn-group">
               <button type="button" className="btn-action btn-excel" onClick={handleDownloadExcel}>
@@ -230,6 +263,7 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
             <div className="quick-stats-pills">
               <span className="pill">เฉลี่ย: <strong>{summary.stats.meanScore}</strong></span>
               <span className="pill">S.D.: <strong>{summary.stats.sdScore}</strong></span>
+              <span className="pill pill-success">เวลาเรียน: <strong>{summary.attendanceSummary.averagePercentage}%</strong></span>
               <span className="pill pill-success">เกรด 3 ขึ้นไป: <strong>{summary.stats.qualityPercentage}%</strong></span>
               <span className="pill pill-pass">ผ่านเกณฑ์: <strong>{summary.stats.passPercentage}%</strong></span>
             </div>
@@ -262,7 +296,9 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
                 <tr>
                   <th>เลขที่</th>
                   <th>รหัส</th>
+                  <th>เลข ปชช. 13 หลัก</th>
                   <th>ชื่อ - นามสกุล</th>
+                  <th>เวลาเรียน</th>
                   <th>คะแนนเก็บ ({weights.COLLECTED})</th>
                   <th>สอบ ({weights.EXAM})</th>
                   <th>รวม ({weights.TOTAL})</th>
@@ -276,7 +312,13 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
                   <tr key={r.studentCode}>
                     <td>{r.studentNo}</td>
                     <td><code>{r.studentCode}</code></td>
+                    <td><small style={{ fontFamily: 'monospace', color: '#475569' }}>{r.citizenId || '-'}</small></td>
                     <td className="text-left font-sarabun">{r.fullName}</td>
+                    <td>
+                      <span className={`eval-tag ${r.attendanceStatus === 'ผ่าน' ? 'eval-pass' : 'eval-fail'}`} style={{ fontSize: '0.75rem' }}>
+                        {r.attendancePercentage}% ({r.attendanceStatus})
+                      </span>
+                    </td>
                     <td>{r.totalCollected}</td>
                     <td>{r.totalExam}</td>
                     <td><strong>{r.totalScore}</strong></td>
@@ -434,6 +476,90 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
           color: white;
           border-color: #4f46e5;
           box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+        }
+
+        .official-complete-banner {
+          margin: 14px 24px 0;
+          padding: 16px 20px;
+          background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%);
+          border-radius: 14px;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          box-shadow: 0 4px 14px rgba(49, 46, 129, 0.25);
+        }
+
+        .banner-left {
+          flex: 1;
+        }
+
+        .banner-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(255, 255, 255, 0.18);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 20px;
+          padding: 3px 10px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          margin-bottom: 6px;
+        }
+
+        .banner-left h3 {
+          font-size: 1.15rem;
+          font-weight: 700;
+          margin: 0 0 4px 0;
+          color: #f8fafc;
+        }
+
+        .banner-left p {
+          font-size: 0.82rem;
+          color: #c7d2fe;
+          margin: 0;
+          line-height: 1.4;
+        }
+
+        .banner-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 250px;
+        }
+
+        .btn-banner-action {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 9px 16px;
+          border-radius: 10px;
+          font-size: 0.88rem;
+          font-weight: 700;
+          cursor: pointer;
+          border: none;
+          transition: all 0.15s ease;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-banner-word {
+          background: #ffffff;
+          color: #1e3a8a;
+        }
+        .btn-banner-word:hover {
+          background: #f1f5f9;
+          transform: translateY(-1px);
+        }
+
+        .btn-banner-excel {
+          background: #10b981;
+          color: white;
+        }
+        .btn-banner-excel:hover {
+          background: #059669;
+          transform: translateY(-1px);
         }
 
         .export-action-grid {

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Play, Trophy, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Trash2, Repeat } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import ScaffoldingHintLadder, { type ScaffoldingTiers } from '../../components/ScaffoldingHintLadder';
+import BloomTaxonomyBadge from '../../components/BloomTaxonomyBadge';
 import './GameStyles.css';
 import './CodingMaze.css';
 
@@ -15,6 +17,7 @@ interface Level {
   goal: [number, number];
   maxBlocks: number;
   hint?: string;
+  difficulty?: 'easy' | 'medium' | 'hard' | 'master';
 }
 
 // '#' = กำแพง, '.' = ทางเดิน, 'S' = เริ่ม, 'G' = เป้าหมาย, '*' = ดาว (โบนัส)
@@ -36,6 +39,7 @@ const parseGrid = (rows: string[]): { grid: Cell[][]; start: [number, number]; g
 const levels: Level[] = [
   {
     name: 'ก้าวแรก',
+    difficulty: 'easy',
     ...parseGrid([
       '######',
       '#S..G#',
@@ -46,6 +50,7 @@ const levels: Level[] = [
   },
   {
     name: 'หักมุม',
+    difficulty: 'easy',
     ...parseGrid([
       '#######',
       '#S....#',
@@ -58,6 +63,7 @@ const levels: Level[] = [
   },
   {
     name: 'เก็บดาวก่อน!',
+    difficulty: 'easy',
     ...parseGrid([
       '########',
       '#S...*.#',
@@ -71,6 +77,7 @@ const levels: Level[] = [
   },
   {
     name: 'ซิกแซก',
+    difficulty: 'easy',
     ...parseGrid([
       '########',
       '#S.#..G#',
@@ -83,6 +90,7 @@ const levels: Level[] = [
   },
   {
     name: 'เก็บดาวคู่',
+    difficulty: 'easy',
     ...parseGrid([
       '#########',
       '#S..*...#',
@@ -95,6 +103,7 @@ const levels: Level[] = [
   },
   {
     name: 'อุโมงค์เขาวงกต',
+    difficulty: 'medium',
     ...parseGrid([
       '##########',
       '#S........#',
@@ -107,6 +116,7 @@ const levels: Level[] = [
   },
   {
     name: 'หมุนรอบตัว',
+    difficulty: 'medium',
     ...parseGrid([
       '#######',
       '#S.*.G#',
@@ -119,6 +129,7 @@ const levels: Level[] = [
   },
   {
     name: 'เลือกทางที่ไม่ตัน',
+    difficulty: 'medium',
     ...parseGrid([
       '#########',
       '#S..#...#',
@@ -132,6 +143,7 @@ const levels: Level[] = [
   },
   {
     name: 'สามดาวสามมุม',
+    difficulty: 'medium',
     ...parseGrid([
       '#########',
       '#S..*...#',
@@ -146,6 +158,7 @@ const levels: Level[] = [
   },
   {
     name: 'ทางลวงสองด้าน',
+    difficulty: 'medium',
     ...parseGrid([
       '##########',
       '#S.......#',
@@ -160,6 +173,7 @@ const levels: Level[] = [
   },
   {
     name: 'เก็บดาวใต้เขาวงกต',
+    difficulty: 'hard',
     ...parseGrid([
       '#########',
       '#S#....G#',
@@ -174,6 +188,7 @@ const levels: Level[] = [
   },
   {
     name: 'ภารกิจรอบกำแพง',
+    difficulty: 'hard',
     ...parseGrid([
       '###########',
       '#S..#.....#',
@@ -185,6 +200,136 @@ const levels: Level[] = [
     ]),
     maxBlocks: 40,
     hint: 'เก็บดาวล่างซ้ายก่อน เดินตามทางไปดาวกลาง แล้วอ้อมขึ้นด้านบนเพื่อไปเป้าหมาย',
+  },
+  {
+    name: 'สะพานสองฝั่ง',
+    difficulty: 'hard',
+    ...parseGrid([
+      '###########',
+      '#S...#...*#',
+      '#..#.#.#..#',
+      '##.#...#.##',
+      '#*...#...G#',
+      '###########',
+    ]),
+    maxBlocks: 30,
+    hint: 'วางแผนข้ามสะพานเชื่อมสองฝั่ง เก็บ ⭐ ให้ครบแล้วเข้าเส้นชัย',
+  },
+  {
+    name: 'สี่ห้องปริศนา',
+    difficulty: 'hard',
+    ...parseGrid([
+      '#############',
+      '#S...#.....*#',
+      '#.##.#.###..#',
+      '#....#...#..#',
+      '####.###.#.##',
+      '#*.......#..#',
+      '###.######.G#',
+      '#############',
+    ]),
+    maxBlocks: 35,
+    hint: 'เดินลัดเลาะข้ามระหว่าง 4 โซนห้อง ระวังทางตันด้านบน',
+  },
+  {
+    name: 'เกาะแก่งสามดาว',
+    difficulty: 'hard',
+    ...parseGrid([
+      '#############',
+      '#S.*...#...*#',
+      '####.#.#.##.#',
+      '#....#...#..#',
+      '#.####.###.##',
+      '#*...#.....G#',
+      '#############',
+    ]),
+    maxBlocks: 35,
+    hint: 'เก็บดาวตามเกาะแต่ละจุด แล้วอ้อมแนวหินสู่เส้นชัย G',
+  },
+  {
+    name: 'บันไดหกขั้น',
+    difficulty: 'master',
+    ...parseGrid([
+      '############',
+      '#S...#.....#',
+      '#.##.#.###.#',
+      '#..#...#*..#',
+      '##.#####.#.#',
+      '#*...#...#.#',
+      '#.##.#.###.#',
+      '#....#....G#',
+      '############',
+    ]),
+    maxBlocks: 35,
+    hint: 'เดินซิกแซกตามขั้นบันได เก็บดาวกลางและดาวซ้ายล่างให้ครบ',
+  },
+  {
+    name: 'เขาวงกตเกลียวคู่',
+    difficulty: 'master',
+    ...parseGrid([
+      '############',
+      '#S........*#',
+      '#.########.#',
+      '#.#......#.#',
+      '#.#.####.#.#',
+      '#*..#*G#.#.#',
+      '#.###..#.#.#',
+      '#..........#',
+      '############',
+    ]),
+    maxBlocks: 45,
+    hint: 'เดินเลาะวงกตชั้นนอกเพื่อเก็บดาว 2 ดวง ก่อนมุ่งหน้าสู่วงกตชั้นใน',
+  },
+  {
+    name: 'ตาข่ายดาวแปดทิศ',
+    difficulty: 'master',
+    ...parseGrid([
+      '#############',
+      '#S..*#...*..#',
+      '#.##.#.###..#',
+      '#....#.#....#',
+      '####.#.#.####',
+      '#*...#.#...*#',
+      '#.####.###..#',
+      '#..........G#',
+      '#############',
+    ]),
+    maxBlocks: 45,
+    hint: 'ใช้ Loop ทำซ้ำก้าวเดินให้มีประสิทธิภาพเพื่อเก็บ ⭐ ให้ครบทั้ง 4 ทิศ',
+  },
+  {
+    name: 'วังวนอัลกอริทึม',
+    difficulty: 'master',
+    ...parseGrid([
+      '#############',
+      '#S....#....*#',
+      '#.###.#.###.#',
+      '#...#...#...#',
+      '###.#####.###',
+      '#*..#...#..*#',
+      '#.###.#.###.#',
+      '#.....#....G#',
+      '#############',
+    ]),
+    maxBlocks: 45,
+    hint: 'วิเคราะห์รูปแบบการเดินแบบสมมาตร แล้วนำทางหุ่นยนต์ไปยังเป้าหมาย',
+  },
+  {
+    name: 'วิหารปรมาจารย์โค้ด',
+    difficulty: 'master',
+    ...parseGrid([
+      '##############',
+      '#S...#.*..#..#',
+      '#.##.#.##.#..#',
+      '#.#..#.......#',
+      '#.#.######.#.#',
+      '#.#...*....#.#',
+      '#.####.####..#',
+      '#*...#....#*G#',
+      '##############',
+    ]),
+    maxBlocks: 50,
+    hint: 'ด่านสุดยอดของยอดนักโค้ด! วางแผนลำดับขั้นตอนอย่างแม่นยำเพื่อพิชิตด่านที่ 20',
   },
 ];
 
@@ -198,6 +343,7 @@ const CodingMaze: React.FC = () => {
   const [solved, setSolved] = useState<boolean[]>(() => Array(levels.length).fill(false));
   const [message, setMessage] = useState<string>('');
   const [stepIdx, setStepIdx] = useState(-1);
+  const [diffFilter, setDiffFilter] = useState<'all' | 'easy' | 'medium' | 'hard' | 'master'>('all');
   const recordGame = useGameProgress('coding-maze', 'Coding Maze');
 
   const level = levels[levelIdx];
@@ -341,6 +487,16 @@ const CodingMaze: React.FC = () => {
 
   const arrowEmoji: Record<Cmd, string> = { up: '↑', down: '↓', left: '←', right: '→' };
 
+  const getScaffoldingTiersForLevel = (l: Level): ScaffoldingTiers => {
+    return {
+      observation: `สังเกตจุดเริ่มต้น S และธงเป้าหมาย 🏁 รวมถึงดวงดาว ⭐ บนตาราง หลีกเลี่ยงกำแพงสีเข้ม #`,
+      strategy: `วางแผนทิศทางเพื่อพาหุ่นยนต์เดินไปตามช่องทางเดิน ${l.hint ? `(แนวทาง: ${l.hint.split('→')[0] || l.hint})` : ''}`,
+      scaffold: l.hint
+        ? `ลำดับคำสั่งแนะนำ: ${l.hint}`
+        : `เริ่มจากการเดินในทิศทางแรก 1-2 ช่อง แล้วเปลี่ยนทิศทางเพื่อมุ่งหน้าสู่เป้าหมาย`,
+    };
+  };
+
   return (
     <div className="game-page">
       <div className="game-topbar">
@@ -357,8 +513,27 @@ const CodingMaze: React.FC = () => {
       <div className="maze-container">
         {/* Maze grid */}
         <div className="maze-side">
-          <h3>🗺️ ด่าน {levelIdx + 1}: {level.name}</h3>
-          {level.hint && <p className="maze-hint">💡 {level.hint}</p>}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+            <h3 style={{ margin: 0 }}>
+              🗺️ ด่าน {levelIdx + 1}: {level.name}{' '}
+              <span style={{
+                fontSize: '0.75rem',
+                fontWeight: 'normal',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                verticalAlign: 'middle',
+                background: level.difficulty === 'master' ? '#f3e8ff' : level.difficulty === 'hard' ? '#ffedd5' : level.difficulty === 'medium' ? '#e0f2fe' : '#dcfce7',
+                color: level.difficulty === 'master' ? '#7e22ce' : level.difficulty === 'hard' ? '#c2410c' : level.difficulty === 'medium' ? '#0369a1' : '#15803d',
+              }}>
+                {level.difficulty === 'master' ? '🟣 ปรมาจารย์' : level.difficulty === 'hard' ? '🟠 ท้าทาย' : level.difficulty === 'medium' ? '🔵 ปานกลาง' : '🟢 ง่าย'}
+              </span>
+            </h3>
+            <BloomTaxonomyBadge level="apply" size="sm" />
+          </div>
+          <ScaffoldingHintLadder
+            tiers={getScaffoldingTiersForLevel(level)}
+            levelName={`ด่านที่ ${levelIdx + 1}`}
+          />
           <div
             className="maze-grid"
             style={{
@@ -453,17 +628,48 @@ const CodingMaze: React.FC = () => {
 
       {/* Level navigation */}
       <div className="level-nav">
-        <h4>เลือกด่าน:</h4>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+          <h4>เลือกด่าน (1-{levels.length}):</h4>
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            {(['all', 'easy', 'medium', 'hard', 'master'] as const).map((diff) => (
+              <button
+                key={diff}
+                type="button"
+                onClick={() => setDiffFilter(diff)}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  border: diffFilter === diff ? '2px solid #6366f1' : '1px solid #cbd5e1',
+                  background: diffFilter === diff ? '#6366f1' : '#fff',
+                  color: diffFilter === diff ? '#fff' : '#475569',
+                  fontSize: '0.78rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                }}
+              >
+                {diff === 'all' && 'ทั้งหมด (20)'}
+                {diff === 'easy' && '🟢 ง่าย'}
+                {diff === 'medium' && '🔵 ปานกลาง'}
+                {diff === 'hard' && '🟠 ท้าทาย'}
+                {diff === 'master' && '🟣 ปรมาจารย์'}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="level-pills">
-          {levels.map((l, i) => (
-            <button
-              key={i}
-              className={`level-pill ${i === levelIdx ? 'active' : ''} ${solved[i] ? 'solved' : ''}`}
-              onClick={() => selectLevel(i)}
-            >
-              {solved[i] && '✓ '}ด่าน {i + 1}: {l.name}
-            </button>
-          ))}
+          {levels.map((l, i) => {
+            if (diffFilter !== 'all' && l.difficulty !== diffFilter) return null;
+            return (
+              <button
+                key={i}
+                className={`level-pill ${i === levelIdx ? 'active' : ''} ${solved[i] ? 'solved' : ''}`}
+                onClick={() => selectLevel(i)}
+                title={`${l.name} (${l.difficulty})`}
+              >
+                {solved[i] && '✓ '}ด่าน {i + 1}: {l.name}
+              </button>
+            );
+          })}
         </div>
       </div>
 

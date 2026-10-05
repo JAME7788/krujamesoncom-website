@@ -103,13 +103,15 @@ const RosterSpinner: React.FC<RosterSpinnerProps> = ({
   const lastTickIndexRef = useRef(-1);
 
   // Sync initialClass when prop changes
-  useEffect(() => {
+  const [prevInitialClass, setPrevInitialClass] = useState(initialClass);
+  if (initialClass !== prevInitialClass) {
+    setPrevInitialClass(initialClass);
     if (initialClass && classrooms.includes(initialClass)) {
       setSelectedClass(initialClass);
       setExcludedIds(new Set());
       setWinner(null);
     }
-  }, [initialClass, classrooms]);
+  }
 
   const currentRoster = useMemo(() => {
     return loadRoster(selectedClass);

@@ -6,11 +6,17 @@ import {
   updateManualAssessmentScore,
   applyManualAssessmentsToGrades,
   loadGrades,
+  computeTotal,
   deleteManualAssessment,
 } from './gradeService';
 import type { Subject, AssessmentCategory } from './gradeService';
+import { loadRoster } from './rosterService';
 import { recordLearningEvidence } from './learningEvidenceService';
 import { writeAuditLog } from './auditLogService';
+
+export type AssignmentDifficulty = 'foundation' | 'standard' | 'advanced';
+export type AssignmentTargetType = 'all' | 'ability_tier' | 'specific_students';
+export type AbilityTier = 'intervention' | 'developing' | 'proficient' | 'advanced';
 
 export interface Assignment {
   id: string;
@@ -34,6 +40,37 @@ export interface Assignment {
   linkedKnowledgeAssessmentId?: string;
   linkedPracticeAssessmentId?: string;
   lessonPlanId?: string;
+
+  // --- Personalized Assignment Extensions ---
+  /** ระดับความยาก: foundation (พื้นฐาน/มีคำใบ้), standard (มาตรฐาน), advanced (ท้าทาย/ต่อยอด) */
+  difficulty?: AssignmentDifficulty;
+  /** กลุ่มเป้าหมาย: all (ทุกคน), ability_tier (ตามระดับศักยภาพ), specific_students (เจาะจงรายคน) */
+  targetType?: AssignmentTargetType;
+  /** ระดับความสามารถเป้าหมายเมื่อ targetType === 'ability_tier' */
+  targetTier?: AbilityTier;
+  /** รายชื่อ studentId หรือ studentCode ที่ได้รับมอบหมายเมื่อ targetType === 'specific_students' */
+  targetStudentIds?: string[];
+  /** คำใบ้และแนวทางช่วยเหลือทีละขั้นตอน (Scaffolding Hints) */
+  hints?: string[];
+  /** เหตุผลที่ระบบหรือครูแนะนำภารกิจนี้ */
+  recommendedReason?: string;
+  /** คะแนนพิเศษ Bonus XP สำหรับภารกิจท้าทาย */
+  bonusPoints?: number;
+  /** Alternatives share one assessment and count as one task. */
+  personalizedPackId?: string;
+  /** ระบุว่าเป็นงานโครงงานกระบวนการคิดเชิงออกแบบ (Design Thinking: ว 4.1) หรือไม่ */
+  isDesignThinking?: boolean;
+}
+
+export interface DesignThinkingSteps {
+  /** 1. ขั้น Define & Empathize: ปัญหาที่ต้องการแก้ และกลุ่มเป้าหมาย */
+  define?: string;
+  /** 2. ขั้น Ideate: แนวคิดสร้างสรรค์และทางเลือกในการแก้ปัญหา */
+  ideate?: string;
+  /** 3. ขั้น Prototype: ลิงก์ชิ้นงานต้นแบบ (Canva, Scratch, Code, หรือไฟล์) */
+  prototypeUrl?: string;
+  /** 4. ขั้น Test: ผลการทดสอบจากเพื่อน/ครู และจุดที่ควรนำไปปรับปรุง */
+  testFeedback?: string;
 }
 
 export interface Submission {
@@ -53,6 +90,8 @@ export interface Submission {
   pScore?: number;
   feedback?: string;
   reviewedAt?: number;
+  /** ข้อมูลโครงงาน Design Thinking 4 ขั้น (ถ้ามี) */
+  designThinkingSteps?: DesignThinkingSteps;
 }
 
 const ASS_KEY = 'krujames_assignments_v1';
@@ -86,12 +125,12 @@ export const loadAssignments = (): Assignment[] => loadCache(ASS_KEY, []);
 export const loadSubmissions = (): Submission[] => loadCache(SUB_KEY, []);
 
 const saveAssignmentRemote = async (assignment: Assignment) => {
-  if (!firebaseAvailable()) throw new Error('Firebase ยังไม่ได้ตั้งค่า');
+  if (!firebaseAvailable()) return;
   await setDoc(doc(db, ASS_COLLECTION, assignment.id), cleanForFirestore(assignment));
 };
 
 const saveSubmissionRemote = async (submission: Submission) => {
-  if (!firebaseAvailable()) throw new Error('Firebase ยังไม่ได้ตั้งค่า');
+  if (!firebaseAvailable()) return;
   const remote = { ...submission };
   delete remote.contentData;
   await setDoc(doc(db, SUB_COLLECTION, submission.id), cleanForFirestore(remote));
@@ -140,9 +179,10 @@ export const fetchSubmissionsFromFirebase = async (): Promise<Submission[]> => {
 export const createAssignment = async (
   data: Omit<Assignment, 'id' | 'createdAt'>,
 ): Promise<Assignment> => {
+  if (data.targetType === 'specific_students' && !data.targetStudentIds?.length) throw new Error('กรุณาเลือกนักเรียนอย่างน้อย 1 คน');
   const assignment: Assignment = { ...data, id: uid(), createdAt: Date.now() };
 
-  if (assignment.classroom && assignment.subject && assignment.indicatorId && assignment.category) {
+  if (!assignment.linkedKnowledgeAssessmentId && !assignment.linkedPracticeAssessmentId && assignment.classroom && assignment.subject && assignment.indicatorId && assignment.category) {
     const groupId = assignment.id;
     const kMax = Math.max(0, assignment.knowledgeMaxScore || 0);
     const pMax = Math.max(0, assignment.practiceMaxScore || 0);
@@ -221,7 +261,7 @@ export const deleteAssignment = async (id: string): Promise<void> => {
       target.linkedAssessmentId,
       target.linkedKnowledgeAssessmentId,
       target.linkedPracticeAssessmentId,
-    ].filter((assessmentId): assessmentId is string => Boolean(assessmentId))
+    ].filter((assessmentId): assessmentId is string => Boolean(assessmentId) && !list.some(a => a.id !== id && [a.linkedAssessmentId, a.linkedKnowledgeAssessmentId, a.linkedPracticeAssessmentId].includes(assessmentId)))
       .forEach((assessmentId) => {
         deleteManualAssessment(target.classroom, target.subject!, assessmentId);
       });
@@ -259,21 +299,256 @@ export const updateAssignment = async (id: string, patch: Partial<Assignment>): 
   return updated;
 };
 
-export const getAssignmentsForStudent = (classroom: string): Assignment[] => (
-  loadAssignments().filter((assignment) => !assignment.classroom || assignment.classroom === classroom)
-);
+/**
+ * คำนวณระดับความพร้อมของผู้เรียน (Ability Tier) จากผลการเรียนในห้องเรียน
+ */
+export const calculateStudentAbilityTier = (classroom: string, studentIdentifier?: string | number): AbilityTier => {
+  if (!classroom || !studentIdentifier) return 'proficient';
+  try {
+    const grades = loadGrades(classroom);
+    const identifierStr = String(studentIdentifier);
+    const student = grades.find((g) =>
+      g.studentCode === identifierStr ||
+      g.studentNo === Number(studentIdentifier) ||
+      (typeof studentIdentifier === 'string' && (studentIdentifier.includes(g.name.replace(/\s/g, '')) || identifierStr === `${classroom}_${g.studentNo}_${g.name.replace(/\s/g, '')}`))
+    );
+    if (student) {
+      const pct = computeTotal(student, classroom);
+      if (typeof pct === 'number' && !Number.isNaN(pct)) {
+        if (pct >= 80) return 'advanced';
+        if (pct >= 65) return 'proficient';
+        if (pct >= 45) return 'developing';
+        return 'intervention';
+      }
+    }
+  } catch (e) {
+    console.warn('calculateStudentAbilityTier failed', e);
+  }
+  return 'proficient';
+};
+
+/**
+ * แนะนำระดับความยากที่เหมาะสมกับผู้เรียน
+ */
+export const getRecommendedDifficulty = (tier: AbilityTier): AssignmentDifficulty => {
+  if (tier === 'advanced') return 'advanced';
+  if (tier === 'intervention' || tier === 'developing') return 'foundation';
+  return 'standard';
+};
+
+/**
+ * ดึงรายการงานสำหรับนักเรียนคนหนึ่งๆ โดยคำนึงถึงการมอบหมายงานเฉพาะบุคคล
+ */
+export const getAssignmentsForStudent = (
+  classroom: string,
+  studentId?: string,
+  studentNo?: number,
+): Assignment[] => {
+  const all = loadAssignments().filter(
+    (assignment) => !assignment.classroom || assignment.classroom === classroom
+  );
+  if (!studentId && studentNo === undefined) {
+    return all.filter(a => !a.targetType || a.targetType === 'all');
+  }
+  const studentCode = loadRoster(classroom).find(s => studentId === s.studentCode || studentId === `${classroom}_${s.no}_${s.name.replace(/\s/g, '')}`)?.studentCode;
+
+  const studentTier = calculateStudentAbilityTier(classroom, studentId || studentNo);
+
+  return all.filter((assignment) => {
+    // 1. ถ้าระบุตัวนักเรียนเฉพาะเจาะจง (Specific Students)
+    if (assignment.targetType === 'specific_students') {
+      const targets = assignment.targetStudentIds || [];
+      if (targets.length === 0) return false;
+      return targets.some((target) => {
+        const t = String(target).trim();
+        if (!t) return false;
+        if (studentNo !== undefined && (t === String(studentNo) || t === `no_${studentNo}` || t === `#${studentNo}`)) {
+          return true;
+        }
+        if (studentId) {
+          if (t === studentId || t === studentCode) return true;
+          const parts = studentId.split('_');
+          const noPart = parts[1];
+          const namePart = parts.slice(2).join('_');
+          if (noPart && (t === noPart || t === `no_${noPart}`)) return true;
+          if (namePart && t === namePart) return true;
+        }
+        return false;
+      });
+    }
+
+    // 2. ถ้ามอบหมายตามกลุ่มความสามารถ (Ability Tier)
+    if (assignment.targetType === 'ability_tier' && assignment.targetTier) {
+      return assignment.targetTier === studentTier;
+    }
+
+    // 3. ทั่วไป: ทุกคนเห็นได้
+    return true;
+  });
+};
+
+/**
+ * ตัวช่วยสร้างชุดงาน 3 ระดับ (Differentiated 3-Tier Assignment Pack) อัตโนมัติในคลิกเดียว
+ */
+export const generate3TierAssignments = async (options: {
+  classroom: string;
+  subject: Subject;
+  indicatorId: string;
+  topic: string;
+  dueDate: string;
+  lessonPlanId?: string;
+  category?: AssessmentCategory;
+  knowledgeMaxScore?: number;
+  practiceMaxScore?: number;
+  resourceUrl?: string;
+}): Promise<Assignment[]> => {
+  const kMax = options.knowledgeMaxScore ?? 5;
+  const pMax = options.practiceMaxScore ?? 5;
+  const cat = options.category ?? 'k';
+
+  // 1. ระดับพื้นฐาน (Foundation Tier) - มีคำใบ้ช่วยฝึกทีละขั้น
+  const foundationDraft: Omit<Assignment, 'id' | 'createdAt'> = {
+    title: `[ระดับพื้นฐาน] ${options.topic}`,
+    description: `ฝึกความรู้และทักษะพื้นฐานเรื่อง "${options.topic}" เน้นทำความเข้าใจแนวคิดหลัก ทำตามตัวอย่างและศึกษาคำใบ้ช่วยคิดทีละขั้นตอน`,
+    classroom: options.classroom,
+    subject: options.subject,
+    indicatorId: options.indicatorId,
+    lessonPlanId: options.lessonPlanId,
+    category: cat,
+    dueDate: options.dueDate,
+    maxScore: kMax + pMax,
+    knowledgeMaxScore: kMax,
+    practiceMaxScore: pMax,
+    resourceUrl: options.resourceUrl,
+    difficulty: 'foundation',
+    targetType: 'all',
+    targetTier: 'developing',
+    recommendedReason: 'เหมาะสำหรับผู้ที่ต้องการทบทวนและปูพื้นฐานความเข้าใจ มีคำใบ้ช่วยทีละขั้น',
+    hints: [
+      'ขั้นตอนที่ 1: ทบทวนคำศัพท์และตัวอย่างจากสไลด์บทเรียนในระบบ',
+      'ขั้นตอนที่ 2: เริ่มต้นทดลองจากโจทย์ข้อที่ง่ายที่สุดตามตัวอย่างก่อน',
+      'ขั้นตอนที่ 3: ตรวจสอบความถูกต้องของคำตอบก่อนกดยืนยันส่งงาน',
+    ],
+    createdBy: 'teacher',
+  };
+
+  // 2. ระดับมาตรฐาน (Standard Tier) - ตรงตามตัวชี้วัดหลักสูตร
+  const standardDraft: Omit<Assignment, 'id' | 'createdAt'> = {
+    title: `[ระดับมาตรฐาน] ${options.topic}`,
+    description: `ภารกิจฝึกปฏิบัติและประยุกต์ใช้ความรู้เรื่อง "${options.topic}" เพื่อแก้ปัญหาตามเกณฑ์ตัวชี้วัดมาตรฐานของหลักสูตร`,
+    classroom: options.classroom,
+    subject: options.subject,
+    indicatorId: options.indicatorId,
+    lessonPlanId: options.lessonPlanId,
+    category: cat,
+    dueDate: options.dueDate,
+    maxScore: kMax + pMax,
+    knowledgeMaxScore: kMax,
+    practiceMaxScore: pMax,
+    resourceUrl: options.resourceUrl,
+    difficulty: 'standard',
+    targetType: 'all',
+    targetTier: 'proficient',
+    recommendedReason: 'ภารกิจระดับมาตรฐานตามเกณฑ์ตัวชี้วัด สพฐ.',
+    hints: [
+      'แนะนำให้วางแผนลำดับขั้นตอนก่อนลงมือปฏิบัติ และทดสอบด้วยตนเองอย่างน้อย 1 ครั้ง',
+    ],
+    createdBy: 'teacher',
+  };
+
+  // 3. ระดับท้าทายต่อยอด (Advanced Tier) - แก้ปัญหาเชิงลึก & Bonus XP
+  const advancedDraft: Omit<Assignment, 'id' | 'createdAt'> = {
+    title: `[ระดับท้าทาย] ${options.topic} (ต่อยอดสร้างสรรค์)`,
+    description: `ภารกิจท้าทายความคิดสร้างสรรค์เรื่อง "${options.topic}" แก้ปัญหาในชีวิตจริง ออกแบบแนวคิดใหม่ หรือสร้างนวัตกรรม พร้อมรับ Bonus XP เพิ่มเติม`,
+    classroom: options.classroom,
+    subject: options.subject,
+    indicatorId: options.indicatorId,
+    lessonPlanId: options.lessonPlanId,
+    category: cat,
+    dueDate: options.dueDate,
+    maxScore: kMax + pMax,
+    knowledgeMaxScore: kMax,
+    practiceMaxScore: pMax,
+    resourceUrl: options.resourceUrl,
+    difficulty: 'advanced',
+    targetType: 'all',
+    targetTier: 'advanced',
+    bonusPoints: 2,
+    recommendedReason: 'เหมาะสำหรับผู้ที่มีทักษะคล่องแคล่วและต้องการความท้าทายระดับสูง พร้อมรับ Bonus XP',
+    hints: [
+      'ลองคิดค้นฟังก์ชันหรือเพิ่มลูกเล่นพิเศษที่แตกต่างจากตัวอย่างในบทเรียน',
+      'เขียนสรุปแนวคิดการออกแบบ (Design Rationale) แนบมาพร้อมผลงาน',
+    ],
+    createdBy: 'teacher',
+  };
+
+  if (options.classroom === 'ป.1' && /ลำดับ|ขั้นตอน/.test(options.topic)) {
+    foundationDraft.description = 'เรียงขั้นตอนแปรงฟัน 3 ขั้นให้ถูกต้อง: แปรงฟัน / บ้วนปาก / บีบยาสีฟัน เขียนเป็น 1 → 2 → 3 แล้วบอกว่าเหตุใดต้องเริ่มขั้นตอนนั้น';
+    foundationDraft.hints = ['เริ่มด้วยเตรียมแปรงและบีบยาสีฟัน', 'ลองทำท่าประกอบทีละขั้น ก่อนเรียงคำตอบ'];
+    standardDraft.description = 'เขียนขั้นตอนเตรียมตัวมาโรงเรียน 5 ขั้น เรียงตั้งแต่ตื่นนอนจนพร้อมออกจากบ้าน แล้วอธิบายว่าถ้าสลับสองขั้นจะเกิดอะไรขึ้น';
+    advancedDraft.description = 'ตรวจลำดับนี้: ใส่รองเท้า → ใส่ถุงเท้า → เดินออกจากบ้าน แก้ให้ถูกต้อง อธิบายเหตุผล แล้วสร้างลำดับกิจวัตรของตนเองอีก 5 ขั้น';
+    for (const draft of [foundationDraft, standardDraft, advancedDraft]) draft.description += '\nเกณฑ์ร่วม: K 5 คะแนน อธิบายเหตุผลของลำดับได้ / P 5 คะแนน เรียงขั้นตอนและตรวจแก้ได้';
+  }
+  const packId = uid();
+  for (const draft of [foundationDraft, standardDraft, advancedDraft]) {
+    draft.personalizedPackId = packId;
+    draft.bonusPoints = undefined;
+    draft.description = draft.description.replace(' พร้อมรับ Bonus XP เพิ่มเติม', '');
+    draft.recommendedReason = 'งานในชุดเดียวกัน เลือกทำหนึ่งทางเลือก ใช้เกณฑ์คะแนนเดียวกัน และใช้คำใบ้ได้โดยไม่หักคะแนน';
+  }
+  const a1 = await createAssignment(foundationDraft);
+  for (const draft of [standardDraft, advancedDraft]) {
+    draft.linkedKnowledgeAssessmentId = a1.linkedKnowledgeAssessmentId;
+    draft.linkedPracticeAssessmentId = a1.linkedPracticeAssessmentId;
+  }
+  const a2 = await createAssignment(standardDraft);
+  const a3 = await createAssignment(advancedDraft);
+
+  return [a1, a2, a3];
+};
+
+/** Recommend from the most recent reviewed work for this skill, never total grades. */
+export const recommendAssignment = (assignment: Assignment, studentId: string): { difficulty: AssignmentDifficulty; reason: string } => {
+  const related = new Set(loadAssignments().filter(a => a.classroom === assignment.classroom && a.subject === assignment.subject && a.indicatorId === assignment.indicatorId).map(a => a.id));
+  const previous = loadSubmissions().filter(s => s.studentId === studentId && related.has(s.assignmentId) && s.reviewedAt && Number.isFinite(s.score)).sort((a,b) => (b.reviewedAt || 0) - (a.reviewedAt || 0))[0];
+  const task = previous && loadAssignments().find(a => a.id === previous.assignmentId);
+  if (!task || task.maxScore <= 0) return { difficulty: 'standard', reason: 'ยังไม่มีผลประเมินทักษะนี้ เริ่มฝึกด้วยตนเองหรือเลือกตัวช่วยได้' };
+  const ratio = previous.score! / task.maxScore;
+  return { difficulty: ratio >= .8 ? 'advanced' : ratio >= .5 ? 'standard' : 'foundation', reason: `แนะนำจากงานล่าสุดในตัวชี้วัดนี้ (${previous.score}/${task.maxScore}) เปลี่ยนทางเลือกได้` };
+};
+
+/** จัดรูปแบบ URL ให้อยู่ในรูปสมบูรณ์ ป้องกัน browser เปิดเป็น relative link */
+export const normalizeHomeworkUrl = (url?: string): string => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
 
 export const submitWork = async (
   data: Omit<Submission, 'id' | 'submittedAt'>,
 ): Promise<Submission> => {
-  const previous = loadSubmissions().find((submission) => (
-    submission.assignmentId === data.assignmentId && submission.studentId === data.studentId
-  ));
+  const assignment = loadAssignments().find(a => a.id === data.assignmentId);
+  if (!assignment || !getAssignmentsForStudent(data.classroom, data.studentId, data.studentNo).some(a => a.id === assignment.id)) throw new Error('งานนี้ไม่ได้มอบหมายให้นักเรียนคนนี้');
+  const alternatives = new Set(loadAssignments().filter(a => a.id === assignment.id || (assignment.personalizedPackId && a.personalizedPackId === assignment.personalizedPackId)).map(a => a.id));
+  const previous = loadSubmissions().find(s => alternatives.has(s.assignmentId) && s.studentId === data.studentId);
+  if (previous?.reviewedAt) throw new Error('ครูตรวจงานนี้แล้ว กรุณาติดต่อครูก่อนแก้ไข');
+  const normalizedContentUrl = normalizeHomeworkUrl(data.contentUrl);
+  const normalizedDtSteps = data.designThinkingSteps ? {
+    ...data.designThinkingSteps,
+    prototypeUrl: normalizeHomeworkUrl(data.designThinkingSteps.prototypeUrl),
+  } : undefined;
+
   const submission: Submission = {
     ...data,
+    contentUrl: normalizedContentUrl || undefined,
+    designThinkingSteps: normalizedDtSteps,
     id: previous?.id || uid(),
     submittedAt: Date.now(),
     score: undefined,
+    kScore: undefined,
+    pScore: undefined,
     feedback: undefined,
     reviewedAt: undefined,
   };
@@ -325,7 +600,9 @@ export const reviewSubmission = async (
 
   const grades = loadGrades(assignment.classroom, assignment.subject);
   const student = grades.find((grade) => (
-    grade.name === submission.studentName || grade.studentNo === submission.studentNo
+    (submission.studentId && (grade.studentCode === submission.studentId || submission.studentId.includes(grade.studentCode))) ||
+    grade.name === submission.studentName ||
+    grade.studentNo === submission.studentNo
   ));
   if (!student) return;
   if (assignment.linkedKnowledgeAssessmentId && kScore !== undefined) {

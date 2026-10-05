@@ -2,7 +2,6 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import {
   submitExitTicket,
   hasStudentSubmittedToday,
-  loadLocalExitTickets,
   getExitTicketSummary,
   formatExitTicketNarrative,
   MOOD_LABELS,

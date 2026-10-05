@@ -24,6 +24,7 @@ export const useGameProgress = (
 
   return useCallback(
     async (score?: number, activityKey?: string, maxScore?: number) => {
+      window.dispatchEvent(new CustomEvent('game-learning-complete', { detail: { gameId } }));
       const scoringPartner = isScoreEligibleUser(partner) ? partner : null;
       const completionKey = JSON.stringify([user?.id, scoringPartner?.id, gameId, activityKey?.trim() || 'complete']);
       if (recordOnce && recordedRef.current.has(completionKey)) return;

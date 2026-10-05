@@ -5,8 +5,8 @@ import { gameLessons } from '../src/data/gameLessons';
 import { getGameTargetUnits } from '../src/services/gameProgressService';
 
 describe('เกมระบายสีตามรหัสพิกเซล', () => {
-  it('มี 8 ด่านและทุกด่านเป็นตาราง 10 คูณ 10 ที่ใช้รหัสสีถูกต้อง', () => {
-    expect(COLOR_CODE_LEVELS).toHaveLength(8);
+  it('มีอย่างน้อย 16 ด่านและทุกด่านเป็นตาราง 10 คูณ 10 ที่ใช้รหัสสีถูกต้อง', () => {
+    expect(COLOR_CODE_LEVELS.length).toBeGreaterThanOrEqual(16);
     COLOR_CODE_LEVELS.forEach((level) => {
       expect(level.rows).toHaveLength(10);
       expect(level.rows.every((row) => row.length === 10)).toBe(true);

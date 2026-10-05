@@ -39,6 +39,7 @@ dist-ssr
 
 # เอกสารการสอน/ข้อสอบของครู (.docx) — ห้ามขึ้น GitHub เด็ดขาด
 # โดยเฉพาะข้อสอบ ถ้า repo เป็นสาธารณะ นักเรียนอาจค้นเจอได้
+curriculum_documents/
 SSS*/
 sss*/
 แผน*/
@@ -55,4 +56,21 @@ inspect-*.mjs
 p1_unit1_extracted.txt
 p1_unit2_extracted.txt
 claw-empire-main/
+backups/
+output_pptx/
+artifacts/
+.agents/
+*.xlsx
+*.csv
+*.pptx
+*.pyc
+best-pisa/
+game-layout-audit/
+pdfs/
+scripts/*.json
+scripts/*.py
+*.txt
+*.png
+
+
 

@@ -11,6 +11,7 @@ export function portalDirectory(user?: Partial<PortalUserIdentity> | null): Port
   const entries: PortalEntry[] = [
     { title: 'คอร์สเรียน', detail: 'รายวิชาและบทเรียนประจำชั้น', path: '/courses', section: 'learn' },
     { title: 'หลักสูตรและหน่วยเรียน', detail: 'ตัวชี้วัด สไลด์ และกิจกรรมรายหน่วย', path: '/curriculum', section: 'learn' },
+    { title: 'คลังข้อสอบมาตรฐาน (25 ชุด)', detail: 'แบบทดสอบดิจิทัลวิทยาการคำนวณ ว 4.2 ป.1 - ม.3', path: '/quiz/all', section: 'learn', keywords: 'ข้อสอบ แบบทดสอบ 25ชุด ประเมินผล' },
     { title: 'แหล่งเรียนรู้', detail: 'สื่อและเครื่องมือประกอบการเรียน', path: '/resources', section: 'learn' },
     { title: 'ห้องเรียน 3D', detail: 'พื้นที่เรียนรู้และกิจกรรมเสมือนจริง', path: '/world', section: 'practice' },
     { title: 'เข้าร่วมควิซสด', detail: 'เข้าร่วมกิจกรรมด้วยรหัสห้อง', path: '/live', section: 'practice' },
@@ -28,6 +29,7 @@ export function portalDirectory(user?: Partial<PortalUserIdentity> | null): Port
     { title: 'แบบประเมินและหลังสอน', detail: 'บันทึกผลการจัดการเรียนรู้', path: '/admin?tab=assessments', section: 'teach' },
     { title: 'จัดการการบ้าน', detail: 'มอบหมายและติดตามงานนักเรียน', path: '/admin?tab=homework', section: 'teach' },
     { title: 'เอกสารวัดผล', detail: 'ส่งออก ปพ.5 และเอกสารคะแนน', path: '/admin?tab=export-grades', section: 'teach' },
+    { title: 'สมุดสะท้อนคิดการเรียนรู้', detail: 'ร่องรอยหลักฐานการเรียนรู้เชิงประจักษ์ (GBL) จากการเล่นจริง 36 เกม', path: '/admin?tab=reflections', section: 'teach', keywords: 'สะท้อนคิด บันทึก journal gbl' },
     { title: 'วิจัย ๕ บท & ว.PA', detail: 'เล่มวิจัยในชั้นเรียน และข้อตกลงพัฒนางาน ว.PA', path: '/admin?tab=research', section: 'teach' },
     { title: 'เครื่องมือครู', detail: 'เครื่องมือสำหรับกิจกรรมในชั้นเรียน', path: '/tools', section: 'teach' },
   );

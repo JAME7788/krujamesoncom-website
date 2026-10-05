@@ -10,8 +10,16 @@ import './GameStyles.css';
 const binToDec = (bin: string) => parseInt(bin, 2);
 const SESSION_ROUNDS = 12;
 
-const makeTargets = () => {
-  const values = Array.from({ length: 256 }, (_, value) => value);
+type BinaryDifficulty = '4bit' | '6bit' | '8bit';
+
+const DIFFICULTY_CONFIGS: Record<BinaryDifficulty, { name: string; maxVal: number; positions: number[] }> = {
+  '4bit': { name: '🟢 4-Bit (0-15: ป.1-4)', maxVal: 15, positions: [8, 4, 2, 1] },
+  '6bit': { name: '🔵 6-Bit (0-63: ป.5-6)', maxVal: 63, positions: [32, 16, 8, 4, 2, 1] },
+  '8bit': { name: '🟠 8-Bit (0-255: ม.1-3)', maxVal: 255, positions: [128, 64, 32, 16, 8, 4, 2, 1] },
+};
+
+const makeTargets = (maxVal: number = 255) => {
+  const values = Array.from({ length: maxVal + 1 }, (_, value) => value);
   for (let i = values.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [values[i], values[j]] = [values[j], values[i]];
@@ -21,17 +29,33 @@ const makeTargets = () => {
 
 const BinaryGame: React.FC = () => {
   const [roundGuard] = useState(createGameRoundGuard);
-  const [targets, setTargets] = useState(makeTargets);
+  const [difficulty, setDifficulty] = useState<BinaryDifficulty>('8bit');
+  const [targets, setTargets] = useState(() => makeTargets(255));
   const [roundIndex, setRoundIndex] = useState(0);
   const [done, setDone] = useState(false);
   const target = targets[roundIndex];
-  const [bits, setBits] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0]);
+  const [bits, setBits] = useState<number[]>(() => Array(8).fill(0));
   const [checked, setChecked] = useState<'correct' | 'wrong' | null>(null);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [showHelp, setShowHelp] = useState(true);
   const [bestStreak, setBestStreak] = useState(() => readGameRecord('kj_bin_best'));
   const recordGame = useGameProgress('binary', 'แปลงเลขฐานสอง');
+
+  const positions = DIFFICULTY_CONFIGS[difficulty].positions;
+
+  const changeDifficulty = (nextDiff: BinaryDifficulty) => {
+    roundGuard.reset();
+    setDifficulty(nextDiff);
+    const newTgts = makeTargets(DIFFICULTY_CONFIGS[nextDiff].maxVal);
+    setTargets(newTgts);
+    setRoundIndex(0);
+    setBits(Array(DIFFICULTY_CONFIGS[nextDiff].positions.length).fill(0));
+    setChecked(null);
+    setScore(0);
+    setStreak(0);
+    setDone(false);
+  };
 
   const newRound = () => {
     if (done || checked !== 'correct' || !roundGuard.claim(`next-${roundIndex}`)) return;
@@ -41,15 +65,15 @@ const BinaryGame: React.FC = () => {
       return;
     }
     setRoundIndex((value) => value + 1);
-    setBits([0, 0, 0, 0, 0, 0, 0, 0]);
+    setBits(Array(positions.length).fill(0));
     setChecked(null);
   };
 
   const restart = () => {
     roundGuard.reset();
-    setTargets(makeTargets());
+    setTargets(makeTargets(DIFFICULTY_CONFIGS[difficulty].maxVal));
     setRoundIndex(0);
-    setBits([0, 0, 0, 0, 0, 0, 0, 0]);
+    setBits(Array(positions.length).fill(0));
     setChecked(null);
     setScore(0);
     setStreak(0);
@@ -82,8 +106,6 @@ const BinaryGame: React.FC = () => {
     }
   };
 
-  const positions = [128, 64, 32, 16, 8, 4, 2, 1];
-
   return (
     <div className="game-page">
       <div className="game-topbar">
@@ -102,9 +124,33 @@ const BinaryGame: React.FC = () => {
         </button>
       </div>
 
+      {/* Difficulty selector */}
+      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', margin: '0.75rem 0' }}>
+        <span style={{ fontSize: '0.88rem', fontWeight: 'bold', color: '#475569' }}>ระดับความยาก:</span>
+        {(['4bit', '6bit', '8bit'] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: difficulty === mode ? '2px solid #2563eb' : '1px solid #cbd5e1',
+              background: difficulty === mode ? '#2563eb' : '#fff',
+              color: difficulty === mode ? '#fff' : '#1e293b',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+            }}
+            onClick={() => changeDifficulty(mode)}
+          >
+            {DIFFICULTY_CONFIGS[mode].name}
+          </button>
+        ))}
+      </div>
+
       <div className="binary-card">
         <div className="binary-target">
-          <p>แปลงเลขนี้เป็น Binary:</p>
+          <p>แปลงเลขนี้เป็น Binary ({difficulty === '4bit' ? '4 หลัก' : difficulty === '6bit' ? '6 หลัก' : '8 หลัก'}):</p>
           <h1>{target}</h1>
         </div>
 
@@ -151,7 +197,7 @@ const BinaryGame: React.FC = () => {
             </button>
           ) : (
             <>
-              <button className="btn-secondary" onClick={() => setBits([0,0,0,0,0,0,0,0])}>
+              <button className="btn-secondary" onClick={() => setBits(Array(positions.length).fill(0))}>
                 <RotateCcw size={16} /> ล้าง
               </button>
               <button className="btn-game-start" onClick={check}>

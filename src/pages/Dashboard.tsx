@@ -23,10 +23,15 @@ import AnnouncementBanner from '../components/AnnouncementBanner';
 import TrendChart from '../components/TrendChart';
 import MyGradeCard from '../components/MyGradeCard';
 import GamificationCard from '../components/GamificationCard';
+import CtRadarWidget from '../components/CtRadarWidget';
 import AchievementShowcase from '../components/AchievementShowcase';
 import DailyQuestionWidget from '../components/DailyQuestionWidget';
 import SatisfactionSurvey from '../components/SatisfactionSurvey';
 import ExitTicketModal from '../components/ExitTicketModal';
+import CurriculumExamWidget from '../components/CurriculumExamWidget';
+import StudentReflectionJournal from '../components/StudentReflectionJournal';
+import SmartSpacedReviewWidget from '../components/SmartSpacedReviewWidget';
+import WeeklyGoalTracker from '../components/WeeklyGoalTracker';
 import { getTodayDateString, loadLocalExitTickets, type ExitTicket } from '../services/exitTicketService';
 import { fetchEventsFromFirebase, getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
 import type { CalendarEvent } from '../services/calendarService';
@@ -459,8 +464,14 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* เป้าหมายการเรียนรู้สัปดาห์นี้ (Self-Regulated Learning - SRL) */}
+      <WeeklyGoalTracker studentId={user.id} />
+
       {/* XP / Level / Streak — Gamification */}
       <GamificationCard studentId={user.id} />
+
+      {/* โปรไฟล์ทักษะการคิดเชิงคำนวณ (Computational Thinking 4 เสาหลัก) */}
+      <CtRadarWidget studentId={user.id} classroom={user.classroom} />
 
       {/* คะแนนของฉัน */}
       <MyGradeCard
@@ -495,6 +506,20 @@ const Dashboard: React.FC = () => {
           </motion.div>
         ))}
       </div>
+
+      {/* คลังข้อสอบมาตรฐานหลักสูตร ว 4.2 (25 ชุด) */}
+      <CurriculumExamWidget studentId={user.id} classroom={user.classroom} />
+
+      {/* ทบทวนความจำเว้นระยะห่าง (Ebbinghaus Spaced Repetition) */}
+      <SmartSpacedReviewWidget studentId={user.id} />
+
+      {/* สมุดสะท้อนคิดการเรียนรู้ของผู้เรียน (GBL 36 เกม) */}
+      <StudentReflectionJournal
+        studentId={user.id}
+        studentName={user.name}
+        classroom={user.classroom}
+        compact={true}
+      />
 
       {/* MAIN GRID */}
       <div className="dashboard-main">

@@ -10,6 +10,8 @@ import { loadAllRosters } from './rosterService';
 import { getAllCachedProgress, computeGamification } from './progressService';
 import { SURVEY_QUESTIONS } from './satisfactionSurveyService';
 import type { SurveyStats } from './satisfactionSurveyService';
+import { getReflectionStats } from './gameReflectionService';
+import { loadSubmissions } from './homeworkService';
 
 export interface ResearchMeta {
   title: string;
@@ -77,6 +79,12 @@ export interface ResearchData {
   postMean: number;             // % ครั้งที่ดีที่สุด (หลังเรียนรู้)
   learningGain: number;         // post - pre
   prePostN: number;             // จำนวนคู่ที่คำนวณได้
+  // ===== ข้อมูลเชิงคุณภาพ: การสะท้อนคิด (GBL Reflection) & การใช้นั่งร้าน (Scaffolding) =====
+  gblReflectionCount?: number;
+  gblChallengeCount?: number;
+  gblFoundationCount?: number;
+  gblChallengeRatio?: number;
+  dtProjectSubmissionsCount?: number;
 }
 
 export interface ObjectiveResult {
@@ -305,6 +313,11 @@ export const computeResearchData = (classroom: string): ResearchData => {
     postMean: round2(postMean),
     learningGain: round2(postMean - preMean),
     prePostN: pres.length,
+    gblReflectionCount: getReflectionStats(classroom === 'all' ? undefined : classroom).totalCount,
+    gblChallengeCount: getReflectionStats(classroom === 'all' ? undefined : classroom).challengeCount,
+    gblFoundationCount: getReflectionStats(classroom === 'all' ? undefined : classroom).foundationCount,
+    gblChallengeRatio: getReflectionStats(classroom === 'all' ? undefined : classroom).challengeRatio,
+    dtProjectSubmissionsCount: loadSubmissions().filter(s => s.designThinkingSteps && (classroom === 'all' || s.classroom === classroom)).length,
   };
 };
 
@@ -521,7 +534,12 @@ ${objLines}
 
 4.5 ความพึงพอใจของนักเรียน ${satSource}
 ความพึงพอใจโดยรวมอยู่ในระดับ "${satisfactionLevel(sat)}" (ค่าเฉลี่ย ${satStr})${perQLines ? '\nรายข้อ:\n' + perQLines : ''}
-
+${d.gblReflectionCount !== undefined ? `
+4.6 ผลการสะท้อนคิดในเกมการเรียนรู้ (GBL) และการเสริมแรงหนุน (Scaffolding)
+- มีการบันทึกการสะท้อนคิดหลังเล่นเกม (GBL Reflections) ทั้งหมด ${d.gblReflectionCount} ครั้ง
+- สัดส่วนการเลือกระดับความท้าทายตนเอง (Challenge Mode): ร้อยละ ${d.gblChallengeRatio || 0} และระดับฝึกพื้นฐานพร้อมคำใบ้นั่งร้าน (Foundation Mode): ร้อยละ ${100 - (d.gblChallengeRatio || 0)}
+- มีการส่งผลงานโครงงานกระบวนการคิดเชิงออกแบบ (Design Thinking: ว 4.1) ครบ 4 ขั้นตอน จำนวน ${d.dtProjectSubmissionsCount || 0} รายการ
+` : ''}
 ──────────────────────────────────────────
 บทที่ 5 สรุป อภิปรายผล และข้อเสนอแนะ
 
@@ -529,7 +547,7 @@ ${objLines}
 การพัฒนาการเรียนการสอนผ่านเว็บด้วย ADDIE Model ทำให้ได้ระบบที่รวมบทเรียน สไลด์ เกม แบบฝึก งาน และแบบทดสอบไว้ในเส้นทางเรียนเดียวกัน ผู้เรียนที่มีข้อมูลคะแนน ${d.n} คน มีผลสัมฤทธิ์เฉลี่ยอยู่ในระดับ "${d.achievementLevel}" (${d.achievementMean25.toFixed(2)}/25) อัตราผ่านร้อยละ ${d.passRate.toFixed(1)} ผู้เข้าใช้ระบบมี ${d.activeStudents} คน คิดเป็นร้อยละ ${d.engagementRate.toFixed(1)} ของบัญชีรายชื่อ และความพึงพอใจอยู่ในระดับ "${satisfactionLevel(sat)}"
 
 5.2 อภิปรายผล
-ผลสัมฤทธิ์และการมีส่วนร่วมควรพิจารณาร่วมกัน ผู้เรียนได้รับข้อมูลย้อนกลับจากแบบทดสอบและเห็นความก้าวหน้าของตนผ่าน XP ระดับ และภารกิจ จึงมีเป้าหมายระยะสั้นระหว่างเรียน ขณะเดียวกัน WBI เปิดโอกาสให้ทบทวนซ้ำและทำกิจกรรมตามความพร้อม กลไกเหล่านี้อาจช่วยส่งเสริมความสม่ำเสมอ แต่ข้อมูลการเข้าใช้เพียงอย่างเดียวไม่ยืนยันว่าเกิดความเข้าใจ จึงต้องใช้คะแนน K ผลงาน P พฤติกรรม A และบันทึกของครูประกอบกัน
+ผลสัมฤทธิ์และการมีส่วนร่วมควรพิจารณาร่วมกัน ผู้เรียนได้รับข้อมูลย้อนกลับจากแบบทดสอบและเห็นความก้าวหน้าของตนผ่าน XP ระดับ และภารกิจ จึงมีเป้าหมายระยะสั้นระหว่างเรียน ขณะเดียวกัน WBI เปิดโอกาสให้ทบทวนซ้ำและทำกิจกรรมตามความพร้อม การเสริมแรงหนุน (Scaffolding Hints) และการสะท้อนคิดหลังเล่นเกม (GBL Reflection) ช่วยให้ผู้เรียนเกิดการกำกับตนเอง (Self-Regulation) และการคิดแก้ปัญหาเป็นลำดับขั้นตอน (Computational Thinking) ได้อย่างเป็นรูปธรรม โดยข้อมูลการเข้าใช้เพียงอย่างเดียวไม่ยืนยันว่าเกิดความเข้าใจ จึงต้องใช้คะแนน K ผลงาน P พฤติกรรม A และบันทึกของครูประกอบกัน
 
 ผลรายตัวชี้วัดช่วยให้เห็นจุดที่ควรซ่อมเสริมได้ชัดกว่าคะแนนรวม หากตัวชี้วัดใดมีคะแนนต่ำ ครูควรตรวจทั้งความยากของเนื้อหา ความชัดของคำสั่ง เวลา อุปกรณ์ และโอกาสฝึกปฏิบัติ ก่อนสรุปว่าเป็นข้อจำกัดของผู้เรียน สำหรับค่า Learning Gain ต้องตีความตามวิธีเก็บข้อมูล เนื่องจากระบบใช้ครั้งแรกและครั้งดีที่สุดของหน่วยเป็นตัวแทนก่อน-หลัง มิใช่การสุ่มกลุ่มทดลอง
 

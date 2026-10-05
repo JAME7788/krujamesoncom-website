@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -12,18 +12,37 @@ import {
   VolumeX,
   X,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { isSfxMuted, setSfxMuted, playWinSound } from '../../utils/celebrate';
 import { gamesCatalog } from '../../data/gamesCatalog';
+import {
+  CT_PILLARS,
+  getPillarForGameId,
+  calculateStudentCtProfile,
+  type CtPillar,
+} from '../../services/computationalThinkingService';
+import { speakThai, stopSpeech } from '../../utils/speechService';
+import BloomTaxonomyBadge from '../../components/BloomTaxonomyBadge';
+import { getActivityBloomLevel } from '../../services/bloomTaxonomyService';
 import './Games.css';
 import './GameStyles.css';
 
 type GradeFilter = 'all' | 'lower-primary' | 'upper-primary' | 'secondary';
+type CtFilter = 'all' | CtPillar;
 
 const gradeFilters: { id: GradeFilter; label: string; range: [number, number] }[] = [
   { id: 'all', label: 'ทั้งหมด', range: [1, 9] },
   { id: 'lower-primary', label: 'ป.1-3', range: [1, 3] },
   { id: 'upper-primary', label: 'ป.4-6', range: [4, 6] },
   { id: 'secondary', label: 'ม.1-3', range: [7, 9] },
+];
+
+const ctFilterOptions: { id: CtFilter; label: string; emoji: string }[] = [
+  { id: 'all', label: 'ทุกทักษะ CT', emoji: '🌟' },
+  { id: 'decomposition', label: 'การแยกย่อยปัญหา', emoji: CT_PILLARS.decomposition.emoji },
+  { id: 'pattern', label: 'การหารูปแบบ', emoji: CT_PILLARS.pattern.emoji },
+  { id: 'abstraction', label: 'การคิดเชิงนามธรรม', emoji: CT_PILLARS.abstraction.emoji },
+  { id: 'algorithm', label: 'การออกแบบอัลกอริทึม', emoji: CT_PILLARS.algorithm.emoji },
 ];
 
 const gameLevelRange = (level: string): [number, number] => {
@@ -49,9 +68,28 @@ const gameMatchesGrade = (level: string, filter: GradeFilter): boolean => {
 };
 
 const Games: React.FC = () => {
+  const { user } = useAuth();
   const [muted, setMuted] = useState<boolean>(isSfxMuted());
   const [query, setQuery] = useState('');
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>('all');
+  const [ctFilter, setCtFilter] = useState<CtFilter>('all');
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+    };
+  }, []);
+
+  const ctProfile = useMemo(() => {
+    if (!user?.id || user.accountType !== 'student') return null;
+    return calculateStudentCtProfile(user.id, user.classroom || '');
+  }, [user?.id, user?.classroom, user?.accountType]);
+
+  const recommendedGame = useMemo(() => {
+    if (!ctProfile) return null;
+    return gamesCatalog.find((g) => g.id === ctProfile.recommendedGameId) || null;
+  }, [ctProfile]);
 
   const featuredGame = gamesCatalog.find((game) => game.id === 'digital-city-quest') || gamesCatalog[0];
   const filteredGames = useMemo(() => {
@@ -59,9 +97,29 @@ const Games: React.FC = () => {
     return gamesCatalog.filter((game) => {
       const matchesQuery = !normalizedQuery || [game.title, game.desc, game.skill, game.level]
         .some((value) => value.toLocaleLowerCase('th').includes(normalizedQuery));
-      return matchesQuery && gameMatchesGrade(game.level, gradeFilter);
+      const matchesGrade = gameMatchesGrade(game.level, gradeFilter);
+      const pillar = getPillarForGameId(game.id);
+      const matchesCt = ctFilter === 'all' || pillar.id === ctFilter;
+      return matchesQuery && matchesGrade && matchesCt;
     });
-  }, [gradeFilter, query]);
+  }, [gradeFilter, ctFilter, query]);
+
+  const handleToggleSpeak = (e: React.MouseEvent, gameId: string, title: string, level: string, desc: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (speakingId === gameId) {
+      stopSpeech();
+      setSpeakingId(null);
+    } else {
+      setSpeakingId(gameId);
+      const success = speakThai(`${title} ระดับ ${level}. ${desc}`, () => {
+        setSpeakingId((curr) => (curr === gameId ? null : curr));
+      });
+      if (!success) {
+        setSpeakingId(null);
+      }
+    }
+  };
 
   return (
     <div className="games-hub container section-padding">
@@ -109,6 +167,26 @@ const Games: React.FC = () => {
           <span className="games-result-count">{filteredGames.length} เกม</span>
         </div>
 
+        {ctProfile && recommendedGame && (
+          <aside className="games-recommendation-banner" aria-label="คำแนะนำเกมเฉพาะบุคคล">
+            <div className="rec-icon" aria-hidden="true">
+              {CT_PILLARS[ctProfile.recommendedPillar].emoji}
+            </div>
+            <div className="rec-text">
+              <strong>
+                🎯 แนะนำสำหรับคุณ: เสริมทักษะ {CT_PILLARS[ctProfile.recommendedPillar].name}
+              </strong>
+              <p>
+                ลองฝึกฝนกับเกม &ldquo;{recommendedGame.title}&rdquo; เพื่อยกระดับความเข้าใจด้าน{' '}
+                {CT_PILLARS[ctProfile.recommendedPillar].nameEn}
+              </p>
+            </div>
+            <Link to={recommendedGame.path} className="rec-action-btn">
+              เล่นเกมแนะนำเลย →
+            </Link>
+          </aside>
+        )}
+
         <div className="games-toolbar">
           <label className="games-search">
             <Search size={19} />
@@ -139,39 +217,91 @@ const Games: React.FC = () => {
           </div>
         </div>
 
+        {/* CT 4 Pillars Filter */}
+        <div className="games-ct-filter" aria-label="กรองตามทักษะการคิดเชิงคำนวณ">
+          {ctFilterOptions.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              className={`ct-filter-pill ${ctFilter === opt.id ? 'active' : ''}`}
+              aria-pressed={ctFilter === opt.id}
+              onClick={() => setCtFilter(opt.id)}
+            >
+              <span>{opt.emoji}</span> {opt.label}
+            </button>
+          ))}
+        </div>
+
         {filteredGames.length > 0 ? (
           <div className="games-grid">
-            {filteredGames.map((game, index) => (
-              <motion.div
-                key={game.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(index * 0.035, 0.35) }}
-              >
-                <Link to={game.path} className="game-card-big" style={{ '--game-accent': game.color } as React.CSSProperties}>
-                  <div className="gc-card-top">
-                    <div className="gc-emoji" style={{ background: `${game.color}1f`, color: game.color }}>
-                      {game.emoji}
+            {filteredGames.map((game, index) => {
+              const pillar = getPillarForGameId(game.id);
+              const isSpeaking = speakingId === game.id;
+              return (
+                <motion.div
+                  key={game.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(index * 0.035, 0.35) }}
+                >
+                  <Link to={game.path} className="game-card-big" style={{ '--game-accent': game.color } as React.CSSProperties}>
+                    <div className="gc-card-top">
+                      <div className="gc-emoji" style={{ background: `${game.color}1f`, color: game.color }}>
+                        {game.emoji}
+                      </div>
+                      <span className="gc-level">{game.level}</span>
                     </div>
-                    <span className="gc-level">{game.level}</span>
-                  </div>
-                  <div className="gc-info">
-                    <h3>{game.title}</h3>
-                    <p>{game.desc}</p>
-                  </div>
-                  <div className="gc-cta">
-                    <span className="gc-skill"><Sparkles size={14} /> {game.skill}</span>
-                    <span className="gc-play" aria-hidden="true"><Play size={14} fill="currentColor" /></span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+                    <div className="gc-info">
+                      <h3>{game.title}</h3>
+                      <p>{game.desc}</p>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <div
+                          className="gc-ct-badge"
+                          style={{
+                            color: pillar.color,
+                            backgroundColor: `${pillar.color}18`,
+                            borderColor: `${pillar.color}35`,
+                          }}
+                          title={`ทักษะหลัก: ${pillar.name} (${pillar.nameEn})`}
+                        >
+                          <span>{pillar.emoji}</span>
+                          <span>{pillar.name}</span>
+                        </div>
+                        <BloomTaxonomyBadge level={getActivityBloomLevel('fun', game.id)} size="sm" />
+                      </div>
+                    </div>
+                    <div className="gc-cta">
+                      <span className="gc-skill"><Sparkles size={14} /> {game.skill}</span>
+                      <button
+                        type="button"
+                        className={`gc-speak-btn ${isSpeaking ? 'speaking' : ''}`}
+                        title={isSpeaking ? 'หยุดอ่าน' : 'ฟังเสียงอ่านคำอธิบายเกม'}
+                        aria-label={isSpeaking ? 'หยุดอ่าน' : `ฟังเสียงอ่านเกม ${game.title}`}
+                        onClick={(e) => handleToggleSpeak(e, game.id, game.title, game.level, game.desc)}
+                      >
+                        <Volume2 size={15} />
+                      </button>
+                      <span className="gc-play" aria-hidden="true"><Play size={14} fill="currentColor" /></span>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         ) : (
           <div className="games-empty-state">
             <Search size={28} />
             <h3>ไม่พบเกมที่ตรงกับคำค้นหา</h3>
-            <button type="button" onClick={() => { setQuery(''); setGradeFilter('all'); }}>แสดงเกมทั้งหมด</button>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery('');
+                setGradeFilter('all');
+                setCtFilter('all');
+              }}
+            >
+              แสดงเกมทั้งหมด
+            </button>
           </div>
         )}
       </section>

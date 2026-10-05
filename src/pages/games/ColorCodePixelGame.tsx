@@ -113,6 +113,15 @@ const ColorCodePixelGame: React.FC = () => {
     setResult('idle');
   };
 
+  const selectLevel = (idx: number) => {
+    if (idx === levelIndex) return;
+    setLevelIndex(idx);
+    setGrid(blankGrid(10));
+    setAttempts(0);
+    setHints(0);
+    setResult('idle');
+  };
+
   const restart = () => {
     setLevelIndex(0);
     setGrid(blankGrid(10));
@@ -121,6 +130,13 @@ const ColorCodePixelGame: React.FC = () => {
     setScore(0);
     setResult('idle');
   };
+
+  const diffLabel = {
+    easy: '🟢 ง่าย (ป.1-3)',
+    medium: '🔵 ปานกลาง (ป.4-6)',
+    hard: '🟠 ท้าทาย (ม.1-3)',
+    master: '🟣 ปรมาจารย์',
+  }[level.difficulty || 'easy'];
 
   return (
     <div className="ccp-page" onPointerUp={() => setDrawing(false)} onPointerLeave={() => setDrawing(false)}>
@@ -136,8 +152,36 @@ const ColorCodePixelGame: React.FC = () => {
       <div className="ccp-toolbar">
         <GameLearnCard gameKey="color-code-pixel" />
         <div><strong>ด่าน {levelIndex + 1}/{COLOR_CODE_LEVELS.length}</strong><small>{level.name}</small></div>
+        <div><strong>{diffLabel}</strong><small>ระดับความยาก</small></div>
         <div><strong>{progressPercent}%</strong><small>ความคืบหน้า</small></div>
         <div><strong>{hints}</strong><small>คำใบ้ที่ใช้</small></div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', margin: '0.75rem 0' }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569' }}>เลือกด่าน (1-16):</span>
+        {COLOR_CODE_LEVELS.map((lvl, idx) => (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => selectLevel(idx)}
+            style={{
+              padding: '4px 9px',
+              borderRadius: '6px',
+              border: levelIndex === idx ? '2px solid #2563eb' : '1px solid #cbd5e1',
+              background: levelIndex === idx ? '#2563eb' : '#fff',
+              color: levelIndex === idx ? '#fff' : '#1e293b',
+              fontWeight: levelIndex === idx ? 'bold' : 'normal',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+            title={`${lvl.name} (${lvl.difficulty})`}
+          >
+            <span>{lvl.icon}</span> <span>{idx + 1}</span>
+          </button>
+        ))}
       </div>
 
       <main className="ccp-workspace">

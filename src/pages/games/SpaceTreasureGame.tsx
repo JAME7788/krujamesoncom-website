@@ -146,9 +146,9 @@ export const SpaceTreasureGame: React.FC = () => {
     setIsRunning(true);
     setStatusMessage('กำลังรันชุดคำสั่ง...');
 
-    let currentPos = { ...currentLevel.start };
-    let currTreasures: { x: number; y: number }[] = [];
-    let currEnergies: { x: number; y: number }[] = [];
+    const currentPos = { ...currentLevel.start };
+    const currTreasures: { x: number; y: number }[] = [];
+    const currEnergies: { x: number; y: number }[] = [];
 
     const step = (index: number) => {
       if (index >= program.length) {

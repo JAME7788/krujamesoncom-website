@@ -53,7 +53,7 @@ describe('เกม 🛡️ Cyber Shield (CyberShieldGame)', () => {
 
       MISSION_LEVELS.forEach((level) => {
         expect(level.waves.length).toBeGreaterThanOrEqual(3);
-        level.waves.forEach((wave, wIdx) => {
+        level.waves.forEach((wave) => {
           expect(wave.threats.length).toBeGreaterThanOrEqual(1);
           wave.threats.forEach((group) => {
             expect(validThreatTypes).toContain(group.type);

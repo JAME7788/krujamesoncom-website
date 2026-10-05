@@ -10,7 +10,7 @@ import { richSlides } from '../src/data/richSlides';
 import { primaryRichSlides } from '../src/data/richSlidesPrimary';
 import { secondaryRichSlides } from '../src/data/richSlidesSecondary';
 import { electiveRichSlides } from '../src/data/richSlidesElective';
-import { getUnitSlideImages, hasUnitSlideImages, unitSlideImages } from '../src/data/slideImages';
+import { unitSlideImages } from '../src/data/slideImages';
 import { buildOfficialLessonNotes } from '../src/data/officialSources';
 
 const PRIMARY = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] as const;

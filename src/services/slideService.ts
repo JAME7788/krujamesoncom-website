@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import type { RichSlide } from '../data/richSlides';
 
 const firebaseAvailable = (): boolean => {
@@ -22,6 +22,22 @@ export const saveCustomSlides = async (gradeId: string, unitNo: number, slides: 
     return true;
   } catch (e) {
     console.error('Failed to save custom slides', e);
+    return false;
+  }
+};
+
+export const deleteCustomSlides = async (gradeId: string, unitNo: number) => {
+  try {
+    const key = `custom_slides_${gradeId}_${unitNo}`;
+    localStorage.removeItem(key);
+
+    if (firebaseAvailable()) {
+      const ref = doc(db, 'custom_slides', `${gradeId}_${unitNo}`);
+      await deleteDoc(ref);
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to delete custom slides', e);
     return false;
   }
 };
@@ -91,6 +107,10 @@ export const parseMarkdownToSlides = (md: string): RichSlide[] => {
     let emoji = '';
     let theme: 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'yellow' | 'red' = 'blue';
     let layout: 'standard' | 'split' | 'cover' | 'quote' | 'comparison' = 'standard';
+    let image = '';
+    let imageCaption = '';
+    let learnerSummary = '';
+    let callout: { type: 'tip' | 'warn' | 'fun' | 'quote'; text: string } | undefined = undefined;
     let body = '';
     const bullets: { text: string }[] = [];
     let isCodeBlock = false;
@@ -149,6 +169,22 @@ export const parseMarkdownToSlides = (md: string): RichSlide[] => {
         if (['standard', 'split', 'cover', 'quote', 'comparison'].includes(val)) {
           layout = val as 'standard' | 'split' | 'cover' | 'quote' | 'comparison';
         }
+      } else if (trimmed.startsWith('image:')) {
+        image = trimmed.slice(6).trim();
+      } else if (trimmed.startsWith('imageCaption:')) {
+        imageCaption = trimmed.slice(13).trim();
+      } else if (trimmed.startsWith('learnerSummary:')) {
+        learnerSummary = trimmed.slice(15).trim();
+      } else if (trimmed.startsWith('callout:')) {
+        const val = trimmed.slice(8).trim();
+        const parts = val.split('|');
+        if (parts.length >= 2) {
+          const type = parts[0].trim().toLowerCase() as 'tip' | 'warn' | 'fun' | 'quote';
+          const text = parts.slice(1).join('|').trim();
+          callout = { type: ['tip', 'warn', 'fun', 'quote'].includes(type) ? type : 'tip', text };
+        } else {
+          callout = { type: 'tip', text: val };
+        }
       } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
         bullets.push({ text: trimmed.slice(2).trim() });
       } else if (trimmed) {
@@ -163,6 +199,10 @@ export const parseMarkdownToSlides = (md: string): RichSlide[] => {
         emoji: emoji || undefined,
         theme: theme || undefined,
         layout: layout || undefined,
+        image: image || undefined,
+        imageCaption: imageCaption || undefined,
+        learnerSummary: learnerSummary || undefined,
+        callout: callout || undefined,
         body: body || undefined,
         bullets: bullets.length ? bullets : undefined,
       };
@@ -187,6 +227,10 @@ export const slidesToMarkdown = (slides: RichSlide[]): string => {
     if (slide.emoji) md += `emoji: ${slide.emoji}\n`;
     if (slide.theme) md += `theme: ${slide.theme}\n`;
     if (slide.layout) md += `layout: ${slide.layout}\n`;
+    if (slide.image) md += `image: ${slide.image}\n`;
+    if (slide.imageCaption) md += `imageCaption: ${slide.imageCaption}\n`;
+    if (slide.learnerSummary) md += `learnerSummary: ${slide.learnerSummary}\n`;
+    if (slide.callout) md += `callout: ${slide.callout.type} | ${slide.callout.text}\n`;
     md += `\n`;
     if (slide.body) md += `${slide.body}\n\n`;
     if (slide.bullets) {

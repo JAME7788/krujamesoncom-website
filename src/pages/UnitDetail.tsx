@@ -39,6 +39,8 @@ import ExitTicketModal from '../components/ExitTicketModal';
 import { enrichRichSlideDeck, hasRichSlides, getRichSlides, type RichSlide } from '../data/richSlides';
 import { fetchCustomSlides } from '../services/slideService';
 import { detectLessonTheme, isArduinoLessonText, type LessonTheme } from '../utils/lessonTheme';
+import BloomTaxonomyBadge from '../components/BloomTaxonomyBadge';
+import { getUnitBloomLevel } from '../services/bloomTaxonomyService';
 import './UnitDetail.css';
 
 const mergeList = (...lists: Array<string[] | undefined>) => {
@@ -1351,6 +1353,7 @@ const UnitDetail: React.FC = () => {
   const [locksReady, setLocksReady] = useState(false);
   const [courseAccessSettings, setCourseAccessSettings] = useState<CourseAccessSettings>(() => getCourseAccessSettings());
   const [showExitTicketModal, setShowExitTicketModal] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const quizItems = useMemo(
     () => grade && unit ? buildQuizItems(grade, unit, extras.quiz || []) : [],
@@ -1496,33 +1499,69 @@ const UnitDetail: React.FC = () => {
     };
   }, []);
 
+  const topics = unit?.topics || [];
+  const lessonNotes: LessonNotes = (grade && unit)
+    ? mergeLessonNotes(
+        buildDefaultLessonNotes(unit.title, topics, gradeId || ''),
+        { activities: unit.activities || [] },
+        buildOfficialLessonNotes(grade, unit),
+        extras.lessonNotes
+      )
+    : { objectives: [], summary: [], activities: [], checkQuestions: [] };
+  const articleItems = (grade && unit) ? mergeArticles(extras.articles, buildOfficialArticles(grade, unit)) : [];
+  const fileItems = (grade && unit) ? mergeFiles(extras.files, buildOfficialFiles(grade, unit)) : [];
+  const generatedSlides = (grade && unit) ? buildIndicatorSlides(grade, unit, lessonNotes) : [];
+
+  const hasCustom = !!(customSlides && customSlides.length > 0);
+  const authoredRichSlides = hasCustom
+    ? customSlides!
+    : (gradeId && hasRichSlides(gradeId, unitNumber))
+      ? getRichSlides(gradeId, unitNumber)
+      : [];
+  const shouldCompleteLessonDeck = authoredRichSlides.length === 0 && (
+    (grade ? /^p[1-6]$/.test(grade.id) : false) || shouldUseGeneratedSlides(slides)
+  );
+  const generatedRichSlides = shouldCompleteLessonDeck
+    ? generatedSlides.map(lessonSlideToRichSlide)
+    : [];
+  const richSlideList = authoredRichSlides.length > 0
+    ? authoredRichSlides
+    : (grade ? enrichRichSlideDeck(grade.id, unitNumber, generatedRichSlides) : []);
+
+  const useRichSlides = richSlideList.length > 0;
+  const useGeneratedSlides = !useRichSlides && shouldUseGeneratedSlides(slides);
+  const displaySlides = useGeneratedSlides ? generatedSlides : slides;
+  const totalSlides = useRichSlides
+    ? richSlideList.length
+    : displaySlides.length;
+
   // Track slide views — บันทึกทุกครั้งที่นักเรียนเปลี่ยนสไลด์
   useEffect(() => {
-    const richTotal = (gradeId && hasRichSlides(gradeId, unitNumber))
-      ? getRichSlides(gradeId, unitNumber).length
-      : (customSlides?.length || 0);
-    const generatedTotal = grade && unit
-      ? buildIndicatorSlides(
-          grade,
-          unit,
-          (gradeId && unitExtras[gradeId]?.[unitNumber]?.lessonNotes) || buildDefaultLessonNotes(unit.title, unit.topics || [])
-        ).length
-      : 0;
-    const total = richTotal > 0
-      ? richTotal
-      : shouldUseGeneratedSlides(slidesEntry?.slides || [], slidesEntry?.slideImages)
-        ? generatedTotal
-        : (slidesEntry?.slideImages?.length || slidesEntry?.slides?.length || 0);
-    if (!user || !gradeId || activeTab !== 'slides' || total === 0) return;
+    if (!user || !gradeId || activeTab !== 'slides' || totalSlides === 0) return;
     const t = setTimeout(() => {
       // บันทึกให้ทั้ง main + partner (ถ้านั่งคู่)
-      Promise.all(getActiveIds().map((id) => trackSlideView(id, gradeId, unitNumber, slideIdx, total)))
+      Promise.all(getActiveIds().map((id) => trackSlideView(id, gradeId, unitNumber, slideIdx, totalSlides)))
         .then((stored) => stored.every(Boolean) ? syncActiveUserGrades() : undefined)
         .catch((error) => console.warn('slide progress sync failed', error));
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slideIdx, activeTab, user, gradeId, unitNumber]);
+  }, [slideIdx, activeTab, user, gradeId, unitNumber, totalSlides]);
+
+  useEffect(() => {
+    if (activeTab !== 'slides' || totalSlides === 0) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const targetTag = (e.target as HTMLElement)?.tagName;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(targetTag)) return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        setSlideIdx((i) => Math.min(totalSlides - 1, i + 1));
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        setSlideIdx((i) => Math.max(0, i - 1));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, totalSlides]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -1531,6 +1570,14 @@ const UnitDetail: React.FC = () => {
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
   if (!grade || !unit) {
@@ -1608,61 +1655,8 @@ const UnitDetail: React.FC = () => {
     );
   }
 
-  const topics = unit.topics || [];
-  const lessonNotes: LessonNotes = mergeLessonNotes(
-    buildDefaultLessonNotes(unit.title, topics, gradeId || ''),
-    { activities: unit.activities || [] },
-    buildOfficialLessonNotes(grade, unit),
-    extras.lessonNotes
-  );
-  const articleItems = mergeArticles(extras.articles, buildOfficialArticles(grade, unit));
-  const fileItems = mergeFiles(extras.files, buildOfficialFiles(grade, unit));
-  const generatedSlides = buildIndicatorSlides(grade, unit, lessonNotes);
-
-  // สไลด์ที่จัดทำไว้อย่างสมบูรณ์ (9-10 สไลด์ พร้อมภาพ การ์ด และแบบฝึกที่ถูกลิขสิทธิ์)
-  const hasCustom = !!(customSlides && customSlides.length > 0);
-  const authoredRichSlides = hasCustom
-    ? customSlides!
-    : hasRichSlides(gradeId || '', unitNumber)
-      ? getRichSlides(gradeId || '', unitNumber)
-      : [];
-  const shouldCompleteLessonDeck = authoredRichSlides.length === 0 && (
-    /^p[1-6]$/.test(grade.id) || shouldUseGeneratedSlides(slides)
-  );
-  const generatedRichSlides = shouldCompleteLessonDeck
-    ? generatedSlides.map(lessonSlideToRichSlide)
-    : [];
-  const richSlideList = authoredRichSlides.length > 0
-    ? authoredRichSlides
-    : enrichRichSlideDeck(
-        grade.id,
-        unitNumber,
-        generatedRichSlides,
-      );
-
-  const useRichSlides = richSlideList.length > 0;
-  const useGeneratedSlides = !useRichSlides && shouldUseGeneratedSlides(slides);
-  const displaySlides = useGeneratedSlides ? generatedSlides : slides;
-  const totalSlides = useRichSlides
-    ? richSlideList.length
-    : displaySlides.length;
   const visibleSlideIndexes = getVisibleSlideIndexes(totalSlides, slideIdx);
   const currentSlide = displaySlides[slideIdx] || '';
-
-  useEffect(() => {
-    if (activeTab !== 'slides' || totalSlides === 0) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const targetTag = (e.target as HTMLElement)?.tagName;
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(targetTag)) return;
-      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-        setSlideIdx((i) => Math.min(totalSlides - 1, i + 1));
-      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        setSlideIdx((i) => Math.max(0, i - 1));
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab, totalSlides]);
   const selfStudyGuide = [
     {
       step: '1',
@@ -1691,16 +1685,6 @@ const UnitDetail: React.FC = () => {
 
   const score = quizItems.reduce((acc, q, i) => (quizAnswers[i] === q.answer ? acc + 1 : acc), 0);
   const maxScore = quizItems.length;
-
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
 
   const toggleFullScreen = () => {
     const elem = document.querySelector('.slide-viewer');
@@ -1801,7 +1785,10 @@ const UnitDetail: React.FC = () => {
                   </div>
                   <div className="lms-hero-emoji">{grade.emoji}</div>
                   <div className="lms-hero-text">
-                    <span className="badge-light">หน่วยที่ {unit.no}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                      <span className="badge-light">หน่วยที่ {unit.no}</span>
+                      <BloomTaxonomyBadge level={getUnitBloomLevel(unit.title, unit.topics)} showDescription size="md" />
+                    </div>
                     <h1>{unit.title}</h1>
                     {extras.intro && <p className="unit-intro">{extras.intro}</p>}
                     <div className="unit-meta">
@@ -1811,8 +1798,8 @@ const UnitDetail: React.FC = () => {
                       {quizItems.length > 0 && <span><Award size={16} /> {quizItems.length} ข้อสอบ</span>}
                       {extras.fun && <span><Gamepad2 size={16} /> {extras.fun.length} กิจกรรม</span>}
                     </div>
-                    {totalSlides > 0 && (
-                      <div className="hero-action-row">
+                    <div className="hero-action-row" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
+                      {totalSlides > 0 && (
                         <button
                           type="button"
                           className="hero-start-lesson-btn"
@@ -1823,8 +1810,52 @@ const UnitDetail: React.FC = () => {
                         >
                           🚀 เริ่มเรียนสไลด์บทเรียน ({totalSlides} หน้า)
                         </button>
-                      </div>
-                    )}
+                      )}
+                      {quizItems.length > 0 && (
+                        <button
+                          type="button"
+                          className="hero-quiz-btn"
+                          onClick={() => {
+                            setActiveTab('quiz');
+                            setQuizIdx(0);
+                          }}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '0.75rem 1.25rem',
+                            borderRadius: '12px',
+                            border: '1.5px solid #6366f1',
+                            background: '#ffffff',
+                            color: '#4f46e5',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontSize: '0.95rem',
+                            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.1)',
+                          }}
+                        >
+                          📝 ทำแบบทดสอบประจำหน่วย ({quizItems.length} ข้อ)
+                        </button>
+                      )}
+                      <Link
+                        to={`/quiz/${grade.id}_${unit.no}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '0.75rem 1.25rem',
+                          borderRadius: '12px',
+                          border: '1.5px solid #cbd5e1',
+                          background: '#f8fafc',
+                          color: '#334155',
+                          fontWeight: 700,
+                          fontSize: '0.95rem',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        📚 คลังข้อสอบมาตรฐาน ว 4.2
+                      </Link>
+                    </div>
                     {((unit.indicators && unit.indicators.length > 0 && grade.indicators) || grade.technologyProfile) && (
                       <details className="teacher-curriculum-accordion">
                         <summary>📋 ข้อมูลตัวชี้วัดและแผนการสอน (สำหรับคุณครู/ผู้ปกครอง)</summary>

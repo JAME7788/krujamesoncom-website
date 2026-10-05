@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FileText, Save, Eye, RefreshCw, AlertTriangle } from 'lucide-react';
+import { FileText, Save, Eye, RefreshCw, AlertTriangle, ExternalLink, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { grades } from '../data/curriculum';
-import { fetchCustomSlides, saveCustomSlides, parseMarkdownToSlides, slidesToMarkdown } from '../services/slideService';
-import type { RichSlide } from '../data/richSlides';
+import { fetchCustomSlides, saveCustomSlides, deleteCustomSlides, parseMarkdownToSlides, slidesToMarkdown } from '../services/slideService';
+import { getRichSlides, type RichSlide } from '../data/richSlides';
 import { useToast } from './Toast';
 
 const SlideManager: React.FC = () => {
@@ -12,6 +12,7 @@ const SlideManager: React.FC = () => {
   const [markdown, setMarkdown] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isCustomized, setIsCustomized] = useState(false);
 
   const currentGrade = useMemo(() => grades.find((g) => g.id === selectedGradeId), [selectedGradeId]);
   const units = useMemo(() => currentGrade?.units || [], [currentGrade]);
@@ -42,12 +43,19 @@ const SlideManager: React.FC = () => {
     try {
       const custom = await fetchCustomSlides(selectedGradeId, selectedUnitNo);
       if (custom && custom.length > 0) {
+        setIsCustomized(true);
         const md = slidesToMarkdown(custom);
         setMarkdown(md);
       } else {
-        // Generate a default template
-        const unitObj = units.find((u) => u.no === selectedUnitNo);
-        const template = `# ${unitObj?.title || 'หน่วยการเรียนรู้ใหม่'}
+        setIsCustomized(false);
+        const defaultRich = getRichSlides(selectedGradeId, selectedUnitNo);
+        if (defaultRich && defaultRich.length > 0) {
+          const md = slidesToMarkdown(defaultRich);
+          setMarkdown(md);
+        } else {
+          // Generate a default template
+          const unitObj = units.find((u) => u.no === selectedUnitNo);
+          const template = `# ${unitObj?.title || 'หน่วยการเรียนรู้ใหม่'}
 emoji: 📖
 theme: blue
 layout: cover
@@ -55,23 +63,9 @@ layout: cover
 ยินดีต้อนรับสู่บทเรียน!
 - กดเพื่อเริ่มเรียนบทเรียนนี้
 - เรียนรู้อย่างเป็นขั้นตอน
-
----
-# หัวข้อที่ 1: แนะนำบทเรียน
-emoji: 💡
-theme: green
-layout: standard
-
-เนื้อหารายละเอียดของสไลด์หน้านี้
-- รายการย่อยที่ 1
-- รายการย่อยที่ 2
-
-\`\`\`python
-# สามารถเขียนโค้ดตัวอย่างได้
-print("สวัสดีชาวโลก")
-\`\`\`
 `;
-        setMarkdown(template);
+          setMarkdown(template);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -87,6 +81,26 @@ print("สวัสดีชาวโลก")
     return () => clearTimeout(timer);
   }, [loadSlidesData]);
 
+  const handleResetToDefault = async () => {
+    if (!confirm(`ต้องการรีเซ็ตสไลด์ ${currentGrade?.title} หน่วยที่ ${selectedUnitNo} กลับเป็นค่ามาตรฐานของหลักสูตรใช่หรือไม่?`)) {
+      return;
+    }
+    setLoading(true);
+    try {
+      await deleteCustomSlides(selectedGradeId, selectedUnitNo);
+      setIsCustomized(false);
+      const defaultRich = getRichSlides(selectedGradeId, selectedUnitNo);
+      if (defaultRich && defaultRich.length > 0) {
+        setMarkdown(slidesToMarkdown(defaultRich));
+      }
+      toast.show('รีเซ็ตสไลด์กลับเป็นค่ามาตรฐานสำเร็จแล้ว', 'success');
+    } catch (e) {
+      console.error(e);
+      toast.show('เกิดข้อผิดพลาดในการรีเซ็ต', 'error');
+    }
+    setLoading(false);
+  };
+
   const handleSave = async () => {
     if (parseError) {
       toast.show('กรุณาแก้ไขรูปแบบสไลด์ให้ถูกต้องก่อนบันทึก', 'error');
@@ -97,6 +111,7 @@ print("สวัสดีชาวโลก")
       const parsed = parseMarkdownToSlides(markdown);
       const success = await saveCustomSlides(selectedGradeId, selectedUnitNo, parsed);
       if (success) {
+        setIsCustomized(true);
         toast.show('บันทึกสไลด์และส่งขึ้น Cloud สำเร็จแล้ว!', 'success');
       } else {
         toast.show('บันทึกลงฐานข้อมูลล้มเหลว', 'error');
@@ -148,15 +163,49 @@ print("สวัสดีชาวโลก")
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>เนื้อหาสไลด์ (Markdown)</label>
-            <button
-              onClick={loadSlidesData}
-              disabled={loading}
-              style={{ padding: '2px 8px', fontSize: '0.78rem', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              <RefreshCw size={12} className={loading ? 'spin' : ''} /> รีโหลด
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>เนื้อหาสไลด์ (Markdown)</label>
+              {isCustomized ? (
+                <span style={{ padding: '2px 8px', borderRadius: '12px', background: '#e0e7ff', color: '#3730a3', fontSize: '0.72rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                  ✏️ ปรับแต่งเองบน Cloud
+                </span>
+              ) : (
+                <span style={{ padding: '2px 8px', borderRadius: '12px', background: '#dcfce7', color: '#166534', fontSize: '0.72rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                  <CheckCircle2 size={12} /> สไลด์มาตรฐานหลักสูตร
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <a
+                href={`/unit/${selectedGradeId}/${selectedUnitNo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="เปิดดูหน้านักเรียนในแท็บใหม่"
+                style={{ padding: '3px 8px', fontSize: '0.78rem', background: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+              >
+                <ExternalLink size={12} /> ดูหน้านักเรียน
+              </a>
+              {isCustomized && (
+                <button
+                  type="button"
+                  onClick={handleResetToDefault}
+                  disabled={loading}
+                  title="คืนค่ากลับเป็นสไลด์มาตรฐานของหลักสูตร"
+                  style={{ padding: '3px 8px', fontSize: '0.78rem', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <RotateCcw size={12} /> คืนค่ามาตรฐาน
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={loadSlidesData}
+                disabled={loading}
+                style={{ padding: '3px 8px', fontSize: '0.78rem', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <RefreshCw size={12} className={loading ? 'spin' : ''} /> รีโหลด
+              </button>
+            </div>
           </div>
           <textarea
             value={markdown}
@@ -165,7 +214,7 @@ print("สวัสดีชาวโลก")
             placeholder="เขียนสไลด์แต่ละแผ่น แยกด้วย ---..."
             style={{
               width: '100%',
-              height: '350px',
+              height: '380px',
               fontFamily: 'monospace',
               fontSize: '0.85rem',
               padding: '0.75rem',
@@ -206,7 +255,7 @@ print("สวัสดีชาวโลก")
       </div>
 
       {/* Live Preview Panel */}
-      <div className="preview-side glass" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border, #e5e7eb)', background: 'rgba(255,255,255,0.7)', maxHeight: '600px', overflowY: 'auto' }}>
+      <div className="preview-side glass" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border, #e5e7eb)', background: 'rgba(255,255,255,0.7)', maxHeight: '640px', overflowY: 'auto' }}>
         <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Eye className="text-primary" /> พรีวิวสไลด์ที่จะแสดงผล ({previewSlides.length} หน้า)
         </h3>
@@ -225,6 +274,8 @@ print("สวัสดีชาวโลก")
                               slide.theme === 'green' ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)' :
                               slide.theme === 'orange' ? 'linear-gradient(135deg, #ffedd5, #fed7aa)' :
                               slide.theme === 'yellow' ? 'linear-gradient(135deg, #fef9c3, #fef08a)' :
+                              slide.theme === 'pink' ? 'linear-gradient(135deg, #fce7f3, #fbcfe8)' :
+                              slide.theme === 'red' ? 'linear-gradient(135deg, #fee2e2, #fecaca)' :
                               'linear-gradient(135deg, #dbeafe, #bfdbfe)',
                   border: '1px solid #d1d5db',
                   borderRadius: '12px',
@@ -233,21 +284,50 @@ print("สวัสดีชาวโลก")
                   boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '0.5rem', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '1.05rem', fontWeight: 'bold', marginBottom: '0.5rem', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '4px' }}>
                   <span>{slide.emoji || '✨'}</span>
                   <span>{slide.title}</span>
-                  <span style={{ marginLeft: 'auto', fontSize: '0.8rem', opacity: 0.6 }}>หน้า {idx + 1}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: '0.78rem', opacity: 0.7 }}>
+                    {slide.layout ? `[${slide.layout}] ` : ''}หน้า {idx + 1}
+                  </span>
                 </div>
-                {slide.body && <p style={{ fontSize: '0.9rem', margin: '0 0 0.5rem', whiteSpace: 'pre-line' }}>{slide.body}</p>}
+                {slide.learnerSummary && (
+                  <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: '6px', padding: '4px 8px', fontSize: '0.78rem', color: '#4b5563', marginBottom: '0.5rem' }}>
+                    💡 <strong>สรุปย่อ:</strong> {slide.learnerSummary}
+                  </div>
+                )}
+                {slide.body && <p style={{ fontSize: '0.88rem', margin: '0 0 0.5rem', whiteSpace: 'pre-line' }}>{slide.body}</p>}
                 {slide.bullets && (
-                  <ul style={{ margin: '0 0 0.5rem', paddingLeft: '1.25rem', fontSize: '0.85rem' }}>
-                    {slide.bullets.map((b: { text: string }, bIdx: number) => (
-                      <li key={bIdx}>{b.text}</li>
+                  <ul style={{ margin: '0 0 0.5rem', paddingLeft: '1.25rem', fontSize: '0.82rem' }}>
+                    {slide.bullets.map((b: { text: string; sub?: string }, bIdx: number) => (
+                      <li key={bIdx}>
+                        <strong>{b.text}</strong>
+                        {b.sub && <span style={{ opacity: 0.8, marginLeft: '4px' }}>{b.sub}</span>}
+                      </li>
                     ))}
                   </ul>
                 )}
+                {slide.callout && (
+                  <div style={{
+                    background: slide.callout.type === 'warn' ? '#fef3c7' : slide.callout.type === 'fun' ? '#fce7f3' : '#dbeafe',
+                    borderLeft: `4px solid ${slide.callout.type === 'warn' ? '#f59e0b' : slide.callout.type === 'fun' ? '#ec4899' : '#3b82f6'}`,
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.78rem',
+                    margin: '0.4rem 0',
+                  }}>
+                    {slide.callout.type === 'warn' ? '⚠️ ' : slide.callout.type === 'fun' ? '🎉 ' : '💡 '}
+                    {slide.callout.text}
+                  </div>
+                )}
+                {slide.image && (
+                  <div style={{ margin: '0.5rem 0', textAlign: 'center' }}>
+                    <img src={slide.image} alt={slide.imageCaption || slide.title} style={{ maxWidth: '100%', maxHeight: '160px', borderRadius: '6px', objectFit: 'cover' }} />
+                    {slide.imageCaption && <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: '2px' }}>{slide.imageCaption}</div>}
+                  </div>
+                )}
                 {slide.code && (
-                  <pre style={{ background: '#1e293b', color: '#f8fafc', padding: '0.5rem', borderRadius: '6px', fontSize: '0.78rem', overflowX: 'auto', margin: '0.25rem 0' }}>
+                  <pre style={{ background: '#1e293b', color: '#f8fafc', padding: '0.5rem', borderRadius: '6px', fontSize: '0.75rem', overflowX: 'auto', margin: '0.25rem 0' }}>
                     <code>{slide.code.content}</code>
                   </pre>
                 )}

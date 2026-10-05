@@ -188,6 +188,152 @@ const ObstacleDodgeGame: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState, shiftLane, performJump]);
 
+  // Canvas drawing
+  const renderCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Background
+    ctx.fillStyle = '#050814';
+    ctx.fillRect(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
+
+    // Draw Lane Dividers
+    ctx.strokeStyle = 'rgba(6, 182, 212, 0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([12, 12]);
+    for (let i = 1; i < LANES_COUNT; i++) {
+      const lx = i * LANE_WIDTH;
+      ctx.beginPath();
+      ctx.moveTo(lx, 0);
+      ctx.lineTo(lx, ARENA_HEIGHT);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // 1. Draw Laser Warnings & Laser Beams
+    for (const h of hazardsRef.current) {
+      if (h.type === 'laser') {
+        for (const lane of h.lanes) {
+          const lx = lane * LANE_WIDTH;
+          if (h.state === 'warning') {
+            // Pulsing warning strip
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
+            ctx.fillRect(lx, 0, LANE_WIDTH, ARENA_HEIGHT);
+
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(lx + 4, 4, LANE_WIDTH - 8, ARENA_HEIGHT - 8);
+
+            ctx.font = 'bold 18px Kanit, sans-serif';
+            ctx.fillStyle = '#ef4444';
+            ctx.textAlign = 'center';
+            ctx.fillText('⚠️ DANGER', lx + LANE_WIDTH / 2, 80);
+          } else if (h.state === 'firing') {
+            // Intense energy beam
+            const grad = ctx.createLinearGradient(lx, 0, lx + LANE_WIDTH, 0);
+            grad.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
+            grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.95)');
+            grad.addColorStop(1, 'rgba(239, 68, 68, 0.3)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(lx, 0, LANE_WIDTH, ARENA_HEIGHT);
+
+            // Core beam
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(lx + LANE_WIDTH / 2 - 8, 0, 16, ARENA_HEIGHT);
+          }
+        }
+      }
+    }
+
+    // 2. Draw Collectible Orbs
+    for (const orb of collectiblesRef.current) {
+      const ox = orb.lane * LANE_WIDTH + LANE_WIDTH / 2;
+      ctx.fillStyle = orb.isBoost ? 'rgba(6, 182, 212, 0.3)' : 'rgba(251, 191, 36, 0.3)';
+      ctx.beginPath();
+      ctx.arc(ox, orb.y, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = '22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(orb.isBoost ? '⚡' : '💎', ox, orb.y);
+    }
+
+    // 3. Draw Hazards: Boulders & Walls
+    for (const h of hazardsRef.current) {
+      if (h.type === 'boulder') {
+        const bx = h.lane * LANE_WIDTH + LANE_WIDTH / 2;
+        ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
+        ctx.beginPath();
+        ctx.arc(bx, h.y, h.radius + 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font = '30px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🪨', bx, h.y);
+      } else if (h.type === 'wall') {
+        const wallHeight = 24;
+        for (let l = 0; l < LANES_COUNT; l++) {
+          if (!h.safeLanes.includes(l)) {
+            const wx = l * LANE_WIDTH;
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
+
+            ctx.strokeStyle = '#f87171';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
+          } else {
+            // Green Gate Indicator
+            const wx = l * LANE_WIDTH;
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+            ctx.fillRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
+            ctx.strokeStyle = '#10b981';
+            ctx.strokeRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
+          }
+        }
+      }
+    }
+
+    // 4. Draw Player
+    const p = playerStateRef.current;
+    const isFlashing = p.iframe > 0 && Math.floor(p.iframe / 100) % 2 === 0;
+
+    if (!isFlashing) {
+      const jumpOffset = p.isJumping ? Math.sin((p.jumpTimer / p.jumpDuration) * Math.PI) * 35 : 0;
+      const drawY = p.y - jumpOffset;
+      const playerScale = p.isJumping ? 1.25 : 1;
+
+      // Shadow when jumping
+      if (p.isJumping) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y + 12, 16, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Overdrive Glow
+      if (overdrive) {
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(p.x, drawY, 28, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.save();
+      ctx.translate(p.x, drawY);
+      ctx.scale(playerScale, playerScale);
+      ctx.font = '32px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(overdrive ? '🚀' : '🏃‍♂️', 0, 0);
+      ctx.restore();
+    }
+  }, [overdrive]);
+
   // Game loop
   useEffect(() => {
     if (gameState !== 'playing') {
@@ -463,164 +609,24 @@ const ObstacleDodgeGame: React.FC = () => {
     return () => {
       if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
     };
-  }, [gameState, playTone]);
+  }, [gameState, playTone, renderCanvas]);
 
   // Record score when game ends
   useEffect(() => {
     if (gameState === 'gameover' && score > 0) {
       void recordGame(score);
-      if (score > highScore) {
-        setHighScore(score);
-        localStorage.setItem('kj_obstacle_dodge_best', String(score));
-      }
-    }
-  }, [gameState, score, highScore, recordGame]);
-
-  // Canvas drawing
-  const renderCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Background
-    ctx.fillStyle = '#050814';
-    ctx.fillRect(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
-
-    // Draw Lane Dividers
-    ctx.strokeStyle = 'rgba(6, 182, 212, 0.2)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([12, 12]);
-    for (let i = 1; i < LANES_COUNT; i++) {
-      const lx = i * LANE_WIDTH;
-      ctx.beginPath();
-      ctx.moveTo(lx, 0);
-      ctx.lineTo(lx, ARENA_HEIGHT);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-
-    // 1. Draw Laser Warnings & Laser Beams
-    for (const h of hazardsRef.current) {
-      if (h.type === 'laser') {
-        for (const lane of h.lanes) {
-          const lx = lane * LANE_WIDTH;
-          if (h.state === 'warning') {
-            // Pulsing warning strip
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
-            ctx.fillRect(lx, 0, LANE_WIDTH, ARENA_HEIGHT);
-
-            ctx.strokeStyle = '#ef4444';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(lx + 4, 4, LANE_WIDTH - 8, ARENA_HEIGHT - 8);
-
-            ctx.font = 'bold 18px Kanit, sans-serif';
-            ctx.fillStyle = '#ef4444';
-            ctx.textAlign = 'center';
-            ctx.fillText('⚠️ DANGER', lx + LANE_WIDTH / 2, 80);
-          } else if (h.state === 'firing') {
-            // Intense energy beam
-            const grad = ctx.createLinearGradient(lx, 0, lx + LANE_WIDTH, 0);
-            grad.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
-            grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.95)');
-            grad.addColorStop(1, 'rgba(239, 68, 68, 0.3)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(lx, 0, LANE_WIDTH, ARENA_HEIGHT);
-
-            // Core beam
-            ctx.fillStyle = '#ef4444';
-            ctx.fillRect(lx + LANE_WIDTH / 2 - 8, 0, 16, ARENA_HEIGHT);
+      const timer = window.setTimeout(() => {
+        setHighScore((prev) => {
+          if (score > prev) {
+            localStorage.setItem('kj_obstacle_dodge_best', String(score));
+            return score;
           }
-        }
-      }
+          return prev;
+        });
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
-
-    // 2. Draw Collectible Orbs
-    for (const orb of collectiblesRef.current) {
-      const ox = orb.lane * LANE_WIDTH + LANE_WIDTH / 2;
-      ctx.fillStyle = orb.isBoost ? 'rgba(6, 182, 212, 0.3)' : 'rgba(251, 191, 36, 0.3)';
-      ctx.beginPath();
-      ctx.arc(ox, orb.y, 18, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.font = '22px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(orb.isBoost ? '⚡' : '💎', ox, orb.y);
-    }
-
-    // 3. Draw Hazards: Boulders & Walls
-    for (const h of hazardsRef.current) {
-      if (h.type === 'boulder') {
-        const bx = h.lane * LANE_WIDTH + LANE_WIDTH / 2;
-        ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
-        ctx.beginPath();
-        ctx.arc(bx, h.y, h.radius + 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.font = '30px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🪨', bx, h.y);
-      } else if (h.type === 'wall') {
-        const wallHeight = 24;
-        for (let l = 0; l < LANES_COUNT; l++) {
-          if (!h.safeLanes.includes(l)) {
-            const wx = l * LANE_WIDTH;
-            ctx.fillStyle = '#dc2626';
-            ctx.fillRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
-
-            ctx.strokeStyle = '#f87171';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
-          } else {
-            // Green Gate Indicator
-            const wx = l * LANE_WIDTH;
-            ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
-            ctx.fillRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
-            ctx.strokeStyle = '#10b981';
-            ctx.strokeRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
-          }
-        }
-      }
-    }
-
-    // 4. Draw Player
-    const p = playerStateRef.current;
-    const isFlashing = p.iframe > 0 && Math.floor(p.iframe / 100) % 2 === 0;
-
-    if (!isFlashing) {
-      const jumpOffset = p.isJumping ? Math.sin((p.jumpTimer / p.jumpDuration) * Math.PI) * 35 : 0;
-      const drawY = p.y - jumpOffset;
-      const playerScale = p.isJumping ? 1.25 : 1;
-
-      // Shadow when jumping
-      if (p.isJumping) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.beginPath();
-        ctx.ellipse(p.x, p.y + 12, 16, 6, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Overdrive Glow
-      if (overdrive) {
-        ctx.strokeStyle = '#06b6d4';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(p.x, drawY, 28, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      ctx.save();
-      ctx.translate(p.x, drawY);
-      ctx.scale(playerScale, playerScale);
-      ctx.font = '32px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(overdrive ? '🚀' : '🏃‍♂️', 0, 0);
-      ctx.restore();
-    }
-  };
+  }, [gameState, score, recordGame]);
 
   return (
     <div className="dodge-game-container">
