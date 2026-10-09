@@ -41,6 +41,7 @@ const ROUTES = [
   },
   { path: '/admin?tab=p1-plan', auth: 'admin', wait: 4000, mustInclude: 'แผนเทคโนโลยีและบันทึกหลังสอน' },
   { path: '/admin?tab=research', auth: 'admin', mustInclude: 'รายงานการวิจัยปฏิบัติการในชั้นเรียน' },
+  { path: '/admin?tab=reflections', auth: 'admin', mustInclude: 'สมุดบันทึกการสะท้อนคิด' },
 ];
 
 /** เกมทุกเกมที่มีใน catalog — ดึงอัตโนมัติเพื่อไม่ต้องแก้ลิสต์เมื่อเพิ่มเกมใหม่ */

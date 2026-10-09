@@ -334,7 +334,17 @@ service cloud.firestore {
                     && strOk('gameTitle', 300)
                     && strOk('objective', 1000)
                     && strOk('challengeText', 2000)
-                    && strOk('reflectionText', 2000);
+                    && strOk('reflectionText', 2000)
+                    && strOk('learnerStage', 30)
+                    && strOk('recommendedNextStep', 1000)
+                    && (!('learningStars' in request.resource.data)
+                        || (request.resource.data.learningStars is int
+                            && request.resource.data.learningStars >= 0
+                            && request.resource.data.learningStars <= 3))
+                    && (!('attemptNumber' in request.resource.data)
+                        || (request.resource.data.attemptNumber is int
+                            && request.resource.data.attemptNumber > 0
+                            && request.resource.data.attemptNumber <= 1000));
       allow update, delete: if false;
     }
 

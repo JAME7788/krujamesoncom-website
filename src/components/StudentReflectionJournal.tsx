@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   loadAllReflections,
-  getReflectionStats,
+  fetchGameReflectionsFromFirebase,
 } from '../services/gameReflectionService';
 import { allClassrooms2569 } from '../data/students2569';
 import { gamesCatalog } from '../data/gamesCatalog';
@@ -27,8 +27,22 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
   const [selectedGame, setSelectedGame] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [modeFilter, setModeFilter] = useState<ReflectionModeFilter>('all');
+  const [allRecords, setAllRecords] = useState(() => loadAllReflections());
+  const [cloudStatus, setCloudStatus] = useState<'loading' | 'synced' | 'local'>('loading');
 
-  const allRecords = useMemo(() => loadAllReflections(), []);
+  useEffect(() => {
+    let active = true;
+    void fetchGameReflectionsFromFirebase(compact ? studentId : undefined)
+      .then((records) => {
+        if (!active) return;
+        setAllRecords(records);
+        setCloudStatus('synced');
+      })
+      .catch(() => {
+        if (active) setCloudStatus('local');
+      });
+    return () => { active = false; };
+  }, [compact, studentId]);
 
   // Filter records specifically for student if studentId / studentName provided
   const studentRecords = useMemo(() => {
@@ -50,8 +64,18 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
       const challengeRatio = totalCount > 0 ? Math.round((challengeCount / totalCount) * 100) : 0;
       return { totalCount, challengeCount, uniqueGamesCount, challengeRatio };
     }
-    return getReflectionStats(selectedClassroom === 'all' ? undefined : selectedClassroom);
-  }, [compact, studentRecords, selectedClassroom]);
+    const records = selectedClassroom === 'all'
+      ? allRecords
+      : allRecords.filter((record) => record.classroom === selectedClassroom);
+    const totalCount = records.length;
+    const challengeCount = records.filter((record) => record.challengeMode).length;
+    return {
+      totalCount,
+      challengeCount,
+      uniqueGamesCount: new Set(records.map((record) => record.gameId)).size,
+      challengeRatio: totalCount > 0 ? Math.round((challengeCount / totalCount) * 100) : 0,
+    };
+  }, [allRecords, compact, studentRecords, selectedClassroom]);
 
   const filteredRecords = useMemo(() => {
     return targetRecords.filter((r) => {
@@ -88,6 +112,9 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ background: cloudStatus === 'synced' ? '#ecfdf5' : '#f8fafc', padding: '3px 9px', borderRadius: 999, border: '1px solid #cbd5e1', fontSize: '0.78rem', color: '#475569', fontWeight: 600 }}>
+              {cloudStatus === 'loading' ? '⏳ กำลังซิงก์' : cloudStatus === 'synced' ? '☁️ ข้อมูลล่าสุด' : '💾 ข้อมูลในเครื่อง'}
+            </span>
             <span style={{ background: '#f0fdf4', padding: '3px 9px', borderRadius: 999, border: '1px solid #bbf7d0', fontSize: '0.78rem', color: '#166534', fontWeight: 600 }}>
               📝 บันทึกแล้ว {stats.totalCount} ครั้ง
             </span>
@@ -150,6 +177,11 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
                     🎯 {record.objective}
                   </p>
 
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 8, fontSize: '0.72rem', color: '#92400e' }}>
+                    <span>⭐ {record.learningStars || (record.questionAnswered ? 3 : 1)}/3</span>
+                    {record.attemptNumber && <span>• รอบที่ {record.attemptNumber}</span>}
+                  </div>
+
                   <div
                     style={{
                       background: '#fffbeb',
@@ -203,6 +235,9 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
           </div>
           <div style={{ background: '#f8fafc', padding: '4px 10px', borderRadius: 999, border: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
             🎮 ครอบคลุม: {stats.uniqueGamesCount}/36 เกม
+          </div>
+          <div style={{ background: cloudStatus === 'synced' ? '#ecfdf5' : '#f8fafc', padding: '4px 10px', borderRadius: 999, border: '1px solid #d1d5db', fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
+            {cloudStatus === 'loading' ? '⏳ กำลังดึงข้อมูล' : cloudStatus === 'synced' ? '☁️ ซิงก์คลาวด์แล้ว' : '💾 ใช้ข้อมูลในเครื่อง'}
           </div>
         </div>
       </div>
@@ -320,6 +355,11 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
                   <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
                     🎯 เป้าหมาย: {record.objective}
                   </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 5, fontSize: '0.72rem', color: '#92400e' }}>
+                    <span>⭐ ดาวการเรียนรู้ {record.learningStars || (record.questionAnswered ? 3 : 1)}/3</span>
+                    {record.attemptNumber && <span>🔁 รอบที่ {record.attemptNumber}</span>}
+                    {record.learnerStage && <span>🧭 {record.learnerStage === 'first' ? 'เริ่มต้น' : record.learnerStage === 'growing' ? 'กำลังพัฒนา' : 'ชำนาญ'}</span>}
+                  </div>
                 </div>
 
                 {/* Reflection Quote */}
@@ -338,6 +378,11 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
                   </span>
                   "{record.reflectionText}"
                 </div>
+                {record.recommendedNextStep && (
+                  <div style={{ marginTop: 8, padding: '7px 10px', borderRadius: 8, background: '#eff6ff', color: '#1e40af', fontSize: '0.76rem' }}>
+                    ➜ ขั้นต่อไป: {record.recommendedNextStep}
+                  </div>
+                )}
               </div>
 
               {/* Footer Timestamp */}

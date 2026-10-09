@@ -11,6 +11,10 @@ export interface GameReflectionRecord {
   challengeText: string;
   questionAnswered: boolean;
   reflectionText: string;
+  learningStars?: number;
+  learnerStage?: 'first' | 'growing' | 'mastery';
+  recommendedNextStep?: string;
+  attemptNumber?: number;
   createdAt: number;
 }
 
@@ -90,6 +94,41 @@ export const loadClassroomReflections = (classroom: string): GameReflectionRecor
 /** โหลดบันทึกสะท้อนคิดทั้งหมด */
 export const loadAllReflections = (): GameReflectionRecord[] => {
   return getLocalReflections();
+};
+
+const mergeReflections = (
+  cloudRecords: GameReflectionRecord[],
+  localRecords = getLocalReflections(),
+): GameReflectionRecord[] => {
+  const merged = new Map<string, GameReflectionRecord>();
+  [...cloudRecords, ...localRecords].forEach((record) => {
+    if (!merged.has(record.id)) merged.set(record.id, record);
+  });
+  return [...merged.values()].sort((a, b) => b.createdAt - a.createdAt).slice(0, 500);
+};
+
+/**
+ * โหลดหลักฐานจากคลาวด์สำหรับหน้าครู หรือเฉพาะเจ้าของข้อมูลสำหรับหน้านักเรียน
+ * แล้วรวมกับรายการที่ยังรอซิงก์ในเครื่องโดยไม่สร้างรายการซ้ำ
+ */
+export const fetchGameReflectionsFromFirebase = async (
+  studentId?: string,
+): Promise<GameReflectionRecord[]> => {
+  const [{ db }, firestore] = await Promise.all([
+    import('./firebase'),
+    import('firebase/firestore'),
+  ]);
+  const source = firestore.collection(db, FIRESTORE_COLLECTION);
+  const request = studentId
+    ? firestore.query(source, firestore.where('studentId', '==', studentId), firestore.limit(200))
+    : firestore.query(source, firestore.orderBy('createdAt', 'desc'), firestore.limit(500));
+  const snapshot = await firestore.getDocs(request);
+  const cloudRecords = snapshot.docs.map((item) => item.data() as GameReflectionRecord);
+  const merged = mergeReflections(cloudRecords);
+  saveLocalReflections(merged);
+  return studentId
+    ? merged.filter((record) => record.studentId === studentId || record.studentCode === studentId)
+    : merged;
 };
 
 /** ดึงข้อมูลสถิติภาพรวมของการสะท้อนคิด (สำหรับงานวิจัย CAR และ แดชบอร์ดครู) */

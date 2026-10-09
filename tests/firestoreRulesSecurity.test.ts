@@ -47,6 +47,9 @@ describe('Firestore security rule regression checks', () => {
     expect(block).toContain('allow read: if isTeacher()');
     expect(block).toContain('allow update, delete: if false');
     expect(block).toContain('isAcademicStudentId(request.resource.data.studentId)');
+    expect(block).toContain("strOk('recommendedNextStep', 1000)");
+    expect(block).toContain("'learningStars' in request.resource.data");
+    expect(block).toContain("'attemptNumber' in request.resource.data");
   });
 
   it('keeps question bank answers teacher-only', () => {

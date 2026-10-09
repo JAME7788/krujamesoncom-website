@@ -29,10 +29,16 @@ describe('Game-based learning curriculum coverage', () => {
       challengeText: 'สร้างเลขเป้าหมายแล้วบอกผลรวม',
       questionAnswered: true,
       reflectionText: 'เปิดหลัก 4 และ 1 ได้ 5 รอบหน้าจะรวมค่าก่อนกด',
+      learningStars: 3,
+      learnerStage: 'growing',
+      recommendedNextStep: 'ลองอธิบายวิธีคิดให้เพื่อนฟัง',
+      attemptNumber: 2,
     });
 
     expect(saved.id).toBeDefined();
     expect(saved.createdAt).toBeGreaterThan(0);
+    expect(saved.learningStars).toBe(3);
+    expect(saved.attemptNumber).toBe(2);
 
     const studentReflections = loadStudentReflections('test_student_01');
     expect(studentReflections.length).toBeGreaterThanOrEqual(1);

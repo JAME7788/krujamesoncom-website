@@ -5,6 +5,7 @@ const games = [...fs.readFileSync('src/data/gamesCatalog.ts', 'utf8').matchAll(/
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || 'C:/Users/KruJames/AppData/Local/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-win64/chrome-headless-shell.exe' });
 fs.mkdirSync('artifacts/game-learning', { recursive: true });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+page.setDefaultTimeout(10_000);
 await page.addInitScript(() => sessionStorage.setItem('krujames_login_prompt_dismissed_v1', 'true'));
 const failures = [];
 try {
@@ -13,12 +14,18 @@ try {
       await page.goto((process.env.QA_BASE_URL || 'http://127.0.0.1:5180') + game.path);
       await page.getByRole('button', { name: /ท้าทายตัวเอง/ }).click();
       assert.equal(await page.getByRole('button', { name: /ท้าทายตัวเอง/ }).getAttribute('aria-pressed'), 'true');
+      await page.locator('.gbl-personal').waitFor();
+      assert.match(await page.locator('.gbl-success-rule').innerText(), /3 ดาว/);
+      await page.getByRole('button', { name: /เปิดแผนสอน 10 นาที/ }).click();
+      assert.match(await page.locator('.gbl-teacher-guide').innerText(), /ก่อนเล่น 2 นาที/);
+      await page.getByRole('button', { name: /ซ่อนแผนสอน 10 นาที/ }).click();
       const cover = page.locator('.gbl-art img');
       await cover.waitFor();
       await page.waitForFunction(() => { const img = document.querySelector('.gbl-art img'); return img?.complete && img.naturalWidth > 0; });
       if (game.id === 'binary') await page.screenshot({ path: 'artifacts/game-learning/mission-desktop.png' });
       await page.getByRole('button', { name: 'รับภารกิจและเข้าเกม', exact: true }).click();
       await page.getByRole('region', { name: 'ทบทวนหลังเล่น', exact: true }).waitFor();
+      assert.equal(await page.locator('.gbl-star-meter span').count(), 3);
       await page.waitForTimeout(400);
       if (game.id === 'cyber-shield') {
         await page.locator('.cyber-option-btn').first().click();
@@ -48,9 +55,11 @@ try {
   await review.getByRole('button', { name: '101', exact: true }).click();
   await review.getByRole('status').filter({ hasText: 'ลองคิดอีกครั้ง' }).waitFor();
   await review.getByRole('button', { name: '5', exact: true }).click();
-  await review.getByRole('textbox').fill('เปิดหลัก 4 และ 1 ได้ 5 รอบหน้าจะรวมค่าก่อนกด');
+  await review.getByRole('button', { name: '+ ฉันแยกปัญหาเป็นขั้น', exact: true }).click();
+  await review.getByRole('textbox').fill('เปิดหลัก 4 และ 1 ได้ 5 ฉันแยกปัญหาเป็นขั้น รอบหน้าจะรวมค่าก่อนกด');
   await review.getByRole('button', { name: 'สรุปการฝึกครั้งนี้', exact: true }).click();
   await review.getByText('ทบทวนแล้ว', { exact: false }).waitFor();
+  assert.match(await review.locator('.gbl-review-reward').innerText(), /3\/3 ดาว/);
   await page.setViewportSize({ width: 390, height: 844 });
   await review.scrollIntoViewIfNeeded();
   await page.screenshot({ path: 'artifacts/game-learning/mobile-reflection.png' });
