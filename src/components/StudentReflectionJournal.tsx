@@ -15,6 +15,8 @@ export interface StudentReflectionJournalProps {
   compact?: boolean;
 }
 
+type ReflectionModeFilter = 'all' | 'foundation' | 'challenge';
+
 export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> = ({
   studentId,
   studentName,
@@ -24,7 +26,7 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
   const [selectedClassroom, setSelectedClassroom] = useState<string>(propClassroom || 'all');
   const [selectedGame, setSelectedGame] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [modeFilter, setModeFilter] = useState<'all' | 'foundation' | 'challenge'>('all');
+  const [modeFilter, setModeFilter] = useState<ReflectionModeFilter>('all');
 
   const allRecords = useMemo(() => loadAllReflections(), []);
 
@@ -248,7 +250,7 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
           <div>
             <select
               value={modeFilter}
-              onChange={(e) => setModeFilter(e.target.value as any)}
+              onChange={(e) => setModeFilter(e.target.value as ReflectionModeFilter)}
               style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.82rem', background: 'white' }}
             >
               <option value="all">ทุกโหมดภารกิจ</option>

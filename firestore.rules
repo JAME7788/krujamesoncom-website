@@ -53,10 +53,40 @@ service cloud.firestore {
         );
     }
 
+    function isStudentOwner(studentId) {
+      return request.auth != null
+        && ('role' in request.auth.token)
+        && request.auth.token.role == 'student'
+        && ('studentId' in request.auth.token)
+        && request.auth.token.studentId == studentId;
+    }
+
+    function isStudent() {
+      return request.auth != null
+        && ('role' in request.auth.token)
+        && request.auth.token.role == 'student'
+        && ('studentId' in request.auth.token);
+    }
+
+    function isTycoonParticipant(room) {
+      return isStudent() && (
+        room.hostId == request.auth.token.studentId
+        || (room.players.size() > 0 && room.players[0].id == request.auth.token.studentId)
+        || (room.players.size() > 1 && room.players[1].id == request.auth.token.studentId)
+        || (room.players.size() > 2 && room.players[2].id == request.auth.token.studentId)
+        || (room.players.size() > 3 && room.players[3].id == request.auth.token.studentId)
+      );
+    }
+
     // ====== Teacher identity and audit ======
     match /teacherProfiles/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || isTeacher());
       allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    match /studentProfiles/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isTeacher());
+      allow write: if false;
     }
 
     match /teacherAuditLogs/{id} {
@@ -73,19 +103,25 @@ service cloud.firestore {
 
     // ====== Students (รายชื่อ) ======
     match /students/{studentId} {
-      allow read: if true;
-      allow write: if isAcademicStudentId(studentId)
+      allow read: if isTeacher() || isStudentOwner(studentId);
+      allow create, update: if (isTeacher() || isStudentOwner(studentId))
+                   && isAcademicStudentId(studentId)
                    && baseWrite(20)
                    && strOk('name', 200)
                    && strOk('classroom', 20)
                    && strOk('studentNumber', 10);
+      allow delete: if false;
     }
 
     // ====== Progress (ความก้าวหน้า + XP + streak + bonus) ======
     match /progress/{studentId} {
-      allow read: if true;
+      allow read: if isTeacher() || isStudentOwner(studentId);
       // progress มี nested arrays/maps เยอะ — จำกัดจำนวน top-level field
-      allow write: if isAcademicStudentId(studentId) && baseWrite(40);
+      allow create, update: if (isTeacher() || isStudentOwner(studentId))
+                   && isAcademicStudentId(studentId)
+                   && baseWrite(40)
+                   && request.resource.data.studentId == studentId;
+      allow delete: if false;
     }
 
     // ====== Grades (K/P/A + ทักษะอาชีพ) ======
@@ -107,8 +143,8 @@ service cloud.firestore {
 
     // ====== Primary Technology Outcome 5 Assessments ======
     match /primaryCompetencyAssessments/{recordId} {
-      allow read: if true;
-      allow write: if baseWrite(30)
+      allow read: if isTeacher();
+      allow write: if isTeacher() && baseWrite(30)
                    && strOk('planId', 100)
                    && strOk('classroom', 20)
                    && strOk('studentCode', 100)
@@ -118,8 +154,8 @@ service cloud.firestore {
 
     // ====== Post-teaching lesson records ======
     match /lessonRecords/{recordId} {
-      allow read: if true;
-      allow write: if baseWrite(35)
+      allow read: if isTeacher();
+      allow write: if isTeacher() && baseWrite(35)
                    && strOk('classroom', 20)
                    && strOk('courseName', 300)
                    && strOk('teacherName', 300)
@@ -133,8 +169,8 @@ service cloud.firestore {
 
     // ====== Teaching sessions and unified learning evidence ======
     match /teachingSessions/{sessionId} {
-      allow read: if true;
-      allow write: if baseWrite(30)
+      allow read: if isTeacher();
+      allow write: if isTeacher() && baseWrite(30)
                    && strOk('classroom', 20)
                    && strOk('lessonTitle', 500)
                    && strOk('plannedDate', 20)
@@ -144,14 +180,15 @@ service cloud.firestore {
     }
 
     match /learningEvidence/{evidenceId} {
-      allow read: if true;
-      allow create, update: if isAcademicStudentId(request.resource.data.studentId)
+      allow read: if isTeacher() || isStudentOwner(resource.data.studentId);
+      allow create, update: if (isTeacher() || isStudentOwner(request.resource.data.studentId))
+                   && isAcademicStudentId(request.resource.data.studentId)
                    && baseWrite(30)
                    && strOk('studentName', 300)
                    && strOk('classroom', 20)
                    && strOk('title', 500)
                    && strOk('detail', 3000);
-      allow delete: if isTeacher() || resource.data.classroom is string;
+      allow delete: if isTeacher();
     }
 
     // ====== Student assessments and general post-lesson records ======
@@ -170,90 +207,135 @@ service cloud.firestore {
     // ====== Announcements ======
     match /announcements/{id} {
       allow read: if true;
-      allow write: if baseWrite(20) && strOk('title', 300) && strOk('body', 5000);
+      allow write: if isTeacher() && baseWrite(20) && strOk('title', 300) && strOk('body', 5000);
     }
 
     // ====== Calendar Events ======
     match /events/{id} {
       allow read: if true;
-      allow write: if baseWrite(20) && strOk('title', 300);
+      allow write: if isTeacher() && baseWrite(20) && strOk('title', 300);
     }
 
     // ====== Custom Courses (Course Builder) ======
     match /courses/{id} {
       allow read: if true;
-      allow write: if baseWrite(50);
+      allow write: if isTeacher() && baseWrite(50);
     }
 
     match /courseVersions/{id} {
-      allow read: if true;
-      allow write: if baseWrite(15);
+      allow read: if isTeacher();
+      allow write: if isTeacher() && baseWrite(15);
     }
 
     match /questionBank/{id} {
-      allow read: if true;
-      allow create, update: if baseWrite(30)
+      allow read: if isTeacher();
+      allow create, update: if isTeacher() && baseWrite(30)
                    && strOk('classroom', 20)
                    && strOk('indicatorCode', 100)
                    && strOk('question', 3000)
                    && strOk('explanation', 5000);
-      allow delete: if isTeacher() || resource.data.classroom is string;
+      allow delete: if isTeacher();
     }
 
     // ====== Homework (งานที่ครูสั่ง + งานที่นักเรียนส่ง) ======
     match /homeworkAssignments/{id} {
       allow read: if true;
-      allow write: if baseWrite(30)
+      allow write: if isTeacher() && baseWrite(30)
                    && strOk('title', 500)
                    && strOk('description', 10000)
                    && strOk('classroom', 20);
     }
 
     match /homeworkSubmissions/{id} {
-      allow read: if true;
-      allow write: if isAcademicStudentId(request.resource.data.studentId)
+      allow read: if isTeacher() || isStudentOwner(resource.data.studentId);
+      allow create: if isStudentOwner(request.resource.data.studentId)
+                   && isAcademicStudentId(request.resource.data.studentId)
                    && baseWrite(30)
                    && strOk('studentName', 300)
                    && strOk('classroom', 20)
                    && strOk('contentUrl', 3000)
                    && strOk('comment', 5000)
-                   && strOk('feedback', 5000);
+                   && !('score' in request.resource.data)
+                   && !('kScore' in request.resource.data)
+                   && !('pScore' in request.resource.data)
+                   && !('feedback' in request.resource.data)
+                   && !('reviewedAt' in request.resource.data);
+      allow update: if isTeacher()
+                   || (isStudentOwner(resource.data.studentId)
+                     && request.resource.data.studentId == resource.data.studentId
+                     && !('reviewedAt' in resource.data)
+                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                       'contentUrl', 'comment', 'submittedAt', 'designThinkingSteps'
+                     ]));
+      allow delete: if isTeacher();
+    }
+
+    // Legacy file submission service. New homework uses homeworkSubmissions.
+    match /submissions/{id} {
+      allow read: if isTeacher() || isStudentOwner(resource.data.studentId);
+      allow create: if isStudentOwner(request.resource.data.studentId)
+                    && baseWrite(15)
+                    && strOk('studentName', 300)
+                    && strOk('assignmentTitle', 500)
+                    && strOk('content', 3000)
+                    && request.resource.data.status == 'pending';
+      allow update, delete: if isTeacher();
     }
 
     // ====== Schedule / courseAccess / unitLocks ======
     match /schedule/{id} {
       allow read: if true;
-      allow write: if baseWrite(30);
+      allow write: if isTeacher() && baseWrite(30);
     }
 
     // ====== Custom Slides (NotebookLM) ======
     match /custom_slides/{id} {
       allow read: if true;
-      allow write: if baseWrite(60);
+      allow write: if isTeacher() && baseWrite(60);
     }
 
     // ====== Site Settings (รหัสเข้าระบบ ฯลฯ) ======
     match /settings/{id} {
       allow read: if true;
-      allow write: if baseWrite(15) && strOk('accessCode', 100);
+      allow write: if isTeacher() && baseWrite(15) && strOk('accessCode', 100);
     }
 
     // ====== Manual Attendance (เช็คชื่อ Quick) ======
     match /attendance/{id} {
-      allow read: if true;
-      allow write: if baseWrite(10);
+      allow read: if isTeacher();
+      allow write: if isTeacher() && baseWrite(10);
     }
 
     // ====== Daily Questions (คำถามประจำวัน) ======
     match /dailyQuestions/{id} {
       allow read: if true;
-      allow write: if baseWrite(10) && strOk('question', 1000);
+      allow write: if isTeacher() && baseWrite(10) && strOk('question', 1000);
     }
 
     // ====== Satisfaction Surveys (แบบสอบถามความพึงพอใจ) ======
     match /surveys/{studentId} {
-      allow read: if true;
-      allow write: if baseWrite(10);
+      allow read: if isTeacher() || isStudentOwner(studentId);
+      allow create, update: if isStudentOwner(studentId) && baseWrite(10);
+      allow delete: if false;
+    }
+
+    // ====== Game-Based Learning reflections ======
+    // Records are immutable, bounded and tied to the authenticated student.
+    match /gameReflections/{reflectionId} {
+      allow read: if isTeacher() || isStudentOwner(resource.data.studentId);
+      allow create: if isStudentOwner(request.resource.data.studentId)
+                    && isAcademicStudentId(request.resource.data.studentId)
+                    && baseWrite(20)
+                    && strOk('studentId', 300)
+                    && strOk('studentCode', 100)
+                    && strOk('studentName', 300)
+                    && strOk('classroom', 20)
+                    && strOk('gameId', 100)
+                    && strOk('gameTitle', 300)
+                    && strOk('objective', 1000)
+                    && strOk('challengeText', 2000)
+                    && strOk('reflectionText', 2000);
+      allow update, delete: if false;
     }
 
     // ====== External website trial visitors ======
@@ -279,61 +361,97 @@ service cloud.firestore {
 
     // ====== Live Quiz Rooms ======
     match /liveQuizzes/{code} {
-      allow read: if true;
-      allow write: if baseWrite(20);
+      allow read: if request.auth != null;
+      allow create, update: if isTeacher() && baseWrite(25);
+      allow delete: if isTeacher();
+    }
+
+    match /liveQuizJoinRequests/{requestId} {
+      allow read, delete: if isTeacher();
+      allow create: if isStudentOwner(request.resource.data.studentId)
+                    && baseWrite(10)
+                    && strOk('code', 6)
+                    && strOk('studentId', 300)
+                    && strOk('name', 300);
+      allow update: if false;
+    }
+
+    match /liveQuizAnswerRequests/{requestId} {
+      allow read, delete: if isTeacher();
+      allow create: if isStudentOwner(request.resource.data.studentId)
+                    && baseWrite(10)
+                    && strOk('code', 6)
+                    && strOk('studentId', 300)
+                    && request.resource.data.questionIndex is int
+                    && request.resource.data.choice is int;
+      allow update: if false;
     }
 
     // ====== Computing Tycoon multiplayer rooms ======
     match /tycoonRooms/{code} {
-      allow read: if true;
-      allow create, update: if baseWrite(20)
+      allow read: if request.auth != null;
+      allow create: if (isTeacher() || (isStudent() && request.resource.data.hostId == request.auth.token.studentId))
+                   && baseWrite(20)
                    && strOk('code', 6)
                    && strOk('name', 100)
                    && strOk('passwordHash', 100)
                    && strOk('hostId', 300);
-      allow delete: if true;
+      allow update: if (isTeacher() || isTycoonParticipant(resource.data))
+                   && request.resource.data.hostId == resource.data.hostId
+                   && request.resource.data.code == resource.data.code
+                   && baseWrite(20)
+                   && strOk('name', 100)
+                   && strOk('passwordHash', 100)
+                   && strOk('hostId', 300);
+      allow delete: if isTeacher() || isTycoonParticipant(resource.data);
     }
 
     // ====== Virtual 3D Classroom ======
     match /virtualWorlds/{roomId} {
-      allow read: if true;
-      allow create, update: if baseWrite(10);
-      allow delete: if true;
+      allow read: if request.auth != null;
+      allow create, update: if (isTeacher() || isStudent()) && baseWrite(10);
+      allow delete: if isTeacher();
     }
 
     match /virtualPlayers/{playerId} {
-      allow read: if true;
-      allow create, update: if baseWrite(20)
+      allow read: if request.auth != null;
+      allow create, update: if (isTeacher() || isStudentOwner(playerId))
+                   && request.resource.data.id == playerId
+                   && baseWrite(20)
                    && strOk('name', 300)
                    && strOk('classroom', 20)
                    && strOk('roomId', 100);
-      allow delete: if true;
+      allow delete: if isTeacher() || isStudentOwner(playerId);
     }
 
     // สถานะห้องที่ครูควบคุม: ล็อกการเดิน/สร้าง, สไลด์ร่วม, รหัสห้อง และการอนุมัติ
     match /virtualRooms/{roomId} {
-      allow read: if true;
-      allow create, update: if baseWrite(40)
+      allow read: if request.auth != null;
+      allow create, update: if isTeacher() && baseWrite(40)
                    && strOk('roomId', 100)
                    && strOk('classroom', 20)
                    && strOk('accessCodeHash', 100)
                    && strOk('activeGamePath', 300)
                    && strOk('activeGameTitle', 300)
                    && strOk('updatedBy', 300);
-      allow delete: if true;
+      allow delete: if isTeacher();
     }
 
     // เหตุการณ์หลักฐานในห้อง 3D ใช้ document id คงที่เพื่อไม่บันทึกซ้ำ
     match /virtualActivityEvents/{eventId} {
-      allow read: if true;
-      allow create, update: if baseWrite(20)
+      allow read: if request.auth != null;
+      allow create: if (isTeacher() || isStudentOwner(request.resource.data.playerId))
+                   && baseWrite(20)
                    && strOk('eventId', 200)
                    && strOk('roomId', 100)
                    && strOk('playerId', 300)
                    && strOk('playerName', 300)
                    && strOk('classroom', 20)
                    && strOk('detail', 1000);
-      allow delete: if true;
+      allow update: if (isTeacher() || isStudentOwner(resource.data.playerId))
+                   && request.resource.data.playerId == resource.data.playerId
+                   && baseWrite(20);
+      allow delete: if isTeacher();
     }
 
     // Default deny for any other path

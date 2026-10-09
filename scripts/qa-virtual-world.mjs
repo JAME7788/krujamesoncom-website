@@ -210,10 +210,10 @@ for (const viewport of [
       pointerType: 'touch', pointerId: 41, isPrimary: true, clientX: 100, clientY: 420,
     });
     await sceneCanvas.dispatchEvent('pointermove', {
-      pointerType: 'touch', pointerId: 41, isPrimary: true, clientX: 310, clientY: 420,
+      pointerType: 'touch', pointerId: 41, isPrimary: true, clientX: 285, clientY: 420,
     });
     await sceneCanvas.dispatchEvent('pointerup', {
-      pointerType: 'touch', pointerId: 41, isPrimary: true, clientX: 310, clientY: 420,
+      pointerType: 'touch', pointerId: 41, isPrimary: true, clientX: 285, clientY: 420,
     });
     await page.screenshot({ path: join(artifactDir, 'virtual-world-game-aim.png'), fullPage: true });
     await page.getByRole('button', { name: 'โต้ตอบกับสไลด์หรือเกม' }).click();
@@ -271,14 +271,25 @@ teacherPage.on('console', (message) => {
 await teacherPage.goto(baseUrl, { waitUntil: 'domcontentloaded' });
 await teacherPage.evaluate(() => {
   localStorage.setItem('krujames_admin_session_v1', JSON.stringify({
+    user: 'qa-teacher',
+    uid: 'qa-teacher',
+    role: 'admin',
+    authSource: 'qa',
+    loginAt: Date.now(),
     expiresAt: Date.now() + 60 * 60 * 1000,
   }));
 });
 await teacherPage.goto(`${baseUrl}/world?qa=${qaId}`, { waitUntil: 'domcontentloaded' });
 await teacherPage.locator('.virtual-classroom-canvas canvas').waitFor({ timeout: 15_000 });
 await teacherPage.getByRole('combobox', { name: 'เลือกห้องเรียนที่ครูจะเข้าร่วม' }).waitFor();
+// A previously interrupted run may leave approval/lock state in the shared QA room.
+// Reset it before the second browser joins so the run is deterministic.
+await teacherPage.evaluate(() => window.dispatchEvent(new Event('kj-world-qa-cleanup')));
+await teacherPage.waitForTimeout(1_200);
 
 const studentPage = await studentContext.newPage();
+const studentPageErrors = [];
+studentPage.on('pageerror', (error) => studentPageErrors.push(error.message));
 studentPage.on('console', (message) => {
   if (message.type() === 'warning') multiplayerWarnings.push(message.text());
 });
@@ -294,7 +305,14 @@ await studentPage.evaluate(() => {
   }));
 });
 await studentPage.goto(`${baseUrl}/world?qa=${qaId}`, { waitUntil: 'domcontentloaded' });
-await studentPage.locator('.virtual-classroom-canvas canvas').waitFor({ timeout: 15_000 });
+try {
+  await studentPage.locator('.virtual-classroom-canvas canvas').waitFor({ timeout: 30_000 });
+} catch (error) {
+  await studentPage.screenshot({ path: join(artifactDir, 'virtual-world-student-load-failure.png'), fullPage: true });
+  const location = studentPage.url();
+  const body = (await studentPage.locator('body').innerText()).slice(0, 2_000);
+  throw new Error(`student world did not load url=${location} body=${JSON.stringify(body)} pageErrors=${studentPageErrors.join(' | ')} ${error}`);
+}
 try {
   await studentPage.waitForFunction(() => {
     const text = document.querySelector('.world-room-label span')?.textContent || '';
@@ -387,11 +405,15 @@ adminPage.on('pageerror', (error) => adminErrors.push(error.message));
 await adminPage.goto(baseUrl, { waitUntil: 'domcontentloaded' });
 await adminPage.evaluate(() => {
   localStorage.setItem('krujames_admin_session_v1', JSON.stringify({
+    user: 'qa-teacher',
+    uid: 'qa-teacher',
+    role: 'admin',
+    authSource: 'qa',
+    loginAt: Date.now(),
     expiresAt: Date.now() + 60 * 60 * 1000,
   }));
 });
-await adminPage.goto(`${baseUrl}/admin`, { waitUntil: 'domcontentloaded' });
-await adminPage.getByRole('button', { name: 'ห้องเรียน 3D' }).click();
+await adminPage.goto(`${baseUrl}/admin?tab=world&qa=${qaId}`, { waitUntil: 'domcontentloaded' });
 await adminPage.locator('.vcm').waitFor({ timeout: 12_000 });
 const adminScreenshot = join(artifactDir, 'virtual-world-admin-dashboard.png');
 await adminPage.screenshot({ path: adminScreenshot, fullPage: true });

@@ -84,7 +84,7 @@ const Games: React.FC = () => {
   const ctProfile = useMemo(() => {
     if (!user?.id || user.accountType !== 'student') return null;
     return calculateStudentCtProfile(user.id, user.classroom || '');
-  }, [user?.id, user?.classroom, user?.accountType]);
+  }, [user]);
 
   const recommendedGame = useMemo(() => {
     if (!ctProfile) return null;

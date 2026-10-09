@@ -822,6 +822,8 @@ const VirtualClassroom: React.FC = () => {
     renderer.shadowMap.enabled = graphicsQuality !== 'low';
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
     renderer.domElement.setAttribute('aria-label', 'ห้องเรียนออนไลน์สามมิติ');
     mount.appendChild(renderer.domElement);
 
@@ -855,9 +857,21 @@ const VirtualClassroom: React.FC = () => {
         }
       }
       const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
       texture.magFilter = THREE.NearestFilter;
       texture.minFilter = THREE.NearestFilter;
       pixelTextures.push(texture);
+      return texture;
+    };
+    const makeRepeatedPixelTexture = (
+      hex: number,
+      variance: number,
+      repeatX: number,
+      repeatY: number,
+    ) => {
+      const texture = makePixelTexture(hex, variance);
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(repeatX, repeatY);
       return texture;
     };
     // พื้นหญ้าแบบตารางบล็อก 1x1 พร้อมเส้นขอบช่อง
@@ -886,6 +900,7 @@ const VirtualClassroom: React.FC = () => {
         ctx.beginPath(); ctx.moveTo(0, i * cell + 0.5); ctx.lineTo(size, i * cell + 0.5); ctx.stroke();
       }
       const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
       texture.repeat.set(WORLD_SIZE / 8, WORLD_SIZE / 8);
       texture.magFilter = THREE.NearestFilter;
@@ -903,9 +918,24 @@ const VirtualClassroom: React.FC = () => {
     ground.userData = { kind: 'ground', sampleColor: '#6ca83c' };
     scene.add(ground);
 
+    // ทางเดินพิกเซลจากจุดเกิดเข้าสู่ห้องเรียน ช่วยบอกทิศทางโดยไม่ต้องเพิ่มแผง UI
+    const entryPath = new THREE.Mesh(
+      new THREE.BoxGeometry(4, 0.08, 28),
+      new THREE.MeshStandardMaterial({
+        map: makeRepeatedPixelTexture(0xb6a279, 30, 2, 14),
+        roughness: 0.96,
+      }),
+    );
+    entryPath.position.set(0, 0.025, 20.5);
+    entryPath.receiveShadow = true;
+    scene.add(entryPath);
+
     const classroomFloor = new THREE.Mesh(
       new THREE.BoxGeometry(20, 0.25, 17),
-      new THREE.MeshStandardMaterial({ color: 0xe8e2d5, roughness: 0.85 }),
+      new THREE.MeshStandardMaterial({
+        map: makeRepeatedPixelTexture(0xc58b4c, 22, 10, 9),
+        roughness: 0.9,
+      }),
     );
     classroomFloor.position.set(0, 0.08, 0);
     classroomFloor.receiveShadow = true;
@@ -921,7 +951,10 @@ const VirtualClassroom: React.FC = () => {
     }
     const staticColliders: StaticCollider[] = [];
 
-    const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.9 });
+    const wallMaterial = new THREE.MeshStandardMaterial({
+      map: makeRepeatedPixelTexture(0xd9d6c9, 18, 12, 4),
+      roughness: 0.95,
+    });
     const addWall = (x: number, y: number, z: number, w: number, h: number, d: number) => {
       const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMaterial);
       wall.position.set(x, y, z);
@@ -941,11 +974,85 @@ const VirtualClassroom: React.FC = () => {
     addWall(-10, 2.75, 0, 0.35, 5.5, 17);
     addWall(10, 2.75, 0, 0.35, 5.5, 17);
 
+    // ภูมิประเทศแบบว็อกเซลรอบพื้นที่เล่น ใช้ InstancedMesh เพื่อลด draw call
+    const terrainGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const dirtMaterial = new THREE.MeshStandardMaterial({
+      map: makePixelTexture(0x8b5a2b, 28),
+      roughness: 1,
+    });
+    const grassMaterial = new THREE.MeshStandardMaterial({
+      map: makePixelTexture(0x5d9f35, 26),
+      roughness: 1,
+    });
+    const hillCenters = [[-28, -24], [28, -23], [-30, 23], [30, 24]] as const;
+    const hillRadius = graphicsQuality === 'low' ? 4 : 7;
+    const dirtPositions: THREE.Vector3[] = [];
+    const grassPositions: THREE.Vector3[] = [];
+    hillCenters.forEach(([centerX, centerZ], hillIndex) => {
+      for (let dx = -hillRadius; dx <= hillRadius; dx += 1) {
+        for (let dz = -hillRadius; dz <= hillRadius; dz += 1) {
+          const distance = Math.hypot(dx, dz);
+          if (distance > hillRadius) continue;
+          const ripple = ((Math.abs(dx * 13 + dz * 7 + hillIndex * 3) % 3) - 1) * 0.35;
+          const height = Math.max(1, Math.floor((hillRadius - distance) / 1.9 + 1 + ripple));
+          for (let level = 0; level < height - 1; level += 1) {
+            dirtPositions.push(new THREE.Vector3(centerX + dx + 0.5, level + 0.5, centerZ + dz + 0.5));
+          }
+          grassPositions.push(new THREE.Vector3(centerX + dx + 0.5, height - 0.5, centerZ + dz + 0.5));
+        }
+      }
+      staticColliders.push({
+        minX: centerX - hillRadius,
+        maxX: centerX + hillRadius + 1,
+        minZ: centerZ - hillRadius,
+        maxZ: centerZ + hillRadius + 1,
+        minY: 0,
+        maxY: hillRadius,
+      });
+    });
+    const dummy = new THREE.Object3D();
+    const addTerrainInstances = (positions: THREE.Vector3[], material: THREE.Material) => {
+      const mesh = new THREE.InstancedMesh(terrainGeometry, material, positions.length);
+      positions.forEach((position, index) => {
+        dummy.position.copy(position);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(index, dummy.matrix);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.castShadow = graphicsQuality === 'high';
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+      return mesh;
+    };
+    addTerrainInstances(dirtPositions, dirtMaterial);
+    addTerrainInstances(grassPositions, grassMaterial);
+
+    // ดวงอาทิตย์และเมฆทรงบล็อก ให้บรรยากาศเป็นโลกว็อกเซลโดยใช้เรขาคณิตเบา ๆ
+    const skyDecor = new THREE.Group();
+    const cubeSun = new THREE.Mesh(
+      new THREE.BoxGeometry(4.5, 4.5, 1),
+      new THREE.MeshBasicMaterial({ color: 0xffee77, fog: false }),
+    );
+    cubeSun.position.set(-28, 27, -42);
+    skyDecor.add(cubeSun);
+    const cloudMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
+    [[-18, 18, -28], [20, 22, -35], [6, 16, 32]].forEach(([x, y, z], cloudIndex) => {
+      const cloud = new THREE.Group();
+      [[0, 0, 0, 5], [3, 0, 0, 4], [-3, 0, 0, 3], [0, 1.2, 0, 3]].forEach(([cx, cy, cz, width]) => {
+        const part = new THREE.Mesh(new THREE.BoxGeometry(width, 1.5, 2.2), cloudMaterial);
+        part.position.set(cx, cy, cz);
+        cloud.add(part);
+      });
+      cloud.position.set(x, y, z + cloudIndex * 2);
+      skyDecor.add(cloud);
+    });
+    scene.add(skyDecor);
+
     const roofBeams = new THREE.Group();
     [-7.5, -2.5, 2.5, 7.5].forEach((x) => {
       const beam = new THREE.Mesh(
         new THREE.BoxGeometry(0.28, 0.28, 17),
-        new THREE.MeshStandardMaterial({ color: 0x315b4c }),
+        new THREE.MeshStandardMaterial({ map: makePixelTexture(0x315b4c, 14), roughness: 0.9 }),
       );
       beam.position.set(x, 5.55, 0);
       roofBeams.add(beam);
@@ -1081,29 +1188,38 @@ const VirtualClassroom: React.FC = () => {
       pixelTextures.push(texture);
       return texture;
     };
-    const portalBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.1, 1.35, 0.5, 20),
-      new THREE.MeshStandardMaterial({ color: 0x4c1d95, roughness: 0.6 }),
-    );
-    portalBase.position.set(-9.3, 0.25, 0);
+    const portalFrameMaterial = new THREE.MeshStandardMaterial({
+      map: makePixelTexture(0x24123d, 16),
+      roughness: 0.78,
+      metalness: 0.18,
+    });
+    const portalBase = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.55, 3.8), portalFrameMaterial);
+    portalBase.position.set(-9.25, 0.28, 0);
     portalBase.castShadow = true;
     portalBase.userData = { kind: 'portal' };
-    const portalArch = new THREE.Mesh(
-      new THREE.TorusGeometry(1.5, 0.26, 16, 36),
-      new THREE.MeshStandardMaterial({ color: 0x8b5cf6, emissive: 0x7c3aed, emissiveIntensity: 0.6, metalness: 0.4, roughness: 0.3 }),
-    );
-    portalArch.position.set(-9.3, 2.2, 0);
-    portalArch.rotation.y = Math.PI / 2;
-    portalArch.userData = { kind: 'portal' };
+    const portalFrame = new THREE.Group();
+    [
+      [0, 2.1, -1.55, 0.75, 3.7, 0.75],
+      [0, 2.1, 1.55, 0.75, 3.7, 0.75],
+      [0, 4.05, 0, 0.75, 0.75, 3.85],
+    ].forEach(([x, y, z, w, h, d]) => {
+      const part = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), portalFrameMaterial);
+      part.position.set(x, y, z);
+      part.castShadow = true;
+      part.userData = { kind: 'portal' };
+      portalFrame.add(part);
+      portalMeshes.push(part);
+    });
+    portalFrame.position.x = -9.25;
     const portalScreen = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.3, 2.3),
-      new THREE.MeshStandardMaterial({ map: makePortalTexture(), emissive: 0xffffff, emissiveIntensity: 0.12, transparent: true, opacity: 0.94, side: THREE.DoubleSide }),
+      new THREE.PlaneGeometry(2.65, 2.9),
+      new THREE.MeshStandardMaterial({ map: makePortalTexture(), emissive: 0x6d28d9, emissiveIntensity: 0.45, transparent: true, opacity: 0.94, side: THREE.DoubleSide }),
     );
-    portalScreen.position.set(-9.15, 2.2, 0);
+    portalScreen.position.set(-8.84, 2.25, 0);
     portalScreen.rotation.y = Math.PI / 2;
     portalScreen.userData = { kind: 'portal' };
-    scene.add(portalBase, portalArch, portalScreen);
-    portalMeshes.push(portalBase, portalArch, portalScreen);
+    scene.add(portalBase, portalFrame, portalScreen);
+    portalMeshes.push(portalBase, portalScreen);
     staticColliders.push({
       minX: -9.3 - 1.35,
       maxX: -9.3 + 1.35,
@@ -1142,17 +1258,26 @@ const VirtualClassroom: React.FC = () => {
       const tree = new THREE.Group();
       const trunk = new THREE.Mesh(
         new THREE.BoxGeometry(0.7, 2.8, 0.7),
-        new THREE.MeshStandardMaterial({ color: 0x8b5a2b }),
+        new THREE.MeshStandardMaterial({ map: makePixelTexture(0x8b5a2b, 24), roughness: 1 }),
       );
       trunk.position.y = 1.4;
       trunk.castShadow = true;
-      const crown = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(2.1, 0),
-        new THREE.MeshStandardMaterial({ color: 0x2f8f46, roughness: 0.95 }),
-      );
-      crown.position.y = 4.2;
-      crown.castShadow = true;
-      tree.add(trunk, crown);
+      const leafMaterial = new THREE.MeshStandardMaterial({
+        map: makePixelTexture(0x2f8f46, 30),
+        roughness: 1,
+      });
+      const crowns = [
+        [0, 3.65, 0, 3.4, 1.7, 3.4],
+        [0, 4.9, 0, 2.5, 1.3, 2.5],
+        [0.9, 4.1, 0, 1.7, 1.7, 1.7],
+        [-0.9, 4.1, 0, 1.7, 1.7, 1.7],
+      ].map(([cx, cy, cz, w, h, d]) => {
+        const crown = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), leafMaterial);
+        crown.position.set(cx, cy, cz);
+        crown.castShadow = true;
+        return crown;
+      });
+      tree.add(trunk, ...crowns);
       tree.position.set(x, 0, z);
       scene.add(tree);
       staticColliders.push({
@@ -1880,6 +2005,11 @@ const VirtualClassroom: React.FC = () => {
       if (document.pointerLockElement === renderer.domElement) document.exitPointerLock();
       renderer.dispose();
       blockGeometry.dispose();
+      terrainGeometry.dispose();
+      dirtMaterial.dispose();
+      grassMaterial.dispose();
+      portalFrameMaterial.dispose();
+      cloudMaterial.dispose();
       starGeometry.dispose();
       starMaterial.dispose();
       Object.values(blockMaterials).forEach((item) => item.dispose());

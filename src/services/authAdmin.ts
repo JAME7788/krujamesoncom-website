@@ -1,13 +1,11 @@
 // Admin authentication — แยกจาก student login
 //
-// ⚠️ ข้อจำกัดด้านความปลอดภัย: การตรวจรหัสฝั่ง client (browser) ไม่ใช่กำแพงจริง
-// ค่านี้ถูกฝังใน JS bundle เสมอ ใครเปิด DevTools ก็อ่านได้ → ถือเป็นแค่ "กันคนทั่วไป"
-// การป้องกันข้อมูลจริงอยู่ที่ Firestore App Check + Rules (ดู SECURITY.md)
-//
-// ตั้งค่าผ่าน .env ได้ (VITE_ADMIN_USER / VITE_ADMIN_PASS) เพื่อเปลี่ยนรหัส
-// โดยไม่ต้องแก้ซอร์ส และไม่ให้รหัสค้างอยู่ในประวัติ git ของซอร์ส
-const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || 'jameskmd';
-const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || '12345678kmd';
+// Legacy login is available only for explicit local development. Production must use Firebase Auth.
+const ADMIN_USER = import.meta.env.VITE_ADMIN_USER?.trim() || '';
+const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || '';
+const ALLOW_LEGACY_ADMIN_LOGIN = import.meta.env.DEV
+  && import.meta.env.VITE_ALLOW_LEGACY_ADMIN_LOGIN === 'true'
+  && Boolean(ADMIN_USER && ADMIN_PASS);
 const SESSION_KEY = 'krujames_admin_session_v1';
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 ชั่วโมง
 
@@ -20,11 +18,11 @@ export interface AdminSession {
   uid?: string;
   email?: string;
   role?: TeacherRole;
-  authSource?: 'firebase' | 'legacy';
+  authSource?: 'firebase' | 'legacy' | 'qa';
 }
 
 export const adminLogin = (user: string, pass: string): boolean => {
-  if (user.trim() === ADMIN_USER && pass === ADMIN_PASS) {
+  if (ALLOW_LEGACY_ADMIN_LOGIN && user.trim() === ADMIN_USER && pass === ADMIN_PASS) {
     const session: AdminSession = {
       user,
       loginAt: Date.now(),
@@ -147,3 +145,39 @@ export const getAdminSession = (): AdminSession | null => {
 };
 
 export const isAdminAuthed = (): boolean => !!getAdminSession();
+
+/**
+ * A localStorage value is only a UI cache. Production access is granted only
+ * after Firebase restores the signed-in user and verifies a teacher claim.
+ */
+export const validateAdminSession = async (): Promise<AdminSession | null> => {
+  const session = getAdminSession();
+  if (!session) return null;
+  const qaRun = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('qa')
+    : null;
+  if (
+    import.meta.env.DEV
+    && import.meta.env.VITE_QA_ADMIN_BYPASS === 'true'
+    && session.authSource === 'qa'
+    && qaRun?.startsWith('run-')
+  ) return session;
+  if (session.authSource === 'legacy') return ALLOW_LEGACY_ADMIN_LOGIN ? session : null;
+  if (session.authSource !== 'firebase' || !session.uid) return null;
+
+  try {
+    const [{ getAuth }, { default: app }] = await Promise.all([
+      import('firebase/auth'),
+      import('./firebase'),
+    ]);
+    const auth = getAuth(app);
+    await auth.authStateReady();
+    if (!auth.currentUser || auth.currentUser.uid !== session.uid) return null;
+    const token = await auth.currentUser.getIdTokenResult();
+    const role = token.claims.role;
+    if (role !== 'admin' && role !== 'teacher' && role !== 'viewer') return null;
+    return { ...session, role };
+  } catch {
+    return null;
+  }
+};

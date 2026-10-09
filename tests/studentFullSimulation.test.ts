@@ -14,7 +14,6 @@ const memoryStorage = new MemoryStorage();
 vi.stubGlobal('localStorage', memoryStorage);
 
 import {
-  createAssignment,
   getAssignmentsForStudent,
   submitWork,
   reviewSubmission,
@@ -77,6 +76,7 @@ describe('จำลองสถานการณ์จริง: การเ�
     const standardTask = pack.find((a) => a.difficulty === 'standard')!;
     const foundationTask = pack.find((a) => a.difficulty === 'foundation')!;
     const advancedTask = pack.find((a) => a.difficulty === 'advanced')!;
+    expect([foundationTask, standardTask, advancedTask].every(Boolean)).toBe(true);
 
     // -------------------------------------------------------------
     // ขั้นตอนที่ 2: ครูส่งลิงก์ให้นักเรียนในไลน์ (เช่น /homework?id=xxx)

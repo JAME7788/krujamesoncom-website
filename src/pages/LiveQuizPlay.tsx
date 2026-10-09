@@ -17,6 +17,8 @@ const LiveQuizPlay: React.FC = () => {
   const [room, setRoom] = useState<LiveQuizRoom | null>(null);
   const [joined, setJoined] = useState(false);
   const [error, setError] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [pendingAnswer, setPendingAnswer] = useState<{ questionIndex: number; choice: number } | null>(null);
 
   useEffect(() => {
     if (!joined || !code) return;
@@ -80,17 +82,36 @@ const LiveQuizPlay: React.FC = () => {
     });
   }, [room, user]);
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!user) { setError('ต้อง login ก่อน'); return; }
     if (code.length !== 6) { setError('รหัสต้องเป็น 6 หลัก'); return; }
-    const ok = joinRoom(code, {
-      id: user.id,
-      name: user.name,
-      emoji: '🧑‍🎓',
-    });
-    if (!ok) { setError('ไม่พบห้องนี้ หรือเริ่มไปแล้ว'); return; }
-    setJoined(true);
-    setError('');
+    setJoining(true);
+    try {
+      const ok = await joinRoom(code, {
+        id: user.id,
+        name: user.name,
+        emoji: '🧑‍🎓',
+      });
+      if (!ok) { setError('ไม่พบห้องนี้ หรือเริ่มไปแล้ว'); return; }
+      setJoined(true);
+      setError('');
+    } catch {
+      setError('เข้าห้องไม่สำเร็จ กรุณาตรวจการเชื่อมต่อแล้วลองใหม่');
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const handleAnswer = async (roomCode: string, playerId: string, choice: number) => {
+    const questionIndex = room?.currentQuestion ?? -1;
+    setPendingAnswer({ questionIndex, choice });
+    try {
+      const accepted = await submitAnswer(roomCode, playerId, choice);
+      if (!accepted) setPendingAnswer(null);
+    } catch {
+      setPendingAnswer(null);
+      setError('ส่งคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง');
+    }
   };
 
   if (!user) {
@@ -124,8 +145,8 @@ const LiveQuizPlay: React.FC = () => {
         />
         {error && <p style={{ color: '#dc2626' }}>{error}</p>}
         <br />
-        <button onClick={handleJoin} className="btn-primary" style={{ padding: '14px 40px', fontSize: '1.1rem' }}>
-          เข้าร่วม
+        <button onClick={() => void handleJoin()} disabled={joining} className="btn-primary" style={{ padding: '14px 40px', fontSize: '1.1rem' }}>
+          {joining ? 'กำลังเข้าห้อง...' : 'เข้าร่วม'}
         </button>
       </div>
     );
@@ -151,6 +172,7 @@ const LiveQuizPlay: React.FC = () => {
   if (room.state === 'question') {
     const q = room.questions[room.currentQuestion];
     const myAnswer = me?.answers[room.currentQuestion];
+    const pendingChoice = pendingAnswer?.questionIndex === room.currentQuestion ? pendingAnswer.choice : null;
     return (
       <div className="container section-padding" style={{ paddingTop: '6rem', maxWidth: 700, textAlign: 'center' }}>
         <small>ข้อ {room.currentQuestion + 1} / {room.questions.length}</small>
@@ -158,16 +180,16 @@ const LiveQuizPlay: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginTop: 20 }}>
           {q.options.map((opt, i) => {
             const cls = ['#ef4444', '#3b82f6', '#facc15', '#22c55e'][i];
-            const picked = myAnswer?.choice === i;
+            const picked = (myAnswer?.choice ?? pendingChoice) === i;
             return (
               <button
                 key={i}
-                onClick={() => !myAnswer && submitAnswer(room.code, user.id, i)}
-                disabled={!!myAnswer}
+                onClick={() => { if (!myAnswer && pendingChoice === null) void handleAnswer(room.code, user.id, i); }}
+                disabled={!!myAnswer || pendingChoice !== null}
                 style={{
                   background: cls, color: 'white', padding: '1.5rem',
                   borderRadius: 14, border: picked ? '4px solid #1f2937' : 'none',
-                  cursor: myAnswer ? 'default' : 'pointer',
+                   cursor: myAnswer || pendingChoice !== null ? 'default' : 'pointer',
                   fontSize: '1.2rem', fontWeight: 700, fontFamily: 'inherit',
                   opacity: myAnswer && !picked ? 0.4 : 1,
                 }}
@@ -177,7 +199,7 @@ const LiveQuizPlay: React.FC = () => {
             );
           })}
         </div>
-        {myAnswer && <p style={{ marginTop: 20 }}>✓ ตอบแล้ว — รอเฉลย</p>}
+        {(myAnswer || pendingChoice !== null) && <p style={{ marginTop: 20 }}>✓ ส่งคำตอบแล้ว — รอเฉลย</p>}
       </div>
     );
   }
@@ -185,12 +207,13 @@ const LiveQuizPlay: React.FC = () => {
   if (room.state === 'reveal') {
     const q = room.questions[room.currentQuestion];
     const myAnswer = me?.answers[room.currentQuestion];
-    const correct = myAnswer?.choice === q.answer;
+    const answerIndex = room.revealedAnswer;
+    const correct = myAnswer?.choice === answerIndex;
     return (
       <div className="container section-padding" style={{ paddingTop: '6rem', textAlign: 'center' }}>
         <h1 style={{ fontSize: '3rem' }}>{correct ? '✅' : '❌'}</h1>
         <h2>{correct ? 'ถูกต้อง!' : 'เสียดาย!'}</h2>
-        <p>คำตอบที่ถูก: <strong>{q.options[q.answer]}</strong></p>
+        <p>คำตอบที่ถูก: <strong>{Number.isInteger(answerIndex) ? q.options[answerIndex as number] : 'กำลังโหลดเฉลย'}</strong></p>
         <p>คะแนนของคุณ: <strong>{me?.score || 0}</strong></p>
       </div>
     );

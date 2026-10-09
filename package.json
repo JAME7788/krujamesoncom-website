@@ -15,6 +15,7 @@
     "teaching-schedule:backfill": "node scripts/backfill-teaching-schedule-dates.mjs",
     "teaching-schedule:verify": "node scripts/backfill-teaching-schedule-dates.mjs --verify",
     "data:audit": "node scripts/audit-live-data.mjs",
+    "data:diagnose": "node scripts/diagnose-live-data.mjs",
     "content:audit": "node scripts/audit-static-content.mjs",
     "teaching-data:seed": "node scripts/seed-teaching-system-data.mjs",
     "teaching-data:apply": "node scripts/seed-teaching-system-data.mjs --apply",
@@ -22,6 +23,9 @@
     "students:clean:apply": "node scripts/clean-student-identities.mjs --apply",
     "teacher-auth:setup": "node scripts/setup-teacher-auth.mjs",
     "teacher-auth:apply": "node scripts/setup-teacher-auth.mjs --apply",
+    "student-auth:setup": "node scripts/setup-student-auth.mjs",
+    "student-auth:apply": "node scripts/setup-student-auth.mjs --apply",
+    "student-auth:verify": "node scripts/verify-student-auth.mjs",
     "ability:check": "node scripts/sync-student-ability-assessments.mjs",
     "ability:apply": "node scripts/sync-student-ability-assessments.mjs --apply",
     "post-lesson:grades:check": "node scripts/apply-post-lesson-assessments-to-grades.mjs",
@@ -37,12 +41,12 @@
   "dependencies": {
     "@types/three": "^0.185.1",
     "blockly": "^13.1.1",
-    "firebase": "^12.16.0",
+    "firebase": "^12.19.0",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.27.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.1",
+    "react-router-dom": "^7.18.4",
     "three": "^0.185.1"
   },
   "devDependencies": {
@@ -59,7 +63,11 @@
     "pngjs": "^7.0.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.9",
-    "vitest": "^4.1.10"
+    "vite": "^8.3.3",
+    "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6",
+    "source-map-js": "^1.2.2"
   }
 }

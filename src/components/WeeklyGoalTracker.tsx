@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Sparkles, Edit3 } from 'lucide-react';
 import {
   getActiveWeeklyGoal,
@@ -11,15 +11,11 @@ interface WeeklyGoalTrackerProps {
   studentId: string;
 }
 
-export const WeeklyGoalTracker: React.FC<WeeklyGoalTrackerProps> = ({ studentId }) => {
+const WeeklyGoalTrackerContent: React.FC<WeeklyGoalTrackerProps> = ({ studentId }) => {
   const [data, setData] = useState(() => getActiveWeeklyGoal(studentId));
   const [showGoalPicker, setShowGoalPicker] = useState(false);
   const [reflectionInput, setReflectionInput] = useState('');
   const [isSavingReflection, setIsSavingReflection] = useState(false);
-
-  useEffect(() => {
-    setData(getActiveWeeklyGoal(studentId));
-  }, [studentId]);
 
   const handleSelectGoal = (goalId: string) => {
     changeWeeklyGoal(studentId, goalId);
@@ -284,5 +280,9 @@ export const WeeklyGoalTracker: React.FC<WeeklyGoalTrackerProps> = ({ studentId 
     </div>
   );
 };
+
+export const WeeklyGoalTracker: React.FC<WeeklyGoalTrackerProps> = ({ studentId }) => (
+  <WeeklyGoalTrackerContent key={studentId} studentId={studentId} />
+);
 
 export default WeeklyGoalTracker;

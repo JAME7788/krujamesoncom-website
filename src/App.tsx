@@ -7,6 +7,8 @@ import Loading from './components/Loading';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPromptOverlay from './components/LoginPromptOverlay';
+import AdminGate from './components/AdminGate';
+import { gamesCatalog } from './data/gamesCatalog';
 
 // Code-splitting: โหลดเฉพาะหน้าที่เปิดใช้งาน → first paint เร็วขึ้น
 const Home = React.lazy(() => import('./pages/Home'));
@@ -66,6 +68,16 @@ const StroopColorGame = React.lazy(() => import('./pages/games/StroopColorGame')
 const SpaceTreasureGame = React.lazy(() => import('./pages/games/SpaceTreasureGame'));
 const CyberCopGame = React.lazy(() => import('./pages/games/CyberCopGame'));
 const FlowchartBingoGame = React.lazy(() => import('./pages/games/FlowchartBingoGame'));
+const GameLearningJourney = React.lazy(() => import('./components/GameLearningJourney'));
+
+const LearningGameRoute = ({ gameId, children }: { gameId: string; children: React.ReactNode }) => {
+  const game = gamesCatalog.find((item) => item.id === gameId);
+  return (
+    <LoginPromptOverlay>
+      {game ? <GameLearningJourney game={game}>{children}</GameLearningJourney> : children}
+    </LoginPromptOverlay>
+  );
+};
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -109,46 +121,46 @@ function App() {
                   <Route path="/quiz/:id" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
                   <Route path="/lesson/:id" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
                   <Route path="/games" element={<LoginPromptOverlay><Games /></LoginPromptOverlay>} />
-                  <Route path="/games/mouse-practice" element={<LoginPromptOverlay><MousePractice /></LoginPromptOverlay>} />
-                  <Route path="/games/keyboard-practice" element={<LoginPromptOverlay><KeyboardPractice /></LoginPromptOverlay>} />
-                  <Route path="/games/algorithm-sorter" element={<LoginPromptOverlay><AlgorithmSorter /></LoginPromptOverlay>} />
-                  <Route path="/games/binary" element={<LoginPromptOverlay><BinaryGame /></LoginPromptOverlay>} />
-                  <Route path="/games/memory" element={<LoginPromptOverlay><MemoryMatch /></LoginPromptOverlay>} />
-                  <Route path="/games/pattern" element={<LoginPromptOverlay><PatternGame /></LoginPromptOverlay>} />
-                  <Route path="/games/coding-maze" element={<LoginPromptOverlay><CodingMaze /></LoginPromptOverlay>} />
-                  <Route path="/games/snake" element={<LoginPromptOverlay><SnakeGame /></LoginPromptOverlay>} />
-                  <Route path="/games/bug-catcher" element={<LoginPromptOverlay><BugCatcher /></LoginPromptOverlay>} />
-                  <Route path="/games/quick-answer-computing" element={<LoginPromptOverlay><QuickAnswerComputing /></LoginPromptOverlay>} />
-                  <Route path="/games/device-match" element={<LoginPromptOverlay><DeviceMatch /></LoginPromptOverlay>} />
-                  <Route path="/games/step-sort" element={<LoginPromptOverlay><StepSort /></LoginPromptOverlay>} />
-                  <Route path="/games/safety" element={<LoginPromptOverlay><SafetyGame /></LoginPromptOverlay>} />
-                  <Route path="/games/pixel-art" element={<LoginPromptOverlay><PixelArtGame /></LoginPromptOverlay>} />
-                  <Route path="/games/color-code-pixel" element={<LoginPromptOverlay><ColorCodePixelGame /></LoginPromptOverlay>} />
-                  <Route path="/games/logic-gates" element={<LoginPromptOverlay><LogicGatesGame /></LoginPromptOverlay>} />
-                  <Route path="/games/file-organizer" element={<LoginPromptOverlay><FileOrganizerGame /></LoginPromptOverlay>} />
-                  <Route path="/games/algorithm-runner-3d" element={<LoginPromptOverlay><AlgorithmRunner3D /></LoginPromptOverlay>} />
-                  <Route path="/games/coding-studio" element={<LoginPromptOverlay><CodingStudioGame /></LoginPromptOverlay>} />
-                  <Route path="/games/circuit-lab" element={<LoginPromptOverlay><CircuitLabGame /></LoginPromptOverlay>} />
-                  <Route path="/games/ct-board" element={<LoginPromptOverlay><CTBoardGame /></LoginPromptOverlay>} />
-                  <Route path="/games/tycoon" element={<LoginPromptOverlay><TycoonGame /></LoginPromptOverlay>} />
-                  <Route path="/games/digital-city-quest" element={<LoginPromptOverlay><DigitalCityQuestGame /></LoginPromptOverlay>} />
-                  <Route path="/games/robot-maker" element={<LoginPromptOverlay><RobotMakerGame /></LoginPromptOverlay>} />
-                  <Route path="/games/tech-system" element={<LoginPromptOverlay><TechSystemGame /></LoginPromptOverlay>} />
-                  <Route path="/games/search-smart" element={<LoginPromptOverlay><SearchSmartGame /></LoginPromptOverlay>} />
-                  <Route path="/games/cyber-shield" element={<LoginPromptOverlay><CyberShieldGame /></LoginPromptOverlay>} />
-                  <Route path="/games/sorting-dash" element={<LoginPromptOverlay><SortingDashGame /></LoginPromptOverlay>} />
-                  <Route path="/games/bomb-collector" element={<LoginPromptOverlay><BombCollectorGame /></LoginPromptOverlay>} />
-                  <Route path="/games/obstacle-dodge" element={<LoginPromptOverlay><ObstacleDodgeGame /></LoginPromptOverlay>} />
-                  <Route path="/games/situation-reaction" element={<LoginPromptOverlay><SituationReactionGame /></LoginPromptOverlay>} />
-                  <Route path="/games/pc-builder" element={<LoginPromptOverlay><PCBuilderGame /></LoginPromptOverlay>} />
-                  <Route path="/games/stroop-color" element={<LoginPromptOverlay><StroopColorGame /></LoginPromptOverlay>} />
-                  <Route path="/games/space-treasure" element={<LoginPromptOverlay><SpaceTreasureGame /></LoginPromptOverlay>} />
-                  <Route path="/games/cyber-cop" element={<LoginPromptOverlay><CyberCopGame /></LoginPromptOverlay>} />
-                  <Route path="/games/flowchart-bingo" element={<LoginPromptOverlay><FlowchartBingoGame /></LoginPromptOverlay>} />
+                  <Route path="/games/mouse-practice" element={<LearningGameRoute gameId="mouse"><MousePractice /></LearningGameRoute>} />
+                  <Route path="/games/keyboard-practice" element={<LearningGameRoute gameId="keyboard"><KeyboardPractice /></LearningGameRoute>} />
+                  <Route path="/games/algorithm-sorter" element={<LearningGameRoute gameId="algorithm"><AlgorithmSorter /></LearningGameRoute>} />
+                  <Route path="/games/binary" element={<LearningGameRoute gameId="binary"><BinaryGame /></LearningGameRoute>} />
+                  <Route path="/games/memory" element={<LearningGameRoute gameId="memory"><MemoryMatch /></LearningGameRoute>} />
+                  <Route path="/games/pattern" element={<LearningGameRoute gameId="pattern"><PatternGame /></LearningGameRoute>} />
+                  <Route path="/games/coding-maze" element={<LearningGameRoute gameId="maze"><CodingMaze /></LearningGameRoute>} />
+                  <Route path="/games/snake" element={<LearningGameRoute gameId="snake"><SnakeGame /></LearningGameRoute>} />
+                  <Route path="/games/bug-catcher" element={<LearningGameRoute gameId="bug"><BugCatcher /></LearningGameRoute>} />
+                  <Route path="/games/quick-answer-computing" element={<LearningGameRoute gameId="quick-answer"><QuickAnswerComputing /></LearningGameRoute>} />
+                  <Route path="/games/device-match" element={<LearningGameRoute gameId="device-match"><DeviceMatch /></LearningGameRoute>} />
+                  <Route path="/games/step-sort" element={<LearningGameRoute gameId="step-sort"><StepSort /></LearningGameRoute>} />
+                  <Route path="/games/safety" element={<LearningGameRoute gameId="safety"><SafetyGame /></LearningGameRoute>} />
+                  <Route path="/games/pixel-art" element={<LearningGameRoute gameId="pixel-art"><PixelArtGame /></LearningGameRoute>} />
+                  <Route path="/games/color-code-pixel" element={<LearningGameRoute gameId="color-code-pixel"><ColorCodePixelGame /></LearningGameRoute>} />
+                  <Route path="/games/logic-gates" element={<LearningGameRoute gameId="logic-gates"><LogicGatesGame /></LearningGameRoute>} />
+                  <Route path="/games/file-organizer" element={<LearningGameRoute gameId="file-organizer"><FileOrganizerGame /></LearningGameRoute>} />
+                  <Route path="/games/algorithm-runner-3d" element={<LearningGameRoute gameId="algorithm-runner-3d"><AlgorithmRunner3D /></LearningGameRoute>} />
+                  <Route path="/games/coding-studio" element={<LearningGameRoute gameId="coding-studio"><CodingStudioGame /></LearningGameRoute>} />
+                  <Route path="/games/circuit-lab" element={<LearningGameRoute gameId="circuit-lab"><CircuitLabGame /></LearningGameRoute>} />
+                  <Route path="/games/ct-board" element={<LearningGameRoute gameId="ct-board"><CTBoardGame /></LearningGameRoute>} />
+                  <Route path="/games/tycoon" element={<LearningGameRoute gameId="tycoon"><TycoonGame /></LearningGameRoute>} />
+                  <Route path="/games/digital-city-quest" element={<LearningGameRoute gameId="digital-city-quest"><DigitalCityQuestGame /></LearningGameRoute>} />
+                  <Route path="/games/robot-maker" element={<LearningGameRoute gameId="robot-maker"><RobotMakerGame /></LearningGameRoute>} />
+                  <Route path="/games/tech-system" element={<LearningGameRoute gameId="tech-system"><TechSystemGame /></LearningGameRoute>} />
+                  <Route path="/games/search-smart" element={<LearningGameRoute gameId="search-smart"><SearchSmartGame /></LearningGameRoute>} />
+                  <Route path="/games/cyber-shield" element={<LearningGameRoute gameId="cyber-shield"><CyberShieldGame /></LearningGameRoute>} />
+                  <Route path="/games/sorting-dash" element={<LearningGameRoute gameId="sorting-dash"><SortingDashGame /></LearningGameRoute>} />
+                  <Route path="/games/bomb-collector" element={<LearningGameRoute gameId="bomb-collector"><BombCollectorGame /></LearningGameRoute>} />
+                  <Route path="/games/obstacle-dodge" element={<LearningGameRoute gameId="obstacle-dodge"><ObstacleDodgeGame /></LearningGameRoute>} />
+                  <Route path="/games/situation-reaction" element={<LearningGameRoute gameId="situation-reaction"><SituationReactionGame /></LearningGameRoute>} />
+                  <Route path="/games/pc-builder" element={<LearningGameRoute gameId="pc-builder"><PCBuilderGame /></LearningGameRoute>} />
+                  <Route path="/games/stroop-color" element={<LearningGameRoute gameId="stroop-color"><StroopColorGame /></LearningGameRoute>} />
+                  <Route path="/games/space-treasure" element={<LearningGameRoute gameId="space-treasure"><SpaceTreasureGame /></LearningGameRoute>} />
+                  <Route path="/games/cyber-cop" element={<LearningGameRoute gameId="cyber-cop"><CyberCopGame /></LearningGameRoute>} />
+                  <Route path="/games/flowchart-bingo" element={<LearningGameRoute gameId="flowchart-bingo"><FlowchartBingoGame /></LearningGameRoute>} />
                   <Route path="/tools" element={<Tools />} />
                   <Route path="/parent/:studentId" element={<ParentPortal />} />
                   <Route path="/live" element={<LiveQuizPlay />} />
-                  <Route path="/live/host" element={<LiveQuizHost />} />
+                  <Route path="/live/host" element={<AdminGate><LiveQuizHost /></AdminGate>} />
                   <Route path="/homework" element={<ProtectedRoute><HomeworkStudent /></ProtectedRoute>} />
                   <Route path="/world" element={<ProtectedRoute><VirtualClassroom /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />

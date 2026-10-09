@@ -1,18 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, KeyRound, LogIn, AlertCircle } from 'lucide-react';
-import { adminLoginSecure, isAdminAuthed } from '../services/authAdmin';
+import { adminLoginSecure, validateAdminSession } from '../services/authAdmin';
 
 interface Props {
   children: React.ReactNode;
 }
 
 const AdminGate: React.FC<Props> = ({ children }) => {
-  const [authed, setAuthed] = useState(isAdminAuthed());
+  const [authed, setAuthed] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void validateAdminSession().then((session) => {
+      if (!active) return;
+      setAuthed(Boolean(session));
+      setChecking(false);
+    });
+    return () => { active = false; };
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +41,14 @@ const AdminGate: React.FC<Props> = ({ children }) => {
       setSubmitting(false);
     }
   };
+
+  if (checking) {
+    return (
+      <div style={{ minHeight: '70vh', display: 'grid', placeItems: 'center', color: '#475569' }}>
+        กำลังตรวจสอบสิทธิ์ครู...
+      </div>
+    );
+  }
 
   if (authed) return <>{children}</>;
 

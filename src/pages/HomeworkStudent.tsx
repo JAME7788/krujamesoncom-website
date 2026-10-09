@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Upload, CheckCircle2, Clock, AlertCircle, FileText, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -19,7 +19,7 @@ const HomeworkStudent: React.FC = () => {
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [usingCachedAssignments, setUsingCachedAssignments] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [dataVersion, setDataVersion] = useState(0);
+  const [, setDataVersion] = useState(0);
   const [filter, setFilter] = useState<'all' | 'recommended' | 'foundation' | 'standard' | 'advanced' | 'submitted'>('all');
   const openedFromUrlRef = useRef(false);
 
@@ -29,7 +29,7 @@ const HomeworkStudent: React.FC = () => {
   const [dtTestFeedback, setDtTestFeedback] = useState('');
 
   const [packChoices, setPackChoices] = useState<Record<string, string>>({});
-  const openSubmission = (assignment: Assignment) => {
+  const openSubmission = useCallback((assignment: Assignment) => {
     const previous = user ? getStudentSubmissionForAssignment(assignment.id, user.id) : null;
     setContentUrl(previous?.contentUrl || '');
     setComment(previous?.comment || '');
@@ -38,7 +38,7 @@ const HomeworkStudent: React.FC = () => {
     setDtPrototypeUrl(previous?.designThinkingSteps?.prototypeUrl || previous?.contentUrl || '');
     setDtTestFeedback(previous?.designThinkingSteps?.testFeedback || '');
     setSelected(assignment);
-  };
+  }, [user]);
 
   const closeSubmission = () => {
     setSelected(null);
@@ -90,12 +90,14 @@ const HomeworkStudent: React.FC = () => {
       const match = assignments.find((a) => a.id === targetId);
       if (match) {
         openedFromUrlRef.current = true;
-        openSubmission(match);
+        const timer = window.setTimeout(() => openSubmission(match), 0);
+        return () => window.clearTimeout(timer);
       }
     }
-  }, [assignments]);
+    return undefined;
+  }, [assignments, openSubmission]);
 
-  const filteredAssignments = useMemo(() => {
+  const filteredAssignments = (() => {
     const chosen = new Map<string, string>();
     for (const a of assignments) {
       if (!a.personalizedPackId || chosen.has(a.personalizedPackId)) continue;
@@ -115,7 +117,7 @@ const HomeworkStudent: React.FC = () => {
       if (filter === 'advanced') return a.difficulty === 'advanced';
       return true;
     });
-  }, [assignments, filter, user, packChoices, dataVersion]);
+  })();
 
   if (!user) {
     return (
@@ -144,7 +146,7 @@ const HomeworkStudent: React.FC = () => {
     let dtSteps = undefined;
 
     if (selected.isDesignThinking) {
-      let proto = dtPrototypeUrl.trim();
+      const proto = dtPrototypeUrl.trim();
       dtSteps = {
         define: dtDefine.trim(),
         ideate: dtIdeate.trim(),
@@ -186,9 +188,9 @@ const HomeworkStudent: React.FC = () => {
       setDataVersion((version) => version + 1);
       alert('ส่งงานสำเร็จเรียบร้อยแล้ว! 📋 ชิ้นงานถูกส่งให้คุณครูแล้ว อยู่ในสถานะ "รอคุณครูตรวจและให้คะแนน" ครับ');
       closeSubmission();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      alert(error?.message || 'ส่งงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
+      alert(error instanceof Error ? error.message : 'ส่งงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
     } finally {
       setSyncing(false);
     }

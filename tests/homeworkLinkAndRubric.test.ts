@@ -17,12 +17,10 @@ import {
   createAssignment,
   submitWork,
   reviewSubmission,
-  loadAssignments,
   loadSubmissions,
   normalizeHomeworkUrl,
   isValidSubmissionUrl,
   validateSubmissionContent,
-  type Assignment,
 } from '../src/services/homeworkService';
 
 describe('ระบบรับงานผ่านลิงก์และตรวจงานด้วยรูบริก (Link & Rubric Verification)', () => {

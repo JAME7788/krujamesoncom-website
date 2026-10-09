@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CheckCircle2, XCircle, RotateCcw, ArrowRight, Sparkles } from 'lucide-react';
 import {
   getPendingReviewQuestions,
@@ -11,7 +11,7 @@ interface SmartSpacedReviewWidgetProps {
   studentId: string;
 }
 
-export const SmartSpacedReviewWidget: React.FC<SmartSpacedReviewWidgetProps> = ({
+const SmartSpacedReviewWidgetContent: React.FC<SmartSpacedReviewWidgetProps> = ({
   studentId,
 }) => {
   const [pending, setPending] = useState<MissedQuestionItem[]>(() =>
@@ -21,11 +21,6 @@ export const SmartSpacedReviewWidget: React.FC<SmartSpacedReviewWidgetProps> = (
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
-
-  useEffect(() => {
-    setPending(getPendingReviewQuestions(studentId));
-    setStats(getSpacedReviewStats(studentId));
-  }, [studentId]);
 
   if (pending.length === 0) {
     if (stats.masteredCount > 0) {
@@ -317,5 +312,9 @@ export const SmartSpacedReviewWidget: React.FC<SmartSpacedReviewWidgetProps> = (
     </div>
   );
 };
+
+export const SmartSpacedReviewWidget: React.FC<SmartSpacedReviewWidgetProps> = ({ studentId }) => (
+  <SmartSpacedReviewWidgetContent key={studentId} studentId={studentId} />
+);
 
 export default SmartSpacedReviewWidget;

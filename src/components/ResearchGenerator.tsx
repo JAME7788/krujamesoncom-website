@@ -149,10 +149,11 @@ const ResearchGenerator: React.FC = () => {
     const title = viewMode === 'pa' ? 'แบบข้อตกลงพัฒนางาน ว.PA' : meta.title;
     const w = window.open('', '_blank');
     if (!w) return;
-    w.document.write(`<html><head><title>${title}</title>
-      <style>body{font-family:'Sarabun','TH Sarabun New',sans-serif;line-height:1.7;padding:2.5cm;font-size:16px;white-space:pre-wrap;}</style>
-      </head><body>${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</body></html>`);
-    w.document.close();
+    w.document.title = title;
+    const style = w.document.createElement('style');
+    style.textContent = "body{font-family:'Sarabun','TH Sarabun New',sans-serif;line-height:1.7;padding:2.5cm;font-size:16px;white-space:pre-wrap;}";
+    w.document.head.appendChild(style);
+    w.document.body.textContent = text;
     w.focus();
     setTimeout(() => w.print(), 300);
   };

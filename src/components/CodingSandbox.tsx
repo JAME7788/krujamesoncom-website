@@ -16,6 +16,60 @@ declare global {
 
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
 
+const runJavaScriptInWorker = (source: string): Promise<string[]> => new Promise((resolve) => {
+  const workerSource = `
+    const emit = self.postMessage.bind(self);
+    const blocked = () => { throw new Error('ไม่อนุญาตให้เข้าถึงเครือข่ายหรือข้อมูลของเว็บไซต์จาก Sandbox'); };
+    const format = (value) => {
+      try { return typeof value === 'object' ? JSON.stringify(value) : String(value); }
+      catch { return '[แสดงค่านี้ไม่ได้]'; }
+    };
+    self.onmessage = async (event) => {
+      const logs = [];
+      const write = (...values) => {
+        if (logs.length >= 100) return;
+        logs.push(values.map(format).join(' ').slice(0, 500));
+      };
+      const safeConsole = { log: write, info: write, warn: write, error: write };
+      try {
+        const execute = new Function(
+          'console', 'fetch', 'XMLHttpRequest', 'WebSocket', 'indexedDB', 'caches',
+          'localStorage', 'sessionStorage', 'document', 'window', 'parent', 'top',
+          '"use strict"; return (async () => {\\n' + event.data + '\\n})()'
+        );
+        await execute(
+          safeConsole, blocked, blocked, blocked, undefined, undefined,
+          undefined, undefined, undefined, undefined, undefined, undefined,
+        );
+      } catch (error) {
+        write('❌', error instanceof Error ? error.message : String(error));
+      }
+      emit({ type: 'done', logs });
+    };
+  `;
+  const workerUrl = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
+  const worker = new Worker(workerUrl);
+  let settled = false;
+  const finish = (logs: string[]) => {
+    if (settled) return;
+    settled = true;
+    worker.terminate();
+    URL.revokeObjectURL(workerUrl);
+    resolve(logs);
+  };
+  const timeout = window.setTimeout(() => finish(['❌ โปรแกรมใช้เวลานานเกิน 3 วินาที ระบบหยุดให้แล้ว']), 3000);
+  worker.onmessage = (event: MessageEvent<{ type?: string; logs?: string[] }>) => {
+    if (event.data?.type !== 'done') return;
+    window.clearTimeout(timeout);
+    finish(Array.isArray(event.data.logs) ? event.data.logs : []);
+  };
+  worker.onerror = (event) => {
+    window.clearTimeout(timeout);
+    finish([`❌ ${event.message || 'รัน JavaScript ไม่สำเร็จ'}`]);
+  };
+  worker.postMessage(source);
+});
+
 const samples: Record<Lang, string> = {
   javascript: `// ลองเขียน JavaScript ดู
 console.log('สวัสดี Kru James!');
@@ -96,21 +150,7 @@ const CodingSandbox: React.FC = () => {
     const logs: string[] = [];
 
     if (lang === 'javascript') {
-      // Capture console.log
-      const originalLog = console.log;
-      console.log = (...args: unknown[]) => {
-        logs.push(args.map((a) => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
-      };
-      try {
-        // Run JavaScript
-        const fn = new Function(code);
-        fn();
-      } catch (e: unknown) {
-        logs.push(`❌ ${errorMessage(e)}`);
-      } finally {
-        console.log = originalLog;
-      }
-      setOutput(logs);
+      setOutput(await runJavaScriptInWorker(code));
     } else if (lang === 'python' && pyodide) {
       try {
         pyodide.setStdout({ batched: (s: string) => logs.push(s) });
@@ -142,9 +182,11 @@ const CodingSandbox: React.FC = () => {
     const ext = lang === 'python' ? 'py' : 'js';
     const blob = new Blob([code], { type: 'text/plain' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    a.href = objectUrl;
     a.download = `code.${ext}`;
     a.click();
+    URL.revokeObjectURL(objectUrl);
   };
 
   return (

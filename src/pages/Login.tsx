@@ -10,6 +10,7 @@ import { allClassrooms2569 } from '../data/students2569';
 import type { StudentInfo } from '../data/students2569';
 import { fetchRostersFromFirebase, loadAllRosters } from '../services/rosterService';
 import { loadSiteSettings, fetchSiteSettingsFromFirebase } from '../services/siteSettingsService';
+import { isStudentFirebaseAuthRequired } from '../services/studentAuthService';
 import './Login.css';
 
 type Step = 'classroom' | 'student';
@@ -45,6 +46,9 @@ const Login: React.FC = () => {
   const [search, setSearch] = useState('');
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [loginError, setLoginError] = useState('');
+  const [pendingStudent, setPendingStudent] = useState<StudentInfo | null>(null);
+  const [studentPin, setStudentPin] = useState('');
+  const secureStudentLogin = isStudentFirebaseAuthRequired();
 
   // ⚠️ All hooks ต้องอยู่ก่อน early return เพื่อ rules-of-hooks
   const studentList: StudentInfo[] = useMemo(() => {
@@ -235,8 +239,13 @@ const Login: React.FC = () => {
   // คลิก card นักเรียน
   const handleCardClick = (s: StudentInfo) => {
     if (!pairMode) {
-      // โหมดเดี่ยว → login เลย
-      loginSingle(s);
+      if (secureStudentLogin) {
+        setPendingStudent(s);
+        setStudentPin('');
+        setLoginError('');
+      } else {
+        void loginSingle(s);
+      }
       return;
     }
     // โหมดคู่ — toggle selection (สูงสุด 2 คน)
@@ -252,11 +261,11 @@ const Login: React.FC = () => {
     });
   };
 
-  const loginSingle = async (s: StudentInfo) => {
+  const loginSingle = async (s: StudentInfo, pin?: string) => {
     setSubmitting(s.studentCode);
     setLoginError('');
     try {
-      await loginAsStudent(s.name, classroom, String(s.no));
+      await loginAsStudent(s.name, classroom, String(s.no), pin);
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : 'เข้าสู่ระบบไม่สำเร็จ');
     } finally {
@@ -278,6 +287,7 @@ const Login: React.FC = () => {
         s1.name,
         classroom,
         String(s1.no),
+        undefined,
         { name: s2.name, classroom, studentNumber: String(s2.no) }
       );
     } catch (error) {
@@ -386,7 +396,7 @@ const Login: React.FC = () => {
                   </div>
 
                   {/* Toggle "นั่งคู่" — เปิดแล้วเลือก 2 คนจาก grid ตรงๆ */}
-                  <div className="pair-mode-toggle">
+                  {!secureStudentLogin && <div className="pair-mode-toggle">
                     <label className={`pair-switch ${pairMode ? 'on' : ''}`}>
                       <input
                         type="checkbox"
@@ -406,7 +416,13 @@ const Login: React.FC = () => {
                         👆 กดเลือกชื่อ <strong>2 คน</strong>ที่นั่งด้วยกัน
                       </span>
                     )}
-                  </div>
+                  </div>}
+                  {secureStudentLogin && (
+                    <div className="external-privacy-note" style={{ marginBottom: 14 }}>
+                      <ShieldCheck size={20} />
+                      <span>ใช้รหัส PIN นักเรียนรายคน เพื่อป้องกันการเปิดคะแนนหรือส่งงานแทนกัน</span>
+                    </div>
+                  )}
 
                   {studentList.length === 0 ? (
                     <p style={{ textAlign: 'center', color: '#6b7280', padding: '2rem' }}>
@@ -438,6 +454,71 @@ const Login: React.FC = () => {
                           </button>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {pendingStudent && (
+                    <div
+                      role="dialog"
+                      aria-modal="true"
+                      aria-label="ยืนยันรหัส PIN นักเรียน"
+                      style={{
+                        position: 'fixed', inset: 0, zIndex: 10000,
+                        display: 'grid', placeItems: 'center', padding: 16,
+                        background: 'rgba(15,23,42,.66)',
+                      }}
+                    >
+                      <div className="card" style={{ width: 'min(420px, 100%)', textAlign: 'center', padding: 24 }}>
+                        <div style={{ fontSize: '2.5rem' }}>{pendingStudent.emoji}</div>
+                        <h2 style={{ marginBottom: 4 }}>{pendingStudent.name}</h2>
+                        <p style={{ color: '#64748b', marginTop: 0 }}>เลขที่ {pendingStudent.no} · {classroom}</p>
+                        <label style={{ display: 'block', fontWeight: 700, textAlign: 'left', marginBottom: 6 }}>
+                          รหัส PIN นักเรียน 6 หลัก
+                        </label>
+                        <input
+                          type="password"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          autoFocus
+                          autoComplete="current-password"
+                          value={studentPin}
+                          onChange={(event) => {
+                            setStudentPin(event.target.value.replace(/\D/g, '').slice(0, 6));
+                            setLoginError('');
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' && studentPin.length === 6) {
+                              void loginSingle(pendingStudent, studentPin);
+                            }
+                          }}
+                          aria-label="รหัส PIN นักเรียน"
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: 14,
+                            border: '2px solid #cbd5e1', borderRadius: 12,
+                            textAlign: 'center', letterSpacing: '.5rem', fontSize: '1.5rem',
+                          }}
+                        />
+                        {loginError && <p className="login-inline-error">{loginError}</p>}
+                        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            style={{ flex: 1 }}
+                            onClick={() => { setPendingStudent(null); setStudentPin(''); setLoginError(''); }}
+                          >
+                            ยกเลิก
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-login-submit"
+                            style={{ flex: 1, margin: 0 }}
+                            disabled={studentPin.length !== 6 || submitting !== null}
+                            onClick={() => void loginSingle(pendingStudent, studentPin)}
+                          >
+                            {submitting ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
 

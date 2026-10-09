@@ -79,14 +79,14 @@ const HomeworkManager: React.FC = () => {
   });
 
   // 3-Tier Auto Modal state
-  const [autoDraft, setAutoDraft] = useState({
+  const [autoDraft, setAutoDraft] = useState(() => ({
     classroom: 'ป.1',
     subject: '' as Subject | '',
     indicatorId: '',
     topic: '',
     dueDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
     lessonPlanId: '',
-  });
+  }));
 
   const [filterDifficulty, setFilterDifficulty] = useState<'all' | AssignmentDifficulty>('all');
   const [filterTarget, setFilterTarget] = useState<'all' | AssignmentTargetType>('all');

@@ -153,27 +153,30 @@ const Quiz: React.FC = () => {
   // Sync paramId if URL changes
   useEffect(() => {
     if (!paramId) return;
-    if (paramId === 'practice') {
-      setActiveMode('practice');
-      setActiveExamSet(null);
-      return;
-    }
-    if (paramId === 'all') {
-      setActiveMode('exam_bank');
-      setActiveExamSet(null);
-      return;
-    }
-    const found = findExamSetFromParam(paramId);
-    if (found) {
-      setActiveMode('exam_bank');
-      setSelectedGrade(found.grade);
-      setActiveExamSet(found);
-      setExamQIndex(0);
-      setExamAnswers({});
-      setExamStartTime(Date.now());
-      setExamResult(null);
-      setShowReview(false);
-    }
+    const timer = window.setTimeout(() => {
+      if (paramId === 'practice') {
+        setActiveMode('practice');
+        setActiveExamSet(null);
+        return;
+      }
+      if (paramId === 'all') {
+        setActiveMode('exam_bank');
+        setActiveExamSet(null);
+        return;
+      }
+      const found = findExamSetFromParam(paramId);
+      if (found) {
+        setActiveMode('exam_bank');
+        setSelectedGrade(found.grade);
+        setActiveExamSet(found);
+        setExamQIndex(0);
+        setExamAnswers({});
+        setExamStartTime(Date.now());
+        setExamResult(null);
+        setShowReview(false);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [paramId]);
 
   // State สำหรับ Practice Mode (ดั้งเดิม)
@@ -236,6 +239,7 @@ const Quiz: React.FC = () => {
     setActiveExamSet(set);
     setExamQIndex(0);
     setExamAnswers({});
+    // eslint-disable-next-line react-hooks/purity -- event timestamp captured when the learner starts the exam
     setExamStartTime(Date.now());
     setExamResult(null);
     setShowReview(false);

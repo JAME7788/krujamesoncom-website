@@ -39,12 +39,6 @@ const QuestionBankManager: React.FC = () => {
   const officialSets = useMemo(() => getExamSetsByGrade(officialGrade), [officialGrade]);
   const [selectedSetId, setSelectedSetId] = useState<string>('');
 
-  useEffect(() => {
-    if (officialSets.length > 0) {
-      setSelectedSetId(officialSets[0].id);
-    }
-  }, [officialGrade, officialSets]);
-
   const activeOfficialSet = useMemo(() => {
     return officialSets.find((s) => s.id === selectedSetId) || officialSets[0];
   }, [officialSets, selectedSetId]);
@@ -205,14 +199,18 @@ const QuestionBankManager: React.FC = () => {
         <div style={{ display: 'grid', gap: '14px' }}>
           <section className="question-bank-filters" style={{ gridTemplateColumns: '150px 1fr auto' }}>
             <label>ระดับชั้น
-              <select value={officialGrade} onChange={(e) => setOfficialGrade(e.target.value)}>
+              <select value={officialGrade} onChange={(e) => {
+                const nextGrade = e.target.value;
+                setOfficialGrade(nextGrade);
+                setSelectedSetId(getExamSetsByGrade(nextGrade)[0]?.id || '');
+              }}>
                 {availableExamGrades.map((g) => (
                   <option key={g} value={g}>ชั้น {g}</option>
                 ))}
               </select>
             </label>
             <label>เลือกชุดข้อสอบ
-              <select value={selectedSetId} onChange={(e) => setSelectedSetId(e.target.value)}>
+              <select value={activeOfficialSet?.id || ''} onChange={(e) => setSelectedSetId(e.target.value)}>
                 {officialSets.map((s) => (
                   <option key={s.id} value={s.id}>
                     ชุดที่ {s.setNumber}: {s.title} ({s.totalQuestions} ข้อ)

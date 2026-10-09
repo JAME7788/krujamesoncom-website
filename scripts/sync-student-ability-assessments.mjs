@@ -169,6 +169,7 @@ const main = async () => {
     const assessmentsById = new Map(assessmentDocs.map((item) => [item.id, item.data]));
     const lessonRecordsById = new Map(lessonRecordDocs.map((item) => [item.id, item.data]));
     const profiles = new Map();
+    const fallbackProfileKeys = new Set();
     const targetPostIds = new Set();
     const targetRecordIds = new Set();
     const completedSessionCounts = {};
@@ -178,9 +179,25 @@ const main = async () => {
       const source = assessmentsById.get(assessmentId(classroom, 'learner-analysis'));
       if (!source) throw new Error(`ไม่พบผลวิเคราะห์ผู้เรียนของ ${classroom}`);
       const classroomProfiles = new Map();
+      const knownPercents = Object.values(source.entries || {})
+        .filter((entry) => entry?.scores)
+        .map((entry) => Math.max(
+          MIN_PASS_PERCENT,
+          ability.scorePercent(
+            entry.scores,
+            templates.getStudentAssessmentTemplate('learner-analysis').categories.length,
+          ),
+        ));
+      const classroomFallback = knownPercents.length
+        ? Math.max(MIN_PASS_PERCENT, Math.round(average(knownPercents)))
+        : MIN_PASS_PERCENT;
       (rosters[classroom] || []).forEach((student) => {
         const entry = source.entries?.[student.studentCode];
-        if (!entry?.scores) throw new Error(`${classroom} เลขที่ ${student.no} ไม่มีโปรไฟล์ฐาน`);
+        if (!entry?.scores) {
+          classroomProfiles.set(student.studentCode, classroomFallback);
+          fallbackProfileKeys.add(`${classroom}:${student.studentCode}`);
+          return;
+        }
         classroomProfiles.set(
           student.studentCode,
           Math.max(
@@ -222,7 +239,9 @@ const main = async () => {
             ),
             note: copy.note,
             supportPlan: copy.supportPlan,
-            evidence: 'อ้างอิงโปรไฟล์ความสามารถรายบุคคลที่ครูยืนยัน ปีการศึกษา 2569',
+            evidence: fallbackProfileKeys.has(`${classroom}:${student.studentCode}`)
+              ? 'ค่าเริ่มต้นจากค่าเฉลี่ยห้อง รอครูประเมินโปรไฟล์รายบุคคล'
+              : 'อ้างอิงโปรไฟล์ความสามารถรายบุคคลที่ครูยืนยัน ปีการศึกษา 2569',
           };
         });
         writes.push({
@@ -276,7 +295,9 @@ const main = async () => {
             scores: ability.buildAbilityScores(['k', 'p', 'a'], percent, student.no + session.period),
             note: copy.note,
             supportPlan: copy.supportPlan,
-            evidence: 'ฉบับร่างจากโปรไฟล์ความสามารถ รอครูบันทึกหลักฐานจริงหลังสอน',
+            evidence: fallbackProfileKeys.has(`${classroom}:${student.studentCode}`)
+              ? 'ฉบับร่างจากค่าเฉลี่ยห้อง รอครูประเมินรายบุคคลและบันทึกหลักฐานจริงหลังสอน'
+              : 'ฉบับร่างจากโปรไฟล์ความสามารถ รอครูบันทึกหลักฐานจริงหลังสอน',
           };
         });
         writes.push({
@@ -410,7 +431,9 @@ const main = async () => {
           kScore: Math.round((Math.max(0, Math.min(10, Math.round(percent / 10))) / 10) * 15),
           pLevel: competencyAverage >= 2.5 ? 'ดี' : competencyAverage >= 1.5 ? 'ปานกลาง' : 'พอใช้',
           aPassed: characteristicAverage >= 2,
-          note: `${ability.abilityProfileCopy(percent).note} | ครูยืนยันโปรไฟล์ฐานแล้ว`,
+          note: fallbackProfileKeys.has(`${data.classroom}:${data.studentCode}`)
+            ? `${ability.abilityProfileCopy(percent).note} | ค่าเริ่มต้นจากค่าเฉลี่ยห้อง รอครูยืนยันรายบุคคล`
+            : `${ability.abilityProfileCopy(percent).note} | ครูยืนยันโปรไฟล์ฐานแล้ว`,
           provisional: false,
           confirmedByTeacher: true,
           profileSource: 'learner-analysis',
@@ -443,6 +466,7 @@ const main = async () => {
       studentsAtMinimum: classrooms.reduce((sum, classroom) => (
         sum + [...profiles.get(classroom).values()].filter((percent) => percent === MIN_PASS_PERCENT).length
       ), 0),
+      missingProfilesUsingClassAverage: fallbackProfileKeys.size,
       standardAbilityAssessments: classrooms.length * standardKinds.length,
       completedSessionCounts,
       attendanceMatchedCounts,

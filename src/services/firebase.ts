@@ -23,11 +23,11 @@ export const db = getFirestore(app);
 // Storage — ใช้เฉพาะ assignmentService — getStorage ไม่ throw ตอน init (lazy)
 export const storage = getStorage(app);
 
-// หมายเหตุสำคัญ: เดิมมี `export const auth = getAuth(app)` แต่แอปนี้ไม่ได้ใช้
-// Firebase Auth เลย (ล็อกอินนักเรียน/แอดมินเป็นระบบเอง) และ getAuth() จะ
+// โหลด Firebase Auth แบบ lazy ในระบบครู เพื่อไม่ให้การตั้งค่า Auth ที่ผิด
+// ทำให้หน้าสาธารณะทั้งเว็บล้มตั้งแต่เริ่มโหลด โดย getAuth() อาจ
 // throw แบบ synchronous ทันทีถ้า API key ว่าง/ผิด → ทำให้ทั้งแอปโหลดไม่ขึ้น
 // (เป็นต้นเหตุที่เว็บค้างหน้าโหลดเมื่อ env var บน Vercel หาย)
-// จึงถอด getAuth ออก เพื่อไม่ให้ปัญหา config ล้มทั้งเว็บอีก
+// จึงไม่ export getAuth แบบ eager เพื่อไม่ให้ปัญหา config ล้มทั้งเว็บอีก
 
 // ---------------------------------------------------------------
 // App Check — โหลด lazy หลัง export แล้ว ไม่อยู่ใน critical path

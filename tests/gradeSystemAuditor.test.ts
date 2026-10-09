@@ -17,11 +17,8 @@ import {
   computeBreakdown,
   computeTotal,
   computeGrade,
-  computeMaxTotal,
   getIndicators,
   updateTeacherKnowledgeScore,
-  updatePracticeCriteriaScores,
-  updateMidtermExam,
   updateFinalExam,
   cacheGradesLocally,
   loadGrades,
@@ -212,29 +209,29 @@ describe('การตรวจพิสูจน์ระบบคะแนน�
 
       testCutoffs.forEach(({ totalScore, expectedGrade }) => {
         const student = createDummyStudent('ม.1');
-        const numIndicators = Object.keys(student.indicators).length; // 4 ตัวชี้วัด
-        // จำลองให้คะแนนรวมได้ตาม totalScore
-        const collectedShare = (totalScore * 0.55); // จาก 55
-        const examShare = (totalScore * 0.45);      // จาก 45
-
-        const kRatio = (collectedShare / 55);
+        // จัดคะแนนให้ได้ยอดรวมตามจุดตัดจริง โดยใช้สัดส่วนมัธยม 55 + 15 + 30
+        const examScore = Math.min(totalScore, 45);
+        const needsPracticePoint = totalScore > 78;
+        const practiceScore = needsPracticePoint ? (55 * 0.25 / 3) : 0;
+        const knowledgeScore = Math.max(0, totalScore - examScore - practiceScore);
+        const kRatio = knowledgeScore / (55 * 0.60);
         Object.values(student.indicators).forEach((ind) => {
-          ind.k = Math.round(ind.maxK * kRatio * 10) / 10;
+          ind.k = ind.maxK * kRatio;
           ind.teacherK = ind.k;
-          ind.p = kRatio >= 0.7 ? 'ดี' : kRatio >= 0.4 ? 'ปานกลาง' : 'พอใช้';
-          ind.pScore = kRatio >= 0.7 ? 30 : 15;
+          ind.p = 'พอใช้';
+          ind.pScore = needsPracticePoint ? 1 : 0;
           ind.pAssessed = true;
-          ind.practicePassed = true;
-          ind.a = true;
+          ind.practicePassed = needsPracticePoint;
+          ind.a = false;
           ind.aAssessed = true;
         });
 
-        student.midtermExam = Math.round((examShare * (20 / 45)) * 10) / 10;
-        student.finalExam = Math.round((examShare * (25 / 45)) * 10) / 10;
+        student.midtermExam = Math.min(examScore, 15);
+        student.finalExam = Math.max(0, examScore - 15);
 
         // ตรวจสอบว่า computeGrade คืนค่าเกรดที่ถูกต้อง
         const actualGrade = computeGrade(student, 'ม.1');
-        expect(['4', '3.5', '3', '2.5', '2', '1.5', '1', '0']).toContain(actualGrade);
+        expect(actualGrade).toBe(expectedGrade);
       });
     });
   });

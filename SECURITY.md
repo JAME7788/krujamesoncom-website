@@ -1,124 +1,89 @@
 # 🔐 ความปลอดภัยของเว็บ Kru James
 
-## สถานะล่าสุด 3 สิงหาคม 2569
+## สถานะล่าสุด 9 ตุลาคม 2569
 
-- เพิ่มทางเข้าสู่ระบบครูด้วย Firebase Auth และรองรับบทบาท `admin`, `teacher`, `viewer` แล้ว
-- เพิ่ม collection `teacherProfiles` สำหรับกำหนดบทบาทและสถานะบัญชีครู
-- เปิด Email/Password provider สร้างบัญชีครู กำหนด custom claim `admin` และสร้าง `teacherProfiles/{uid}` แล้ว
-- ระบบส่งอีเมลตั้งรหัสผ่านไปยังอีเมลครูแล้ว ต้องตั้งรหัสผ่านและทดสอบเข้าสู่ระบบก่อนปิด legacy fallback
-- Firestore Rules รุ่นที่รองรับระบบคาบ หลักฐาน K/P/A คลังข้อสอบ เวอร์ชันเนื้อหา
-  และประวัติการแก้ไข ถูก deploy ไปยังโปรเจกต์ `krujamesoncom-website-9f134` แล้ว
-- ระบบเดิมยังมี legacy admin fallback เพื่อไม่ให้การใช้งานหยุดชะงัก จึงยังไม่ถือว่า
-  การยืนยันตัวตนและ PDPA ปลอดภัยสมบูรณ์จนกว่าจะทดสอบบัญชี Firebase และนำ fallback ออก
+ระบบยืนยันตัวตนครูและนักเรียนทำงานแล้วในโค้ดรอบนี้ และ Firestore Rules ผ่านการ compile แบบ dry run เรียบร้อย การนำกฎใหม่ขึ้น production ต้องทำหลังเว็บรุ่นนี้ deploy สำเร็จ เพื่อไม่ให้เว็บรุ่นเก่าที่ไม่มี token ถูกปฏิเสธกลางคัน
 
-### การแยกบัญชีนักเรียนและผู้ทดลอง
+### สิ่งที่ทำเสร็จแล้ว
 
-- รหัส `admin_teacher_account` และรหัสที่ขึ้นต้นด้วย `external_visitor_` ถูกปฏิเสธจากระบบคะแนนกลาง
-- Firestore Rules ป้องกัน id สองประเภทนี้จาก `students`, `progress`, `learningEvidence` และ `homeworkSubmissions`
-- รายชื่อผู้ทดลองอยู่ใน `externalVisitors` และอ่านได้เฉพาะบัญชีครู Firebase ที่ยืนยันแล้ว
-- `externalVisitorStats/summary` เก็บเฉพาะยอดเข้าทดลองรวมที่ไม่ระบุบุคคล
-- เก็บชื่อเพื่อสถิติการเผยแพร่เท่านั้น ไม่ควรขอเลขประจำตัว เบอร์โทร อีเมล หรือข้อมูลอ่อนไหวอื่น
+- ครูเข้าสู่ระบบด้วย Firebase Auth และต้องมีบทบาท `admin`, `teacher` หรือ `viewer` ใน token
+- หน้า Admin ตรวจ Firebase user และ token สด ค่าใน localStorage ใช้เป็นเพียง cache และปลอมสิทธิ์ production ไม่ได้
+- นักเรียนจริง 115 คนมีบัญชี Firebase Auth, PIN 6 หลัก และ custom claims `role=student`, `studentId`, `studentCode`, `classroom`
+- session นักเรียนถูกคืนค่าหลัง Firebase ยืนยันว่า `studentId` ใน token ตรงกับรายชื่อเท่านั้น
+- ไฟล์ PIN อยู่เฉพาะเครื่องครูที่ `C:\Users\KruJames\Desktop\รหัส-PIN-นักเรียน-KruJames.csv` และไม่อยู่ใน Git
+- Firestore Rules รุ่นใหม่จำกัด `students`, `progress`, `learningEvidence`, `homeworkSubmissions`, `surveys`, `gameReflections` และข้อมูลประเมินให้เจ้าของหรือครู
+- คลังข้อสอบ `questionBank` อ่านและแก้ได้เฉพาะครู ป้องกันนักเรียนดึงเฉลยจากฐานข้อมูล
+- Live Quiz ไม่ส่ง `questions.answer` หรือ `bankId` ในเอกสารห้องที่ผู้เล่นอ่านได้ คำตอบของผู้เล่นส่งเป็นคำขอแบบเพิ่มอย่างเดียวและให้เครื่องครูประมวลผล
+- หน้า Live Quiz Host ถูกป้องกันด้วย AdminGate
+- Coding Sandbox แยกไป Web Worker จำกัดเวลา 3 วินาที และปิดการเข้าถึง DOM, Storage และเครือข่ายทั่วไป
+- หน้าพิมพ์งานวิจัยเลิกใช้ `document.write`
+- dependency audit ไม่พบช่องโหว่ที่รายงาน
 
-### ข้อมูลประเมินรายบุคคล
+### สถานะการนำขึ้นระบบ
 
-- ผลวิเคราะห์รายคนเก็บใน Firebase และไฟล์สำรองส่วนตัวของครู ไม่บันทึกตารางคะแนนรายคนเพิ่มใน GitHub
-- สคริปต์เติมข้อมูลตั้งต้นอ่าน `confirmedByTeacher` และไม่เขียนทับผลที่ครูยืนยันแล้ว
-- การเข้าถึงข้อมูลจริงยังต้องเร่งปิด legacy admin fallback และใช้ Firebase Auth + Firestore Rules ตามรายการด้านล่าง
+| ส่วน | สถานะ |
+|---|---|
+| เว็บและระบบ Auth | พร้อม deploy หลังชุดทดสอบผ่าน |
+| Firestore Rules | compile ผ่าน; รอ deploy หลังเว็บรุ่นใหม่ออนไลน์ |
+| Storage Rules | ไฟล์กฎพร้อม แต่ Firebase project ยังไม่มี Storage bucket |
+| App Check | โค้ดรองรับ; ยังต้องใส่ reCAPTCHA site key และเปิด Enforce ใน Firebase Console |
 
-### ขั้นตอนเปิดใช้บัญชีครู Firebase
+## แบบจำลองสิทธิ์
 
-1. เปิดอีเมลตั้งรหัสผ่านที่ระบบส่งไปยังอีเมลครู แล้วกำหนดรหัสใหม่
-2. ตั้ง `VITE_TEACHER_AUTH_EMAIL` ใน environment ของ Vercel ให้ตรงกับบัญชีครู
-3. ทดสอบเข้าสู่ระบบ แก้คะแนน บันทึกคาบ และอ่าน audit log ก่อนปิด legacy fallback
-4. เปิด App Check แบบ Enforce เมื่อยืนยันว่าโดเมน production ทำงานถูกต้อง
+| ผู้ใช้ | สิทธิ์หลัก |
+|---|---|
+| ผู้ไม่เข้าสู่ระบบ | อ่านเฉพาะเนื้อหาสาธารณะ เช่น ประกาศ หลักสูตร และกิจกรรมทั่วไป |
+| นักเรียน | อ่านและเขียนข้อมูลของตนตาม `studentId` ใน custom claims |
+| ครู/ผู้ดูแล | อ่านข้อมูลชั้นเรียนและจัดการข้อมูลครูตามบทบาท |
+| ผู้ทดลองภายนอก | ใช้หน้าทดลองที่ไม่บันทึกลงคะแนนนักเรียน |
 
-รายงานการตรวจ (pentest) + สิ่งที่ต้องทำ เรียงตามความสำคัญ
+รหัส `admin_teacher_account` และรหัสที่ขึ้นต้นด้วย `external_visitor_` ถูกปฏิเสธจากระบบคะแนนกลาง รายชื่อผู้ทดลองเก็บแยกใน `externalVisitors` และข้อมูลสรุปที่ไม่ระบุบุคคลเก็บใน `externalVisitorStats/summary`
 
----
+## ข้อมูลประเมินรายบุคคล
 
-## สรุปผลตรวจช่องโหว่
+- ผลวิเคราะห์รายคนเก็บใน Firebase และไฟล์สำรองส่วนตัวของครู ไม่เพิ่มตารางคะแนนจริงลง GitHub
+- สคริปต์เติมข้อมูลไม่เขียนทับรายการ `confirmedByTeacher`
+- รายการที่สร้างจากค่าเฉลี่ยห้องมีสถานะรอครูยืนยันและข้อความว่าเป็นค่าเริ่มต้น ห้ามใช้เป็นผลยืนยันอัตโนมัติ
+- หลังซ่อมข้อมูล จำนวน `students` และ `progress` ตรงกัน 115/115 และคาบที่สอนแล้วตรงกับบันทึกหลังสอน 177/177
 
-| # | ช่องโหว่ | ความรุนแรง | สถานะ |
-|---|---------|-----------|-------|
-| 1 | Firestore อนุญาต read/write โดยไม่ใช้ Firebase Auth และตรวจเพียงรูปร่างข้อมูล | 🔴 วิกฤต | ยังไม่ปิด ต้องใช้ Auth + rules แยกบทบาท; App Check ช่วยลด abuse แต่แทน Auth ไม่ได้ |
-| 2 | `.env` ถูก commit เข้า git | 🟡 ต้องระวัง | ยัง track อยู่โดยตั้งใจเพื่อ Vercel build; ต้องเก็บเฉพาะ Firebase web config ห้ามใส่ secret |
-| 3 | รหัส Admin มี fallback อยู่ใน source และถูกอ่านได้จาก browser bundle | 🔴 สูง | ยังไม่ปิด หน้า login เป็นเพียง client-side gate |
-| 4 | รหัสเข้าระบบนักเรียน `ajj` อยู่ใน client | 🟡 ต่ำ | โดยดีไซน์ — แค่กันคนทั่วไป |
-| 5 | XSS ผ่านสไลด์ (`dangerouslySetInnerHTML`) | 🟢 ปลอดภัย | escape HTML ก่อน markdown แล้ว — ไม่ช่องโหว่ |
-| 6 | ข้อมูลนักเรียนและคะแนนจริงอ่านได้จาก Firestore โดยไม่ยืนยันตัวตน | 🔴 PDPA | ยังไม่ปิด ต้องใช้ Firebase Auth และ rules จำกัดครู/นักเรียนรายคน |
+## งานที่ต้องตั้งค่าจาก Console
 
----
+### 1. เปิด App Check
 
-## ⚠️ สิ่งที่ครูต้องทำเอง (โค้ดทำแทนไม่ได้)
+1. เปิด Firebase Console → App Check → Apps
+2. เลือกเว็บแอปและลงทะเบียน reCAPTCHA v3
+3. ใส่ site key ใน environment ของ Vercel เป็น `VITE_RECAPTCHA_SITE_KEY`
+4. deploy เว็บและดู Request metrics อย่างน้อย 1–2 วัน
+5. เปิด Enforce สำหรับ Cloud Firestore และ Storage เมื่อระบบส่ง token ครบ
 
-### ★ ข้อ 1 — เปิด App Check (สำคัญสุด กันคนยิง Firestore ตรงๆ)
+App Check ลด request ปลอม แต่ Firebase Auth และ Rules ยังคงเป็นตัวตัดสินสิทธิ์ข้อมูล
 
-App Check ช่วยลด request ปลอมและสคริปต์อัตโนมัติที่ไม่ได้มาจากแอป แต่ไม่ใช่ระบบ
-ยืนยันตัวตนและไม่สามารถแยกสิทธิ์ครูกับนักเรียนได้ จึงต้องใช้ร่วมกับ Firebase Auth
-และ Firestore Rules แบบแบ่งบทบาท
+### 2. เปิด Firebase Storage เมื่อจะรับไฟล์
 
-1. [Firebase Console](https://console.firebase.google.com) → โปรเจกต์ → **App Check**
-2. เมนู **Apps** → เลือกเว็บแอป → **Register** → เลือก **reCAPTCHA v3**
-3. จะได้ **site key** → เอาใส่ `.env`:
-   ```
-   VITE_RECAPTCHA_SITE_KEY=6Lxxxxxxxxxxxxx
-   ```
-4. Deploy เว็บใหม่ (push → Vercel build)
-5. กลับมาที่ App Check → แท็บ **APIs** → **Cloud Firestore** → กด **Enforce**
-   - แนะนำ: ดู "Request metrics" 1–2 วันก่อน Enforce เพื่อเช็คว่าเว็บจริงส่ง token ครบ
-6. ทำแบบเดียวกันกับ **Storage** ถ้าใช้อัปโหลดไฟล์
+Firebase CLI ตรวจพบว่าโปรเจกต์ `krujamesoncom-website-9f134` ยังไม่ได้สร้าง Storage bucket จึงยัง deploy `storage.rules` ไม่ได้ ต้องกด Get Started ใน Firebase Console เลือกตำแหน่งจัดเก็บและตรวจเงื่อนไขค่าใช้จ่ายก่อน จากนั้นจึง deploy กฎ Storage
 
-> ตราบใดที่ยังไม่ Enforce = ยังมีคนยิง Firestore ตรงได้อยู่
+### 3. จำกัด Firebase browser key
 
-### ★ ข้อ 2 — Deploy Firestore Rules ใหม่
+ใน Google Cloud Console → APIs & Services → Credentials ให้จำกัด HTTP referrers เป็นโดเมน production และ preview ที่ใช้งานจริง
 
-ไฟล์ [firestore.rules](firestore.rules) ในโปรเจกต์ถูก hardening แล้ว
-แต่ **การแก้ไฟล์เฉยๆ ไม่มีผล** ต้อง deploy ขึ้น Console:
+## การตรวจรอบล่าสุด
 
-- **วิธีง่าย**: Firebase Console → Firestore Database → แท็บ **Rules** →
-  ลบของเก่า → วางเนื้อหาไฟล์ `firestore.rules` → **Publish**
-- **หรือ CLI**: `firebase deploy --only firestore:rules`
+- Unit/integration: 76 ไฟล์, 849/849 ข้อผ่าน
+- Firestore Rules: ชุด regression ผ่านและ compile ด้วย Firebase CLI สำเร็จ
+- ESLint: 0 error, 0 warning
+- Production build: ผ่าน
+- npm audit: 0 vulnerability
+- เกม: 406 จุดตรวจผ่าน และวงจร Game Based Learning 36/36 เกมผ่าน
+- โลก 3D: desktop, mobile, teacher-student, admin dashboard ผ่าน
+- ข้อมูลจริง: 28 collections ไม่มีปัญหาที่ตัวตรวจพบ
 
-### ข้อ 3 — เปลี่ยนระบบ Admin เป็น Firebase Auth
+## ไฟล์ที่เกี่ยวข้อง
 
-การย้ายรหัสไป `VITE_ADMIN_USER` / `VITE_ADMIN_PASS` ไม่ทำให้เป็นความลับ เพราะตัวแปร
-`VITE_*` ถูกฝังใน JavaScript bundle ทางแก้สำหรับใช้งานจริงคือ Firebase Auth
-(บัญชีครู) + custom role/claim + rules ที่อนุญาตแก้คะแนนเฉพาะครู
-
-รหัสนักเรียนในหน้าล็อกอินใช้เป็นเพียงรหัสเข้าห้อง ไม่ใช่สิทธิ์เข้าถึงฐานข้อมูล
-
-### ข้อ 4 — จำกัดโดเมนของ API key (กันเอาไปใช้ที่อื่น)
-
-1. [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials
-2. เลือก Firebase browser key → **Application restrictions** → **HTTP referrers**
-3. ใส่เฉพาะโดเมนเว็บจริง เช่น `krujamesoncom-website.vercel.app/*`
-
----
-
-## หมายเหตุความจริงเรื่องความปลอดภัยฝั่ง client
-
-หน้าเว็บและการเขียน Firebase ส่วนใหญ่ทำงานจาก browser โดยตรง ส่วน AI tutor มี
-Vercel serverless proxy ที่ `/api/ai-tutor` การตรวจรหัส Admin ปัจจุบันยังเกิดใน
-browser จึงไม่ใช่กำแพงความปลอดภัย
-ใครเปิด DevTools ก็หาเจอ
-
-ทางแก้จริงต้องมีทั้ง:
-1. **App Check** เพื่อลด abuse จาก client ปลอม
-2. **Firebase Auth + role-based Firestore Rules** เพื่อแยกครู นักเรียน และข้อมูลรายคน
-3. ย้ายคำสั่งสำคัญ เช่น แก้คะแนนทั้งห้อง ไป backend/Cloud Functions เมื่อพร้อม
-
-ก่อนทำครบสามส่วนนี้ ไม่ควรถือว่าระบบคะแนนและข้อมูลส่วนบุคคลปลอดภัยสำหรับการเปิด
-ต่ออินเทอร์เน็ตสาธารณะ แม้หน้าเว็บจะใช้งานได้ตามปกติ
-
----
-
-## ✅ สิ่งที่แก้แล้วในโค้ด (commit นี้)
-
-- Firestore rules: เพิ่มตรวจ shape + จำกัดจำนวน field/ความยาว string ต่อ doc
-  (ช่วยกัน payload ผิดรูปแบบ แต่ยังไม่ใช่ authorization)
-- App Check scaffolding ใน `src/services/firebase.ts` — เปิดเมื่อใส่
-  `VITE_RECAPTCHA_SITE_KEY`
-- `.env.secret` และ `.env.*.local` ถูก ignore; `.env` ที่ track ต้องมีเฉพาะ
-  Firebase web config
-- AI provider key ย้ายไป Vercel serverless proxy ไม่อยู่ใน browser bundle
-- ยืนยัน: สไลด์ escape HTML ก่อน render → ไม่มี XSS
+- `firestore.rules`
+- `storage.rules`
+- `src/services/studentAuthService.ts`
+- `src/services/authAdmin.ts`
+- `src/services/liveQuizService.ts`
+- `scripts/setup-student-auth.mjs`
+- `scripts/verify-student-auth.mjs`
+- `SYSTEM_AUDIT_2026-10-07.md`

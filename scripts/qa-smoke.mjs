@@ -74,14 +74,23 @@ const run = async () => {
     if (target.auth) {
       await context.addInitScript((arg) => {
         if (arg.role === 'student') sessionStorage.setItem('current_student', JSON.stringify(arg.student));
-        if (arg.role === 'admin') localStorage.setItem('krujames_admin_session_v1', JSON.stringify({ expiresAt: Date.now() + 3600000 }));
+        if (arg.role === 'admin') localStorage.setItem('krujames_admin_session_v1', JSON.stringify({
+          user: 'qa-smoke',
+          uid: 'qa-smoke',
+          role: 'admin',
+          authSource: 'qa',
+          loginAt: Date.now(),
+          expiresAt: Date.now() + 3600000,
+        }));
       }, { role: target.auth, student });
     }
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message.slice(0, 120)));
     try {
-      await page.goto(baseUrl + target.path, { waitUntil: 'domcontentloaded', timeout: 25000 });
+      const targetUrl = new URL(target.path, baseUrl);
+      if (target.auth === 'admin') targetUrl.searchParams.set('qa', 'run-smoke');
+      await page.goto(targetUrl.href, { waitUntil: 'domcontentloaded', timeout: 25000 });
       await page.waitForTimeout(target.wait || 1500);
       const pageState = await page.evaluate(({ mustInclude, mustExclude, isGame }) => {
         const root = document.getElementById('root');

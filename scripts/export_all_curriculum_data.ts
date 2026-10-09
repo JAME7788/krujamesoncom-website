@@ -15,7 +15,7 @@ interface ExportedUnit {
   topics: string[];
   activities: string[];
   indicators: string[];
-  slides: any[];
+  slides: unknown[];
 }
 
 const allData: ExportedUnit[] = [];

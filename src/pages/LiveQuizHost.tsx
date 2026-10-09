@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Users, Play, Award, X, Trophy } from 'lucide-react';
 import {
   createRoom, generateRoomCode, startQuiz, revealAnswer, nextQuestion, closeRoom, subscribeRoom,
+  subscribeHostRequests,
 } from '../services/liveQuizService';
 import type { LiveQuizRoom, LiveQuizQuestion } from '../services/liveQuizService';
 import { grades as curriculumGrades } from '../data/curriculum';
@@ -32,7 +33,12 @@ const LiveQuizHost: React.FC = () => {
 
   useEffect(() => {
     if (!code) return;
-    return subscribeRoom(code, (r) => setRoom(r));
+    const unsubscribeRoom = subscribeRoom(code, (r) => setRoom(r), { host: true });
+    const unsubscribeRequests = subscribeHostRequests(code);
+    return () => {
+      unsubscribeRoom();
+      unsubscribeRequests();
+    };
   }, [code]);
 
   useEffect(() => {
@@ -213,7 +219,7 @@ const LiveQuizHost: React.FC = () => {
         </div>
 
         <button
-          onClick={() => startQuiz(room.code)}
+          onClick={() => void startQuiz(room.code)}
           disabled={Object.keys(room.players).length === 0}
           className="btn-primary"
           style={{ padding: '14px 40px', fontSize: '1.2rem' }}
@@ -221,7 +227,7 @@ const LiveQuizHost: React.FC = () => {
           <Play size={20} /> เริ่มเลย!
         </button>
         <br />
-        <button onClick={() => { closeRoom(room.code); setCode(''); }} className="btn-ghost" style={{ marginTop: 12 }}>
+        <button onClick={() => { void closeRoom(room.code); setCode(''); }} className="btn-ghost" style={{ marginTop: 12 }}>
           ❌ ยกเลิก
         </button>
       </div>
@@ -242,7 +248,7 @@ const LiveQuizHost: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
           {q.options.map((opt, i) => {
             const cls = ['#ef4444', '#3b82f6', '#facc15', '#22c55e'][i];
-            const isCorrect = room.state === 'reveal' && i === q.answer;
+            const isCorrect = room.state === 'reveal' && i === (room.revealedAnswer ?? q.answer);
             const count = Object.values(room.players).filter(p => p.answers[room.currentQuestion]?.choice === i).length;
             return (
               <div key={i} style={{
@@ -270,11 +276,11 @@ const LiveQuizHost: React.FC = () => {
 
         <div style={{ textAlign: 'center' }}>
           {room.state === 'question' ? (
-            <button onClick={() => revealAnswer(room.code)} className="btn-primary" style={{ padding: '12px 32px' }}>
+            <button onClick={() => void revealAnswer(room.code)} className="btn-primary" style={{ padding: '12px 32px' }}>
               <Award size={16} /> เฉลย
             </button>
           ) : (
-            <button onClick={() => nextQuestion(room.code)} className="btn-primary" style={{ padding: '12px 32px' }}>
+            <button onClick={() => void nextQuestion(room.code)} className="btn-primary" style={{ padding: '12px 32px' }}>
               {room.currentQuestion + 1 < room.questions.length ? 'ข้อต่อไป →' : '🏆 ดูผลสุดท้าย'}
             </button>
           )}
@@ -304,7 +310,7 @@ const LiveQuizHost: React.FC = () => {
           </div>
         ))}
       </div>
-      <button onClick={() => { closeRoom(room.code); setCode(''); }} className="btn-secondary" style={{ marginTop: 20 }}>
+      <button onClick={() => { void closeRoom(room.code); setCode(''); }} className="btn-secondary" style={{ marginTop: 20 }}>
         เริ่มเกมใหม่
       </button>
     </div>

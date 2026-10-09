@@ -154,8 +154,6 @@ describe('3D Voxel Collision Detection & Wall Sliding', () => {
     const col: StaticCollider = { minX: -10.175, maxX: -9.825, minZ: -8.5, maxZ: 8.5, minY: 0, maxY: 5.5 };
     // ผู้เล่นถูกผลักหรือแว้งเข้าไปที่ x = -9.75 (ซ้อนทับขอบกำแพง x=-9.825 เล็กน้อย)
     const player = { x: -9.75, z: 0, y: 1.905 };
-    const feet = player.y - 1.7;
-
     const overlapMinX = (player.x + PLAYER_RADIUS) - col.minX; // (-9.75 + 0.34) - (-10.175) = 0.765
     const overlapMaxX = col.maxX - (player.x - PLAYER_RADIUS); // -9.825 - (-9.75 - 0.34) = 0.265
     const overlapMinZ = (player.z + PLAYER_RADIUS) - col.minZ;
@@ -164,8 +162,6 @@ describe('3D Voxel Collision Detection & Wall Sliding', () => {
     expect(overlapMinX > 0 && overlapMaxX > 0 && overlapMinZ > 0 && overlapMaxZ > 0).toBe(true);
 
     const penX = overlapMinX < overlapMaxX ? -overlapMinX : overlapMaxX;
-    const penZ = overlapMinZ < overlapMaxZ ? -overlapMinZ : overlapMaxZ;
-
     // แกนที่แทรกน้อยที่สุดคือแกน X ขวา (ดันออกจากกำแพงกลับเข้าห้องเรียน)
     expect(penX).toBeGreaterThan(0);
     player.x += penX * 1.05;
@@ -224,9 +220,6 @@ describe('3D Voxel Collision Detection & Wall Sliding', () => {
     let playerY = -2.5;
     let verticalVelocity = -15;
     let grounded = false;
-    let summonX = 0;
-    let summonZ = 10;
-
     if (playerY < -2.0) {
       playerY = 1.7;
       verticalVelocity = 0;

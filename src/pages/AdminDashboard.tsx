@@ -394,6 +394,12 @@ const AdminDashboardInner: React.FC = () => {
   );
 
   const [activityFilter, setActivityFilter] = useState<'all' | 'activeNow' | 'activeToday'>('all');
+  const [activityClock, setActivityClock] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setActivityClock(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const baseFilteredStudents = useMemo(
     () =>
@@ -406,8 +412,8 @@ const AdminDashboardInner: React.FC = () => {
   );
 
   const countOnline = useMemo(
-    () => baseFilteredStudents.filter((s) => (Date.now() - (s.progress?.lastActive || 0)) <= 15 * 60 * 1000).length,
-    [baseFilteredStudents]
+    () => baseFilteredStudents.filter((s) => (activityClock - (s.progress?.lastActive || 0)) <= 15 * 60 * 1000).length,
+    [activityClock, baseFilteredStudents]
   );
 
   const countToday = useMemo(
@@ -417,13 +423,13 @@ const AdminDashboardInner: React.FC = () => {
 
   const filteredStudents = useMemo(() => {
     if (activityFilter === 'activeNow') {
-      return baseFilteredStudents.filter((s) => (Date.now() - (s.progress?.lastActive || 0)) <= 15 * 60 * 1000);
+      return baseFilteredStudents.filter((s) => (activityClock - (s.progress?.lastActive || 0)) <= 15 * 60 * 1000);
     }
     if (activityFilter === 'activeToday') {
       return baseFilteredStudents.filter((s) => s.progress?.lastActive && new Date(s.progress.lastActive).toDateString() === new Date().toDateString());
     }
     return baseFilteredStudents;
-  }, [baseFilteredStudents, activityFilter]);
+  }, [activityClock, baseFilteredStudents, activityFilter]);
 
   const recentActivitiesAcrossAll = useMemo(() => {
     const list: Array<{

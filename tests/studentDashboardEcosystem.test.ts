@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getExamSetsByGrade, getBestScoreForExamSet, saveExamAttempt, loadLocalExamAttempts, type ExamAttempt } from '../src/services/examService';
-import { loadAllReflections, saveGameReflection, loadStudentReflections } from '../src/services/gameReflectionService';
+import { saveGameReflection, loadStudentReflections } from '../src/services/gameReflectionService';
 import { allClassrooms2569 } from '../src/data/students2569';
 import { loadGrades, initClassroom } from '../src/services/gradeService';
 

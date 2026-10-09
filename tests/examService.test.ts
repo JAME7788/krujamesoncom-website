@@ -3,7 +3,6 @@ import {
   curriculumExamSets,
   getExamSetsByGrade,
   getExamSetById,
-  availableExamGrades,
   saveExamAttempt,
   loadLocalExamAttempts,
   getBestScoreForExamSet,

@@ -1,6 +1,3 @@
-import { db } from './firebase';
-import { collection, addDoc } from 'firebase/firestore';
-
 export interface GameReflectionRecord {
   id: string;
   studentId: string;
@@ -29,7 +26,9 @@ const getLocalReflections = (): GameReflectionRecord[] => {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) return JSON.parse(raw) as GameReflectionRecord[];
     }
-  } catch {}
+  } catch {
+    // localStorage may be blocked in private browsing; use the in-memory copy.
+  }
   return memoryFallback;
 };
 
@@ -61,7 +60,11 @@ export const saveGameReflection = async (input: GameReflectionInput): Promise<Ga
   // 2. บันทึกลง Firestore หากเชื่อมต่อได้
   try {
     const isTest = (globalThis as unknown as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV === 'test';
-    if (db && typeof navigator !== 'undefined' && navigator.onLine && !isTest) {
+    if (typeof navigator !== 'undefined' && navigator.onLine && !isTest) {
+      const [{ db }, { collection, addDoc }] = await Promise.all([
+        import('./firebase'),
+        import('firebase/firestore'),
+      ]);
       await addDoc(collection(db, FIRESTORE_COLLECTION), newRecord);
     }
   } catch (error) {
