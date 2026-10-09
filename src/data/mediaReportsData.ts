@@ -1191,7 +1191,7 @@ const INTERACTIVE_SLIDE_REPORTS: MediaReportItem[] = [
 ];
 
 // 3. สื่อนวัตกรรมเกมการเรียนรู้ดิจิทัลทั้งหมดจาก gamesCatalog.ts (36 รายการ)
-const GAMES_CATALOG_REPORTS: MediaReportItem[] = gamesCatalog.map((game) => {
+const GAMES_CATALOG_REPORTS: MediaReportItem[] = gamesCatalog.filter((g) => g.id !== 'cyber-racer').map((game) => {
   const gradeText = game.level ? `ระดับชั้น ${game.level}` : 'ทุกระดับชั้น (ป.1 - ม.3)';
 
   let subjectName = 'วิทยาการคำนวณ';

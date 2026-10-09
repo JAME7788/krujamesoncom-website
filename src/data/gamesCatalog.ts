@@ -371,4 +371,14 @@ export const gamesCatalog: GameInfo[] = [
     color: '#06b6d4',
     path: '/games/flowchart-bingo',
   },
+  {
+    id: 'cyber-racer',
+    title: '🏎️ ขับรถซิ่งตอบคำถาม (Cyber Racer Quiz)',
+    desc: 'ขับรถสปอร์ตซิ่งบนทางด่วนไซเบอร์ เลือกเลนคำตอบวิทยาการคำนวณที่ถูกต้อง หลบสิ่งกีดขวาง เก็บเหรียญและไนโตรเร่งความเร็ว',
+    emoji: '🏎️',
+    level: 'ป.1-ม.3',
+    skill: 'การตัดสินใจ/ความเร็ว/ตอบคำถาม',
+    color: '#ef4444',
+    path: '/games/cyber-racer',
+  },
 ];

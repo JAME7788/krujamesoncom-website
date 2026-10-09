@@ -55,7 +55,8 @@ export type GameProgressId =
   | 'stroop-color'
   | 'space-treasure'
   | 'cyber-cop'
-  | 'flowchart-bingo';
+  | 'flowchart-bingo'
+  | 'cyber-racer';
 
 type StudentLike = {
   id: string;
@@ -243,6 +244,10 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
   }
   // บิงโกสัญลักษณ์ผังงาน
   if (normalizedGameId === 'flowchart-bingo') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  // ขับรถซิ่งตอบคำถาม: การตัดสินใจและความเร็ว
+  if (normalizedGameId === 'cyber-racer') {
     return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
 

@@ -48,7 +48,7 @@ export const CT_PILLARS: Record<CtPillar, CtPillarInfo> = {
     emoji: '⚡',
     color: '#10b981', // Emerald green
     description: 'วางลำดับขั้นตอนและเงื่อนไขที่ชัดเจน เพื่อนำไปใช้แก้ปัญหาได้อย่างถูกต้องแม่นยำ',
-    gameIds: ['algorithm-runner-3d', 'coding-studio', 'maze', 'snake', 'flowchart-bingo', 'obstacle-dodge', 'bomb-collector', 'space-treasure', 'mouse', 'keyboard', 'situation-reaction', 'algorithm'],
+    gameIds: ['algorithm-runner-3d', 'coding-studio', 'maze', 'snake', 'flowchart-bingo', 'obstacle-dodge', 'bomb-collector', 'space-treasure', 'cyber-racer', 'mouse', 'keyboard', 'situation-reaction', 'algorithm'],
   },
 };
 
