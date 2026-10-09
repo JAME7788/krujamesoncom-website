@@ -30,14 +30,17 @@ const Login: React.FC = () => {
   const [externalMode, setExternalMode] = useState(false);
   const [externalName, setExternalName] = useState('');
   const [externalError, setExternalError] = useState('');
+  const [studentCodeInput, setStudentCodeInput] = useState('');
 
   useEffect(() => {
     // ดึง access code ล่าสุดจาก Firebase (เผื่อครูเปลี่ยน)
     void fetchSiteSettingsFromFirebase().then((s) => {
       if (s) setCurrentCode(s.accessCode);
     });
-    // รายชื่อนักเรียนใช้ Firebase เป็นชุดกลาง เครื่องนักเรียนจึงเห็นรายการที่ครูแก้ล่าสุด
-    void fetchRostersFromFirebase().then(setStudents2569);
+    // ระบบ PIN ไม่ดึงรายชื่อทั้งโรงเรียนก่อนยืนยันตัวตน เพื่อลดการเปิดเผยข้อมูลส่วนบุคคล
+    if (!isStudentFirebaseAuthRequired()) {
+      void fetchRostersFromFirebase().then(setStudents2569);
+    }
   }, []);
   const [step, setStep] = useState<Step>('classroom');
   const [classroom, setClassroom] = useState<string>('');
@@ -296,6 +299,114 @@ const Login: React.FC = () => {
       setSubmitting(null);
     }
   };
+
+  const loginSecureByCode = async () => {
+    const requestedCode = studentCodeInput.trim();
+    const match = Object.entries(students2569).flatMap(([room, roster]) => (
+      roster.map((student) => ({ room, student }))
+    )).find(({ student }) => student.studentCode === requestedCode);
+    if (!match || studentPin.length !== 6) {
+      setLoginError('รหัสนักเรียนหรือ PIN ไม่ถูกต้อง');
+      return;
+    }
+    setSubmitting('secure-student');
+    setLoginError('');
+    try {
+      await loginAsStudent(
+        match.student.name,
+        match.room,
+        String(match.student.no),
+        studentPin,
+      );
+    } catch {
+      // ใช้ข้อความเดียวกันทั้งกรณีไม่พบรหัสและ PIN ผิด เพื่อไม่เปิดเผยว่ารหัสใดมีอยู่จริง
+      setLoginError('รหัสนักเรียนหรือ PIN ไม่ถูกต้อง');
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  if (secureStudentLogin) {
+    return (
+      <div className="login-page page-transition">
+        <div className="login-bg"></div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="login-card"
+          style={{ maxWidth: 440 }}
+        >
+          <div className="login-header">
+            <div className="auth-icon"><ShieldCheck size={44} /></div>
+            <span className="badge-yellow" style={{ marginBottom: '0.75rem' }}>
+              <Sparkles size={14} /> Student Portal
+            </span>
+            <h1>เข้าสู่ระบบนักเรียน</h1>
+            <p>กรอกรหัสนักเรียนและ PIN ส่วนตัวที่ครูแจกให้</p>
+          </div>
+
+          <label className="external-name-field">
+            <span>รหัสนักเรียน</span>
+            <input
+              type="text"
+              value={studentCodeInput}
+              onChange={(event) => {
+                setStudentCodeInput(event.target.value.trimStart().slice(0, 40));
+                setLoginError('');
+              }}
+              placeholder="เช่น 12345"
+              autoFocus
+              autoComplete="username"
+              spellCheck={false}
+            />
+          </label>
+          <label className="external-name-field" style={{ marginTop: 14 }}>
+            <span>PIN 6 หลัก</span>
+            <input
+              type="password"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={studentPin}
+              onChange={(event) => {
+                setStudentPin(event.target.value.replace(/\D/g, '').slice(0, 6));
+                setLoginError('');
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void loginSecureByCode();
+              }}
+              placeholder="••••••"
+              autoComplete="current-password"
+            />
+          </label>
+
+          {loginError && <p className="login-inline-error">{loginError}</p>}
+          <div className="external-privacy-note">
+            <ShieldCheck size={20} />
+            <span>ระบบจะไม่แสดงรายชื่อนักเรียนทั้งโรงเรียนก่อนเข้าสู่ระบบ</span>
+          </div>
+          <button
+            type="button"
+            className="btn-login-submit"
+            style={{ marginTop: 16 }}
+            disabled={!studentCodeInput.trim() || studentPin.length !== 6 || submitting !== null}
+            onClick={() => void loginSecureByCode()}
+          >
+            <LogIn size={18} />
+            {submitting ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
+          </button>
+
+          <p className="auth-footer" style={{ marginTop: 18, textAlign: 'center' }}>
+            ไม่ทราบรหัสหรือ PIN กรุณาติดต่อครูประจำวิชา
+          </p>
+          <p style={{ textAlign: 'center', marginTop: 12 }}>
+            <Link to="/admin" className="teacher-login-btn" style={{ color: '#FAB005', fontWeight: 700 }}>
+              🔑 สำหรับคุณครู/ผู้ดูแลระบบ
+            </Link>
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-page page-transition">

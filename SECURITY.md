@@ -10,6 +10,7 @@
 - หน้า Admin ตรวจ Firebase user และ token สด ค่าใน localStorage ใช้เป็นเพียง cache และปลอมสิทธิ์ production ไม่ได้
 - นักเรียนจริง 115 คนมีบัญชี Firebase Auth, PIN 6 หลัก และ custom claims `role=student`, `studentId`, `studentCode`, `classroom`
 - session นักเรียนถูกคืนค่าหลัง Firebase ยืนยันว่า `studentId` ใน token ตรงกับรายชื่อเท่านั้น
+- หน้าเข้าสู่ระบบไม่แสดงรายชื่อนักเรียนก่อนยืนยันตัวตน ใช้รหัสนักเรียนกับ PIN และไม่อ่าน roster จาก Firebase แบบ anonymous
 - ไฟล์ PIN อยู่เฉพาะเครื่องครูที่ `C:\Users\KruJames\Desktop\รหัส-PIN-นักเรียน-KruJames.csv` และไม่อยู่ใน Git
 - Firestore Rules รุ่นใหม่จำกัด `students`, `progress`, `learningEvidence`, `homeworkSubmissions`, `surveys`, `gameReflections` และข้อมูลประเมินให้เจ้าของหรือครู
 - คลังข้อสอบ `questionBank` อ่านและแก้ได้เฉพาะครู ป้องกันนักเรียนดึงเฉลยจากฐานข้อมูล
