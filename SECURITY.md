@@ -2,7 +2,7 @@
 
 ## สถานะล่าสุด 9 ตุลาคม 2569
 
-ระบบยืนยันตัวตนครูและนักเรียนทำงานแล้วในโค้ดรอบนี้ และ Firestore Rules ผ่านการ compile แบบ dry run เรียบร้อย การนำกฎใหม่ขึ้น production ต้องทำหลังเว็บรุ่นนี้ deploy สำเร็จ เพื่อไม่ให้เว็บรุ่นเก่าที่ไม่มี token ถูกปฏิเสธกลางคัน
+ระบบยืนยันตัวตนครูและนักเรียนทำงานแล้วบน production และ Firestore Rules รุ่นใหม่ถูก compile และ deploy หลังเว็บรุ่นใหม่ออนไลน์เรียบร้อย
 
 ### สิ่งที่ทำเสร็จแล้ว
 
@@ -24,8 +24,8 @@
 
 | ส่วน | สถานะ |
 |---|---|
-| เว็บและระบบ Auth | พร้อม deploy หลังชุดทดสอบผ่าน |
-| Firestore Rules | compile ผ่าน; รอ deploy หลังเว็บรุ่นใหม่ออนไลน์ |
+| เว็บและระบบ Auth | deploy บน Vercel แล้ว |
+| Firestore Rules | deploy บน production แล้ว |
 | Storage Rules | ไฟล์กฎพร้อม แต่ Firebase project ยังไม่มี Storage bucket |
 | App Check | โค้ดรองรับ; ยังต้องใส่ reCAPTCHA site key และเปิด Enforce ใน Firebase Console |
 
@@ -70,7 +70,8 @@ Firebase CLI ตรวจพบว่าโปรเจกต์ `krujamesoncom-
 ## การตรวจรอบล่าสุด
 
 - Unit/integration: 76 ไฟล์, 849/849 ข้อผ่าน
-- Firestore Rules: ชุด regression ผ่านและ compile ด้วย Firebase CLI สำเร็จ
+- Firestore Rules: ชุด regression ผ่าน, compile และ deploy ด้วย Firebase CLI สำเร็จ
+- Authorization จริง: นักเรียนอ่าน `students/progress` ของตนได้ อ่านข้อมูลนักเรียนคนอื่นและ `questionBank` ไม่ได้
 - ESLint: 0 error, 0 warning
 - Production build: ผ่าน
 - npm audit: 0 vulnerability

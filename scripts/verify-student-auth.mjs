@@ -32,9 +32,33 @@ const response = await fetch(
 const payload = await response.json();
 if (!response.ok) throw new Error(payload.error?.message || `เข้าสู่ระบบไม่สำเร็จ ${response.status}`);
 const claims = JSON.parse(Buffer.from(payload.idToken.split('.')[1], 'base64url').toString('utf8'));
+const projectId = env.VITE_FIREBASE_PROJECT_ID;
+const documentUrl = (collection, id) => (
+  `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}`
+  + `/databases/(default)/documents/${collection}/${encodeURIComponent(id)}`
+);
+const authorizedGet = (url) => fetch(url, {
+  headers: { authorization: `Bearer ${payload.idToken}` },
+});
+const otherAccount = Object.values(secrets).find((candidate) => candidate.studentId !== account.studentId);
+const [ownStudent, ownProgress, otherStudent, questionBank] = await Promise.all([
+  authorizedGet(documentUrl('students', account.studentId)),
+  authorizedGet(documentUrl('progress', account.studentId)),
+  authorizedGet(documentUrl('students', otherAccount.studentId)),
+  authorizedGet(
+    `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}`
+    + '/databases/(default)/documents/questionBank?pageSize=1',
+  ),
+]);
 console.log(JSON.stringify({
   login: true,
   role: claims.role,
   studentIdMatches: claims.studentId === account.studentId,
   configuredAccounts: Object.keys(secrets).length,
+  firestore: {
+    ownStudentReadable: ownStudent.ok,
+    ownProgressReadable: ownProgress.ok,
+    otherStudentDenied: otherStudent.status === 403,
+    questionBankDenied: questionBank.status === 403,
+  },
 }, null, 2));
