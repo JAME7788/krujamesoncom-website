@@ -72,6 +72,7 @@ Firebase CLI ตรวจพบว่าโปรเจกต์ `krujamesoncom-
 - Unit/integration: 76 ไฟล์, 849/849 ข้อผ่าน
 - Firestore Rules: ชุด regression ผ่าน, compile และ deploy ด้วย Firebase CLI สำเร็จ
 - Authorization จริง: นักเรียนอ่าน `students/progress` ของตนได้ อ่านข้อมูลนักเรียนคนอื่นและ `questionBank` ไม่ได้
+- Production end-to-end: ล็อกอินนักเรียน เปิด Dashboard เกม และโลก 3D ผ่านโดยไม่มี page error
 - ESLint: 0 error, 0 warning
 - Production build: ผ่าน
 - npm audit: 0 vulnerability

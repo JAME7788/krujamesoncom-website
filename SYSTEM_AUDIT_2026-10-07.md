@@ -31,6 +31,7 @@
 | Dependency audit | 0 vulnerability |
 | Firestore Rules | compile และ deploy บน production ผ่าน |
 | Student authorization | อ่านข้อมูลตนเองได้; ข้อมูลผู้อื่นและคลังข้อสอบถูกปฏิเสธ |
+| Production student flow | Login → Dashboard → เกม → โลก 3D ผ่าน; page error 0 |
 | Game content checks | 406 checks ผ่าน |
 | Browser smoke test | 84 เส้นทางเดิมผ่าน และ 4 หน้าแอดมินที่ได้รับผลจาก Auth ผ่านหลังแก้ QA รวม 88/88 |
 | Game Based Learning browser test | 36/36 เกมผ่าน |
