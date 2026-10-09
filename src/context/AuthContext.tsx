@@ -1,15 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../services/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { loadRoster } from '../services/rosterService';
 import { recordExternalVisitor } from '../services/externalVisitorService';
-import { validateAdminSession } from '../services/authAdmin';
-import {
-  isStudentFirebaseAuthRequired,
-  signInStudentAccount,
-  signOutStudentAccount,
-} from '../services/studentAuthService';
 import {
   ADMIN_USER_ID,
   getPortalAccountType,
@@ -31,7 +25,6 @@ interface AuthContextType {
     name: string,
     classroom: string,
     studentNumber: string,
-    pin?: string,
     partner?: { name: string; classroom: string; studentNumber: string }
   ) => Promise<void>;
   loginAsExternalVisitor: (name: string) => Promise<void>;
@@ -168,52 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   });
 
-  const initialUserRef = useRef(user);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    const validateRestoredSession = async () => {
-      const restored = initialUserRef.current;
-      if (!restored) {
-        if (active) setLoading(false);
-        return;
-      }
-
-      let valid = true;
-      if (restored.accountType === 'student' && isStudentFirebaseAuthRequired()) {
-        try {
-          const [{ getAuth }, { default: app }] = await Promise.all([
-            import('firebase/auth'),
-            import('../services/firebase'),
-          ]);
-          const auth = getAuth(app);
-          await auth.authStateReady();
-          const token = await auth.currentUser?.getIdTokenResult();
-          valid = Boolean(
-            auth.currentUser
-            && token?.claims.role === 'student'
-            && token.claims.studentId === restored.id,
-          );
-        } catch {
-          valid = false;
-        }
-      } else if (restored.accountType === 'admin') {
-        valid = Boolean(await validateAdminSession());
-      }
-
-      if (!active) return;
-      if (!valid) {
-        removeStudentSessionStorage();
-        if (restored.accountType === 'admin') localStorage.removeItem('krujames_admin_session_v1');
-        setUser(null);
-        setPartner(null);
-      }
-      setLoading(false);
-    };
-    void validateRestoredSession();
-    return () => { active = false; };
-  }, []);
+  const [loading] = useState(false);
 
   const persistStudent = async (s: Student) => {
     if (!isScoreEligibleUser(s)) return;
@@ -232,7 +180,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string,
     classroom: string,
     studentNumber: string,
-    pin?: string,
     partnerInfo?: { name: string; classroom: string; studentNumber: string }
   ) => {
     const rosterMain = findRosterStudent(name, classroom, studentNumber);
@@ -245,9 +192,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (partnerInfo && !rosterPartner) {
       throw new Error('ไม่พบข้อมูลเพื่อนร่วมเครื่องในรายชื่อนักเรียน');
     }
-    if (partnerInfo && isStudentFirebaseAuthRequired()) {
-      throw new Error('ระบบบัญชีปลอดภัยรองรับหนึ่งบัญชีต่อเครื่อง กรุณาให้นักเรียนอีกคนเข้าสู่ระบบบนอุปกรณ์ของตน');
-    }
     const main: Student = {
       id: buildId(rosterMain.name, classroom, String(rosterMain.no)),
       name: rosterMain.name,
@@ -257,7 +201,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       accountType: 'student',
       loginTime: Date.now(),
     };
-    await signInStudentAccount(rosterMain.studentCode, main.id, pin || '');
     removeStudentSessionStorage();
     setSessionItem(STUDENT_KEY, JSON.stringify(main));
     setUser(main);
@@ -291,7 +234,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginAsExternalVisitor = async (name: string) => {
-    await signOutStudentAccount();
     const { userId, visitor } = await recordExternalVisitor(name);
     const externalUser: Student = {
       id: userId,
@@ -311,7 +253,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     removeStudentSessionStorage();
     setUser(null);
     setPartner(null);
-    void signOutStudentAccount();
   };
 
   const logout = () => {
@@ -319,7 +260,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('krujames_admin_session_v1');
     setUser(null);
     setPartner(null);
-    void signOutStudentAccount();
     window.location.reload();
   };
 
