@@ -960,6 +960,15 @@ const ClawPlatformerGame: React.FC = () => {
         </button>
       </div>
 
+      {/* Quick Switch to Cyber Racer */}
+      <div className="cg-game-switcher-banner">
+        <Link to="/games/cyber-racer" className="cg-switcher-link">
+          <span className="cg-switcher-tag">🏎️ เกมขับรถ:</span>
+          <span>ลองเล่นเกม Cyber Racer: แข่งรถซิ่งตอบคำถามวิทยาการคำนวณ</span>
+          <span className="cg-switcher-arrow">เล่นเลย →</span>
+        </Link>
+      </div>
+
       {/* Hero Selection Bar */}
       <div className="cg-hero-select-bar">
         <span className="cg-hero-label">เลือกฮีโร่ AI:</span>

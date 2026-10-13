@@ -368,6 +368,7 @@ const CyberRacerGame: React.FC = () => {
   const [isNitroActive, setIsNitroActive] = useState(false);
   const [hasShield, setHasShield] = useState(false);
   const [isSoundMuted, setIsSoundMuted] = useState(false);
+  const [activeLane, setActiveLane] = useState<0 | 1 | 2>(1);
 
   // UI feedback banners
   const [currentQuestionHUD, setCurrentQuestionHUD] = useState<QuizQuestion | null>(null);
@@ -457,6 +458,7 @@ const CyberRacerGame: React.FC = () => {
     if (car.currentLane === lane) return;
     car.currentLane = lane;
     car.targetLane = lane;
+    setActiveLane(lane);
     const laneOffsets = [0.22, 0.5, 0.78];
     car.targetX = laneOffsets[lane];
     playSfxTone(260 + lane * 40, 0.08, 'triangle', 0.08);
@@ -529,6 +531,7 @@ const CyberRacerGame: React.FC = () => {
     setHasShield(false);
     setFeedbackBanner(null);
     setCurrentQuestionHUD(null);
+    setActiveLane(1);
 
     carStateRef.current = {
       currentLane: 1,
@@ -824,31 +827,59 @@ const CyberRacerGame: React.FC = () => {
         ctx.lineTo(gateLeft + gateW, y);
         ctx.stroke();
 
+        // Arch overhead banner title
+        if (scale > 0.4) {
+          ctx.fillStyle = '#00f7ff';
+          ctx.font = `bold ${Math.max(10, Math.round(14 * scale))}px "Prompt", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText('⚡ ซุ้มคำถาม: เลือกเข้าเลนที่ถูกต้อง ⚡', width / 2, y - gateH - 4 * scale);
+        }
+
         // 3 Lane Answer Gate Panels
-        const panelW = (gateW / 3) * 0.92;
+        const panelW = (gateW / 3) * 0.94;
+        const choiceHeaders = ['[A] เลนซ้าย', '[B] เลนกลาง', '[C] เลนขวา'];
+        const laneColors = ['#38bdf8', '#facc15', '#c084fc'];
+
         for (let l = 0; l < 3; l++) {
           const laneCenterX = getLaneXAtProgress(l as 0 | 1 | 2, p);
           const px = laneCenterX - panelW / 2;
-          const py = y - gateH * 0.85;
+          const py = y - gateH * 0.88;
+          const panelH = gateH * 0.8;
+
+          const isPlayerLane = car.currentLane === l;
 
           // Panel background
-          const isCorrectLane = l === gate.question.correctIndex;
-          ctx.fillStyle = isCorrectLane ? 'rgba(16, 185, 129, 0.45)' : 'rgba(30, 27, 75, 0.75)';
-          ctx.strokeStyle = isCorrectLane ? '#10b981' : '#a855f7';
-          ctx.lineWidth = 2 * scale;
-          ctx.fillRect(px, py, panelW, gateH * 0.75);
-          ctx.strokeRect(px, py, panelW, gateH * 0.75);
+          ctx.fillStyle = isPlayerLane
+            ? 'rgba(14, 165, 233, 0.55)'
+            : 'rgba(15, 23, 42, 0.88)';
+          ctx.strokeStyle = isPlayerLane ? '#38bdf8' : laneColors[l];
+          ctx.lineWidth = (isPlayerLane ? 3 : 2) * scale;
+          ctx.fillRect(px, py, panelW, panelH);
+          ctx.strokeRect(px, py, panelW, panelH);
 
-          // Panel choice label
-          const choiceLetters = ['[A]', '[B]', '[C]'];
-          const text = `${choiceLetters[l]} ${gate.question.choices[l]}`;
-          ctx.fillStyle = '#ffffff';
-          ctx.font = `bold ${Math.max(9, Math.round(12 * scale))}px "Prompt", sans-serif`;
+          // Panel Lane Header
+          ctx.fillStyle = laneColors[l];
+          ctx.font = `bold ${Math.max(10, Math.round(13 * scale))}px "Prompt", sans-serif`;
           ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(choiceHeaders[l], laneCenterX, py + 4 * scale);
+
+          // Panel Choice Text
+          const choiceStr = gate.question.choices[l];
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `600 ${Math.max(8, Math.round(11 * scale))}px "Prompt", sans-serif`;
           ctx.textBaseline = 'middle';
-          // Truncate text if needed
-          const displayText = text.length > 14 && scale < 0.8 ? text.slice(0, 12) + '..' : text;
-          ctx.fillText(displayText, laneCenterX, py + (gateH * 0.75) / 2);
+
+          if (choiceStr.length > 13 && scale > 0.45) {
+            const splitIdx = choiceStr.lastIndexOf(' ', 13) > 0 ? choiceStr.lastIndexOf(' ', 13) : 11;
+            const line1 = choiceStr.slice(0, splitIdx).trim();
+            const line2 = choiceStr.slice(splitIdx).trim();
+            ctx.fillText(line1, laneCenterX, py + panelH * 0.48);
+            ctx.fillText(line2, laneCenterX, py + panelH * 0.72);
+          } else {
+            ctx.fillText(choiceStr, laneCenterX, py + panelH * 0.6);
+          }
         }
         ctx.restore();
 
@@ -1235,6 +1266,15 @@ const CyberRacerGame: React.FC = () => {
         </button>
       </div>
 
+      {/* Quick Switch to Claw Empire Platformer */}
+      <div className="cr-game-switcher-banner">
+        <Link to="/games/claw-platformer" className="cr-switcher-link">
+          <span className="cr-switcher-tag">🦞 เกมใหม่:</span>
+          <span>ลองเล่นเกม 2D Platformer ตัวละคร Claw Empire (แนว Mario / ตะลุยด่านปราบไวรัส)</span>
+          <span className="cr-switcher-arrow">เล่นเลย →</span>
+        </Link>
+      </div>
+
       {/* Grade Level Selector */}
       <div className="cr-grade-selector">
         <span className="cr-level-label">ระดับชั้น:</span>
@@ -1305,45 +1345,54 @@ const CyberRacerGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Question HUD Banner (Floating clearly above road) */}
-      {currentQuestionHUD && (
-        <div className="cr-question-hud-card">
-          <div className="cr-q-badge">
-            <Sparkles size={16} /> ภารกิจซิ่งตอบคำถาม
-          </div>
-          <div className="cr-q-text">{currentQuestionHUD.question}</div>
-          <div className="cr-q-lanes">
-            <div className={`cr-lane-hint ${carStateRef.current.currentLane === 0 ? 'selected' : ''}`}>
-              <span className="cr-lane-key">ซ้าย (A):</span> {currentQuestionHUD.choices[0]}
-            </div>
-            <div className={`cr-lane-hint ${carStateRef.current.currentLane === 1 ? 'selected' : ''}`}>
-              <span className="cr-lane-key">กลาง (B):</span> {currentQuestionHUD.choices[1]}
-            </div>
-            <div className={`cr-lane-hint ${carStateRef.current.currentLane === 2 ? 'selected' : ''}`}>
-              <span className="cr-lane-key">ขวา (C):</span> {currentQuestionHUD.choices[2]}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Feedback Toast */}
-      {feedbackBanner && (
-        <div className={`cr-feedback-toast ${feedbackBanner.type}`}>
-          <div className="cr-fb-title">{feedbackBanner.text}</div>
-          {feedbackBanner.detail && <div className="cr-fb-detail">{feedbackBanner.detail}</div>}
-        </div>
-      )}
-
-      {/* Main Game Screen Canvas */}
+      {/* Main Game Screen Canvas Viewport */}
       <div className="cr-viewport">
         <canvas
           ref={canvasRef}
           width={640}
-          height={800}
+          height={720}
           className="cr-canvas"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         />
+
+        {/* Question HUD Banner: ALWAYS pinned inside viewport at top of road! */}
+        {gameState === 'playing' && (
+          <div className="cr-question-overlay">
+            {currentQuestionHUD ? (
+              <div className="cr-question-hud-card">
+                <div className="cr-q-badge">
+                  <Sparkles size={16} /> ภารกิจซิ่งตอบคำถาม: เลี้ยวเข้าเลนที่ถูกต้อง!
+                </div>
+                <div className="cr-q-text">{currentQuestionHUD.question}</div>
+                <div className="cr-q-lanes">
+                  <div className={`cr-lane-hint ${activeLane === 0 ? 'selected' : ''}`}>
+                    <span className="cr-lane-key">⬅️ ซ้าย [A]:</span> {currentQuestionHUD.choices[0]}
+                  </div>
+                  <div className={`cr-lane-hint ${activeLane === 1 ? 'selected' : ''}`}>
+                    <span className="cr-lane-key">⬆️ กลาง [B]:</span> {currentQuestionHUD.choices[1]}
+                  </div>
+                  <div className={`cr-lane-hint ${activeLane === 2 ? 'selected' : ''}`}>
+                    <span className="cr-lane-key">➡️ ขวา [C]:</span> {currentQuestionHUD.choices[2]}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="cr-ready-hud-pill">
+                <Zap size={14} className="text-cyan-400" />
+                <span>ทางด่วนไซเบอร์... ซุ้มคำถามถัดไปกำลังใกล้เข้ามา! (เก็บเหรียญ 🪙 ไนโตร ⚡)</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Quick Feedback Toast (Centered in Viewport) */}
+        {feedbackBanner && (
+          <div className={`cr-viewport-toast ${feedbackBanner.type}`}>
+            <div className="cr-fb-title">{feedbackBanner.text}</div>
+            {feedbackBanner.detail && <div className="cr-fb-detail">{feedbackBanner.detail}</div>}
+          </div>
+        )}
 
         {/* Start / Idle Overlay */}
         {gameState === 'idle' && (

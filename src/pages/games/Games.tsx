@@ -167,6 +167,35 @@ const Games: React.FC = () => {
           <span className="games-result-count">{filteredGames.length} เกม</span>
         </div>
 
+        {/* New Games Spotlight */}
+        <div className="new-games-spotlight">
+          <div className="new-games-header">
+            <Sparkles size={16} className="text-amber-400" />
+            <span>✨ แนะนำเกมใหม่ล่าสุดที่คุณครูสร้างให้:</span>
+          </div>
+          <div className="new-games-grid">
+            <Link to="/games/cyber-racer" className="new-game-card racer-card">
+              <div className="ng-icon">🏎️</div>
+              <div className="ng-info">
+                <span className="ng-badge">เกมแข่งรถตอบคำถาม</span>
+                <strong>Cyber Racer Quiz</strong>
+                <p>ขับรถซิ่งบนทางด่วนไซเบอร์ เลือกเลนคำตอบวิทยาการคำนวณที่ถูกต้อง</p>
+              </div>
+              <span className="ng-arrow">เล่นเลย →</span>
+            </Link>
+
+            <Link to="/games/claw-platformer" className="new-game-card claw-card">
+              <div className="ng-icon">🦞</div>
+              <div className="ng-info">
+                <span className="ng-badge">2D Platformer สไตล์ Mario</span>
+                <strong>Claw Empire: กู้เซิร์ฟเวอร์</strong>
+                <p>เกมผจญภัยก้ามโต กระโดดเหยียบปราบไวรัสคอมพิวเตอร์ โหม่งกล่องคำถาม</p>
+              </div>
+              <span className="ng-arrow">เล่นเลย →</span>
+            </Link>
+          </div>
+        </div>
+
         {ctProfile && recommendedGame && (
           <aside className="games-recommendation-banner" aria-label="คำแนะนำเกมเฉพาะบุคคล">
             <div className="rec-icon" aria-hidden="true">
