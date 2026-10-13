@@ -381,4 +381,14 @@ export const gamesCatalog: GameInfo[] = [
     color: '#ef4444',
     path: '/games/cyber-racer',
   },
+  {
+    id: 'claw-platformer',
+    title: '🦞 ตะลุยด่านกู้เซิร์ฟเวอร์ (Claw Empire Platformer)',
+    desc: 'เกม 2D แพลตฟอร์มเมอร์ผจญภัย พา CEO Lobster และทีม AI กระโดดเหยียบปราบไวรัสคอมพิวเตอร์ ข้ามสิ่งกีดขวาง และเก็บกู้ข้อมูลเซิร์ฟเวอร์',
+    emoji: '🦞',
+    level: 'ป.1-ม.3',
+    skill: 'อัลกอริทึม/แก้ปัญหา/จังหวะก้าว',
+    color: '#ea580c',
+    path: '/games/claw-platformer',
+  },
 ];

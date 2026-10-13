@@ -56,7 +56,8 @@ export type GameProgressId =
   | 'space-treasure'
   | 'cyber-cop'
   | 'flowchart-bingo'
-  | 'cyber-racer';
+  | 'cyber-racer'
+  | 'claw-platformer';
 
 type StudentLike = {
   id: string;
@@ -248,6 +249,10 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
   }
   // ขับรถซิ่งตอบคำถาม: การตัดสินใจและความเร็ว
   if (normalizedGameId === 'cyber-racer') {
+    return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
+  }
+  // Claw Empire ตะลุยด่านกู้เซิร์ฟเวอร์ (2D Platformer)
+  if (normalizedGameId === 'claw-platformer') {
     return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
 

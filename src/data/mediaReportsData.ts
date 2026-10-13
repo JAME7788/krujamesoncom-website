@@ -1191,7 +1191,16 @@ const INTERACTIVE_SLIDE_REPORTS: MediaReportItem[] = [
 ];
 
 // 3. สื่อนวัตกรรมเกมการเรียนรู้ดิจิทัลทั้งหมดจาก gamesCatalog.ts (36 รายการ)
-const GAMES_CATALOG_REPORTS: MediaReportItem[] = gamesCatalog.filter((g) => g.id !== 'cyber-racer').map((game) => {
+const PORTFOLIO_36_GAME_IDS = new Set([
+  'quick-answer', 'file-organizer', 'algorithm-runner-3d', 'coding-studio',
+  'circuit-lab', 'robot-maker', 'mouse', 'keyboard', 'algorithm', 'binary',
+  'memory', 'pattern', 'maze', 'snake', 'bug', 'device-match', 'step-sort',
+  'safety', 'pixel-art', 'color-code-pixel', 'logic-gates', 'tech-system',
+  'search-smart', 'ct-board', 'tycoon', 'digital-city-quest', 'cyber-shield',
+  'sorting-dash', 'bomb-collector', 'obstacle-dodge', 'situation-reaction',
+  'pc-builder', 'stroop-color', 'space-treasure', 'cyber-cop', 'flowchart-bingo',
+]);
+const GAMES_CATALOG_REPORTS: MediaReportItem[] = gamesCatalog.filter((g) => PORTFOLIO_36_GAME_IDS.has(g.id)).map((game) => {
   const gradeText = game.level ? `ระดับชั้น ${game.level}` : 'ทุกระดับชั้น (ป.1 - ม.3)';
 
   let subjectName = 'วิทยาการคำนวณ';

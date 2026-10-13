@@ -69,6 +69,7 @@ const SpaceTreasureGame = React.lazy(() => import('./pages/games/SpaceTreasureGa
 const CyberCopGame = React.lazy(() => import('./pages/games/CyberCopGame'));
 const FlowchartBingoGame = React.lazy(() => import('./pages/games/FlowchartBingoGame'));
 const CyberRacerGame = React.lazy(() => import('./pages/games/CyberRacerGame'));
+const ClawPlatformerGame = React.lazy(() => import('./pages/games/ClawPlatformerGame'));
 const GameLearningJourney = React.lazy(() => import('./components/GameLearningJourney'));
 
 const LearningGameRoute = ({ gameId, children }: { gameId: string; children: React.ReactNode }) => {
@@ -159,6 +160,7 @@ function App() {
                   <Route path="/games/cyber-cop" element={<LearningGameRoute gameId="cyber-cop"><CyberCopGame /></LearningGameRoute>} />
                   <Route path="/games/flowchart-bingo" element={<LearningGameRoute gameId="flowchart-bingo"><FlowchartBingoGame /></LearningGameRoute>} />
                   <Route path="/games/cyber-racer" element={<LearningGameRoute gameId="cyber-racer"><CyberRacerGame /></LearningGameRoute>} />
+                  <Route path="/games/claw-platformer" element={<LearningGameRoute gameId="claw-platformer"><ClawPlatformerGame /></LearningGameRoute>} />
                   <Route path="/tools" element={<Tools />} />
                   <Route path="/parent/:studentId" element={<ParentPortal />} />
                   <Route path="/live" element={<LiveQuizPlay />} />

@@ -71,6 +71,7 @@ scripts/*.json
 scripts/*.py
 *.txt
 *.png
+!public/sprites/**
 
 
 
