@@ -155,6 +155,16 @@ interface AttackEffect {
   life: number;
 }
 
+interface FloatingPopup {
+  id: number;
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  life: number;
+  maxLife: number;
+}
+
 const LEVEL_CONFIGS = [
   {
     name: 'ชั้น 1: แผนกพัฒนาซอฟต์แวร์ (Dev & Office Floor)',
@@ -309,6 +319,8 @@ const ClawPlatformerGame: React.FC = () => {
   const coinsRef = useRef<CoinItem[]>([]);
   const enemiesRef = useRef<EnemyBug[]>([]);
   const attacksRef = useRef<AttackEffect[]>([]);
+  const popupsRef = useRef<FloatingPopup[]>([]);
+  const nextPopupIdRef = useRef(1);
   const cameraXRef = useRef(0);
 
   // Preload hero images
@@ -350,6 +362,7 @@ const ClawPlatformerGame: React.FC = () => {
     coinsRef.current = lvl.coins.map((c) => ({ ...c, collected: false }));
     enemiesRef.current = lvl.enemies.map((e) => ({ ...e, alive: true }));
     attacksRef.current = [];
+    popupsRef.current = [];
 
     // Reset player position
     playerRef.current = {
@@ -504,6 +517,7 @@ const ClawPlatformerGame: React.FC = () => {
         return;
       }
 
+      const now = performance.now();
       const p = playerRef.current;
       const keys = keysRef.current;
       const lvl = LEVEL_CONFIGS[currentLevelIdx];
@@ -625,6 +639,15 @@ const ClawPlatformerGame: React.FC = () => {
             setActiveQuiz(randomQ);
             setQuizAnswered(null);
             playBeep(520, 0.15, 'triangle', 0.12);
+            popupsRef.current.push({
+              id: nextPopupIdRef.current++,
+              x: plat.x + plat.w / 2,
+              y: plat.y - 12,
+              text: '❓ ถอดรหัสคำถาม!',
+              color: '#facc15',
+              life: 40,
+              maxLife: 40,
+            });
           }
         }
       }
@@ -636,6 +659,15 @@ const ClawPlatformerGame: React.FC = () => {
           const nextL = l - 1;
           if (nextL <= 0) handleGameOver();
           return nextL;
+        });
+        popupsRef.current.push({
+          id: nextPopupIdRef.current++,
+          x: p.x,
+          y: 350,
+          text: '-1 ❤️ ตกเหว!',
+          color: '#ef4444',
+          life: 40,
+          maxLife: 40,
         });
         p.x = 80;
         p.y = 300;
@@ -653,12 +685,39 @@ const ClawPlatformerGame: React.FC = () => {
           if (coin.type === 'coin') {
             setScore((s) => s + 20);
             setChipsCollected((c) => c + 1);
+            popupsRef.current.push({
+              id: nextPopupIdRef.current++,
+              x: coin.x,
+              y: coin.y - 12,
+              text: '+20 🪙 ชิป',
+              color: '#fbbf24',
+              life: 30,
+              maxLife: 30,
+            });
           } else if (coin.type === 'disk') {
             setScore((s) => s + 50);
             setChipsCollected((c) => c + 1);
+            popupsRef.current.push({
+              id: nextPopupIdRef.current++,
+              x: coin.x,
+              y: coin.y - 12,
+              text: '+50 💾 ข้อมูล',
+              color: '#38bdf8',
+              life: 30,
+              maxLife: 30,
+            });
           } else if (coin.type === 'coffee') {
             setScore((s) => s + 30);
             setLives((l) => Math.min(3, l + 1)); // Heal heart
+            popupsRef.current.push({
+              id: nextPopupIdRef.current++,
+              x: coin.x,
+              y: coin.y - 12,
+              text: '+❤️ ฟื้นหัวใจ',
+              color: '#10b981',
+              life: 35,
+              maxLife: 35,
+            });
           }
         }
       }
@@ -679,6 +738,15 @@ const ClawPlatformerGame: React.FC = () => {
             enemy.alive = false;
             setScore((s) => s + 100);
             playBeep(440, 0.1, 'square', 0.15);
+            popupsRef.current.push({
+              id: nextPopupIdRef.current++,
+              x: enemy.x + enemy.w / 2,
+              y: enemy.y - 14,
+              text: '🦞 หนีบปราบ! +100',
+              color: '#ea580c',
+              life: 35,
+              maxLife: 35,
+            });
           }
         }
         if (atk.life > 0) activeAttacks.push(atk);
@@ -709,6 +777,15 @@ const ClawPlatformerGame: React.FC = () => {
             p.vy = -8.5; // Bounce off enemy
             setScore((s) => s + 100);
             playBeep(420, 0.12, 'square', 0.15);
+            popupsRef.current.push({
+              id: nextPopupIdRef.current++,
+              x: enemy.x + enemy.w / 2,
+              y: enemy.y - 14,
+              text: '🦘 เหยียบปราบ! +100',
+              color: '#f43f5e',
+              life: 35,
+              maxLife: 35,
+            });
           } else if (p.invincibleTimer <= 0) {
             // Player takes damage
             p.invincibleTimer = 60;
@@ -720,6 +797,15 @@ const ClawPlatformerGame: React.FC = () => {
               return nextL;
             });
             sfxWrong();
+            popupsRef.current.push({
+              id: nextPopupIdRef.current++,
+              x: p.x + p.w / 2,
+              y: p.y - 14,
+              text: '-1 ❤️ บาดเจ็บ!',
+              color: '#ef4444',
+              life: 35,
+              maxLife: 35,
+            });
           }
         }
       }
@@ -740,113 +826,349 @@ const ClawPlatformerGame: React.FC = () => {
       // ----------------------------------------------------
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Background Gradient & Office Grid
-      const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      bgGrad.addColorStop(0, lvl.bgGradient[0]);
-      bgGrad.addColorStop(0.5, lvl.bgGradient[1]);
-      bgGrad.addColorStop(1, lvl.bgGradient[2]);
-      ctx.fillStyle = bgGrad;
+      // 1. Rich Twilight Cyber Sky Gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      skyGrad.addColorStop(0, '#020617'); // Space Dark
+      skyGrad.addColorStop(0.35, '#0f172a');
+      skyGrad.addColorStop(0.72, '#1e1b4b'); // Cyber Indigo
+      skyGrad.addColorStop(1, '#0c4a6e'); // Cyan Horizon Glow
+      ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Distant Parallax Server Pillars
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+      // 2. Parallax Cyber Stars & Twinkling Bits
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      for (let s = 0; s < 45; s++) {
+        const starX = ((s * 73) - camX * 0.05) % canvas.width;
+        const starY = (s * 37) % (canvas.height * 0.65);
+        const starSize = (s % 3 === 0) ? 2.5 : 1.5;
+        ctx.fillRect(starX < 0 ? starX + canvas.width : starX, starY, starSize, starSize);
+      }
+
+      // 3. Parallax Distant Server Towers (Far layer)
+      ctx.fillStyle = 'rgba(30, 27, 75, 0.65)';
+      const skylineFar = [70, 45, 80, 55, 95, 40, 75, 60, 85, 50, 90, 65, 75, 55];
+      let farX = -((camX * 0.12) % 1100);
+      for (let i = 0; i < 22; i++) {
+        const bW = skylineFar[i % skylineFar.length];
+        const bH = 80 + ((i * 31) % 90);
+        ctx.fillRect(farX, 440 - bH, bW, bH);
+        // glowing window lights
+        ctx.fillStyle = (i % 2 === 0) ? 'rgba(56, 189, 248, 0.35)' : 'rgba(250, 204, 21, 0.25)';
+        for (let wy = 440 - bH + 12; wy < 430; wy += 20) {
+          ctx.fillRect(farX + 8, wy, 4, 4);
+          ctx.fillRect(farX + bW - 14, wy, 4, 4);
+        }
+        ctx.fillStyle = 'rgba(30, 27, 75, 0.65)';
+        farX += bW + 14;
+      }
+
+      // 4. Parallax Near Server Towers (Mid layer)
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      let midX = -((camX * 0.25) % 1200);
       for (let i = 0; i < 18; i++) {
-        const pillarX = (i * 180 - camX * 0.25) % (canvas.width + 200);
-        ctx.fillRect(pillarX, 40, 60, canvas.height - 40);
+        const bW = 55 + (i % 4) * 20;
+        const bH = 50 + ((i * 47) % 80);
+        ctx.fillRect(midX, 440 - bH, bW, bH);
+        // Cyan accent laser strip
+        ctx.fillStyle = '#0284c7';
+        ctx.fillRect(midX + bW / 2 - 1, 440 - bH, 2, bH);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        midX += bW + 24;
       }
 
       ctx.save();
       ctx.translate(-camX, 0);
 
+      // In-World Tutorial Billboard Signs (Level 1)
+      if (currentLevelIdx === 0) {
+        // Sign 1: Spawn Controls Guide
+        ctx.save();
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+        ctx.strokeStyle = '#00f7ff';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#00f7ff';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.roundRect(40, 230, 220, 80, 10);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#00f7ff';
+        ctx.font = 'bold 12px "Prompt", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('🎮 การควบคุมตัวละคร:', 52, 252);
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '11px "Prompt", sans-serif';
+        ctx.fillText('• เดิน: ปุ่ม ◀ ▶ หรือ A / D', 52, 272);
+        ctx.fillText('• กระโดด: Space (กด 2 ครั้ง = สูงขึ้น)', 52, 289);
+        ctx.fillText('• โจมตี: ปุ่ม J หรือ ก้ามหนีบ', 52, 305);
+        ctx.restore();
+
+        // Sign 2: Arrow under first question block
+        ctx.save();
+        ctx.fillStyle = '#facc15';
+        ctx.font = 'bold 11px "Prompt", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⬆️ โหม่งกล่อง ? เพื่อตอบคำถามกู้รหัส!', 520, 240);
+        ctx.restore();
+
+        // Sign 3: Warning near first enemy
+        ctx.save();
+        ctx.fillStyle = '#f87171';
+        ctx.font = 'bold 11px "Prompt", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🦘 กระโดดเหยียบหัว หรือกด J หนีบก้าม!', 550, 385);
+        ctx.restore();
+      }
+
       // Draw Platforms
       for (const plat of platformsRef.current) {
+        if (plat.y >= 430 && plat.w >= 500) {
+          // Main Ground Floor (Cyber Grass + Patterned Foundation)
+          const grassGrad = ctx.createLinearGradient(0, plat.y, 0, plat.y + 12);
+          grassGrad.addColorStop(0, '#10b981');
+          grassGrad.addColorStop(1, '#059669');
+          ctx.fillStyle = grassGrad;
+          ctx.fillRect(plat.x, plat.y, plat.w, 12);
+
+          // Glowing border line
+          ctx.fillStyle = '#34d399';
+          ctx.fillRect(plat.x, plat.y, plat.w, 3);
+
+          // Soil / Cyber Grid foundation
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(plat.x, plat.y + 12, plat.w, plat.h - 12);
+
+          ctx.strokeStyle = 'rgba(51, 65, 85, 0.4)';
+          ctx.lineWidth = 1;
+          for (let tx = plat.x; tx < plat.x + plat.w; tx += 36) {
+            ctx.beginPath();
+            ctx.moveTo(tx, plat.y + 12);
+            ctx.lineTo(tx, plat.y + plat.h);
+            ctx.stroke();
+          }
+          continue;
+        }
+
         if (plat.type === 'solid') {
-          // Solid office desk / server slab
-          ctx.fillStyle = '#1e293b';
-          ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+          // 3D Beveled Cyber Platform
           ctx.fillStyle = '#38bdf8';
-          ctx.fillRect(plat.x, plat.y, plat.w, 4); // Glowing top lip
+          ctx.fillRect(plat.x, plat.y, plat.w, 6);
+
+          const platGrad = ctx.createLinearGradient(0, plat.y + 6, 0, plat.y + plat.h);
+          platGrad.addColorStop(0, '#1e293b');
+          platGrad.addColorStop(1, '#0f172a');
+          ctx.fillStyle = platGrad;
+          ctx.fillRect(plat.x, plat.y + 6, plat.w, plat.h - 6);
+
+          ctx.fillStyle = '#334155';
+          for (let rx = plat.x + 10; rx < plat.x + plat.w - 10; rx += 18) {
+            ctx.fillRect(rx, plat.y + 8, 6, plat.h - 12);
+          }
+
+          ctx.strokeStyle = '#0284c7';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(plat.x, plat.y, plat.w, plat.h);
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillRect(plat.x + 2, plat.y + 2, 3, 3);
+          ctx.fillRect(plat.x + plat.w - 5, plat.y + 2, 3, 3);
         } else if (plat.type === 'cloud') {
-          // Semi-floating cyber platform
+          // Holographic Blue Energy Platform
           ctx.fillStyle = 'rgba(6, 182, 212, 0.35)';
+          ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
           ctx.strokeStyle = '#22d3ee';
           ctx.lineWidth = 2;
-          ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
           ctx.strokeRect(plat.x, plat.y, plat.w, plat.h);
+          ctx.fillStyle = '#67e8f9';
+          ctx.fillRect(plat.x, plat.y, plat.w, 3);
+          ctx.font = '10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('⟡ ⟡ ⟡', plat.x + plat.w / 2, plat.y + plat.h / 2);
         } else if (plat.type === 'terminal') {
-          // Mystery Question Terminal Box
-          ctx.fillStyle = plat.used ? '#475569' : '#f59e0b';
-          ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
-          ctx.strokeStyle = plat.used ? '#64748b' : '#fbbf24';
-          ctx.lineWidth = 3;
-          ctx.strokeRect(plat.x, plat.y, plat.w, plat.h);
-          // Question mark symbol
-          ctx.fillStyle = '#ffffff';
+          // Iconic Golden Mario-style Quiz Block
+          const bobY = plat.used ? 0 : Math.sin(now * 0.006) * 3;
+          const blockY = plat.y + bobY;
+
+          if (!plat.used) {
+            ctx.shadowColor = '#facc15';
+            ctx.shadowBlur = 14;
+          }
+
+          const blockGrad = ctx.createLinearGradient(plat.x, blockY, plat.x, blockY + plat.h);
+          if (plat.used) {
+            blockGrad.addColorStop(0, '#64748b');
+            blockGrad.addColorStop(1, '#334155');
+          } else {
+            blockGrad.addColorStop(0, '#fef08a');
+            blockGrad.addColorStop(0.35, '#f59e0b');
+            blockGrad.addColorStop(1, '#b45309');
+          }
+          ctx.fillStyle = blockGrad;
+          ctx.fillRect(plat.x, blockY, plat.w, plat.h);
+          ctx.shadowBlur = 0;
+
+          ctx.strokeStyle = plat.used ? '#94a3b8' : '#fffbeb';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(plat.x + 2, blockY + 2, plat.w - 4, plat.h - 4);
+
+          ctx.fillStyle = plat.used ? '#cbd5e1' : '#ffffff';
           ctx.font = 'bold 22px "Prompt", sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(plat.used ? '✓' : '?', plat.x + plat.w / 2, plat.y + plat.h / 2);
+          ctx.fillText(plat.used ? '✓' : '?', plat.x + plat.w / 2, blockY + plat.h / 2);
+
+          if (!plat.used) {
+            ctx.fillStyle = '#fef08a';
+            ctx.font = 'bold 10px "Prompt", sans-serif';
+            ctx.fillText('โหม่งตอบคำถาม ⬆️', plat.x + plat.w / 2, blockY - 8);
+          }
         } else if (plat.type === 'spring') {
-          // Bounce spring
-          ctx.fillStyle = '#ec4899';
-          ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+          // Bouncy Spring Pad
+          ctx.fillStyle = '#db2777';
+          ctx.fillRect(plat.x, plat.y + 6, plat.w, plat.h - 6);
           ctx.fillStyle = '#f472b6';
-          ctx.font = 'bold 12px sans-serif';
+          ctx.fillRect(plat.x, plat.y, plat.w, 6);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 11px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText('⚡', plat.x + plat.w / 2, plat.y + plat.h / 2 + 4);
+          ctx.textBaseline = 'middle';
+          ctx.fillText('⚡ สปริง', plat.x + plat.w / 2, plat.y + plat.h / 2 + 3);
         }
       }
 
       // Draw Collectibles
       for (const coin of coinsRef.current) {
         if (coin.collected) continue;
+        const bobY = Math.sin((now * 0.005) + coin.id) * 3;
+        const cy = coin.y + bobY;
+
         if (coin.type === 'coin') {
-          // Spinning gold chip
+          ctx.save();
+          const spinW = Math.abs(Math.cos(now * 0.008)) * 11;
           ctx.fillStyle = '#f59e0b';
+          ctx.shadowColor = '#fde047';
+          ctx.shadowBlur = 10;
           ctx.beginPath();
-          ctx.arc(coin.x, coin.y, 10, 0, Math.PI * 2);
+          ctx.ellipse(coin.x, cy, Math.max(3, spinW), 11, 0, 0, Math.PI * 2);
           ctx.fill();
           ctx.strokeStyle = '#fef08a';
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 1.5;
           ctx.stroke();
-        } else if (coin.type === 'disk') {
-          // Floppy disk
-          ctx.fillStyle = '#3b82f6';
-          ctx.fillRect(coin.x - 10, coin.y - 10, 20, 20);
+          ctx.shadowBlur = 0;
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(coin.x - 6, coin.y - 8, 12, 6);
+          ctx.font = 'bold 8px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('$', coin.x, cy);
+          ctx.restore();
+        } else if (coin.type === 'disk') {
+          ctx.save();
+          ctx.fillStyle = '#0284c7';
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 8;
+          ctx.fillRect(coin.x - 11, cy - 11, 22, 22);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(coin.x - 7, cy - 9, 14, 7);
+          ctx.shadowBlur = 0;
+          ctx.restore();
         } else if (coin.type === 'coffee') {
-          // Coffee mug (Heals heart)
+          ctx.save();
           ctx.fillStyle = '#10b981';
+          ctx.shadowColor = '#34d399';
+          ctx.shadowBlur = 8;
           ctx.beginPath();
-          ctx.arc(coin.x, coin.y, 11, 0, Math.PI * 2);
+          ctx.arc(coin.x, cy, 12, 0, Math.PI * 2);
           ctx.fill();
           ctx.fillStyle = '#ffffff';
           ctx.font = '12px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText('☕', coin.x, coin.y + 4);
+          ctx.textBaseline = 'middle';
+          ctx.fillText('☕', coin.x, cy);
+          ctx.restore();
         }
       }
 
       // Draw Enemies
       for (const enemy of enemiesRef.current) {
         if (!enemy.alive) continue;
+        const eCenterX = enemy.x + enemy.w / 2;
+        const eCenterY = enemy.y + enemy.h / 2;
+
         if (enemy.type === 'bug') {
-          // Bug Monster
+          const wobble = Math.sin(now * 0.012) * 2;
+          const bodyW = enemy.w / 2;
+          const bodyH = (enemy.h / 2) + wobble;
+
+          ctx.save();
           ctx.fillStyle = '#ef4444';
+          ctx.shadowColor = '#f43f5e';
+          ctx.shadowBlur = 8;
           ctx.beginPath();
-          ctx.ellipse(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, enemy.w / 2, enemy.h / 2, 0, 0, Math.PI * 2);
+          ctx.ellipse(eCenterX, eCenterY, bodyW, bodyH, 0, 0, Math.PI * 2);
           ctx.fill();
-          // Bug antenna & eyes
+          ctx.shadowBlur = 0;
+
+          ctx.fillStyle = '#991b1b';
+          const footOffset = Math.sin(now * 0.02) * 4;
+          ctx.fillRect(enemy.x + 4 + footOffset, enemy.y + enemy.h - 4, 6, 6);
+          ctx.fillRect(enemy.x + enemy.w - 10 - footOffset, enemy.y + enemy.h - 4, 6, 6);
+
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(eCenterX, enemy.y);
+          ctx.lineTo(eCenterX, enemy.y - 8);
+          ctx.stroke();
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(eCenterX, enemy.y - 8, 3, 0, Math.PI * 2);
+          ctx.fill();
+
+          const eyeLook = p.x < enemy.x ? -1.5 : 1.5;
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(enemy.x + 8, enemy.y + 6, 5, 5);
-          ctx.fillRect(enemy.x + enemy.w - 13, enemy.y + 6, 5, 5);
+          ctx.beginPath();
+          ctx.arc(eCenterX - 6, eCenterY - 2, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(eCenterX - 6 + eyeLook, eCenterY - 2, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(eCenterX + 6, eCenterY - 2, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(eCenterX + 6 + eyeLook, eCenterY - 2, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#fca5a5';
+          ctx.font = 'bold 9px "Prompt", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('👾 ไวรัส (เหยียบหัว!)', eCenterX, enemy.y - 12);
+          ctx.restore();
         } else {
-          // Glitch Virus
-          ctx.fillStyle = '#a855f7';
-          ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
-          ctx.fillStyle = '#38bdf8';
-          ctx.fillRect(enemy.x + 4, enemy.y + 4, enemy.w - 8, enemy.h - 8);
+          const floatY = Math.sin(now * 0.015) * 3;
+          ctx.save();
+          ctx.fillStyle = '#8b5cf6';
+          ctx.shadowColor = '#a855f7';
+          ctx.shadowBlur = 10;
+          ctx.fillRect(enemy.x, enemy.y + floatY, enemy.w, enemy.h);
+          ctx.shadowBlur = 0;
+
+          ctx.fillStyle = '#00f7ff';
+          ctx.fillRect(enemy.x + 4, enemy.y + floatY + 6, enemy.w - 8, 6);
+
+          ctx.fillStyle = '#f97316';
+          ctx.fillRect(eCenterX - 3, enemy.y + floatY + enemy.h, 6, 5 + Math.random() * 4);
+
+          ctx.fillStyle = '#c4b5fd';
+          ctx.font = 'bold 9px "Prompt", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('⚡ บั๊กกวนใจ', eCenterX, enemy.y + floatY - 6);
+          ctx.restore();
         }
       }
 
@@ -862,35 +1184,70 @@ const ClawPlatformerGame: React.FC = () => {
       }
 
       // Draw Exit Portal / Gateway
-      ctx.fillStyle = 'rgba(16, 185, 129, 0.4)';
+      ctx.save();
       ctx.strokeStyle = '#10b981';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#34d399';
+      ctx.shadowBlur = 15;
       ctx.beginPath();
-      ctx.arc(lvl.exitX, lvl.exitY - 30, 36, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(lvl.exitX, lvl.exitY - 32, 38, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 22px sans-serif';
+
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(lvl.exitX, lvl.exitY - 32, 28 + Math.sin(now * 0.01) * 3, 0, Math.PI * 2);
+      ctx.stroke();
+
+      const portalGrad = ctx.createRadialGradient(
+        lvl.exitX, lvl.exitY - 32, 5,
+        lvl.exitX, lvl.exitY - 32, 30
+      );
+      portalGrad.addColorStop(0, '#a7f3d0');
+      portalGrad.addColorStop(0.6, 'rgba(16, 185, 129, 0.7)');
+      portalGrad.addColorStop(1, 'rgba(6, 182, 212, 0.1)');
+      ctx.fillStyle = portalGrad;
+      ctx.beginPath();
+      ctx.arc(lvl.exitX, lvl.exitY - 32, 28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#10b981';
+      ctx.font = 'bold 12px "Prompt", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('🚪', lvl.exitX, lvl.exitY - 22);
+      ctx.fillText('🚪 ทางออกผ่านด่าน 🏁', lvl.exitX, lvl.exitY - 76);
+      ctx.restore();
 
       // Draw Player Hero
       ctx.save();
       ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+
+      // Hero Drop Shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(0, p.h / 2 + 1, p.w / 2.2, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Floating Hero Name
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px "Prompt", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#000000';
+      ctx.shadowBlur = 4;
+      ctx.fillText(selectedHero.name, 0, -p.h / 2 - 8);
+      ctx.shadowBlur = 0;
+
       if (!p.facingRight) ctx.scale(-1, 1);
 
-      // Flicker if invincible
       if (p.invincibleTimer > 0 && Math.floor(p.invincibleTimer / 4) % 2 === 0) {
         ctx.globalAlpha = 0.35;
       }
 
-      // Star Power Rainbow Glow
       if (starPowerDuration > 0) {
         ctx.shadowColor = '#fbbf24';
-        ctx.shadowBlur = 18;
+        ctx.shadowBlur = 20;
       }
 
-      // Render actual Hero Sprite from claw-empire
       if (heroImageRef.current && heroImageRef.current.complete) {
         ctx.drawImage(
           heroImageRef.current,
@@ -900,14 +1257,32 @@ const ClawPlatformerGame: React.FC = () => {
           p.h
         );
       } else {
-        // Fallback procedural lobster avatar
         ctx.fillStyle = selectedHero.color;
         ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
         ctx.fillStyle = '#ffffff';
         ctx.fillText('🦞', 0, 4);
       }
-
       ctx.restore();
+
+      // Draw Floating Popups
+      const activePopups: FloatingPopup[] = [];
+      for (const pop of popupsRef.current) {
+        pop.life--;
+        pop.y -= 0.8;
+        const alpha = pop.life / pop.maxLife;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, alpha);
+        ctx.fillStyle = pop.color;
+        ctx.font = 'bold 12px "Prompt", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = pop.color;
+        ctx.shadowBlur = 8;
+        ctx.fillText(pop.text, pop.x, pop.y);
+        ctx.restore();
+        if (pop.life > 0) activePopups.push(pop);
+      }
+      popupsRef.current = activePopups;
+
       ctx.restore();
 
       animId = requestAnimationFrame(gameLoop);
@@ -1019,6 +1394,18 @@ const ClawPlatformerGame: React.FC = () => {
       {/* Main Viewport & Canvas */}
       <div className="cg-viewport">
         <canvas ref={canvasRef} width={760} height={500} className="cg-canvas" />
+
+        {/* Pinned Mission HUD overlay inside viewport */}
+        {gameState === 'playing' && (
+          <div className="cg-mission-overlay">
+            <div className="cg-mission-pill">
+              <span className="cg-mission-tag">🎯 ภารกิจ</span>
+              <span className="cg-mission-text">
+                เก็บชิป 🪙 • โหม่งกล่อง ❓ ถอดรหัสลับ • กระโดดเหยียบไวรัส 👾 • มุ่งหน้าสู่ประตู 🚪!
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Start / Idle Overlay */}
         {gameState === 'idle' && (
