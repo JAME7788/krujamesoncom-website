@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
 import { sfxCorrect, sfxWrong, sfxCoin } from '../../utils/gameSounds';
+import { playGameTone } from '../../utils/gameAudio';
+import { getUnifiedGameRecord } from '../../data/unifiedGameRegistry';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 import './ClawPlatformerGame.css';
@@ -322,6 +324,8 @@ const ClawPlatformerGame: React.FC = () => {
   const popupsRef = useRef<FloatingPopup[]>([]);
   const nextPopupIdRef = useRef(1);
   const cameraXRef = useRef(0);
+  const starPowerFramesRef = useRef(0);
+  const speedMultRef = useRef(1);
 
   // Preload hero images
   useEffect(() => {
@@ -332,35 +336,22 @@ const ClawPlatformerGame: React.FC = () => {
     };
   }, [selectedHero]);
 
-  // Sound synthesizer
-  const playBeep = useCallback((freq: number, duration: number, type: OscillatorType = 'sine', gain = 0.1) => {
+  // Singleton Sound synthesizer (zero AudioContext leak)
+  const playBeep = useCallback((freq: number, duration: number, type: OscillatorType = 'sine', gain = 0.09) => {
     if (isSoundMuted) return;
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gainNode.gain.setValueAtTime(gain, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      osc.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + duration);
-    } catch {
-      // Ignored
-    }
+    playGameTone(freq, duration, type, gain);
   }, [isSoundMuted]);
 
   // Load level data into mutable refs
   const loadLevel = useCallback((lvlIndex: number) => {
     const lvl = LEVEL_CONFIGS[lvlIndex] || LEVEL_CONFIGS[0];
+    const unified = getUnifiedGameRecord('claw-platformer');
+    const mult = unified?.effectiveSpeedMultiplier ?? 1;
+    speedMultRef.current = mult;
     setCurrentLevelIdx(lvlIndex);
     platformsRef.current = lvl.platforms.map((p) => ({ ...p }));
     coinsRef.current = lvl.coins.map((c) => ({ ...c, collected: false }));
-    enemiesRef.current = lvl.enemies.map((e) => ({ ...e, alive: true }));
+    enemiesRef.current = lvl.enemies.map((e) => ({ ...e, vx: e.vx * mult, alive: true }));
     attacksRef.current = [];
     popupsRef.current = [];
 
@@ -388,6 +379,7 @@ const ClawPlatformerGame: React.FC = () => {
     setScore(0);
     setLives(3);
     setChipsCollected(0);
+    starPowerFramesRef.current = 0;
     setStarPowerDuration(0);
     setActiveQuiz(null);
     setQuizAnswered(null);
@@ -522,9 +514,12 @@ const ClawPlatformerGame: React.FC = () => {
       const keys = keysRef.current;
       const lvl = LEVEL_CONFIGS[currentLevelIdx];
 
-      // Update Star Power Duration
-      if (starPowerDuration > 0) {
-        setStarPowerDuration((d) => Math.max(0, d - 1));
+      // Update Star Power Duration in ref (prevents 60fps React re-renders)
+      if (starPowerFramesRef.current > 0) {
+        starPowerFramesRef.current -= 1;
+        if (starPowerFramesRef.current === 0) {
+          setStarPowerDuration(0);
+        }
       }
 
       // Invincibility cooldown
@@ -768,7 +763,7 @@ const ClawPlatformerGame: React.FC = () => {
           p.y < enemy.y + enemy.h &&
           p.y + p.h > enemy.y
         ) {
-          const isStarPowered = starPowerDuration > 0;
+          const isStarPowered = starPowerFramesRef.current > 0;
           const isStomp = p.vy > 0 && p.y + p.h - enemy.y < 16;
 
           if (isStarPowered || isStomp) {
@@ -879,45 +874,25 @@ const ClawPlatformerGame: React.FC = () => {
       ctx.save();
       ctx.translate(-camX, 0);
 
-      // In-World Tutorial Billboard Signs (Level 1)
+      // In-World Spawn Control Guide (Placed high in clear sky x=20..205, y=92..166 so it never overlaps Platform 1 or coins)
       if (currentLevelIdx === 0) {
-        // Sign 1: Spawn Controls Guide
         ctx.save();
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
         ctx.strokeStyle = '#00f7ff';
-        ctx.lineWidth = 2;
-        ctx.shadowColor = '#00f7ff';
-        ctx.shadowBlur = 8;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.roundRect(40, 230, 220, 80, 10);
+        ctx.roundRect(20, 92, 188, 74, 10);
         ctx.fill();
         ctx.stroke();
-        ctx.shadowBlur = 0;
         ctx.fillStyle = '#00f7ff';
-        ctx.font = 'bold 12px "Prompt", sans-serif';
+        ctx.font = 'bold 11px "Prompt", sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('🎮 การควบคุมตัวละคร:', 52, 252);
+        ctx.fillText('🎮 วิธีบังคับฮีโร่:', 30, 112);
         ctx.fillStyle = '#f8fafc';
-        ctx.font = '11px "Prompt", sans-serif';
-        ctx.fillText('• เดิน: ปุ่ม ◀ ▶ หรือ A / D', 52, 272);
-        ctx.fillText('• กระโดด: Space (กด 2 ครั้ง = สูงขึ้น)', 52, 289);
-        ctx.fillText('• โจมตี: ปุ่ม J หรือ ก้ามหนีบ', 52, 305);
-        ctx.restore();
-
-        // Sign 2: Arrow under first question block
-        ctx.save();
-        ctx.fillStyle = '#facc15';
-        ctx.font = 'bold 11px "Prompt", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('⬆️ โหม่งกล่อง ? เพื่อตอบคำถามกู้รหัส!', 520, 240);
-        ctx.restore();
-
-        // Sign 3: Warning near first enemy
-        ctx.save();
-        ctx.fillStyle = '#f87171';
-        ctx.font = 'bold 11px "Prompt", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('🦘 กระโดดเหยียบหัว หรือกด J หนีบก้าม!', 550, 385);
+        ctx.font = '10.5px "Prompt", sans-serif';
+        ctx.fillText('• เดิน: ปุ่ม ◀ ▶ หรือ A / D', 30, 129);
+        ctx.fillText('• กระโดด 2 ชั้น: Space / W', 30, 145);
+        ctx.fillText('• ก้ามหนีบปราบไวรัส: ปุ่ม J', 30, 160);
         ctx.restore();
       }
 
@@ -1243,7 +1218,7 @@ const ClawPlatformerGame: React.FC = () => {
         ctx.globalAlpha = 0.35;
       }
 
-      if (starPowerDuration > 0) {
+      if (starPowerFramesRef.current > 0) {
         ctx.shadowColor = '#fbbf24';
         ctx.shadowBlur = 20;
       }
@@ -1290,7 +1265,7 @@ const ClawPlatformerGame: React.FC = () => {
 
     animId = requestAnimationFrame(gameLoop);
     return () => cancelAnimationFrame(animId);
-  }, [activeQuiz, currentLevelIdx, gameState, handleGameOver, handleLevelClear, playBeep, selectedHero, starPowerDuration]);
+  }, [activeQuiz, currentLevelIdx, gameState, handleGameOver, handleLevelClear, playBeep, selectedHero]);
 
   // Answer Quiz from Terminal Block
   const handleAnswerQuiz = (choiceIdx: number) => {
@@ -1300,7 +1275,8 @@ const ClawPlatformerGame: React.FC = () => {
     if (choiceIdx === activeQuiz.correctIndex) {
       sfxCorrect();
       setScore((s) => s + 150);
-      setStarPowerDuration(280); // Invincible Star Power!
+      starPowerFramesRef.current = 280; // Invincible Star Power in ref!
+      setStarPowerDuration(280);
       setTimeout(() => {
         setActiveQuiz(null);
         setQuizAnswered(null);
@@ -1388,24 +1364,23 @@ const ClawPlatformerGame: React.FC = () => {
 
         <div className="cg-hud-item cg-stage">
           <span>{LEVEL_CONFIGS[currentLevelIdx]?.name.split(':')[0]}</span>
+          {starPowerDuration > 0 && <span className="cg-star-badge">⭐ อมตะ!</span>}
+        </div>
+      </div>
+
+      {/* Docked Mission Guide Bar (Never overlaps high platforms or terminals on canvas) */}
+      <div className="cg-mission-dock">
+        <div className="cg-mission-pill">
+          <span className="cg-mission-tag">🎯 ภารกิจ</span>
+          <span className="cg-mission-text">
+            เก็บชิป 🪙 • โหม่งกล่อง ❓ ถอดรหัสลับ • กระโดดเหยียบไวรัส 👾 • มุ่งหน้าสู่ประตู 🚪!
+          </span>
         </div>
       </div>
 
       {/* Main Viewport & Canvas */}
       <div className="cg-viewport">
         <canvas ref={canvasRef} width={760} height={500} className="cg-canvas" />
-
-        {/* Pinned Mission HUD overlay inside viewport */}
-        {gameState === 'playing' && (
-          <div className="cg-mission-overlay">
-            <div className="cg-mission-pill">
-              <span className="cg-mission-tag">🎯 ภารกิจ</span>
-              <span className="cg-mission-text">
-                เก็บชิป 🪙 • โหม่งกล่อง ❓ ถอดรหัสลับ • กระโดดเหยียบไวรัส 👾 • มุ่งหน้าสู่ประตู 🚪!
-              </span>
-            </div>
-          </div>
-        )}
 
         {/* Start / Idle Overlay */}
         {gameState === 'idle' && (

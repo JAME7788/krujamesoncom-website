@@ -7,6 +7,7 @@ import { celebrate } from '../utils/celebrate';
 import { addCoins, coinsForGameScore } from '../services/coinService';
 import { isScoreEligibleUser } from '../services/userAccessService';
 import { retryGameSave } from '../utils/retryGameSave';
+import { recordUnifiedPlayHistory } from '../services/unifiedDatabaseService';
 
 type GameProgressOptions = {
   recordOnce?: boolean;
@@ -25,7 +26,11 @@ export const useGameProgress = (
   return useCallback(
     async (score?: number, activityKey?: string, maxScore?: number) => {
       window.dispatchEvent(new CustomEvent('game-learning-complete', { detail: { gameId } }));
+      recordUnifiedPlayHistory(user?.id, gameId, gameTitle, score, maxScore, activityKey);
       const scoringPartner = isScoreEligibleUser(partner) ? partner : null;
+      if (scoringPartner?.id) {
+        recordUnifiedPlayHistory(scoringPartner.id, gameId, gameTitle, score, maxScore, activityKey);
+      }
       const completionKey = JSON.stringify([user?.id, scoringPartner?.id, gameId, activityKey?.trim() || 'complete']);
       if (recordOnce && recordedRef.current.has(completionKey)) return;
       if (recordOnce) recordedRef.current.add(completionKey);

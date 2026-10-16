@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
 import { sfxCorrect, sfxWrong, sfxCoin } from '../../utils/gameSounds';
+import { playGameTone } from '../../utils/gameAudio';
+import { getUnifiedGameRecord } from '../../data/unifiedGameRegistry';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 import './CyberRacerGame.css';
@@ -394,6 +396,33 @@ const CyberRacerGame: React.FC = () => {
   const gameLoopRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
   const nextEntityIdRef = useRef<number>(1);
+  const feedbackTimerRef = useRef<number | null>(null);
+
+  // Mutable simulation state to prevent 60fps React re-renders
+  const simStatsRef = useRef({
+    score: 0,
+    distance: 0,
+    lives: 3,
+    combo: 1,
+    maxCombo: 1,
+    hasShield: false,
+    isNitroActive: false,
+    speedMultiplier: 1,
+    lastHudSync: 0,
+  });
+
+  const showTransientFeedback = useCallback(
+    (banner: { text: string; type: 'correct' | 'wrong' | 'info'; detail?: string }) => {
+      if (feedbackTimerRef.current) {
+        window.clearTimeout(feedbackTimerRef.current);
+      }
+      setFeedbackBanner(banner);
+      feedbackTimerRef.current = window.setTimeout(() => {
+        setFeedbackBanner(null);
+      }, 2200);
+    },
+    [],
+  );
 
   // Car Physics
   const carStateRef = useRef({
@@ -429,26 +458,10 @@ const CyberRacerGame: React.FC = () => {
     questionIndexRef.current = 0;
   }, []);
 
-  // Web Audio Synth for engine and effects
-  const playSfxTone = useCallback((freq: number, duration: number, type: OscillatorType = 'sawtooth', gain = 0.1) => {
+  // Singleton Web Audio Synth for engine and effects (zero AudioContext leak)
+  const playSfxTone = useCallback((freq: number, duration: number, type: OscillatorType = 'sawtooth', gain = 0.09) => {
     if (isSoundMuted) return;
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gainNode.gain.setValueAtTime(gain, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      osc.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + duration);
-    } catch {
-      // Audio context might be restricted before interaction
-    }
+    playGameTone(freq, duration, type, gain);
   }, [isSoundMuted]);
 
   // Steer controls
@@ -484,6 +497,7 @@ const CyberRacerGame: React.FC = () => {
 
     setNitroGauge((prev) => Math.max(0, prev - 30));
     car.nitroDurationMs = 3800;
+    simStatsRef.current.isNitroActive = true;
     setIsNitroActive(true);
     playSfxTone(440, 0.35, 'sawtooth', 0.15);
   }, [gameState, nitroGauge, playSfxTone]);
@@ -518,6 +532,21 @@ const CyberRacerGame: React.FC = () => {
     setSelectedLevel(lvl);
     prepareQuestions(lvl);
 
+    const unified = getUnifiedGameRecord('cyber-racer');
+    const speedMult = unified?.effectiveSpeedMultiplier ?? 1;
+
+    simStatsRef.current = {
+      score: 0,
+      distance: 0,
+      lives: 3,
+      combo: 1,
+      maxCombo: 1,
+      hasShield: false,
+      isNitroActive: false,
+      speedMultiplier: speedMult,
+      lastHudSync: performance.now(),
+    };
+
     setScore(0);
     setDistance(0);
     setLives(3);
@@ -539,8 +568,8 @@ const CyberRacerGame: React.FC = () => {
       carX: 0.5,
       targetX: 0.5,
       tilt: 0,
-      speedKmH: 180,
-      maxSpeedKmH: 260,
+      speedKmH: Math.round(180 * speedMult),
+      maxSpeedKmH: Math.round(250 * speedMult),
       nitroDurationMs: 0,
       shieldDurationMs: 0,
       spinAngle: 0,
@@ -550,7 +579,7 @@ const CyberRacerGame: React.FC = () => {
     roadEntitiesRef.current = [];
     questionGateRef.current = null;
     nextSpawnTimeRef.current = 1200;
-    nextQuestionTimeRef.current = 5000; // 5s to first question
+    nextQuestionTimeRef.current = 4000; // 4s to first question
     lastTimeRef.current = performance.now();
 
     setGameState('playing');
@@ -564,21 +593,21 @@ const CyberRacerGame: React.FC = () => {
       gameLoopRef.current = null;
     }
 
-    setScore((currentScore) => {
-      // Save high score
-      if (currentScore > highScore) {
-        setHighScore(currentScore);
-        try {
-          localStorage.setItem('kj_cyber_racer_best', currentScore.toString());
-        } catch {
-          // Ignore localStorage errors
-        }
-      }
+    const finalScore = Math.floor(simStatsRef.current.score);
+    const finalDist = Math.floor(simStatsRef.current.distance);
+    setScore(finalScore);
+    setDistance(finalDist);
 
-      // Record progress into learning system
-      void recordGame(currentScore);
-      return currentScore;
-    });
+    if (finalScore > highScore) {
+      setHighScore(finalScore);
+      try {
+        localStorage.setItem('kj_cyber_racer_best', finalScore.toString());
+      } catch {
+        // Ignore localStorage errors
+      }
+    }
+
+    void recordGame(finalScore);
   }, [highScore, recordGame]);
 
   // Main Render & Simulation Loop
@@ -604,22 +633,27 @@ const CyberRacerGame: React.FC = () => {
 
       const width = canvas.width;
       const height = canvas.height;
-      const horizonY = height * 0.28;
+      const horizonY = height * 0.25;
       const playerY = height * 0.82;
 
       const car = carStateRef.current;
+      const sim = simStatsRef.current;
 
       // Update Timers & Nitro
       if (car.nitroDurationMs > 0) {
         car.nitroDurationMs -= dt * 1000;
-        car.speedKmH = 290;
+        car.speedKmH = Math.round(280 * sim.speedMultiplier);
         if (car.nitroDurationMs <= 0) {
+          sim.isNitroActive = false;
           setIsNitroActive(false);
-          car.speedKmH = 190;
+          car.speedKmH = Math.round(185 * sim.speedMultiplier);
         }
       } else {
         // Natural speed progression
-        car.speedKmH = Math.min(car.maxSpeedKmH, 180 + Math.floor(now / 15000) * 10);
+        car.speedKmH = Math.min(
+          car.maxSpeedKmH,
+          Math.round((180 + Math.floor(sim.distance / 400) * 8) * sim.speedMultiplier),
+        );
       }
 
       if (car.invulnerableMs > 0) {
@@ -631,10 +665,15 @@ const CyberRacerGame: React.FC = () => {
       car.carX += dx * Math.min(1, dt * 14);
       car.tilt = -dx * 1.5; // car leans into turn
 
-      // Update Distance & Score
+      // Update Distance & Score in ref (throttled HUD sync every 180ms to prevent 60fps React re-renders)
       const speedScale = car.speedKmH / 180;
-      setDistance((d) => d + Math.round(car.speedKmH * dt * 0.28));
-      setScore((s) => s + Math.round(10 * dt * speedScale));
+      sim.distance += car.speedKmH * dt * 0.28;
+      sim.score += 10 * dt * speedScale;
+      if (now - sim.lastHudSync >= 180) {
+        sim.lastHudSync = now;
+        setDistance(Math.floor(sim.distance));
+        setScore(Math.floor(sim.score));
+      }
 
       // ----------------------------------------------------
       // DRAW BACKGROUND (Cyber Sunset Sky & Grid Horizon)
@@ -707,9 +746,9 @@ const CyberRacerGame: React.FC = () => {
       ctx.fill();
 
       // Glowing Road Borders (Left & Right curbs)
-      ctx.strokeStyle = isNitroActive ? '#00f7ff' : '#ff007f';
-      ctx.lineWidth = isNitroActive ? 5 : 3;
-      ctx.shadowColor = isNitroActive ? '#00f7ff' : '#ff007f';
+      ctx.strokeStyle = sim.isNitroActive ? '#00f7ff' : '#ff007f';
+      ctx.lineWidth = sim.isNitroActive ? 5 : 3;
+      ctx.shadowColor = sim.isNitroActive ? '#00f7ff' : '#ff007f';
       ctx.shadowBlur = 12;
 
       ctx.beginPath();
@@ -796,7 +835,7 @@ const CyberRacerGame: React.FC = () => {
           };
           setCurrentQuestionHUD(q);
         }
-        nextQuestionTimeRef.current = 14000; // interval between questions
+        nextQuestionTimeRef.current = 12000; // interval between questions
       }
 
       // Update & Draw Question Gate
@@ -810,7 +849,7 @@ const CyberRacerGame: React.FC = () => {
         const scale = 0.2 + 0.8 * p;
         const gateW = (roadTopWidth + (roadBottomWidth - roadTopWidth) * p);
         const gateLeft = (width - gateW) / 2;
-        const gateH = 65 * scale;
+        const gateH = 58 * scale;
 
         // Draw Overhead Truss Arch
         ctx.save();
@@ -827,15 +866,6 @@ const CyberRacerGame: React.FC = () => {
         ctx.lineTo(gateLeft + gateW, y);
         ctx.stroke();
 
-        // Arch overhead banner title
-        if (scale > 0.4) {
-          ctx.fillStyle = '#00f7ff';
-          ctx.font = `bold ${Math.max(10, Math.round(14 * scale))}px "Prompt", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          ctx.fillText('⚡ ซุ้มคำถาม: เลือกเข้าเลนที่ถูกต้อง ⚡', width / 2, y - gateH - 4 * scale);
-        }
-
         // 3 Lane Answer Gate Panels
         const panelW = (gateW / 3) * 0.94;
         const choiceHeaders = ['[A] เลนซ้าย', '[B] เลนกลาง', '[C] เลนขวา'];
@@ -844,15 +874,15 @@ const CyberRacerGame: React.FC = () => {
         for (let l = 0; l < 3; l++) {
           const laneCenterX = getLaneXAtProgress(l as 0 | 1 | 2, p);
           const px = laneCenterX - panelW / 2;
-          const py = y - gateH * 0.88;
-          const panelH = gateH * 0.8;
+          const py = y - gateH * 0.9;
+          const panelH = gateH * 0.82;
 
           const isPlayerLane = car.currentLane === l;
 
           // Panel background
           ctx.fillStyle = isPlayerLane
-            ? 'rgba(14, 165, 233, 0.55)'
-            : 'rgba(15, 23, 42, 0.88)';
+            ? 'rgba(14, 165, 233, 0.58)'
+            : 'rgba(15, 23, 42, 0.9)';
           ctx.strokeStyle = isPlayerLane ? '#38bdf8' : laneColors[l];
           ctx.lineWidth = (isPlayerLane ? 3 : 2) * scale;
           ctx.fillRect(px, py, panelW, panelH);
@@ -860,10 +890,10 @@ const CyberRacerGame: React.FC = () => {
 
           // Panel Lane Header
           ctx.fillStyle = laneColors[l];
-          ctx.font = `bold ${Math.max(10, Math.round(13 * scale))}px "Prompt", sans-serif`;
+          ctx.font = `bold ${Math.max(9, Math.round(12 * scale))}px "Prompt", sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'top';
-          ctx.fillText(choiceHeaders[l], laneCenterX, py + 4 * scale);
+          ctx.fillText(choiceHeaders[l], laneCenterX, py + 3 * scale);
 
           // Panel Choice Text
           const choiceStr = gate.question.choices[l];
@@ -875,10 +905,10 @@ const CyberRacerGame: React.FC = () => {
             const splitIdx = choiceStr.lastIndexOf(' ', 13) > 0 ? choiceStr.lastIndexOf(' ', 13) : 11;
             const line1 = choiceStr.slice(0, splitIdx).trim();
             const line2 = choiceStr.slice(splitIdx).trim();
-            ctx.fillText(line1, laneCenterX, py + panelH * 0.48);
-            ctx.fillText(line2, laneCenterX, py + panelH * 0.72);
+            ctx.fillText(line1, laneCenterX, py + panelH * 0.5);
+            ctx.fillText(line2, laneCenterX, py + panelH * 0.74);
           } else {
-            ctx.fillText(choiceStr, laneCenterX, py + panelH * 0.6);
+            ctx.fillText(choiceStr, laneCenterX, py + panelH * 0.62);
           }
         }
         ctx.restore();
@@ -893,43 +923,44 @@ const CyberRacerGame: React.FC = () => {
             // Correct answer!
             sfxCorrect();
             setCorrectAnswersCount((c) => c + 1);
-            setCombo((c) => {
-              const newCombo = c + 1;
-              setMaxCombo((mc) => Math.max(mc, newCombo));
-              return newCombo;
-            });
-            const bonusPts = 100 * combo;
-            setScore((s) => s + bonusPts);
+            const bonusPts = 100 * sim.combo;
+            sim.combo += 1;
+            sim.maxCombo = Math.max(sim.maxCombo, sim.combo);
+            sim.score += bonusPts;
+            setCombo(sim.combo);
+            setMaxCombo(sim.maxCombo);
+            setScore(Math.floor(sim.score));
             setNitroGauge((g) => Math.min(100, g + 25));
-            setFeedbackBanner({
-              text: `🎉 ถูกต้อง! +${bonusPts} แต้ม (คอมโบ x${combo})`,
+            showTransientFeedback({
+              text: `🎉 ถูกต้อง! +${bonusPts} แต้ม (คอมโบ x${sim.combo})`,
               type: 'correct',
               detail: gate.question.explanation,
             });
           } else {
             // Wrong answer!
             sfxWrong();
+            sim.combo = 1;
             setCombo(1);
-            if (hasShield) {
+            if (sim.hasShield) {
+              sim.hasShield = false;
               setHasShield(false);
-              setFeedbackBanner({
+              showTransientFeedback({
                 text: `🛡️ เกราะป้องกันช่วยรับดาเมจ!`,
                 type: 'info',
-                detail: `คำตอบที่ถูกคือ: ${gate.question.choices[gate.question.correctIndex]} (${gate.question.explanation})`,
+                detail: `คำตอบที่ถูกคือ: ${gate.question.choices[gate.question.correctIndex]}`,
               });
             } else {
-              setLives((l) => {
-                const nextLives = l - 1;
-                if (nextLives <= 0) {
-                  endGame();
-                }
-                return nextLives;
-              });
-              setFeedbackBanner({
-                text: `💥 ผิดเลน! เสีย 1 หัวใจ`,
-                type: 'wrong',
-                detail: `คำตอบที่ถูกต้องคือ [${gate.question.choices[gate.question.correctIndex]}] : ${gate.question.explanation}`,
-              });
+              sim.lives -= 1;
+              setLives(sim.lives);
+              if (sim.lives <= 0) {
+                endGame();
+              } else {
+                showTransientFeedback({
+                  text: `💥 ผิดเลน! เสีย 1 หัวใจ (คำตอบที่ถูก: ${gate.question.choices[gate.question.correctIndex]})`,
+                  type: 'wrong',
+                  detail: gate.question.explanation,
+                });
+              }
             }
           }
         }
@@ -981,32 +1012,37 @@ const CyberRacerGame: React.FC = () => {
           // Collected or Hit!
           if (entity.type === 'coin') {
             sfxCoin();
-            setScore((s) => s + 25);
+            sim.score += 25;
+            setScore(Math.floor(sim.score));
             setCoinsCollected((c) => c + 1);
             setNitroGauge((g) => Math.min(100, g + 8));
           } else if (entity.type === 'nitro') {
             sfxCoin();
             car.nitroDurationMs = 3500;
+            sim.isNitroActive = true;
             setIsNitroActive(true);
             setNitroGauge(100);
             playSfxTone(520, 0.2, 'sawtooth', 0.12);
           } else if (entity.type === 'shield') {
             sfxCoin();
+            sim.hasShield = true;
             setHasShield(true);
-            setLives((l) => Math.min(maxLives, l + 1));
+            sim.lives = Math.min(maxLives, sim.lives + 1);
+            setLives(sim.lives);
           } else if (entity.type === 'cone') {
             if (car.invulnerableMs <= 0) {
-              if (hasShield) {
+              if (sim.hasShield) {
+                sim.hasShield = false;
                 setHasShield(false);
                 car.invulnerableMs = 800;
               } else {
                 sfxWrong();
                 car.speedKmH = Math.max(100, car.speedKmH - 50);
-                setLives((l) => {
-                  const nl = l - 1;
-                  if (nl <= 0) endGame();
-                  return nl;
-                });
+                sim.lives -= 1;
+                setLives(sim.lives);
+                if (sim.lives <= 0) {
+                  endGame();
+                }
                 car.invulnerableMs = 1000;
               }
             }
@@ -1088,7 +1124,7 @@ const CyberRacerGame: React.FC = () => {
       // DRAW PLAYER RACER CAR
       // ----------------------------------------------------
       const playerLaneX = roadBottomLeft + roadBottomWidth * (car.carX);
-      const carScale = 1.05;
+      const carScale = 1.0;
 
       ctx.save();
       ctx.translate(playerLaneX, playerY);
@@ -1100,8 +1136,8 @@ const CyberRacerGame: React.FC = () => {
       }
 
       // Exhaust Boost Flames
-      const flameLength = isNitroActive ? 35 + Math.random() * 20 : 12 + Math.random() * 8;
-      const flameColor = isNitroActive ? '#00f7ff' : '#ff5500';
+      const flameLength = sim.isNitroActive ? 35 + Math.random() * 20 : 12 + Math.random() * 8;
+      const flameColor = sim.isNitroActive ? '#00f7ff' : '#ff5500';
       ctx.fillStyle = flameColor;
       ctx.shadowColor = flameColor;
       ctx.shadowBlur = 15;
@@ -1160,7 +1196,7 @@ const CyberRacerGame: React.FC = () => {
       ctx.fill();
 
       // Cyber Neon Decal Lines
-      ctx.strokeStyle = isNitroActive ? '#00f7ff' : '#facc15';
+      ctx.strokeStyle = sim.isNitroActive ? '#00f7ff' : '#facc15';
       ctx.lineWidth = 2 * carScale;
       ctx.beginPath();
       ctx.moveTo(-12 * carScale, -30 * carScale);
@@ -1196,7 +1232,7 @@ const CyberRacerGame: React.FC = () => {
       ctx.shadowBlur = 0;
 
       // Shield Bubble Aura if active
-      if (hasShield) {
+      if (sim.hasShield) {
         ctx.strokeStyle = '#38bdf8';
         ctx.lineWidth = 3;
         ctx.shadowColor = '#38bdf8';
@@ -1217,7 +1253,7 @@ const CyberRacerGame: React.FC = () => {
     return () => {
       cancelAnimationFrame(animId);
     };
-  }, [gameState, hasShield, isNitroActive, combo, maxLives, endGame, playSfxTone]);
+  }, [gameState, maxLives, endGame, playSfxTone, showTransientFeedback]);
 
   // Touch & Swipe handlers on Canvas
   const touchStartXRef = useRef<number>(0);
@@ -1345,48 +1381,62 @@ const CyberRacerGame: React.FC = () => {
         </div>
       </div>
 
+      {/* Docked Question Cockpit Bar (Non-overlapping! Never covers the 3D road/horizon) */}
+      <div className="cr-question-dock" aria-live="polite">
+        {currentQuestionHUD ? (
+          <div className="cr-question-hud-card">
+            <div className="cr-q-badge">
+              <Sparkles size={15} /> โจทย์ซิ่งตอบคำถาม — เลี้ยวรถหรือกดเลือกเลนคำตอบที่ถูกต้อง!
+            </div>
+            <div className="cr-q-text">{currentQuestionHUD.question}</div>
+            <div className="cr-q-lanes" role="group" aria-label="เลือกเลนคำตอบ">
+              <button
+                type="button"
+                className={`cr-lane-hint ${activeLane === 0 ? 'selected' : ''}`}
+                onClick={() => steerTo(0)}
+              >
+                <span className="cr-lane-key">⬅️ เลนซ้าย [A]:</span> {currentQuestionHUD.choices[0]}
+              </button>
+              <button
+                type="button"
+                className={`cr-lane-hint ${activeLane === 1 ? 'selected' : ''}`}
+                onClick={() => steerTo(1)}
+              >
+                <span className="cr-lane-key">⬆️ เลนกลาง [B]:</span> {currentQuestionHUD.choices[1]}
+              </button>
+              <button
+                type="button"
+                className={`cr-lane-hint ${activeLane === 2 ? 'selected' : ''}`}
+                onClick={() => steerTo(2)}
+              >
+                <span className="cr-lane-key">➡️ เลนขวา [C]:</span> {currentQuestionHUD.choices[2]}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="cr-ready-hud-pill">
+            <Zap size={15} className="text-cyan-400" />
+            <span>
+              {gameState === 'playing'
+                ? 'ทางด่วนไซเบอร์... ซุ้มคำถามถัดไปกำลังพุ่งเข้ามา! (เก็บเหรียญ 🪙 ไนโตร ⚡ หลบกรวย 🚧)'
+                : 'พร้อมซิ่ง! กดปุ่ม “เริ่มซิ่งเลย!” เพื่อเข้าสู่ทางด่วนไซเบอร์'}
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* Main Game Screen Canvas Viewport */}
       <div className="cr-viewport">
         <canvas
           ref={canvasRef}
-          width={640}
-          height={720}
+          width={720}
+          height={440}
           className="cr-canvas"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         />
 
-        {/* Question HUD Banner: ALWAYS pinned inside viewport at top of road! */}
-        {gameState === 'playing' && (
-          <div className="cr-question-overlay">
-            {currentQuestionHUD ? (
-              <div className="cr-question-hud-card">
-                <div className="cr-q-badge">
-                  <Sparkles size={16} /> ภารกิจซิ่งตอบคำถาม: เลี้ยวเข้าเลนที่ถูกต้อง!
-                </div>
-                <div className="cr-q-text">{currentQuestionHUD.question}</div>
-                <div className="cr-q-lanes">
-                  <div className={`cr-lane-hint ${activeLane === 0 ? 'selected' : ''}`}>
-                    <span className="cr-lane-key">⬅️ ซ้าย [A]:</span> {currentQuestionHUD.choices[0]}
-                  </div>
-                  <div className={`cr-lane-hint ${activeLane === 1 ? 'selected' : ''}`}>
-                    <span className="cr-lane-key">⬆️ กลาง [B]:</span> {currentQuestionHUD.choices[1]}
-                  </div>
-                  <div className={`cr-lane-hint ${activeLane === 2 ? 'selected' : ''}`}>
-                    <span className="cr-lane-key">➡️ ขวา [C]:</span> {currentQuestionHUD.choices[2]}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="cr-ready-hud-pill">
-                <Zap size={14} className="text-cyan-400" />
-                <span>ทางด่วนไซเบอร์... ซุ้มคำถามถัดไปกำลังใกล้เข้ามา! (เก็บเหรียญ 🪙 ไนโตร ⚡)</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Quick Feedback Toast (Centered in Viewport) */}
+        {/* Quick Feedback Toast (Bottom-pinned, auto-clears in 2.2s, never blocks road horizon) */}
         {feedbackBanner && (
           <div className={`cr-viewport-toast ${feedbackBanner.type}`}>
             <div className="cr-fb-title">{feedbackBanner.text}</div>
