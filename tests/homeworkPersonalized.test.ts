@@ -151,4 +151,76 @@ describe('Personalized Assignment & Differentiated Learning', () => {
     expect(found).toBeDefined();
     expect(found?.designThinkingSteps?.testFeedback).toContain('เพื่อนๆ ชอบสีสัน');
   });
+
+  it('คำนวณสรุปงานค้างส่ง งานรอส่ง งานรอตรวจ และรวมชุดงาน 3 ระดับไม่ให้นับซ้ำ (getStudentWorkStatusOverview)', async () => {
+    const {
+      getStudentWorkStatusOverview,
+      submitWork,
+      reviewSubmission,
+    } = await import('../src/services/homeworkService');
+
+    // 1. งานเลยกำหนดส่ง (Overdue)
+    await createAssignment({
+      title: 'ใบงานที่ 1 (เลยกำหนด)',
+      description: 'ส่งย้อนหลังได้',
+      classroom: 'ป.5',
+      dueDate: '2020-01-01',
+      maxScore: 10,
+      createdBy: 'teacher',
+      targetType: 'all',
+    });
+
+    // 2. งานยังไม่เลยกำหนด (Pending)
+    const pendingTask = await createAssignment({
+      title: 'ใบงานที่ 2 (รอส่ง)',
+      description: 'ยังไม่ถึงกำหนด',
+      classroom: 'ป.5',
+      dueDate: '2099-12-31',
+      maxScore: 10,
+      createdBy: 'teacher',
+      targetType: 'all',
+    });
+
+    // 3. ชุดงาน 3 ระดับ (ควรนับเป็น 1 งาน ไม่ใช่ 3 งาน)
+    const packList = await generate3TierAssignments({
+      classroom: 'ป.5',
+      subject: 'cs',
+      indicatorId: 'w4.2-p5-1',
+      topic: 'อัลกอริทึมและผังงาน',
+      dueDate: '2099-12-31',
+    });
+    expect(packList).toHaveLength(3);
+
+    // ตรวจสอบสถานะเริ่มต้นของนักเรียน ป.5 เลขที่ 1 (ยังไม่ส่งสักชิ้น)
+    const beforeOverview = getStudentWorkStatusOverview('ป.5', 'p5_student_1', 1, 'เด็กชายขยัน เรียนดี');
+    // ต้องมีทั้งหมด 3 งานหลัก (ใบงานที่ 1 + ใบงานที่ 2 + ชุดงาน 3 ระดับนับเป็น 1)
+    expect(beforeOverview.tasks).toHaveLength(3);
+    expect(beforeOverview.overdueCount).toBe(1);
+    expect(beforeOverview.pendingCount).toBe(2);
+    expect(beforeOverview.missingTasks).toHaveLength(3);
+
+    // นักเรียนส่งใบงานที่ 2
+    const sub2 = await submitWork({
+      assignmentId: pendingTask.id,
+      studentId: 'p5_student_1',
+      studentName: 'เด็กชายขยัน เรียนดี',
+      classroom: 'ป.5',
+      studentNo: 1,
+      contentUrl: 'https://scratch.mit.edu/projects/12345',
+      comment: 'ส่งงานใบงานที่ 2 ครับผม',
+    });
+
+    const afterSubmitOverview = getStudentWorkStatusOverview('ป.5', 'p5_student_1', 1, 'เด็กชายขยัน เรียนดี');
+    expect(afterSubmitOverview.overdueCount).toBe(1);
+    expect(afterSubmitOverview.pendingCount).toBe(1);
+    expect(afterSubmitOverview.waitingReviewCount).toBe(1);
+    expect(afterSubmitOverview.missingTasks).toHaveLength(2);
+
+    // ครูตรวจให้คะแนนใบงานที่ 2
+    await reviewSubmission(sub2.id, { kScore: 9 }, 'ทำได้ดีมากครับ');
+    const afterGradeOverview = getStudentWorkStatusOverview('ป.5', 'p5_student_1', 1, 'เด็กชายขยัน เรียนดี');
+    expect(afterGradeOverview.waitingReviewCount).toBe(0);
+    expect(afterGradeOverview.gradedCount).toBe(1);
+  });
 });
+
