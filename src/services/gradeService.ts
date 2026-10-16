@@ -374,20 +374,29 @@ export const loadGrades = (classroom: string, subject: Subject = 'main'): Studen
 
     const indicatorsDef = getIndicators(classroom, subject);
     const officialByCode = new Map(officialStudents.map((s) => [s.studentCode, s]));
+    const legacyCodeMap: Record<string, string> = {
+      '3231': '2421',
+      '2435': '3202',
+    };
+    const transferredOutCodes = new Set(['2933', '2909']);
 
-    // Update names and student numbers of official students if matched
-    const existingList: StudentGrade[] = parsedGrades.map((g) => {
-      const official = officialByCode.get(g.studentCode);
-      if (official) {
-        return {
-          ...g,
-          name: official.name,
-          studentNo: official.no,
-          emoji: official.emoji || g.emoji || '👤',
-        };
-      }
-      return g;
-    });
+    // Update names and student numbers of official students if matched (including legacy code migration)
+    const existingList: StudentGrade[] = parsedGrades
+      .map((g) => {
+        const canonicalCode = legacyCodeMap[g.studentCode] || g.studentCode;
+        const official = officialByCode.get(canonicalCode);
+        if (official) {
+          return {
+            ...g,
+            studentCode: canonicalCode,
+            name: official.name,
+            studentNo: official.no,
+            emoji: official.emoji || g.emoji || '👤',
+          };
+        }
+        return g;
+      })
+      .filter((g) => !transferredOutCodes.has(g.studentCode) || officialByCode.has(g.studentCode));
 
     officialStudents.forEach((info) => {
       const exists = existingList.some(

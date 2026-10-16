@@ -249,7 +249,7 @@ export const officialStudents2569: Record<string, OfficialStudentInfo> = {
   "3214": {
     "studentCode": "3214",
     "citizenId": "1629901208451",
-    "fullName": "เด็กหญิงสุุภัสสรา เอี่ยมพงษ์",
+    "fullName": "เด็กหญิงสุภัสสรา เอี่ยมพงษ์",
     "classroom": "ป.1",
     "birthDate": "05/06/2562",
     "fatherName": "นายคำพันธ์ เอี่ยมพงษ์",
@@ -1050,7 +1050,7 @@ export const officialStudents2569: Record<string, OfficialStudentInfo> = {
   "2408": {
     "studentCode": "2408",
     "citizenId": "1620301210945",
-    "fullName": "นายก้องภพ แสงทองศรี",
+    "fullName": "เด็กชายก้องภพ แสงทองศรี",
     "classroom": "ม.3",
     "birthDate": "03/06/2554",
     "fatherName": "นายวรากร แสงทองศรี",
@@ -1131,7 +1131,7 @@ export const officialStudents2569: Record<string, OfficialStudentInfo> = {
   "2412": {
     "studentCode": "2412",
     "citizenId": "1629900947668",
-    "fullName": "นางสาวสุรัมภา จูมงคล",
+    "fullName": "เด็กหญิงสุรัมภา จูมงคล",
     "classroom": "ม.3",
     "birthDate": "18/06/2554",
     "fatherName": "นายจ่อปลีพอ หมู่ทอง",
@@ -1172,5 +1172,25 @@ export const officialStudents2569: Record<string, OfficialStudentInfo> = {
     "birthDate": "15/11/2554",
     "fatherName": "นายธนรัตน์ พันธ์ศรี",
     "motherName": "นางสาวชะอร ยางทอง"
+  },
+  // Legacy studentCode aliases for backward compatibility with cached M.2 scores
+  "3231": {
+    "studentCode": "2421",
+    "citizenId": "1620301215670",
+    "fullName": "เด็กชายพีรวัส เปกไธสง",
+    "classroom": "ม.2",
+    "birthDate": "09/08/2555",
+    "fatherName": "นายศตวรรษ ทิพย์สม",
+    "motherName": "นางสาวปัทมาวรรณ เปกไธสง"
+  },
+  "2435": {
+    "studentCode": "3202",
+    "citizenId": "1319800664501",
+    "fullName": "เด็กหญิงสุวภัทร ตลับทอง",
+    "classroom": "ม.2",
+    "birthDate": "20/10/2555",
+    "fatherName": "นายสุขสมาน ตลับทอง",
+    "motherName": "นางสาวแสงระวี พวงมาลี"
   }
 };
+

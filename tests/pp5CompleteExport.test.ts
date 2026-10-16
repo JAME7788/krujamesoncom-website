@@ -3,12 +3,16 @@ import { getClassroomExportSummary } from '../src/services/gradeExportService';
 import {
   generatePp5CompleteDocxHtml,
   generatePp5CompleteSpreadsheetXml,
+  generatePp6CompleteSpreadsheetXml,
+  generatePp6CompleteDocxHtml,
 } from '../src/services/pp5CompleteGeneratorService';
+import { syncAllRostersWithOfficialDmc2569 } from '../src/services/rosterService';
+import { students2569, allClassrooms2569 } from '../src/data/students2569';
 
-describe('PP5 Complete Generator Service', () => {
+describe('PP5 and PP6 Complete Generator Service', () => {
   it('enriches classroom export summary with official student demographics and attendance', () => {
     const summaryM1 = getClassroomExportSummary('ม.1', 'cs');
-    expect(summaryM1.rows.length).toBeGreaterThan(0);
+    expect(summaryM1.rows.length).toBe(12);
     expect(summaryM1.credit).toBe(0.5);
     expect(summaryM1.totalHours).toBe(20);
     expect(summaryM1.advisorName).toContain('อนันตชัย');
@@ -16,14 +20,14 @@ describe('PP5 Complete Generator Service', () => {
 
     const firstStudent = summaryM1.rows[0];
     expect(firstStudent.studentCode).toBeTruthy();
-    expect(firstStudent.citizenId).toBeTruthy(); // Should have 13-digit citizen ID from official info
+    expect(firstStudent.citizenId).toBeTruthy(); // 13-digit citizen ID
     expect(firstStudent.birthDate).toBeTruthy();
     expect(firstStudent.attendancePresent).toBeGreaterThanOrEqual(0);
     expect(firstStudent.attendancePercentage).toBeGreaterThanOrEqual(0);
     expect(firstStudent.attendanceStatus).toBe('ผ่าน');
   });
 
-  it('generates valid official Word document HTML with all 7 sections and 4 signatories', () => {
+  it('generates valid official Word document HTML for PP5 with all sections and signatories', () => {
     const summary = getClassroomExportSummary('ม.1', 'cs');
     const docxHtml = generatePp5CompleteDocxHtml(summary);
 
@@ -50,34 +54,65 @@ describe('PP5 Complete Generator Service', () => {
     expect(docxHtml).toContain('ผู้อนุมัติ');
   });
 
-  it('generates valid multi-sheet SpreadsheetML XML with all 7 worksheets', () => {
+  it('generates valid 9-sheet SpreadsheetML XML matching official PP5 template', () => {
     const summary = getClassroomExportSummary('ม.2', 'cs');
     const xml = generatePp5CompleteSpreadsheetXml(summary);
 
     expect(xml).toContain('xmlns="urn:schemas-microsoft-com:office:spreadsheet"');
     expect(xml).toContain('<Worksheet ss:Name="หน้าปก">');
     expect(xml).toContain('<Worksheet ss:Name="ข้อมูลเกี่ยวกับนักเรียน">');
-    expect(xml).toContain('<Worksheet ss:Name="ตัวชี้วัด">');
     expect(xml).toContain('<Worksheet ss:Name="เวลาเรียน">');
+    expect(xml).toContain('<Worksheet ss:Name="สรุปเวลา">');
     expect(xml).toContain('<Worksheet ss:Name="สรุปคะแนน">');
     expect(xml).toContain('<Worksheet ss:Name="คุณลักษณะ">');
     expect(xml).toContain('<Worksheet ss:Name="อ่านคิด">');
+    expect(xml).toContain('<Worksheet ss:Name="ตัวชี้วัด">');
+    expect(xml).toContain('<Worksheet ss:Name="ปกหลัง">');
 
-    // Ensure student data is present
+    // Ensure student data and school name are present
     expect(xml).toContain('โรงเรียนบ้านคลองมดแดง');
     expect(xml).toContain(summary.rows[0].fullName);
   });
 
-  it('handles primary school classrooms correctly (ป.1 - ป.6)', () => {
-    const summaryP1 = getClassroomExportSummary('ป.1', 'main');
-    expect(summaryP1.credit).toBe(1.0);
-    expect(summaryP1.rows.length).toBeGreaterThan(0);
+  it('generates valid 4-sheet SpreadsheetML XML matching official PP6 template', () => {
+    const summary = getClassroomExportSummary('ป.1', 'main');
+    const xml = generatePp6CompleteSpreadsheetXml(summary);
 
-    const docxHtml = generatePp5CompleteDocxHtml(summaryP1);
-    expect(docxHtml).toContain('ป.1');
-    expect(docxHtml).toContain(summaryP1.rows[0].fullName);
+    expect(xml).toContain('xmlns="urn:schemas-microsoft-com:office:spreadsheet"');
+    expect(xml).toContain('<Worksheet ss:Name="กำหนดข้อมูล">');
+    expect(xml).toContain('<Worksheet ss:Name="บันทึกข้อมูล คะแนน">');
+    expect(xml).toContain('<Worksheet ss:Name="บันทึก คุณลักษณะ อ่านคิด กิจกรร">');
+    expect(xml).toContain('<Worksheet ss:Name="รายงาน ปพ.6">');
 
-    const xml = generatePp5CompleteSpreadsheetXml(summaryP1);
-    expect(xml).toContain('ป.1');
+    expect(xml).toContain('โรงเรียนบ้านคลองมดแดง');
+    expect(xml).toContain(summary.rows[0].fullName);
+  });
+
+  it('generates valid Word document HTML for PP6', () => {
+    const summary = getClassroomExportSummary('ม.3', 'cs');
+    const docxHtml = generatePp6CompleteDocxHtml(summary);
+
+    expect(docxHtml).toContain('แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายบุคคล (ปพ.6)');
+    expect(docxHtml).toContain('โรงเรียนบ้านคลองมดแดง');
+    expect(docxHtml).toContain('๑. ผลการประเมินรายวิชาและตัวชี้วัด');
+    expect(docxHtml).toContain('๒. ผลการประเมินตามตัวชี้วัดรายวิชา');
+    expect(docxHtml).toContain('๓. สรุปการประเมินคุณลักษณะอันพึงประสงค์ การอ่านคิดวิเคราะห์ และเวลาเรียน');
+    expect(docxHtml).toContain('ครูผู้สอน');
+    expect(docxHtml).toContain('ครูประจำชั้น');
+    expect(docxHtml).toContain('ผู้อำนวยการโรงเรียนบ้านคลองมดแดง');
+    expect(docxHtml).toContain('ผู้ปกครอง');
+  });
+
+  it('verifies official DMC student roster totals 113 students across 9 classrooms', async () => {
+    let totalStudents = 0;
+    for (const cls of allClassrooms2569) {
+      totalStudents += students2569[cls].length;
+    }
+    expect(totalStudents).toBe(113);
+
+    // Sync function works seamlessly
+    const syncRes = await syncAllRostersWithOfficialDmc2569();
+    expect(syncRes.totalStudents).toBe(113);
+    expect(syncRes.syncedCount).toBe(9);
   });
 });

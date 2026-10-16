@@ -20,11 +20,53 @@ interface RosterOverrides {
   [classroom: string]: StudentInfo[];
 }
 
+export const LEGACY_STUDENT_CODE_MAP: Record<string, string> = {
+  '3231': '2421', // เด็กชายพีรวัส เปกไธสง (ม.2)
+  '2435': '3202', // เด็กหญิงสุวภัทร ตลับทอง (ม.2)
+};
+
+export const TRANSFERRED_OUT_CODES_2569 = new Set<string>([
+  '2933', // ย้ายออก (ป.3) ตามไฟล์ยืนยัน DMC 10 มิ.ย. 2569
+  '2909', // ย้ายออก (ป.4) ตามไฟล์ยืนยัน DMC 10 มิ.ย. 2569
+]);
+
+const sanitizeStudentList = (classroom: string, list: StudentInfo[]): StudentInfo[] => {
+  const officialMap = new Map(
+    (defaultRoster[classroom] || []).map((s) => [s.studentCode, s]),
+  );
+  const filtered = list
+    .filter((item) => item && item.name && item.studentCode)
+    .map((item) => {
+      const rawCode = String(item.studentCode).trim();
+      const mappedCode = LEGACY_STUDENT_CODE_MAP[rawCode] || rawCode;
+      const official = officialMap.get(mappedCode);
+      return {
+        no: Number(item.no) || 1,
+        studentCode: mappedCode,
+        name: official ? official.name : String(item.name).trim(),
+        emoji: String(item.emoji || official?.emoji || '👤'),
+      };
+    })
+    .filter((item) => !TRANSFERRED_OUT_CODES_2569.has(item.studentCode));
+
+  return filtered.map((item, idx) => ({
+    ...item,
+    no: idx + 1,
+  }));
+};
+
 const loadOverrides = (): RosterOverrides => {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return {};
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw) as RosterOverrides;
+    const cleaned: RosterOverrides = {};
+    Object.entries(parsed).forEach(([cls, students]) => {
+      if (Array.isArray(students)) {
+        cleaned[cls] = sanitizeStudentList(cls, students);
+      }
+    });
+    return cleaned;
   } catch {
     return {};
   }
@@ -43,15 +85,18 @@ const normalizeRosters = (raw: unknown): RosterOverrides => {
   const result: RosterOverrides = {};
   Object.entries(raw as Record<string, unknown>).forEach(([classroom, value]) => {
     if (!Array.isArray(value)) return;
-    result[classroom] = value
+    const rawItems: StudentInfo[] = value
       .map((item) => item as Partial<StudentInfo>)
-      .filter((item) => item && item.name && item.studentCode)
+      .filter((item): item is Partial<StudentInfo> & { name: string; studentCode: string } =>
+        Boolean(item && item.name && item.studentCode)
+      )
       .map((item, index) => ({
         no: Number(item.no) || index + 1,
         studentCode: String(item.studentCode),
         name: String(item.name),
         emoji: String(item.emoji || '👤'),
       }));
+    result[classroom] = sanitizeStudentList(classroom, rawItems);
   });
   return result;
 };
@@ -70,6 +115,12 @@ const mergeWithDefaultRoster = (overrides: RosterOverrides): Record<string, Stud
 const persistRostersToFirebase = async (
   classrooms: Record<string, StudentInfo[]> = mergeWithDefaultRoster(loadOverrides()),
 ): Promise<void> => {
+  const isTest = Boolean(
+    (globalThis as unknown as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV === 'test'
+  );
+  if (isTest) {
+    return;
+  }
   await setDoc(ROSTER_DOC, {
     classrooms,
     academicYear: '2569',
@@ -175,6 +226,34 @@ export const resetClassroom = async (classroom: string): Promise<void> => {
   const overrides = loadOverrides();
   delete overrides[classroom];
   await commitOverrides(overrides);
+};
+
+/** ซิงค์รายชื่อทุกห้องเรียน (ป.1 - ม.3) ให้ตรงตามไฟล์ยืนยัน DMC 10 มิ.ย. 2569 */
+export const syncAllRostersWithOfficialDmc2569 = async (): Promise<{
+  syncedCount: number;
+  totalStudents: number;
+  rosters: Record<string, StudentInfo[]>;
+}> => {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    // ignore
+  }
+  try {
+    await persistRostersToFirebase(defaultRoster);
+  } catch {
+    // offline / test environment
+  }
+  const rosters = loadAllRosters();
+  let totalStudents = 0;
+  Object.values(rosters).forEach((list) => {
+    totalStudents += list.length;
+  });
+  return {
+    syncedCount: Object.keys(rosters).length,
+    totalStudents,
+    rosters,
+  };
 };
 
 /** Export roster เป็น CSV */

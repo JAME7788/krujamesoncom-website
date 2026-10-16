@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   FileSpreadsheet, Download, Printer, Users,
-  BarChart3, FileText, X, Layers, Award
+  BarChart3, FileText, X, Layers, Award, RefreshCw
 } from 'lucide-react';
 import {
   getClassroomExportSummary,
@@ -14,7 +14,10 @@ import {
 import {
   downloadClassroomPp5Docx,
   downloadClassroomPp5CompleteExcel,
+  downloadClassroomPp6Excel,
+  downloadClassroomPp6Docx,
 } from '../services/pp5CompleteGeneratorService';
+import { syncAllRostersWithOfficialDmc2569 } from '../services/rosterService';
 import { allClassrooms2569 } from '../data/students2569';
 import { getSubjectsForClassroom, getGradingPolicy, type Subject } from '../services/gradeService';
 import { OfficialPp5PrintLayout } from './OfficialPp5PrintLayout';
@@ -38,6 +41,7 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
   const [selectedSubject, setSelectedSubject] = useState<Subject>(initialSubject);
   const [printMode, setPrintMode] = useState<'none' | 'pp5' | 'slips'>('none');
   const [selectedStudentForSlip, setSelectedStudentForSlip] = useState<string | undefined>(undefined);
+  const [rosterVersion, setRosterVersion] = useState<number>(0);
   const toast = useToast();
   const weights = getGradingPolicy(selectedClassroom);
 
@@ -52,7 +56,7 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
 
   const summary: ClassroomExportSummary = useMemo(() => {
     return getClassroomExportSummary(selectedClassroom, activeSubject);
-  }, [selectedClassroom, activeSubject]);
+  }, [selectedClassroom, activeSubject, rosterVersion]);
 
   if (!isOpen) return null;
 
@@ -79,6 +83,15 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
     );
   }
 
+  const handleSyncDmcRoster = async () => {
+    const result = await syncAllRostersWithOfficialDmc2569();
+    setRosterVersion((v) => v + 1);
+    toast.show(
+      `ซิงค์รายชื่อตามไฟล์ยืนยัน DMC (10 มิ.ย. 69) สำเร็จ: อัปเดต ${result.syncedCount} ห้อง (${result.totalStudents} คน)`,
+      'success'
+    );
+  };
+
   const handleDownloadCompleteDocx = () => {
     downloadClassroomPp5Docx(summary);
     toast.show(`ดาวน์โหลดเล่มรายงาน Word ปพ.5 (${selectedClassroom}) สำเร็จ`, 'success');
@@ -86,7 +99,17 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
 
   const handleDownloadCompleteExcel = () => {
     downloadClassroomPp5CompleteExcel(summary);
-    toast.show(`ดาวน์โหลดเล่ม Excel ปพ.5 สมบูรณ์ 7 ชีต (${selectedClassroom}) สำเร็จ`, 'success');
+    toast.show(`ดาวน์โหลดเล่ม Excel ปพ.5 สมบูรณ์ 9 ชีต (${selectedClassroom}) สำเร็จ`, 'success');
+  };
+
+  const handleDownloadPp6Excel = () => {
+    downloadClassroomPp6Excel(summary);
+    toast.show(`ดาวน์โหลด Excel ปพ.6 4 ชีต (${selectedClassroom}) สำเร็จ`, 'success');
+  };
+
+  const handleDownloadPp6Docx = () => {
+    downloadClassroomPp6Docx(summary);
+    toast.show(`ดาวน์โหลด Word ปพ.6 (${selectedClassroom}) สำเร็จ`, 'success');
   };
 
   const handleDownloadExcel = () => {
@@ -101,7 +124,7 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
 
   const handleDownloadMaster = () => {
     downloadMasterCsvFile();
-    toast.show('ดาวน์โหลด Master CSV รวมทุกห้อง (111 คน) สำเร็จ', 'success');
+    toast.show('ดาวน์โหลด Master CSV รวมทุกห้อง (109 คน) สำเร็จ', 'success');
   };
 
   const handleDownloadSchoolMis = () => {
@@ -123,8 +146,8 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
               <FileSpreadsheet size={24} />
             </div>
             <div>
-              <h2>ศูนย์ส่งออกเอกสาร ปพ.5 และผลการเรียน</h2>
-              <p>โรงเรียนบ้านคลองมดแดง • ส่งฝ่ายวิชาการ / ลงระบบทะเบียน / พิมพ์แจกผู้ปกครอง</p>
+              <h2>ศูนย์ส่งออกเอกสาร ปพ.5 - ปพ.6 และผลการเรียน</h2>
+              <p>โรงเรียนบ้านคลองมดแดง • ส่งฝ่ายวิชาการ / ลงระบบทะเบียน / พิมพ์แจกผู้ปกครอง (DMC 10 มิ.ย. 2569)</p>
             </div>
           </div>
           <button type="button" className="btn-close-modal" onClick={onClose}>
@@ -167,15 +190,35 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
               </div>
             </div>
           )}
+
+          <div className="control-group" style={{ marginLeft: 'auto' }}>
+            <button
+              type="button"
+              className="chip-btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#ecfdf5',
+                color: '#065f46',
+                borderColor: '#a7f3d0',
+                fontWeight: 600,
+              }}
+              onClick={handleSyncDmcRoster}
+              title="รีเซ็ตและซิงค์รายชื่อนักเรียนทุกห้องให้ตรงกับไฟล์ยืนยัน DMC 10 มิ.ย. 2569 ล่าสุด"
+            >
+              <RefreshCw size={14} /> ซิงค์รายชื่อยืนยัน DMC (10 มิ.ย. 69)
+            </button>
+          </div>
         </div>
 
         {/* Hero Banner: เล่ม ปพ.5 ฉบับสมบูรณ์ (Excel & Word) */}
         <div className="official-complete-banner">
           <div className="banner-left">
             <div className="banner-badge"><Award size={15} /> มาตรฐาน สพฐ. 2569</div>
-            <h3>เล่มรายงาน ปพ.5 ฉบับสมบูรณ์ (Excel &amp; Word)</h3>
+            <h3>เล่มรายงาน ปพ.5 ฉบับสมบูรณ์ (Excel 9 ชีต &amp; Word)</h3>
             <p>
-              ดึงข้อมูลสดจาก Gradebook + เช็คชื่อ 20 สัปดาห์ ครบ 7 หมวด: หน้าปก (สูตร COUNTIF), ข้อมูลนักเรียน (เลข ปชช. 13 หลัก, วันเกิด, บิดา/มารดา), ตัวชี้วัด, เวลาเรียน, สรุปคะแนน K/P/A, คุณลักษณะ, อ่านคิดเขียน และลายมือชื่อ 4 ฝ่าย
+              ดึงข้อมูลสดจาก Gradebook + เช็คชื่อ 20 สัปดาห์ ครบ 9 หมวดตามแบบ สพฐ.: หน้าปก, ข้อมูลเกี่ยวกับนักเรียน (เลข ปชช. 13 หลัก, วันเกิด, บิดา/มารดา), เวลาเรียน, สรุปเวลา, สรุปคะแนน K/P/A, คุณลักษณะ, อ่านคิด, ตัวชี้วัด และปกหลัง
             </p>
           </div>
           <div className="banner-actions">
@@ -183,7 +226,7 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
               <FileText size={18} /> ดาวน์โหลดเล่ม Word (.doc/.docx)
             </button>
             <button type="button" className="btn-banner-action btn-banner-excel" onClick={handleDownloadCompleteExcel}>
-              <FileSpreadsheet size={18} /> ดาวน์โหลดเล่ม Excel (7 ชีต สพฐ.)
+              <FileSpreadsheet size={18} /> ดาวน์โหลดเล่ม Excel (9 ชีต สพฐ.)
             </button>
           </div>
         </div>
@@ -221,16 +264,34 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
             </button>
           </div>
 
-          {/* Card 3: Grade Slips */}
+          {/* Card 3: Grade Slips & PP6 */}
           <div className="action-card slip-card-action">
             <div className="action-card-top">
               <div className="action-icon slip-icon"><FileText size={22} /></div>
-              <span className="card-badge">แจกผู้ปกครอง</span>
+              <span className="card-badge">ปพ.6 ทางการ</span>
             </div>
-            <h3>ใบแจ้งผลการเรียน (ปพ.6)</h3>
-            <p>ใบรายงานผลการเรียนรายบุคคลแบบมีรอยปรุตัดกระดาษ (2 คน/แผ่น A4) สำหรับแจกผู้ปกครองในวันประชุม</p>
+            <h3>รายงานผล ปพ.6 รายบุคคล</h3>
+            <p>แบบฟอร์ม ปพ.6 สพฐ. ครบ 4 หมวด หรือใบเกรดย่อ 2 คน/แผ่น พร้อมออก Excel (4 ชีต) และ Word (.doc)</p>
+            <div className="action-btn-group" style={{ marginBottom: '6px' }}>
+              <button
+                type="button"
+                className="btn-action btn-excel"
+                onClick={handleDownloadPp6Excel}
+                title="ดาวน์โหลด Excel ปพ.6 (4 ชีต: กำหนดข้อมูล, บันทึกคะแนน, คุณลักษณะ, รายงาน ปพ.6)"
+              >
+                <FileSpreadsheet size={15} /> โหลด Excel ปพ.6
+              </button>
+              <button
+                type="button"
+                className="btn-action btn-outline"
+                onClick={handleDownloadPp6Docx}
+                title="ดาวน์โหลด Word ปพ.6 ทั้งห้อง"
+              >
+                <FileText size={15} /> โหลด Word
+              </button>
+            </div>
             <button type="button" className="btn-action btn-slip" onClick={() => setPrintMode('slips')}>
-              <Users size={16} /> พิมพ์ใบเกรดทั้งห้อง ({summary.stats.totalStudents} คน)
+              <Users size={16} /> เปิดหน้าพิมพ์ ปพ.6 ({summary.stats.totalStudents} คน)
             </button>
           </div>
 
@@ -241,7 +302,7 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
               <span className="card-badge">รวม 9 ห้อง</span>
             </div>
             <h3>Master รวมทุกห้อง ป.1-ม.3</h3>
-            <p>รวมข้อมูลคะแนนนักเรียนทั้ง 111 คนในไฟล์เดียว สำหรับส่งต่อให้ฝ่ายวิชาการนำไปรวมระบบกลาง</p>
+            <p>รวมข้อมูลคะแนนนักเรียนทั้ง 109 คนในไฟล์เดียว สำหรับส่งต่อให้ฝ่ายวิชาการนำไปรวมระบบกลาง</p>
             <div className="action-btn-group">
               <button type="button" className="btn-action btn-master" onClick={handleDownloadMaster}>
                 <Download size={16} /> โหลด Master รวมทุกห้อง

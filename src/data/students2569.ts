@@ -83,7 +83,7 @@ export const students2569: Record<string, StudentInfo[]> = {
     {
       "no": 1,
       "studentCode": "2987",
-      "name": "เด็กชายธนาทิป ภู่ระหงษ์",
+      "name": "เด็กชายธนาธิป ภู่ระหงษ์",
       "emoji": "👦"
     },
     {
@@ -180,8 +180,8 @@ export const students2569: Record<string, StudentInfo[]> = {
     },
     {
       "no": 8,
-      "studentCode": "2933",
-      "name": "เด็กหญิงชญานุช วิจิตรปัญญา",
+      "studentCode": "2932",
+      "name": "เด็กหญิงจิราพัชร หนูอิ่ม",
       "emoji": "👧"
     },
     {
@@ -207,12 +207,6 @@ export const students2569: Record<string, StudentInfo[]> = {
       "studentCode": "2921",
       "name": "เด็กหญิงพสิกา เฟื่องจันทร์",
       "emoji": "👧"
-    },
-    {
-      "no": 13,
-      "studentCode": "2932",
-      "name": "เด็กหญิงจิราพัชร  หนูอิ่ม",
-      "emoji": "🧒"
     }
   ],
   "ป.4": [
@@ -262,12 +256,6 @@ export const students2569: Record<string, StudentInfo[]> = {
       "no": 8,
       "studentCode": "2995",
       "name": "เด็กหญิงยูบิน รัต",
-      "emoji": "👧"
-    },
-    {
-      "no": 9,
-      "studentCode": "2909",
-      "name": "เด็กหญิงปภาวี จันทมาด",
       "emoji": "👧"
     }
   ],
@@ -562,7 +550,7 @@ export const students2569: Record<string, StudentInfo[]> = {
     },
     {
       "no": 9,
-      "studentCode": "3231",
+      "studentCode": "2421",
       "name": "เด็กชายพีรวัส เปกไธสง",
       "emoji": "👦"
     },
@@ -592,7 +580,7 @@ export const students2569: Record<string, StudentInfo[]> = {
     },
     {
       "no": 14,
-      "studentCode": "2435",
+      "studentCode": "3202",
       "name": "เด็กหญิงสุวภัทร ตลับทอง",
       "emoji": "👧"
     }
@@ -643,7 +631,7 @@ export const students2569: Record<string, StudentInfo[]> = {
     {
       "no": 8,
       "studentCode": "2410",
-      "name": "เด็กชายมนชิต รักกลิ่น",
+      "name": "นายมนชิต รักกลิ่น",
       "emoji": "👦"
     },
     {

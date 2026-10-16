@@ -966,7 +966,576 @@ export const generatePp5CompleteSpreadsheetXml = (summary: ClassroomExportSummar
    }).join('')}
   </Table>
  </Worksheet>
+
+ <!-- ============================================================== -->
+ <!-- SHEET 8: สรุปเวลา (ตามฟอร์ม ปพ.5 โรงเรียนบ้านคลองมดแดง)        -->
+ <!-- ============================================================== -->
+ <Worksheet ss:Name="สรุปเวลา">
+  <Table ss:DefaultColumnWidth="65" ss:DefaultRowHeight="20">
+   <Column ss:Index="1" ss:Width="45"/>
+   <Column ss:Index="2" ss:Width="70"/>
+   <Column ss:Index="3" ss:Width="180"/>
+   <Column ss:Index="4" ss:Width="65"/>
+   <Column ss:Index="5" ss:Width="65"/>
+   <Column ss:Index="6" ss:Width="65"/>
+   <Column ss:Index="7" ss:Width="75"/>
+   <Column ss:Index="8" ss:Width="75"/>
+   <Column ss:Index="9" ss:Width="80"/>
+
+   <Row ss:Height="26">
+    <Cell ss:MergeAcross="8" ss:StyleID="HeaderTitle"><Data ss:Type="String">สรุปผลเวลามาเรียน วิชา ${escapeXml(summary.subjectTitle)} รหัสวิชา ${escapeXml(summary.subjectCode)}</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="8" ss:StyleID="HeaderSub"><Data ss:Type="String">ชั้น ${escapeXml(summary.classroom)} ภาคเรียนที่ ${escapeXml(summary.term)} ปีการศึกษา ${escapeXml(summary.academicYear)} • เวลาเรียนทั้งหมด ${summary.totalHours} คาบ</Data></Cell>
+   </Row>
+   <Row ss:Height="12"><Cell ss:MergeAcross="8"><Data ss:Type="String"></Data></Cell></Row>
+
+   <Row ss:Height="24">
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">เลขที่</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">เลขประจำตัว</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">ชื่อ - สกุล</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">ป่วย</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">ลา</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">ขาด</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">มาเรียน</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">ร้อยละ (%)</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">ผลการประเมิน</Data></Cell>
+   </Row>
+
+   ${summary.rows.map((r) => `
+   <Row ss:Height="20">
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="Number">${r.studentNo}</Data></Cell>
+    <Cell ss:StyleID="CellText"><Data ss:Type="String">${escapeXml(r.studentCode)}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(r.fullName)}</Data></Cell>
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="Number">${r.attendanceSick}</Data></Cell>
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="Number">${r.attendanceAbsent}</Data></Cell>
+    <Cell ss:StyleID="CellBold"><Data ss:Type="Number">${r.attendancePresent}</Data></Cell>
+    <Cell ss:StyleID="CellBold"><Data ss:Type="Number">${r.attendancePercentage}</Data></Cell>
+    <Cell ss:StyleID="${r.attendanceStatus === 'ผ่าน' ? 'CellGradePass' : 'CellGradeFail'}"><Data ss:Type="String">${r.attendanceStatus}</Data></Cell>
+   </Row>
+   `).join('')}
+  </Table>
+ </Worksheet>
+
+ <!-- ============================================================== -->
+ <!-- SHEET 9: ปกหลัง (คำชี้แจงการจัดทำ ปพ.5 มาตรฐาน สพฐ.)           -->
+ <!-- ============================================================== -->
+ <Worksheet ss:Name="ปกหลัง">
+  <Table ss:DefaultColumnWidth="85" ss:DefaultRowHeight="22">
+   <Column ss:Index="1" ss:Width="150"/>
+   <Column ss:Index="2" ss:Width="180"/>
+   <Column ss:Index="3" ss:Width="260"/>
+
+   <Row ss:Height="28">
+    <Cell ss:MergeAcross="2" ss:StyleID="HeaderTitle"><Data ss:Type="String">คำชี้แจงการจัดทำแบบบันทึกผลการเรียนประจำรายวิชา (ปพ.5)</Data></Cell>
+   </Row>
+   <Row ss:Height="22"><Cell ss:MergeAcross="2" ss:StyleID="CellLeft"><Data ss:Type="String">1. บันทึกข้อมูลเกี่ยวกับตัวนักเรียนตามทะเบียนนักเรียน (DMC โรงเรียนบ้านคลองมดแดง)</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:MergeAcross="2" ss:StyleID="CellLeft"><Data ss:Type="String">2. บันทึกการตรวจสอบการผ่านผลการเรียนตามตัวชี้วัด/ผลการเรียนรู้ ของนักเรียนรายบุคคล</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:MergeAcross="2" ss:StyleID="CellLeft"><Data ss:Type="String">3. บันทึกผลการประเมินระหว่างเรียนและปลายภาค/ปลายปี รวม 100 คะแนน</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:MergeAcross="2" ss:StyleID="CellLeft"><Data ss:Type="String">4. เกณฑ์การตัดสินระดับผลการเรียน 8 ระดับ ตามหลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน พ.ศ. 2551 (ฉบับปรับปรุง 2560)</Data></Cell></Row>
+   <Row ss:Height="14"><Cell ss:MergeAcross="2"><Data ss:Type="String"></Data></Cell></Row>
+
+   <Row ss:Height="24">
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">ระดับผลการเรียน</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">ช่วงคะแนนร้อยละ</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">ความหมายผลการเรียน</Data></Cell>
+   </Row>
+   <Row ss:Height="20"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ระดับ 4</Data></Cell><Cell ss:StyleID="CellBorder"><Data ss:Type="String">80 - 100</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">ผลการเรียนดีเยี่ยม</Data></Cell></Row>
+   <Row ss:Height="20"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ระดับ 3.5</Data></Cell><Cell ss:StyleID="CellBorder"><Data ss:Type="String">75 - 79</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">ผลการเรียนดีมาก</Data></Cell></Row>
+   <Row ss:Height="20"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ระดับ 3</Data></Cell><Cell ss:StyleID="CellBorder"><Data ss:Type="String">70 - 74</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">ผลการเรียนดี</Data></Cell></Row>
+   <Row ss:Height="20"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ระดับ 2.5</Data></Cell><Cell ss:StyleID="CellBorder"><Data ss:Type="String">65 - 69</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">ผลการเรียนค่อนข้างดี</Data></Cell></Row>
+   <Row ss:Height="20"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ระดับ 2</Data></Cell><Cell ss:StyleID="CellBorder"><Data ss:Type="String">60 - 64</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">ผลการเรียนปานกลาง</Data></Cell></Row>
+   <Row ss:Height="20"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ระดับ 1.5</Data></Cell><Cell ss:StyleID="CellBorder"><Data ss:Type="String">55 - 59</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">ผลการเรียนพอใช้</Data></Cell></Row>
+   <Row ss:Height="20"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ระดับ 1</Data></Cell><Cell ss:StyleID="CellBorder"><Data ss:Type="String">50 - 54</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">ผลการเรียนผ่านเกณฑ์ขั้นต่ำ</Data></Cell></Row>
+   <Row ss:Height="20"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ระดับ 0</Data></Cell><Cell ss:StyleID="CellBorder"><Data ss:Type="String">0 - 49</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">ผลการเรียนต่ำกว่าเกณฑ์ขั้นต่ำ</Data></Cell></Row>
+  </Table>
+ </Worksheet>
 </Workbook>
+  `.trim();
+};
+
+/**
+ * 3. สร้างไฟล์สเปรดชีต Excel แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายบุคคล (ปพ.6)
+ * ตามโครงสร้างไฟล์ ปพ.6 ประถม.xlsx และ ปพ.6 มัธยม.xlsx
+ * ประกอบด้วย 4 ชีต:
+ * - กำหนดข้อมูล
+ * - บันทึกข้อมูล คะแนน
+ * - บันทึก คุณลักษณะ อ่านคิด กิจกรรม
+ * - รายงาน ปพ.6
+ */
+export const generatePp6CompleteSpreadsheetXml = (summary: ClassroomExportSummary): string => {
+  const isPrimary = summary.classroom.startsWith('ป.');
+
+  return `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>${escapeXml(summary.teacherName)}</Author>
+  <Title>ปพ.6 ${escapeXml(summary.classroom)} ${escapeXml(summary.subjectTitle)}</Title>
+  <Company>${escapeXml(summary.schoolName)}</Company>
+  <Created>${new Date().toISOString()}</Created>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="14"/>
+  </Style>
+  <Style ss:ID="HeaderTitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="18" ss:Bold="1" ss:Color="#0F172A"/>
+  </Style>
+  <Style ss:ID="HeaderSub">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="14" ss:Color="#334155"/>
+  </Style>
+  <Style ss:ID="ThYellow">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="13" ss:Bold="1"/>
+   <Interior ss:Color="#FEF08A" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="ThBlue">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="13" ss:Bold="1"/>
+   <Interior ss:Color="#E0E7FF" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="CellBorder">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="13"/>
+  </Style>
+  <Style ss:ID="CellBold">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="13" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="CellLeft">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="13"/>
+  </Style>
+  <Style ss:ID="CellText">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="13"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="CellGradePass">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="13" ss:Bold="1" ss:Color="#15803D"/>
+   <Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="CellGradeFail">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="TH SarabunPSK" ss:Size="13" ss:Bold="1" ss:Color="#B91C1C"/>
+   <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+
+ <!-- SHEET 1: กำหนดข้อมูล -->
+ <Worksheet ss:Name="กำหนดข้อมูล">
+  <Table ss:DefaultColumnWidth="120" ss:DefaultRowHeight="22">
+   <Column ss:Index="1" ss:Width="150"/>
+   <Column ss:Index="2" ss:Width="320"/>
+   <Row ss:Height="28">
+    <Cell ss:MergeAcross="1" ss:StyleID="HeaderTitle"><Data ss:Type="String">ข้อมูลพื้นฐานสำหรับออกรายงาน ปพ.6 (${escapeXml(summary.classroom)})</Data></Cell>
+   </Row>
+   <Row ss:Height="22"><Cell ss:StyleID="ThBlue"><Data ss:Type="String">รายการ</Data></Cell><Cell ss:StyleID="ThBlue"><Data ss:Type="String">ข้อมูล</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:StyleID="CellBold"><Data ss:Type="String">โรงเรียน</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(summary.schoolName)}</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:StyleID="CellBold"><Data ss:Type="String">สังกัด</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(summary.affiliation)}</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ผู้อำนวยการโรงเรียน</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(summary.directorName)}</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ครูประจำชั้น</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(summary.advisorName)}</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ครูผู้สอน</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(summary.teacherName)}</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ระดับชั้น</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(summary.classroom)}</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:StyleID="CellBold"><Data ss:Type="String">ภาคเรียนที่ / ปีการศึกษา</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(summary.term)} / ${escapeXml(summary.academicYear)}</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:StyleID="CellBold"><Data ss:Type="String">รายวิชา</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(summary.subjectTitle)} (${escapeXml(summary.subjectCode)})</Data></Cell></Row>
+   <Row ss:Height="22"><Cell ss:StyleID="CellBold"><Data ss:Type="String">จำนวนหน่วยกิต / เวลาเรียน</Data></Cell><Cell ss:StyleID="CellLeft"><Data ss:Type="String">${summary.credit} หน่วยกิต (${summary.totalHours} ชั่วโมง)</Data></Cell></Row>
+  </Table>
+ </Worksheet>
+
+ <!-- SHEET 2: บันทึกข้อมูล คะแนน -->
+ <Worksheet ss:Name="บันทึกข้อมูล คะแนน">
+  <Table ss:DefaultColumnWidth="70" ss:DefaultRowHeight="20">
+   <Column ss:Index="1" ss:Width="45"/>
+   <Column ss:Index="2" ss:Width="75"/>
+   <Column ss:Index="3" ss:Width="120"/>
+   <Column ss:Index="4" ss:Width="185"/>
+   <Column ss:Index="5" ss:Width="75"/>
+   ${!isPrimary ? '<Column ss:Index="6" ss:Width="75"/>' : ''}
+   <Column ss:Index="${!isPrimary ? 7 : 6}" ss:Width="75"/>
+   <Column ss:Index="${!isPrimary ? 8 : 7}" ss:Width="80"/>
+   <Column ss:Index="${!isPrimary ? 9 : 8}" ss:Width="70"/>
+   <Column ss:Index="${!isPrimary ? 10 : 9}" ss:Width="80"/>
+
+   <Row ss:Height="26">
+    <Cell ss:MergeAcross="${!isPrimary ? 9 : 8}" ss:StyleID="HeaderTitle"><Data ss:Type="String">บันทึกผลการพัฒนาคุณภาพผู้เรียนรายบุคคล (ปพ.6) — ชั้น ${escapeXml(summary.classroom)}</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="${!isPrimary ? 9 : 8}" ss:StyleID="HeaderSub"><Data ss:Type="String">${escapeXml(summary.schoolName)} • วิชา ${escapeXml(summary.subjectTitle)} (${escapeXml(summary.subjectCode)}) • ภาคเรียนที่ ${escapeXml(summary.term)}/${escapeXml(summary.academicYear)}</Data></Cell>
+   </Row>
+   <Row ss:Height="12"><Cell ss:MergeAcross="${!isPrimary ? 9 : 8}"><Data ss:Type="String"></Data></Cell></Row>
+
+   <Row ss:Height="24">
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">เลขที่</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">เลขประจำตัว</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">เลขบัตรประชาชน</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">ชื่อ-นามสกุล</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">คะแนนเก็บ</Data></Cell>
+    ${!isPrimary ? '<Cell ss:StyleID="ThBlue"><Data ss:Type="String">กลางภาค</Data></Cell>' : ''}
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">ปลายภาค</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">คะแนนรวม</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">ผลการเรียน</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">ผลตัดสิน</Data></Cell>
+   </Row>
+
+   ${summary.rows.map((r) => `
+   <Row ss:Height="20">
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="Number">${r.studentNo}</Data></Cell>
+    <Cell ss:StyleID="CellText"><Data ss:Type="String">${escapeXml(r.studentCode)}</Data></Cell>
+    <Cell ss:StyleID="CellText"><Data ss:Type="String">${escapeXml(r.citizenId || '-')}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(r.fullName)}</Data></Cell>
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="Number">${r.totalCollected}</Data></Cell>
+    ${!isPrimary ? `<Cell ss:StyleID="CellBorder"><Data ss:Type="${r.midtermExam === '' ? 'String' : 'Number'}">${r.midtermExam === '' ? '-' : r.midtermExam}</Data></Cell>` : ''}
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="${r.finalExam === '' ? 'String' : 'Number'}">${r.finalExam === '' ? '-' : r.finalExam}</Data></Cell>
+    <Cell ss:StyleID="CellBold"><Data ss:Type="Number">${r.totalScore}</Data></Cell>
+    <Cell ss:StyleID="${r.grade === '0' ? 'CellGradeFail' : 'CellGradePass'}"><Data ss:Type="String">${escapeXml(r.grade)}</Data></Cell>
+    <Cell ss:StyleID="${r.isPassed ? 'CellGradePass' : 'CellGradeFail'}"><Data ss:Type="String">${escapeXml(r.evaluationText)}</Data></Cell>
+   </Row>
+   `).join('')}
+  </Table>
+ </Worksheet>
+
+ <!-- SHEET 3: บันทึก คุณลักษณะ อ่านคิด กิจกรร -->
+ <Worksheet ss:Name="บันทึก คุณลักษณะ อ่านคิด กิจกรร">
+  <Table ss:DefaultColumnWidth="85" ss:DefaultRowHeight="20">
+   <Column ss:Index="1" ss:Width="45"/>
+   <Column ss:Index="2" ss:Width="75"/>
+   <Column ss:Index="3" ss:Width="185"/>
+   <Column ss:Index="4" ss:Width="135"/>
+   <Column ss:Index="5" ss:Width="135"/>
+   <Column ss:Index="6" ss:Width="120"/>
+
+   <Row ss:Height="24">
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">เลขที่</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">เลขประจำตัว</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">ชื่อ-นามสกุล</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">คุณลักษณะอันพึงประสงค์ของสถานศึกษา</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">การอ่าน คิด วิเคราะห์และเขียน</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">กิจกรรมพัฒนาผู้เรียน</Data></Cell>
+   </Row>
+
+   ${summary.rows.map((r) => {
+     const charScore = r.characteristicsScore ?? 3;
+     const readScore = r.readingThinkingScore ?? 3;
+     const charLabel = charScore === 3 ? 'ดีเยี่ยม' : charScore === 2 ? 'ดี' : charScore === 1 ? 'ผ่าน' : 'ไม่ผ่าน';
+     const readLabel = readScore === 3 ? 'ดีเยี่ยม' : readScore === 2 ? 'ดี' : readScore === 1 ? 'ผ่าน' : 'ไม่ผ่าน';
+     return `
+   <Row ss:Height="20">
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="Number">${r.studentNo}</Data></Cell>
+    <Cell ss:StyleID="CellText"><Data ss:Type="String">${escapeXml(r.studentCode)}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(r.fullName)}</Data></Cell>
+    <Cell ss:StyleID="CellGradePass"><Data ss:Type="String">${charLabel}</Data></Cell>
+    <Cell ss:StyleID="CellGradePass"><Data ss:Type="String">${readLabel}</Data></Cell>
+    <Cell ss:StyleID="CellGradePass"><Data ss:Type="String">ผ่าน</Data></Cell>
+   </Row>
+     `;
+   }).join('')}
+  </Table>
+ </Worksheet>
+
+ <!-- SHEET 4: รายงาน ปพ.6 -->
+ <Worksheet ss:Name="รายงาน ปพ.6">
+  <Table ss:DefaultColumnWidth="85" ss:DefaultRowHeight="22">
+   <Column ss:Index="1" ss:Width="170"/>
+   <Column ss:Index="2" ss:Width="85"/>
+   <Column ss:Index="3" ss:Width="85"/>
+   <Column ss:Index="4" ss:Width="85"/>
+   <Column ss:Index="5" ss:Width="95"/>
+   <Column ss:Index="6" ss:Width="95"/>
+   <Column ss:Index="7" ss:Width="95"/>
+
+   ${summary.rows.map((r) => {
+     const charScore = r.characteristicsScore ?? 3;
+     const readScore = r.readingThinkingScore ?? 3;
+     const charLabel = charScore === 3 ? 'ดีเยี่ยม' : charScore === 2 ? 'ดี' : charScore === 1 ? 'ผ่าน' : 'ไม่ผ่าน';
+     const readLabel = readScore === 3 ? 'ดีเยี่ยม' : readScore === 2 ? 'ดี' : readScore === 1 ? 'ผ่าน' : 'ไม่ผ่าน';
+     return `
+   <Row ss:Height="26">
+    <Cell ss:MergeAcross="6" ss:StyleID="HeaderTitle"><Data ss:Type="String">แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายบุคคล (ปพ.6)</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="6" ss:StyleID="HeaderSub"><Data ss:Type="String">${escapeXml(summary.schoolName)} • ${escapeXml(summary.affiliation)}</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="6" ss:StyleID="CellBold"><Data ss:Type="String">เลขที่ ${r.studentNo} | เลขประจำตัว ${escapeXml(r.studentCode)} | ชื่อ-สกุล ${escapeXml(r.fullName)} | ชั้น ${escapeXml(summary.classroom)} | ภาคเรียนที่ ${escapeXml(summary.term)}/${escapeXml(summary.academicYear)}</Data></Cell>
+   </Row>
+   <Row ss:Height="24">
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">รายวิชา</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">ประเภท</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">เวลาเรียน (ชม.)</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">หน่วยกิต</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">คะแนนเก็บ</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">คะแนนรวม</Data></Cell>
+    <Cell ss:StyleID="ThYellow"><Data ss:Type="String">ผลการเรียน</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(summary.subjectTitle)} (${escapeXml(summary.subjectCode)})</Data></Cell>
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="String">พื้นฐาน</Data></Cell>
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="Number">${summary.totalHours}</Data></Cell>
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="Number">${summary.credit}</Data></Cell>
+    <Cell ss:StyleID="CellBorder"><Data ss:Type="Number">${r.totalCollected}</Data></Cell>
+    <Cell ss:StyleID="CellBold"><Data ss:Type="Number">${r.totalScore}</Data></Cell>
+    <Cell ss:StyleID="CellGradePass"><Data ss:Type="String">${escapeXml(r.grade)}</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="2" ss:StyleID="CellLeft"><Data ss:Type="String">คุณลักษณะอันพึงประสงค์: ${charLabel}</Data></Cell>
+    <Cell ss:MergeAcross="1" ss:StyleID="CellLeft"><Data ss:Type="String">อ่าน คิดวิเคราะห์ เขียน: ${readLabel}</Data></Cell>
+    <Cell ss:MergeAcross="1" ss:StyleID="CellLeft"><Data ss:Type="String">เวลาเรียน: ${r.attendancePresent}/${r.attendanceTotalHours} ชม. (${r.attendancePercentage}%)</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="2" ss:StyleID="CellLeft"><Data ss:Type="String">ครูประจำชั้น/ผู้สอน: ${escapeXml(summary.teacherName)}</Data></Cell>
+    <Cell ss:MergeAcross="1" ss:StyleID="CellLeft"><Data ss:Type="String">ผอ.โรงเรียน: ${escapeXml(summary.directorName)}</Data></Cell>
+    <Cell ss:MergeAcross="1" ss:StyleID="CellLeft"><Data ss:Type="String">ลงชื่อ..........................................ผู้ปกครอง</Data></Cell>
+   </Row>
+   <Row ss:Height="18"><Cell ss:MergeAcross="6"><Data ss:Type="String"></Data></Cell></Row>
+     `;
+   }).join('')}
+  </Table>
+ </Worksheet>
+</Workbook>
+  `.trim();
+};
+
+/**
+ * 4. สร้างเอกสาร Word (.doc) สำหรับ ปพ.6 (แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายบุคคล)
+ */
+export const generatePp6CompleteDocxHtml = (
+  summary: ClassroomExportSummary,
+  selectedStudentCode?: string,
+): string => {
+  const isPrimary = summary.classroom.startsWith('ป.');
+  const rows = selectedStudentCode
+    ? summary.rows.filter((r) => r.studentCode === selectedStudentCode)
+    : summary.rows;
+
+  return `
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>รายงาน ปพ.6_${summary.classroom}_${summary.subjectTitle}</title>
+<style>
+@page {
+  size: 21.0cm 29.7cm;
+  margin: 1.8cm 1.8cm 1.8cm 1.8cm;
+}
+body {
+  font-family: 'TH SarabunPSK', 'TH Sarabun New', serif;
+  font-size: 15pt;
+  color: #000000;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6pt;
+  margin-bottom: 6pt;
+  font-size: 14pt;
+}
+th, td {
+  border: 1px solid #000000;
+  padding: 4pt 6pt;
+  vertical-align: middle;
+}
+th {
+  background-color: #f1f5f9;
+  font-weight: bold;
+  text-align: center;
+}
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.bold { font-weight: bold; }
+.page-break { page-break-before: always; }
+.no-border td, table.no-border { border: none !important; }
+</style>
+</head>
+<body>
+${rows.map((r, idx) => {
+  const charScore = r.characteristicsScore ?? 3;
+  const readScore = r.readingThinkingScore ?? 3;
+  const compScore = r.competencyScore ?? 3;
+  const charLabel = charScore === 3 ? 'ดีเยี่ยม (3)' : charScore === 2 ? 'ดี (2)' : charScore === 1 ? 'ผ่าน (1)' : 'ไม่ผ่าน (0)';
+  const readLabel = readScore === 3 ? 'ดีเยี่ยม (3)' : readScore === 2 ? 'ดี (2)' : readScore === 1 ? 'ผ่าน (1)' : 'ไม่ผ่าน (0)';
+  const compLabel = compScore === 3 ? 'ดีเยี่ยม (3)' : compScore === 2 ? 'ดี (2)' : compScore === 1 ? 'ผ่าน (1)' : 'ไม่ผ่าน (0)';
+  return `
+  ${idx > 0 ? '<div class="page-break"></div>' : ''}
+  <div style="border: 1.5pt solid #0f172a; padding: 14pt;">
+    <p class="text-center bold" style="font-size: 20pt;">แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายบุคคล (ปพ.6)</p>
+    <p class="text-center bold" style="font-size: 16pt;">${escapeHtml(summary.schoolName)}</p>
+    <p class="text-center" style="font-size: 14pt;">${escapeHtml(summary.affiliation)}</p>
+    <p class="text-center bold" style="font-size: 15pt; margin-top: 4pt;">ระดับชั้น ${escapeHtml(summary.classroom)} • ภาคเรียนที่ ${escapeHtml(summary.term)} ปีการศึกษา ${escapeHtml(summary.academicYear)}</p>
+
+    <table style="margin-top: 8pt;">
+      <tr>
+        <td style="width: 18%;"><strong>เลขที่:</strong> ${r.studentNo}</td>
+        <td style="width: 24%;"><strong>เลขประจำตัว:</strong> ${escapeHtml(r.studentCode)}</td>
+        <td style="width: 58%;"><strong>ชื่อ-นามสกุล:</strong> ${escapeHtml(r.fullName)}</td>
+      </tr>
+      <tr>
+        <td colspan="2"><strong>เลขประจำตัวประชาชน:</strong> ${escapeHtml(r.citizenId || '-')}</td>
+        <td><strong>บิดา/มารดา:</strong> ${escapeHtml(r.fatherName || '-')} / ${escapeHtml(r.motherName || '-')}</td>
+      </tr>
+    </table>
+
+    <p class="bold" style="margin-top: 8pt;">๑. ผลการประเมินรายวิชาและตัวชี้วัด</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 28%;">รหัสและชื่อรายวิชา</th>
+          <th style="width: 10%;">ประเภท</th>
+          <th style="width: 10%;">เวลาเรียน<br>(ชม.)</th>
+          <th style="width: 10%;">หน่วยกิต</th>
+          <th style="width: 11%;">คะแนนเก็บ</th>
+          ${!isPrimary ? '<th style="width: 10%;">กลางภาค</th>' : ''}
+          <th style="width: 10%;">ปลายภาค</th>
+          <th style="width: 11%;">คะแนนรวม</th>
+          <th style="width: 10%;">ผลการเรียน</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-left bold">${escapeHtml(summary.subjectTitle)} (${escapeHtml(summary.subjectCode)})</td>
+          <td class="text-center">พื้นฐาน</td>
+          <td class="text-center">${summary.totalHours}</td>
+          <td class="text-center">${summary.credit}</td>
+          <td class="text-center">${r.totalCollected}</td>
+          ${!isPrimary ? `<td class="text-center">${r.midtermExam === '' ? '-' : r.midtermExam}</td>` : ''}
+          <td class="text-center">${r.finalExam === '' ? '-' : r.finalExam}</td>
+          <td class="text-center bold">${r.totalScore}</td>
+          <td class="text-center bold">${escapeHtml(r.grade)}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="bold" style="margin-top: 8pt;">๒. ผลการประเมินตามตัวชี้วัดรายวิชา (${summary.indicators.length} ตัวชี้วัด)</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 18%;">รหัสตัวชี้วัด</th>
+          <th style="width: 52%;">คำอธิบายตัวชี้วัด</th>
+          <th style="width: 10%;">คะแนน K</th>
+          <th style="width: 10%;">ทักษะ P</th>
+          <th style="width: 10%;">คุณลักษณะ A</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${summary.indicators.map((ind) => {
+          const s = r.indicatorScores[ind.id] || { k: 0, p: 'พอใช้', a: false };
+          return `
+          <tr>
+            <td class="text-center bold">${escapeHtml(ind.code)}</td>
+            <td class="text-left">${escapeHtml(ind.title)}</td>
+            <td class="text-center">${s.k}/${ind.maxScore}</td>
+            <td class="text-center">${escapeHtml(s.p)}</td>
+            <td class="text-center">${s.a ? 'ผ่าน' : 'รอประเมิน'}</td>
+          </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+
+    <p class="bold" style="margin-top: 8pt;">๓. สรุปการประเมินคุณลักษณะอันพึงประสงค์ การอ่านคิดวิเคราะห์ และเวลาเรียน</p>
+    <table>
+      <tr>
+        <td style="width: 50%;"><strong>คุณลักษณะอันพึงประสงค์ของสถานศึกษา:</strong> ${charLabel}</td>
+        <td style="width: 50%;"><strong>การอ่าน คิดวิเคราะห์ และเขียน:</strong> ${readLabel}</td>
+      </tr>
+      <tr>
+        <td><strong>สมรรถนะสำคัญของผู้เรียน:</strong> ${compLabel}</td>
+        <td><strong>กิจกรรมพัฒนาผู้เรียน:</strong> ผ่าน</td>
+      </tr>
+      <tr>
+        <td colspan="2"><strong>สรุปเวลาเรียน:</strong> เวลาเรียนเต็ม ${r.attendanceTotalHours} ชั่วโมง • มาเรียน ${r.attendancePresent} ชั่วโมง • ลาป่วย ${r.attendanceSick} ชั่วโมง • ขาด ${r.attendanceAbsent} ชั่วโมง (คิดเป็นร้อยละ ${r.attendancePercentage}% — <strong>${r.attendanceStatus}</strong>)</td>
+      </tr>
+    </table>
+
+    <table class="no-border" style="margin-top: 18pt;">
+      <tr>
+        <td class="text-center" style="width: 33%;">
+          ลงชื่อ..................................................<br>
+          (${escapeHtml(summary.teacherName)})<br>
+          ครูผู้สอน
+        </td>
+        <td class="text-center" style="width: 33%;">
+          ลงชื่อ..................................................<br>
+          (${escapeHtml(summary.advisorName.split(',')[0])})<br>
+          ครูประจำชั้น ${escapeHtml(summary.classroom)}
+        </td>
+        <td class="text-center" style="width: 34%;">
+          ลงชื่อ..................................................<br>
+          (${escapeHtml(summary.directorName)})<br>
+          ผู้อำนวยการโรงเรียนบ้านคลองมดแดง
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" class="text-center" style="padding-top: 14pt;">
+          <strong>ส่วนรับทราบผลการเรียนของผู้ปกครอง:</strong> ข้าพเจ้ารับทราบผลการเรียนของ ${escapeHtml(r.fullName)} &nbsp;&nbsp; ลงชื่อ..................................................ผู้ปกครอง (..................................................)
+        </td>
+      </tr>
+    </table>
+  </div>
+  `;
+}).join('')}
+</body>
+</html>
   `.trim();
 };
 
@@ -981,7 +1550,7 @@ export const downloadClassroomPp5Docx = (summary: ClassroomExportSummary): void 
 };
 
 /**
- * ฟังก์ชันดาวน์โหลดเล่ม Excel ปพ.5 สมบูรณ์ 7 ชีต (.xls / Multi-Sheet XML)
+ * ฟังก์ชันดาวน์โหลดเล่ม Excel ปพ.5 สมบูรณ์ 9 ชีต (.xls / Multi-Sheet XML)
  */
 export const downloadClassroomPp5CompleteExcel = (summary: ClassroomExportSummary): void => {
   const content = generatePp5CompleteSpreadsheetXml(summary);
@@ -989,3 +1558,28 @@ export const downloadClassroomPp5CompleteExcel = (summary: ClassroomExportSummar
   const filename = `ปพ5_เล่มสมบูรณ์_${summary.classroom}_${cleanTitle}_${summary.academicYear}_ท${summary.term}.xls`;
   downloadFile(content, filename, 'application/vnd.ms-excel;charset=utf-8');
 };
+
+/**
+ * ฟังก์ชันดาวน์โหลดไฟล์ Excel ปพ.6 สมบูรณ์ 4 ชีต (.xls / Multi-Sheet XML)
+ */
+export const downloadClassroomPp6Excel = (summary: ClassroomExportSummary): void => {
+  const content = generatePp6CompleteSpreadsheetXml(summary);
+  const cleanTitle = summary.subjectTitle.replace(/\s+/g, '_');
+  const filename = `ปพ6_รายงานรายบุคคล_${summary.classroom}_${cleanTitle}_${summary.academicYear}_ท${summary.term}.xls`;
+  downloadFile(content, filename, 'application/vnd.ms-excel;charset=utf-8');
+};
+
+/**
+ * ฟังก์ชันดาวน์โหลดไฟล์ Word ปพ.6 รายบุคคลหรือทั้งห้อง (.doc)
+ */
+export const downloadClassroomPp6Docx = (
+  summary: ClassroomExportSummary,
+  selectedStudentCode?: string,
+): void => {
+  const content = generatePp6CompleteDocxHtml(summary, selectedStudentCode);
+  const cleanTitle = summary.subjectTitle.replace(/\s+/g, '_');
+  const suffix = selectedStudentCode ? `_${selectedStudentCode}` : '_ทั้งห้อง';
+  const filename = `ปพ6_รายงานผลการเรียน_${summary.classroom}_${cleanTitle}${suffix}_${summary.academicYear}.doc`;
+  downloadFile(content, filename, 'application/msword;charset=utf-8');
+};
+

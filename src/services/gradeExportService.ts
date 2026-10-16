@@ -23,11 +23,11 @@ import { officialStudents2569 } from '../data/studentsOfficialInfo2569';
 export const SCHOOL_NAME = 'โรงเรียนบ้านคลองมดแดง';
 export const SCHOOL_AFFILIATION = 'สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2';
 export const SCHOOL_DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
-export const ACADEMIC_HEAD_NAME = 'หัวหน้าฝ่ายวิชาการและงานวัดผลประเมินผล';
+export const ACADEMIC_HEAD_NAME = 'นางสาวนริศรา ทำจิตรเหมาะ';
 export { COURSE_TEACHER_NAME, ACADEMIC_YEAR } from './gradeService';
 
 export const CLASSROOM_ADVISORS: Record<string, string> = {
-  'ป.1': 'ครูประจำชั้นประถมศึกษาปีที่ 1',
+  'ป.1': 'นางสาวอรปภา หมื่นอภัย, นายอรรถชัย แก้วเอี่ยม',
   'ป.2': 'ครูประจำชั้นประถมศึกษาปีที่ 2',
   'ป.3': 'ครูประจำชั้นประถมศึกษาปีที่ 3',
   'ป.4': 'ครูประจำชั้นประถมศึกษาปีที่ 4',
