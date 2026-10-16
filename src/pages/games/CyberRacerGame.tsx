@@ -745,22 +745,42 @@ const CyberRacerGame: React.FC = () => {
       ctx.closePath();
       ctx.fill();
 
-      // Glowing Road Borders (Left & Right curbs)
-      ctx.strokeStyle = sim.isNitroActive ? '#00f7ff' : '#ff007f';
-      ctx.lineWidth = sim.isNitroActive ? 5 : 3;
-      ctx.shadowColor = sim.isNitroActive ? '#00f7ff' : '#ff007f';
-      ctx.shadowBlur = 12;
+      // Active Lane Neon Carpet (ช่วยให้เด็กมองเห็นเลนปัจจุบันของรถชัดเจนทันที)
+      const activeLaneIdx = car.currentLane;
+      const laneTopL = roadTopLeft + roadTopWidth * (activeLaneIdx / 3);
+      const laneTopR = roadTopLeft + roadTopWidth * ((activeLaneIdx + 1) / 3);
+      const laneBotL = roadBottomLeft + roadBottomWidth * (activeLaneIdx / 3);
+      const laneBotR = roadBottomLeft + roadBottomWidth * ((activeLaneIdx + 1) / 3);
+      const laneCarpetGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+      laneCarpetGrad.addColorStop(0, 'rgba(56, 189, 248, 0.04)');
+      laneCarpetGrad.addColorStop(1, sim.isNitroActive ? 'rgba(56, 189, 248, 0.24)' : 'rgba(244, 63, 94, 0.16)');
+      ctx.fillStyle = laneCarpetGrad;
+      ctx.beginPath();
+      ctx.moveTo(laneTopL, horizonY);
+      ctx.lineTo(laneTopR, horizonY);
+      ctx.lineTo(laneBotR, height);
+      ctx.lineTo(laneBotL, height);
+      ctx.closePath();
+      ctx.fill();
 
+      // Glowing Road Borders (Left & Right curbs — วาดเส้นคู่แทน shadowBlur เพื่อความลื่นไหล 60fps)
+      ctx.strokeStyle = sim.isNitroActive ? 'rgba(0, 247, 255, 0.32)' : 'rgba(255, 0, 127, 0.32)';
+      ctx.lineWidth = 9;
       ctx.beginPath();
       ctx.moveTo(roadTopLeft, horizonY);
       ctx.lineTo(roadBottomLeft, height);
-      ctx.stroke();
-
-      ctx.beginPath();
       ctx.moveTo(roadTopRight, horizonY);
       ctx.lineTo(roadBottomRight, height);
       ctx.stroke();
-      ctx.shadowBlur = 0;
+
+      ctx.strokeStyle = sim.isNitroActive ? '#00f7ff' : '#ff007f';
+      ctx.lineWidth = sim.isNitroActive ? 4 : 3;
+      ctx.beginPath();
+      ctx.moveTo(roadTopLeft, horizonY);
+      ctx.lineTo(roadBottomLeft, height);
+      ctx.moveTo(roadTopRight, horizonY);
+      ctx.lineTo(roadBottomRight, height);
+      ctx.stroke();
 
       // Animated Road Divider Stripes (3 Lanes -> 2 Dividers)
       const divider1TopX = roadTopLeft + roadTopWidth * (1 / 3);

@@ -25,6 +25,7 @@ const Home: React.FC = () => {
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-shape"></div>
+        <div className="hero-shape-secondary"></div>
         <div className="container hero-content">
           <motion.div 
             initial={{ opacity: 0, x: -50 }}
@@ -32,7 +33,7 @@ const Home: React.FC = () => {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="hero-text"
           >
-            <span className="badge-yellow"><Sparkles size={16} /> Kru James Soncom • ห้องเรียนเทคโนโลยี</span>
+            <span className="badge-yellow"><Sparkles size={16} /> Kru James Soncom • ห้องเรียนเทคโนโลยี 4.0</span>
             <h1>เรียนเทคโนโลยี <span>ไปทำไม?</span></h1>
             <p>
               "การเรียนเทคโนโลยีไม่ใช่เพียงเพื่อการเป็นผู้ใช้งาน แต่เพื่อให้ผู้เรียน 
@@ -42,6 +43,9 @@ const Home: React.FC = () => {
               <button className="btn-primary" onClick={() => navigate('/courses')}>
                 เริ่มเข้าสู่บทเรียน <ChevronRight size={20} />
               </button>
+              <button className="btn-secondary" onClick={() => navigate('/games')}>
+                🎮 คลังเกมฝึกทักษะ (38 เกม)
+              </button>
               <button className="btn-secondary" onClick={() => window.open('https://www.youtube.com/watch?v=TJpkm-WDRHU', '_blank')}>
                 <Play size={18} fill="currentColor" /> วิดีโอแนะนำ
               </button>
@@ -50,7 +54,7 @@ const Home: React.FC = () => {
           
           <motion.div 
             initial={{ opacity: 0, scale: 0.9, rotate: 5 }}
-            animate={{ opacity: 1, scale: 1, rotate: 3 }}
+            animate={{ opacity: 1, scale: 1, rotate: 2 }}
             transition={{ duration: 1, ease: "easeOut" }}
             className="hero-image"
           >
@@ -59,6 +63,9 @@ const Home: React.FC = () => {
               <div className="card-badge">
                  <div className="pulse"></div>
                  Active Learning Mode
+              </div>
+              <div className="card-badge-top">
+                 <span>🚀</span> 38 เกมฝึกทักษะ + CT 4 เสาหลัก
               </div>
             </div>
           </motion.div>

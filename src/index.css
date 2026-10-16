@@ -134,9 +134,24 @@ html[data-theme="dark"] .search-kbd {
 body {
   font-family: 'Outfit', 'Sarabun', sans-serif;
   background-color: var(--background);
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(255, 204, 0, 0.10) 0%, transparent 38%),
+    radial-gradient(circle at 88% 16%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 92%, rgba(99, 102, 241, 0.06) 0%, transparent 45%),
+    radial-gradient(rgba(15, 23, 42, 0.045) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px;
+  background-attachment: fixed;
   color: var(--text-main);
   line-height: 1.5;
   overflow-x: hidden;
+}
+
+html[data-theme="dark"] body {
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(250, 176, 5, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 88% 16%, rgba(56, 189, 248, 0.10) 0%, transparent 42%),
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 28px 28px !important;
 }
 
 a {
@@ -188,7 +203,7 @@ button {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .card-hover {
@@ -207,11 +222,13 @@ button {
 }
 
 .badge-yellow {
-  background: var(--primary-soft);
-  color: var(--primary-dark);
-  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #FFF9DB 0%, #FFF3BF 100%);
+  color: #92400E;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
+  padding: 0.5rem 1.05rem;
   border-radius: var(--radius-full);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.85rem;
   display: inline-flex;
   align-items: center;
@@ -377,4 +394,35 @@ textarea:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================
+   Site-Wide Graphic Polish & Visual Depth
+   ============================================ */
+.navbar {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.navbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #FFD43B 0%, #F59E0B 35%, #38BDF8 70%, #6366F1 100%);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.nav-item.active {
+  color: #92400e;
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.95), rgba(253, 230, 138, 0.85));
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.14);
+}
+
 
