@@ -16,6 +16,7 @@ import {
   isExternalVisitor,
   isScoreEligibleUser,
 } from '../services/userAccessService';
+import { getStudentWorkStatusOverview } from '../services/homeworkService';
 import './Layout.css';
 
 interface LayoutProps {
@@ -35,6 +36,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const scoreEligible = isScoreEligibleUser(user);
   const externalVisitor = isExternalVisitor(user);
   const adminUser = isAdminPortalUser(user);
+
+  const homeworkAlertInfo = React.useMemo(() => {
+    if (!scoreEligible || !user) return { missingTotal: 0, overdueCount: 0 };
+    try {
+      const overview = getStudentWorkStatusOverview(
+        user.classroom,
+        user.id,
+        Number(user.studentNumber) || 1,
+        user.name
+      );
+      return {
+        missingTotal: overview.totalMissingCount,
+        overdueCount: overview.overdueCount,
+      };
+    } catch {
+      return { missingTotal: 0, overdueCount: 0 };
+    }
+  }, [scoreEligible, user, location.pathname]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -72,7 +91,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, [isMenuOpen]);
 
-  const navLinks: { name: string; path: string; icon: React.ReactNode }[] = [
+  const navLinks: { name: string; path: string; icon: React.ReactNode; badge?: number; badgeOverdue?: boolean }[] = [
     { name: 'หน้าแรก', path: '/', icon: <Home size={18} /> },
     { name: 'คอร์สเรียน', path: '/courses', icon: <Award size={18} /> },
     { name: 'แหล่งเรียนรู้', path: '/resources', icon: <Library size={18} /> },
@@ -81,7 +100,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   if (scoreEligible) {
-    navLinks.push({ name: 'การบ้าน', path: '/homework', icon: <Award size={18} /> });
+    navLinks.push({
+      name: 'การบ้าน',
+      path: '/homework',
+      icon: <Award size={18} />,
+      badge: homeworkAlertInfo.missingTotal,
+      badgeOverdue: homeworkAlertInfo.overdueCount > 0,
+    });
     navLinks.push({ name: 'แดชบอร์ด', path: '/dashboard', icon: <LayoutDashboard size={18} /> });
   }
   if (adminUser) navLinks.push({ name: 'พื้นที่ครู', path: '/admin', icon: <LayoutDashboard size={18} /> });
@@ -108,6 +133,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 {link.icon}
                 <span>{link.name}</span>
+                {typeof link.badge === 'number' && link.badge > 0 && (
+                  <span
+                    title={link.badgeOverdue ? `มีงานค้างส่ง/เลยกำหนด ${link.badge} ชิ้น` : `มีงานรอส่ง ${link.badge} ชิ้น`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: 18,
+                      height: 18,
+                      padding: '0 5px',
+                      borderRadius: 999,
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      color: '#fff',
+                      background: link.badgeOverdue ? '#ef4444' : '#f59e0b',
+                      boxShadow: link.badgeOverdue ? '0 0 8px rgba(239,68,68,0.45)' : 'none',
+                    }}
+                  >
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             ))}
           </div>
@@ -200,6 +246,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 >
                   {link.icon}
                   <span>{link.name}</span>
+                  {typeof link.badge === 'number' && link.badge > 0 && (
+                    <span
+                      style={{
+                        marginLeft: 'auto',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: 22,
+                        height: 20,
+                        padding: '0 6px',
+                        borderRadius: 999,
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        color: '#fff',
+                        background: link.badgeOverdue ? '#ef4444' : '#f59e0b',
+                      }}
+                    >
+                      {link.badge} ชิ้น
+                    </span>
+                  )}
                 </Link>
               ))}
             </nav>

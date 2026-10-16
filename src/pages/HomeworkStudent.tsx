@@ -1,14 +1,30 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Upload, CheckCircle2, Clock, AlertCircle, FileText, Sparkles } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Upload, CheckCircle2, Clock, AlertCircle, FileText, Sparkles, ExternalLink, ClipboardList } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
-  getAssignmentsForStudent, submitWork, getStudentSubmissionForAssignment,
-  fetchAssignmentsFromFirebase, fetchSubmissionsFromFirebase,
+  getAssignmentsForStudent,
+  submitWork,
+  getStudentSubmissionForAssignment,
+  getStudentWorkStatusOverview,
+  fetchAssignmentsFromFirebase,
+  fetchSubmissionsFromFirebase,
   recommendAssignment,
   validateSubmissionContent,
   type Assignment,
 } from '../services/homeworkService';
 import { isScoreEligibleUser } from '../services/userAccessService';
+
+type HomeworkFilterTab =
+  | 'all'
+  | 'missing'
+  | 'overdue'
+  | 'waiting_review'
+  | 'graded'
+  | 'recommended'
+  | 'foundation'
+  | 'standard'
+  | 'advanced'
+  | 'submitted';
 
 const HomeworkStudent: React.FC = () => {
   const { user } = useAuth();
@@ -19,8 +35,8 @@ const HomeworkStudent: React.FC = () => {
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [usingCachedAssignments, setUsingCachedAssignments] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [, setDataVersion] = useState(0);
-  const [filter, setFilter] = useState<'all' | 'recommended' | 'foundation' | 'standard' | 'advanced' | 'submitted'>('all');
+  const [dataVersion, setDataVersion] = useState(0);
+  const [filter, setFilter] = useState<HomeworkFilterTab>('all');
   const openedFromUrlRef = useRef(false);
 
   const [dtDefine, setDtDefine] = useState('');
@@ -29,8 +45,11 @@ const HomeworkStudent: React.FC = () => {
   const [dtTestFeedback, setDtTestFeedback] = useState('');
 
   const [packChoices, setPackChoices] = useState<Record<string, string>>({});
+
   const openSubmission = useCallback((assignment: Assignment) => {
-    const previous = user ? getStudentSubmissionForAssignment(assignment.id, user.id) : null;
+    const previous = user
+      ? getStudentSubmissionForAssignment(assignment.id, user.id, user.classroom, parseInt(user.studentNumber))
+      : null;
     setContentUrl(previous?.contentUrl || '');
     setComment(previous?.comment || '');
     setDtDefine(previous?.designThinkingSteps?.define || '');
@@ -86,6 +105,10 @@ const HomeworkStudent: React.FC = () => {
     if (openedFromUrlRef.current || !assignments.length) return;
     const params = new URLSearchParams(window.location.search);
     const targetId = params.get('id') || params.get('assignmentId');
+    const urlFilter = params.get('filter') as HomeworkFilterTab | null;
+    if (urlFilter) {
+      setFilter(urlFilter);
+    }
     if (targetId) {
       const match = assignments.find((a) => a.id === targetId);
       if (match) {
@@ -97,19 +120,28 @@ const HomeworkStudent: React.FC = () => {
     return undefined;
   }, [assignments, openSubmission]);
 
-  const filteredAssignments = (() => {
-    const chosen = new Map<string, string>();
-    for (const a of assignments) {
-      if (!a.personalizedPackId || chosen.has(a.personalizedPackId)) continue;
-      const variants = assignments.filter(v => v.personalizedPackId === a.personalizedPackId);
-      const submitted = variants.find(v => user && getStudentSubmissionForAssignment(v.id, user.id));
-      const recommended = user ? recommendAssignment(a, user.id).difficulty : 'standard';
-      chosen.set(a.personalizedPackId, submitted?.id || packChoices[a.personalizedPackId] || variants.find(v => v.difficulty === recommended)?.id || a.id);
-    }
-    return assignments.filter((a) => {
-      if (a.personalizedPackId && chosen.get(a.personalizedPackId) !== a.id) return false;
-      const recommendedDiff = user ? recommendAssignment(a, user.id).difficulty : 'standard';
-      const sub = user ? getStudentSubmissionForAssignment(a.id, user.id) : undefined;
+  const workOverview = useMemo(() => {
+    void dataVersion;
+    if (!user) return null;
+    return getStudentWorkStatusOverview(
+      user.classroom,
+      user.id,
+      parseInt(user.studentNumber),
+      user.name,
+      packChoices,
+    );
+  }, [user, packChoices, dataVersion]);
+
+  const filteredTasks = useMemo(() => {
+    if (!workOverview || !user) return [];
+    return workOverview.tasks.filter((item) => {
+      const a = item.assignment;
+      const sub = item.submission;
+      const recommendedDiff = recommendAssignment(a, user.id).difficulty;
+      if (filter === 'missing') return !sub;
+      if (filter === 'overdue') return item.status === 'overdue';
+      if (filter === 'waiting_review') return item.status === 'waiting_review';
+      if (filter === 'graded') return item.status === 'graded';
       if (filter === 'submitted') return Boolean(sub);
       if (filter === 'recommended') return (a.difficulty || 'standard') === recommendedDiff;
       if (filter === 'foundation') return a.difficulty === 'foundation';
@@ -117,7 +149,7 @@ const HomeworkStudent: React.FC = () => {
       if (filter === 'advanced') return a.difficulty === 'advanced';
       return true;
     });
-  })();
+  }, [workOverview, user, filter]);
 
   if (!user) {
     return (
@@ -196,13 +228,31 @@ const HomeworkStudent: React.FC = () => {
     }
   };
 
+  const overview = workOverview || {
+    tasks: [],
+    missingTasks: [],
+    overdueTasks: [],
+    pendingTasks: [],
+    waitingReviewTasks: [],
+    gradedTasks: [],
+    missingManualAssessments: [],
+    totalRequiredCount: 0,
+    completedCount: 0,
+    totalMissingCount: 0,
+    overdueCount: 0,
+    pendingCount: 0,
+    waitingReviewCount: 0,
+    gradedCount: 0,
+    completionPercent: 100,
+  };
+
   return (
     <div className="container section-padding" style={{ paddingTop: '6rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ margin: '0 0 4px' }}>📝 ภารกิจของฉัน</h1>
+          <h1 style={{ margin: '0 0 4px' }}>📝 ศูนย์ส่งงานและเช็กงานค้างของฉัน</h1>
           <p style={{ color: '#6b7280', margin: 0 }}>
-            รายการการบ้านของชั้น {user.classroom} • ระบบจัดภารกิจแบบปรับตามศักยภาพผู้เรียน (Personalized Assignment)
+            {user.name} (ชั้น {user.classroom} เลขที่ {user.studentNumber}) • ตรวจสอบงานค้าง ส่งการบ้าน และติดตามผลคะแนน K/P
           </p>
         </div>
         <div style={{ padding: '6px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, fontSize: '0.82rem', color: '#166534', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -216,20 +266,264 @@ const HomeworkStudent: React.FC = () => {
         </p>
       )}
 
+      {/* 📊 แผงสรุปสถานะงานค้างและการส่งงานของฉัน */}
+      <div
+        className="card"
+        style={{
+          marginTop: '1.25rem',
+          padding: '1.25rem',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          border: '1.5px solid #e2e8f0',
+          borderRadius: 18,
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.05)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ClipboardList size={20} color="#4f46e5" />
+            <strong style={{ fontSize: '1.02rem', color: '#0f172a' }}>
+              สรุปสถานะการส่งงานของฉัน (ส่งแล้ว {overview.completedCount} / {overview.tasks.length} ชิ้น)
+            </strong>
+          </div>
+          <span
+            style={{
+              padding: '4px 12px',
+              borderRadius: 999,
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              background: overview.totalMissingCount === 0 ? '#dcfce7' : overview.overdueCount > 0 ? '#fee2e2' : '#fef3c7',
+              color: overview.totalMissingCount === 0 ? '#166534' : overview.overdueCount > 0 ? '#b91c1c' : '#92400e',
+            }}
+          >
+            {overview.totalMissingCount === 0
+              ? '🎉 ส่งงานครบทุกชิ้นแล้ว!'
+              : `📌 มีงานค้างที่ต้องติดตามรวม ${overview.totalMissingCount} รายการ`}
+          </span>
+        </div>
+
+        {/* Progress Bar */}
+        <div style={{ height: 10, background: '#e2e8f0', borderRadius: 999, overflow: 'hidden', marginBottom: 14 }}>
+          <div
+            style={{
+              width: `${overview.completionPercent}%`,
+              height: '100%',
+              background: overview.completionPercent === 100
+                ? 'linear-gradient(90deg, #10b981, #22c55e)'
+                : 'linear-gradient(90deg, #6366f1, #38bdf8)',
+              transition: 'width 0.35s ease',
+            }}
+          />
+        </div>
+
+        {/* 4 Clickable Status Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))', gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => setFilter(filter === 'overdue' ? 'all' : 'overdue')}
+            style={{
+              textAlign: 'left',
+              padding: '12px 14px',
+              borderRadius: 12,
+              border: filter === 'overdue' ? '2px solid #ef4444' : '1px solid #fecaca',
+              background: '#fef2f2',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ fontSize: '0.78rem', color: '#b91c1c', fontWeight: 700 }}>🚨 ค้างส่ง (เลยกำหนด)</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#dc2626', marginTop: 2 }}>
+              {overview.overdueCount} <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>ชิ้น</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilter(filter === 'missing' ? 'all' : 'missing')}
+            style={{
+              textAlign: 'left',
+              padding: '12px 14px',
+              borderRadius: 12,
+              border: filter === 'missing' ? '2px solid #f59e0b' : '1px solid #fde68a',
+              background: '#fffbeb',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ fontSize: '0.78rem', color: '#b45309', fontWeight: 700 }}>📌 งานค้างรอส่งทั้งหมด</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#d97706', marginTop: 2 }}>
+              {overview.overdueCount + overview.pendingCount}{' '}
+              <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>ชิ้น</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilter(filter === 'waiting_review' ? 'all' : 'waiting_review')}
+            style={{
+              textAlign: 'left',
+              padding: '12px 14px',
+              borderRadius: 12,
+              border: filter === 'waiting_review' ? '2px solid #0284c7' : '1px solid #bae6fd',
+              background: '#f0f9ff',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ fontSize: '0.78rem', color: '#0369a1', fontWeight: 700 }}>⏳ ส่งแล้ว (รอครูตรวจ)</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0284c7', marginTop: 2 }}>
+              {overview.waitingReviewCount} <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>ชิ้น</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilter(filter === 'graded' ? 'all' : 'graded')}
+            style={{
+              textAlign: 'left',
+              padding: '12px 14px',
+              borderRadius: 12,
+              border: filter === 'graded' ? '2px solid #16a34a' : '1px solid #bbf7d0',
+              background: '#f0fdf4',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ fontSize: '0.78rem', color: '#15803d', fontWeight: 700 }}>✅ ตรวจและได้คะแนนแล้ว</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#16a34a', marginTop: 2 }}>
+              {overview.gradedCount} <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>ชิ้น</span>
+            </div>
+          </button>
+        </div>
+
+        {/* 🚨 กล่องแจ้งเตือนรายการงานค้าง (ทั้งการบ้านออนไลน์ และ ใบงานในสมุดคะแนน) */}
+        {(overview.missingTasks.length > 0 || overview.missingManualAssessments.length > 0) && (
+          <div
+            style={{
+              marginTop: 14,
+              padding: '12px 14px',
+              borderRadius: 12,
+              background: overview.overdueCount > 0 ? '#fff1f2' : '#fffbeb',
+              border: overview.overdueCount > 0 ? '1.5px solid #fda4af' : '1.5px solid #fcd34d',
+            }}
+          >
+            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: overview.overdueCount > 0 ? '#9f1239' : '#92400e', marginBottom: 8 }}>
+              📋 รายการงานที่เธอยังค้างอยู่ ({overview.totalMissingCount} รายการ) — กดปุ่ม &ldquo;ส่งงานนี้เลย&rdquo; เพื่อทำและส่งได้ทันที:
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {overview.missingTasks.map((item) => (
+                <div
+                  key={item.assignment.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: item.isOverdue ? '1px solid #fca5a5' : '1px solid #fde68a',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span
+                      style={{
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        background: item.isOverdue ? '#ef4444' : '#f59e0b',
+                        color: '#ffffff',
+                      }}
+                    >
+                      {item.isOverdue ? '🚨 เลยกำหนด' : '📌 ยังไม่ส่ง'}
+                    </span>
+                    <strong style={{ fontSize: '0.9rem', color: '#1e293b' }}>{item.assignment.title}</strong>
+                    <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                      ({item.subjectTitle}{item.indicatorCode ? ` • ${item.indicatorCode}` : ''} • {item.dueLabel})
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => openSubmission(item.assignment)}
+                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                  >
+                    <Upload size={13} /> ส่งงานนี้เลย
+                  </button>
+                </div>
+              ))}
+
+              {overview.missingManualAssessments.map((ma) => (
+                <div
+                  key={ma.assessmentId}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1px dashed #fbbf24',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span
+                      style={{
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        background: '#fef3c7',
+                        color: '#92400e',
+                        border: '1px solid #f59e0b',
+                      }}
+                    >
+                      📝 ใบงานในชั้นเรียน
+                    </span>
+                    <strong style={{ fontSize: '0.9rem', color: '#1e293b' }}>{ma.title}</strong>
+                    <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                      (วิชา{ma.subjectTitle} • {ma.indicatorCode} • คะแนนเต็ม {ma.maxScore} คะแนน — ยังไม่มีคะแนนในสมุด ปพ.5)
+                    </span>
+                  </div>
+                  {ma.resourceUrl ? (
+                    <a
+                      href={ma.resourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-secondary"
+                      style={{ padding: '5px 10px', fontSize: '0.78rem' }}
+                    >
+                      <ExternalLink size={13} /> เปิดใบงาน
+                    </a>
+                  ) : (
+                    <span style={{ fontSize: '0.78rem', color: '#b45309', fontWeight: 700 }}>
+                      ติดต่อส่งใบงานกับคุณครูในคาบเรียน
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Filter Tabs */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '1.25rem 0' }}>
         {[
-          { id: 'all', label: `งานทั้งหมด (${assignments.length})` },
+          { id: 'all', label: `งานทั้งหมด (${overview.tasks.length})` },
+          { id: 'missing', label: `📌 งานค้างยังไม่ส่ง (${overview.overdueCount + overview.pendingCount})` },
+          { id: 'overdue', label: `🚨 เลยกำหนด (${overview.overdueCount})` },
+          { id: 'waiting_review', label: `⏳ รอครูตรวจ (${overview.waitingReviewCount})` },
+          { id: 'graded', label: `✅ ตรวจแล้ว (${overview.gradedCount})` },
           { id: 'recommended', label: '✨ แนะนำสำหรับเธอ' },
           { id: 'foundation', label: '🟢 พื้นฐาน' },
           { id: 'standard', label: '🟡 มาตรฐาน' },
           { id: 'advanced', label: '🔵 ท้าทาย' },
-          { id: 'submitted', label: '✓ ส่งแล้ว' },
+          { id: 'submitted', label: '✓ ส่งแล้วทั้งหมด' },
         ].map((tab) => (
           <button
             key={tab.id}
             type="button"
-            onClick={() => setFilter(tab.id as typeof filter)}
+            onClick={() => setFilter(tab.id as HomeworkFilterTab)}
             style={{
               padding: '6px 14px',
               borderRadius: '999px',
@@ -251,17 +545,18 @@ const HomeworkStudent: React.FC = () => {
 
       {loadingAssignments && assignments.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>กำลังดึงงานจากฐานข้อมูล...</div>
-      ) : filteredAssignments.length === 0 ? (
+      ) : filteredTasks.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <FileText size={48} color="#9ca3af" />
           <h3>ไม่พบรายการในหมวดนี้ 🎉</h3>
-          <p>ไม่มีงานต้องส่งในหมวดที่เลือก — ลองเลือกแท็บ "งานทั้งหมด"</p>
+          <p>ไม่มีงานต้องส่งในหมวดที่เลือก — ลองเลือกแท็บ &ldquo;งานทั้งหมด&rdquo;</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {filteredAssignments.map((a) => {
-            const sub = getStudentSubmissionForAssignment(a.id, user.id);
-            const overdue = new Date(`${a.dueDate}T23:59:59`) < new Date() && !sub;
+          {filteredTasks.map((item) => {
+            const a = item.assignment;
+            const sub = item.submission;
+            const overdue = item.isOverdue;
             const recommendation = recommendAssignment(a, user.id);
             const isRecommended = (a.difficulty || 'standard') === recommendation.difficulty;
             return (
@@ -291,6 +586,9 @@ const HomeworkStudent: React.FC = () => {
                           <Sparkles size={11} /> แนะนำสำหรับเธอ
                         </span>
                       )}
+                      <span style={{ background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
+                        📚 {item.subjectTitle}{item.indicatorCode ? ` (${item.indicatorCode})` : ''}
+                      </span>
                     </div>
                     {a.recommendedReason && (
                       <div style={{ fontSize: '0.8rem', color: '#4b5563', margin: '4px 0 6px', background: '#f8fafc', borderLeft: '3px solid #6366f1', padding: '3px 8px', borderRadius: 4 }}>
@@ -319,8 +617,8 @@ const HomeworkStudent: React.FC = () => {
                         เปิดใบงาน/คำสั่งงาน ↗
                       </a>
                     )}
-                    <div style={{ fontSize: '0.85rem', color: '#6b7280', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                      <span><Clock size={14} style={{ verticalAlign: 'middle' }} /> ส่งภายใน {a.dueDate}</span>
+                    <div style={{ fontSize: '0.85rem', color: overdue ? '#dc2626' : '#6b7280', fontWeight: overdue ? 700 : 500, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                      <span><Clock size={14} style={{ verticalAlign: 'middle' }} /> {item.dueLabel}</span>
                       <span>K {a.knowledgeMaxScore ?? (a.category === 'k' ? a.maxScore : 0)}</span>
                       <span>P {a.practiceMaxScore ?? (a.category === 'p' ? a.maxScore : 0)}</span>
                     </div>
@@ -346,8 +644,13 @@ const HomeworkStudent: React.FC = () => {
                         )}
                       </div>
                     ) : overdue ? (
-                      <div style={{ color: '#ef4444', fontWeight: 700 }}>
-                        <AlertCircle size={16} style={{ verticalAlign: 'middle' }} /> เกินกำหนด
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                        <div style={{ color: '#ef4444', fontWeight: 700, fontSize: '0.82rem' }}>
+                          <AlertCircle size={15} style={{ verticalAlign: 'middle' }} /> ค้างส่ง (เลยกำหนด)
+                        </div>
+                        <button onClick={() => openSubmission(a)} className="btn-primary" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}>
+                          <Upload size={14} /> ส่งงานย้อนหลัง
+                        </button>
                       </div>
                     ) : (
                       <button onClick={() => openSubmission(a)} className="btn-primary">
@@ -448,7 +751,7 @@ const HomeworkStudent: React.FC = () => {
                 <div style={{ marginTop: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
                     <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>📎 ลิงก์ผลงาน (Canva, Scratch, Google Drive ฯลฯ)</label>
-                    <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>💡 แนะนำ: เปิดสิทธิ์ "ทุกคนที่มีลิงก์ดูได้" ก่อนส่ง</span>
+                    <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>💡 แนะนำ: เปิดสิทธิ์ &ldquo;ทุกคนที่มีลิงก์ดูได้&rdquo; ก่อนส่ง</span>
                   </div>
                   <input
                     value={contentUrl}
@@ -459,7 +762,7 @@ const HomeworkStudent: React.FC = () => {
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6, fontSize: '0.74rem', color: '#4b5563' }}>
                     <span style={{ background: '#ede9fe', color: '#6d28d9', padding: '2px 8px', borderRadius: 4 }}>🎨 Canva: ปุ่มแชร์ ➔ ลิงก์สำหรับดูเท่านั้น</span>
                     <span style={{ background: '#fef3c7', color: '#b45309', padding: '2px 8px', borderRadius: 4 }}>🐱 Scratch: กด Share ➔ Copy Link</span>
-                    <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: 4 }}>📁 Google Drive: เปิดสิทธิ์ "ทุกคนที่มีลิงก์"</span>
+                    <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: 4 }}>📁 Google Drive: เปิดสิทธิ์ &ldquo;ทุกคนที่มีลิงก์&rdquo;</span>
                   </div>
                 </div>
 

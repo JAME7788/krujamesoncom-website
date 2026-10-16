@@ -32,6 +32,7 @@ import CurriculumExamWidget from '../components/CurriculumExamWidget';
 import StudentReflectionJournal from '../components/StudentReflectionJournal';
 import SmartSpacedReviewWidget from '../components/SmartSpacedReviewWidget';
 import WeeklyGoalTracker from '../components/WeeklyGoalTracker';
+import StudentMissingWorkBanner from '../components/StudentMissingWorkBanner';
 import { getTodayDateString, loadLocalExitTickets, type ExitTicket } from '../services/exitTicketService';
 import { fetchEventsFromFirebase, getUpcomingEvents, eventTypeInfo } from '../services/calendarService';
 import type { CalendarEvent } from '../services/calendarService';
@@ -374,6 +375,16 @@ const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* 📌 แจ้งเตือนงานค้างและการบ้านของฉัน */}
+      {scoreEligible && (
+        <StudentMissingWorkBanner
+          classroom={user.classroom}
+          studentId={user.id}
+          studentNumber={user.studentNumber}
+          studentName={user.name}
+        />
       )}
 
       {/* Daily Question — ครูตั้งคำถามวัน */}

@@ -8,6 +8,10 @@ import {
   loadGrades,
   computeTotal,
   deleteManualAssessment,
+  loadManualAssessments,
+  loadManualAssessmentScores,
+  getSubjectsForClassroom,
+  getIndicators,
 } from './gradeService';
 import type { Subject, AssessmentCategory } from './gradeService';
 import { loadRoster } from './rosterService';
@@ -805,8 +809,262 @@ export const getSubmissionsByStudent = (studentId: string): Submission[] => (
 export const getStudentSubmissionForAssignment = (
   assignmentId: string,
   studentId: string,
-): Submission | null => (
-  loadSubmissions().find((submission) => (
-    submission.assignmentId === assignmentId && submission.studentId === studentId
-  )) || null
-);
+  classroom?: string,
+  studentNo?: number,
+): Submission | null => {
+  const allSubs = loadSubmissions();
+  const direct = allSubs.find(
+    (submission) => submission.assignmentId === assignmentId && submission.studentId === studentId,
+  );
+  if (direct) return direct;
+
+  if (classroom && studentNo !== undefined && !Number.isNaN(studentNo)) {
+    const byNo = allSubs.find(
+      (submission) =>
+        submission.assignmentId === assignmentId &&
+        submission.classroom === classroom &&
+        submission.studentNo === studentNo,
+    );
+    if (byNo) return byNo;
+  }
+  return null;
+};
+
+export type StudentTaskStatus = 'overdue' | 'pending' | 'waiting_review' | 'graded';
+
+export interface StudentTaskStatusItem {
+  assignment: Assignment;
+  submission: Submission | null;
+  status: StudentTaskStatus;
+  isOverdue: boolean;
+  daysRemaining: number; // ติดลบถ้าเลยกำหนดแล้ว, 0 ถ้าครบกำหนดวันนี้, บวกถ้ายังไม่ถึงกำหนด
+  dueLabel: string;
+  subjectTitle: string;
+  indicatorCode?: string;
+}
+
+export interface MissingManualAssessmentItem {
+  assessmentId: string;
+  title: string;
+  subject: Subject;
+  subjectTitle: string;
+  indicatorId: string;
+  indicatorCode: string;
+  category: AssessmentCategory;
+  maxScore: number;
+  resourceUrl?: string;
+  linkedAssignmentId?: string;
+}
+
+export interface StudentWorkStatusOverview {
+  tasks: StudentTaskStatusItem[];
+  missingTasks: StudentTaskStatusItem[];
+  overdueTasks: StudentTaskStatusItem[];
+  pendingTasks: StudentTaskStatusItem[];
+  waitingReviewTasks: StudentTaskStatusItem[];
+  gradedTasks: StudentTaskStatusItem[];
+  missingManualAssessments: MissingManualAssessmentItem[];
+  totalRequiredCount: number;
+  completedCount: number;
+  totalMissingCount: number;
+  overdueCount: number;
+  pendingCount: number;
+  waitingReviewCount: number;
+  gradedCount: number;
+  completionPercent: number;
+}
+
+/**
+ * สรุปภาพรวมงานที่ต้องส่ง งานค้างส่ง งานเลยกำหนด และใบงานในสมุดคะแนนที่ยังไม่มีคะแนนของนักเรียนรายคน
+ */
+export const getStudentWorkStatusOverview = (
+  classroom: string,
+  studentId: string,
+  studentNo?: number,
+  studentName?: string,
+  packChoices: Record<string, string> = {},
+): StudentWorkStatusOverview => {
+  const rawAssignments = getAssignmentsForStudent(classroom, studentId, studentNo);
+  const subjects = getSubjectsForClassroom(classroom);
+  const subjectTitleMap = new Map<string, string>(subjects.map((s) => [s.id, s.title]));
+
+  // Deduplicate 3-tier personalized packs into 1 task per pack
+  const chosenPackAssignmentId = new Map<string, string>();
+  for (const a of rawAssignments) {
+    if (!a.personalizedPackId || chosenPackAssignmentId.has(a.personalizedPackId)) continue;
+    const variants = rawAssignments.filter((v) => v.personalizedPackId === a.personalizedPackId);
+    const submittedVariant = variants.find((v) =>
+      Boolean(getStudentSubmissionForAssignment(v.id, studentId, classroom, studentNo)),
+    );
+    const recommendedDiff = recommendAssignment(a, studentId).difficulty;
+    const chosenId =
+      submittedVariant?.id ||
+      packChoices[a.personalizedPackId] ||
+      variants.find((v) => (v.difficulty || 'standard') === recommendedDiff)?.id ||
+      a.id;
+    chosenPackAssignmentId.set(a.personalizedPackId, chosenId);
+  }
+
+  const deduplicatedAssignments = rawAssignments.filter((a) => {
+    if (!a.personalizedPackId) return true;
+    return chosenPackAssignmentId.get(a.personalizedPackId) === a.id;
+  });
+
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+  const tasks: StudentTaskStatusItem[] = deduplicatedAssignments.map((a) => {
+    const sub = getStudentSubmissionForAssignment(a.id, studentId, classroom, studentNo);
+    const dueTime = a.dueDate ? new Date(`${a.dueDate}T23:59:59`).getTime() : todayMidnight + 86400000 * 7;
+    const dueMidnight = a.dueDate
+      ? new Date(`${a.dueDate}T00:00:00`).getTime()
+      : todayMidnight + 86400000 * 7;
+    const daysRemaining = Number.isFinite(dueMidnight)
+      ? Math.round((dueMidnight - todayMidnight) / 86400000)
+      : 7;
+    const isOverdue = !sub && Number.isFinite(dueTime) && dueTime < now.getTime();
+
+    let status: StudentTaskStatus = 'pending';
+    if (sub) {
+      status = sub.score !== undefined ? 'graded' : 'waiting_review';
+    } else if (isOverdue) {
+      status = 'overdue';
+    }
+
+    let dueLabel = a.dueDate ? `ส่งภายใน ${a.dueDate}` : 'ไม่ระบุวันครบกำหนด';
+    if (!sub) {
+      if (isOverdue) {
+        const lateDays = Math.max(1, Math.abs(daysRemaining));
+        dueLabel = `เลยกำหนดมาแล้ว ${lateDays} วัน (กำหนด ${a.dueDate})`;
+      } else if (daysRemaining === 0) {
+        dueLabel = `ครบกำหนดส่งวันนี้! (${a.dueDate})`;
+      } else if (daysRemaining > 0 && daysRemaining <= 3) {
+        dueLabel = `เหลือเวลาอีก ${daysRemaining} วัน (${a.dueDate})`;
+      }
+    }
+
+    const subj = a.subject || 'main';
+    const indicators = getIndicators(classroom, subj);
+    const indObj = indicators.find((ind) => ind.id === a.indicatorId);
+
+    return {
+      assignment: a,
+      submission: sub,
+      status,
+      isOverdue,
+      daysRemaining,
+      dueLabel,
+      subjectTitle: subjectTitleMap.get(subj) || 'เทคโนโลยี (วิทยาการคำนวณ)',
+      indicatorCode: indObj?.code || a.indicatorId,
+    };
+  });
+
+  // Sort tasks: overdue first, then pending (by due date), then waiting_review, then graded
+  const statusPriority: Record<StudentTaskStatus, number> = {
+    overdue: 0,
+    pending: 1,
+    waiting_review: 2,
+    graded: 3,
+  };
+  tasks.sort((x, y) => {
+    if (statusPriority[x.status] !== statusPriority[y.status]) {
+      return statusPriority[x.status] - statusPriority[y.status];
+    }
+    return (x.assignment.dueDate || '').localeCompare(y.assignment.dueDate || '');
+  });
+
+  // Check manual assessments in Gradebook (ชิ้นงาน/ใบงานในชั้นเรียนที่ยังไม่มีคะแนน)
+  const linkedAssessmentIdsFromSubmittedHomework = new Set<string>();
+  const assignmentByAssessmentId = new Map<string, string>();
+  for (const a of rawAssignments) {
+    const sub = getStudentSubmissionForAssignment(a.id, studentId, classroom, studentNo);
+    const ids = [
+      a.linkedAssessmentId,
+      a.linkedKnowledgeAssessmentId,
+      a.linkedPracticeAssessmentId,
+    ].filter((id): id is string => Boolean(id));
+    ids.forEach((id) => {
+      if (!assignmentByAssessmentId.has(id)) {
+        assignmentByAssessmentId.set(id, a.id);
+      }
+      if (sub) {
+        linkedAssessmentIdsFromSubmittedHomework.add(id);
+      }
+    });
+  }
+
+  const missingManualAssessments: MissingManualAssessmentItem[] = [];
+  const seenGroupKeys = new Set<string>();
+
+  for (const subj of subjects) {
+    const grades = loadGrades(classroom, subj.id);
+    const me = grades.find(
+      (g) =>
+        (studentNo !== undefined && g.studentNo === studentNo) ||
+        (studentName && g.name === studentName) ||
+        g.studentCode === studentId,
+    );
+    if (!me) continue;
+
+    const assessments = loadManualAssessments(classroom, subj.id);
+    const scores = loadManualAssessmentScores(classroom, subj.id);
+    const indicators = getIndicators(classroom, subj.id);
+
+    for (const assmt of assessments) {
+      // Skip if this manual assessment is already linked to a homework task in `tasks`
+      if (assignmentByAssessmentId.has(assmt.id)) continue;
+      if (linkedAssessmentIdsFromSubmittedHomework.has(assmt.id)) continue;
+
+      const rawScore = scores[assmt.id]?.[me.studentCode];
+      if (rawScore !== undefined && rawScore !== null && rawScore > 0) continue;
+
+      const dedupGroupKey = `${subj.id}:${assmt.groupId || assmt.title}`;
+      if (seenGroupKeys.has(dedupGroupKey)) continue;
+      seenGroupKeys.add(dedupGroupKey);
+
+      const indObj = indicators.find((ind) => ind.id === assmt.indicatorId);
+      missingManualAssessments.push({
+        assessmentId: assmt.id,
+        title: assmt.title,
+        subject: subj.id,
+        subjectTitle: subj.title,
+        indicatorId: assmt.indicatorId,
+        indicatorCode: indObj?.code || assmt.indicatorId,
+        category: assmt.category,
+        maxScore: assmt.maxScore,
+        resourceUrl: assmt.resourceUrl,
+      });
+    }
+  }
+
+  const overdueTasks = tasks.filter((t) => t.status === 'overdue');
+  const pendingTasks = tasks.filter((t) => t.status === 'pending');
+  const waitingReviewTasks = tasks.filter((t) => t.status === 'waiting_review');
+  const gradedTasks = tasks.filter((t) => t.status === 'graded');
+  const missingTasks = [...overdueTasks, ...pendingTasks];
+
+  const totalRequiredCount = tasks.length + missingManualAssessments.length;
+  const completedCount = waitingReviewTasks.length + gradedTasks.length;
+  const totalMissingCount = missingTasks.length + missingManualAssessments.length;
+  const completionPercent =
+    totalRequiredCount > 0 ? Math.round((completedCount / totalRequiredCount) * 100) : 100;
+
+  return {
+    tasks,
+    missingTasks,
+    overdueTasks,
+    pendingTasks,
+    waitingReviewTasks,
+    gradedTasks,
+    missingManualAssessments,
+    totalRequiredCount,
+    completedCount,
+    totalMissingCount,
+    overdueCount: overdueTasks.length,
+    pendingCount: pendingTasks.length,
+    waitingReviewCount: waitingReviewTasks.length,
+    gradedCount: gradedTasks.length,
+    completionPercent,
+  };
+};
+
