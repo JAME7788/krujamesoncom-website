@@ -17,10 +17,14 @@ import { isSfxMuted, setSfxMuted, playWinSound } from '../../utils/celebrate';
 import { gamesCatalog } from '../../data/gamesCatalog';
 import {
   CT_PILLARS,
-  getPillarForGameId,
   calculateStudentCtProfile,
   type CtPillar,
 } from '../../services/computationalThinkingService';
+import {
+  getUnifiedStudentLearningSnapshot,
+  fetchGameCustomConfigsFromCloud,
+  getAllUnifiedGames,
+} from '../../services/unifiedDatabaseService';
 import { speakThai, stopSpeech } from '../../utils/speechService';
 import BloomTaxonomyBadge from '../../components/BloomTaxonomyBadge';
 import { getActivityBloomLevel } from '../../services/bloomTaxonomyService';
@@ -29,6 +33,7 @@ import './GameStyles.css';
 
 type GradeFilter = 'all' | 'lower-primary' | 'upper-primary' | 'secondary';
 type CtFilter = 'all' | CtPillar;
+type PlayStatusFilter = 'all' | 'played' | 'unplayed';
 
 const gradeFilters: { id: GradeFilter; label: string; range: [number, number] }[] = [
   { id: 'all', label: 'ทั้งหมด', range: [1, 9] },
@@ -73,13 +78,43 @@ const Games: React.FC = () => {
   const [query, setQuery] = useState('');
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>('all');
   const [ctFilter, setCtFilter] = useState<CtFilter>('all');
+  const [playStatusFilter, setPlayStatusFilter] = useState<PlayStatusFilter>('all');
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [configVersion, setConfigVersion] = useState(0);
 
   useEffect(() => {
+    void fetchGameCustomConfigsFromCloud().then(() => {
+      setConfigVersion((v) => v + 1);
+    });
+    const onConfigUpdate = () => setConfigVersion((v) => v + 1);
+    window.addEventListener('unified-game-config-updated', onConfigUpdate);
     return () => {
+      window.removeEventListener('unified-game-config-updated', onConfigUpdate);
       stopSpeech();
     };
   }, []);
+
+  const classroom = user?.classroom || 'ป.4';
+
+  const unifiedSnapshot = useMemo(() => {
+    void configVersion;
+    return getUnifiedStudentLearningSnapshot(user?.id || 'guest', classroom);
+  }, [user?.id, classroom, configVersion]);
+
+  const unifiedGamesMap = useMemo(() => {
+    void configVersion;
+    const map = new Map<string, (typeof unifiedSnapshot.games)[number]>();
+    unifiedSnapshot.games.forEach((entry) => {
+      map.set(entry.record.id, entry);
+      map.set(entry.record.rawId, entry);
+    });
+    return map;
+  }, [unifiedSnapshot, configVersion]);
+
+  const allUnifiedRecords = useMemo(() => {
+    void configVersion;
+    return getAllUnifiedGames(classroom);
+  }, [classroom, configVersion]);
 
   const ctProfile = useMemo(() => {
     if (!user?.id || user.accountType !== 'student') return null;
@@ -91,18 +126,35 @@ const Games: React.FC = () => {
     return gamesCatalog.find((g) => g.id === ctProfile.recommendedGameId) || null;
   }, [ctProfile]);
 
+  const playedCount = useMemo(
+    () => unifiedSnapshot.games.filter((g) => g.played).length,
+    [unifiedSnapshot],
+  );
+  const totalEarnedStars = useMemo(
+    () => unifiedSnapshot.games.reduce((sum, g) => sum + g.earnedStars, 0),
+    [unifiedSnapshot],
+  );
+
   const featuredGame = gamesCatalog.find((game) => game.id === 'digital-city-quest') || gamesCatalog[0];
   const filteredGames = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('th');
-    return gamesCatalog.filter((game) => {
-      const matchesQuery = !normalizedQuery || [game.title, game.desc, game.skill, game.level]
-        .some((value) => value.toLocaleLowerCase('th').includes(normalizedQuery));
+    return allUnifiedRecords.filter((rec) => {
+      const game = rec.catalog;
+      const snapEntry = unifiedGamesMap.get(rec.id);
+      const matchesQuery =
+        !normalizedQuery ||
+        [rec.effectiveTitle, rec.effectiveDesc, game.skill, game.level, rec.ctPillar.name]
+          .some((value) => value.toLocaleLowerCase('th').includes(normalizedQuery));
       const matchesGrade = gameMatchesGrade(game.level, gradeFilter);
-      const pillar = getPillarForGameId(game.id);
-      const matchesCt = ctFilter === 'all' || pillar.id === ctFilter;
-      return matchesQuery && matchesGrade && matchesCt;
+      const matchesCt = ctFilter === 'all' || rec.ctPillar.id === ctFilter;
+      const isPlayed = Boolean(snapEntry?.played);
+      const matchesPlayStatus =
+        playStatusFilter === 'all' ||
+        (playStatusFilter === 'played' && isPlayed) ||
+        (playStatusFilter === 'unplayed' && !isPlayed);
+      return matchesQuery && matchesGrade && matchesCt && matchesPlayStatus;
     });
-  }, [gradeFilter, ctFilter, query]);
+  }, [allUnifiedRecords, unifiedGamesMap, gradeFilter, ctFilter, playStatusFilter, query]);
 
   const handleToggleSpeak = (e: React.MouseEvent, gameId: string, title: string, level: string, desc: string) => {
     e.preventDefault();
@@ -161,25 +213,66 @@ const Games: React.FC = () => {
       <section className="games-library" aria-labelledby="games-library-title">
         <div className="games-section-heading">
           <div>
-            <span className="games-section-kicker"><Gamepad2 size={15} /> เกมของครูเจมส์</span>
+            <span className="games-section-kicker"><Gamepad2 size={15} /> เกมของครูเจมส์ (ฐานข้อมูลเชื่อมโยง 38 เกม)</span>
             <h2 id="games-library-title">คลังเกมฝึกทักษะ</h2>
           </div>
-          <span className="games-result-count">{filteredGames.length} เกม</span>
+          <span className="games-result-count">{filteredGames.length} / {allUnifiedRecords.length} เกม</span>
+        </div>
+
+        {/* Unified Database Student Progress Bar */}
+        <div className="unified-hub-summary" aria-label="สรุปความก้าวหน้าจากฐานข้อมูลเกมรวมศูนย์">
+          <div className="uhs-stats">
+            <div className="uhs-stat-pill">
+              <span>🎮 พิชิตแล้ว</span>
+              <strong>{playedCount} / {allUnifiedRecords.length} เกม</strong>
+            </div>
+            <div className="uhs-stat-pill">
+              <span>⭐ ดาวการเรียนรู้สะสม</span>
+              <strong>{totalEarnedStars} ดาว</strong>
+            </div>
+            <div className="uhs-stat-pill">
+              <span>🪙 เหรียญรางวัล</span>
+              <strong>{unifiedSnapshot.coins.toLocaleString()} เหรียญ</strong>
+            </div>
+          </div>
+          <div className="uhs-status-filters" role="group" aria-label="กรองตามสถานะการเล่น">
+            <button
+              type="button"
+              className={`uhs-filter-btn ${playStatusFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setPlayStatusFilter('all')}
+            >
+              ทั้งหมด ({allUnifiedRecords.length})
+            </button>
+            <button
+              type="button"
+              className={`uhs-filter-btn ${playStatusFilter === 'played' ? 'active' : ''}`}
+              onClick={() => setPlayStatusFilter('played')}
+            >
+              ✅ เล่นแล้ว ({playedCount})
+            </button>
+            <button
+              type="button"
+              className={`uhs-filter-btn ${playStatusFilter === 'unplayed' ? 'active' : ''}`}
+              onClick={() => setPlayStatusFilter('unplayed')}
+            >
+              🆕 ยังไม่เคยเล่น ({allUnifiedRecords.length - playedCount})
+            </button>
+          </div>
         </div>
 
         {/* New Games Spotlight */}
         <div className="new-games-spotlight">
           <div className="new-games-header">
             <Sparkles size={16} className="text-amber-400" />
-            <span>✨ แนะนำเกมใหม่ล่าสุดที่คุณครูสร้างให้:</span>
+            <span>✨ แนะนำเกมใหม่ล่าสุดที่คุณครูสร้างให้ (ปรับแต่งความเร็ว/โจทย์ได้ในเกม):</span>
           </div>
           <div className="new-games-grid">
             <Link to="/games/cyber-racer" className="new-game-card racer-card">
               <div className="ng-icon">🏎️</div>
               <div className="ng-info">
-                <span className="ng-badge">เกมแข่งรถตอบคำถาม</span>
+                <span className="ng-badge">เกมแข่งรถตอบคำถาม 60 FPS</span>
                 <strong>Cyber Racer Quiz</strong>
-                <p>ขับรถซิ่งบนทางด่วนไซเบอร์ เลือกเลนคำตอบวิทยาการคำนวณที่ถูกต้อง</p>
+                <p>ขับรถซิ่งบนทางด่วนไซเบอร์ คลิกปุ่มเลนคำตอบ A/B/C หรือขับเปลี่ยนเลนได้ลื่นไหล</p>
               </div>
               <span className="ng-arrow">เล่นเลย →</span>
             </Link>
@@ -263,8 +356,10 @@ const Games: React.FC = () => {
 
         {filteredGames.length > 0 ? (
           <div className="games-grid">
-            {filteredGames.map((game, index) => {
-              const pillar = getPillarForGameId(game.id);
+            {filteredGames.map((rec, index) => {
+              const game = rec.catalog;
+              const pillar = rec.ctPillar;
+              const snapEntry = unifiedGamesMap.get(rec.id);
               const isSpeaking = speakingId === game.id;
               return (
                 <motion.div
@@ -278,11 +373,23 @@ const Games: React.FC = () => {
                       <div className="gc-emoji" style={{ background: `${game.color}1f`, color: game.color }}>
                         {game.emoji}
                       </div>
-                      <span className="gc-level">{game.level}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        {snapEntry?.played && (
+                          <span className="gc-played-pill" title={`เล่นแล้ว ${snapEntry.playCount} ครั้ง`}>
+                            {'⭐'.repeat(Math.max(1, snapEntry.earnedStars))} {snapEntry.bestScore > 0 ? `(${snapEntry.bestScore})` : 'เล่นแล้ว'}
+                          </span>
+                        )}
+                        {rec.customOverride && (
+                          <span className="gc-custom-pill" title="มีการปรับแต่งความเร็ว/โจทย์">
+                            ⚙️ ปรับแต่งแล้ว
+                          </span>
+                        )}
+                        <span className="gc-level">{game.level}</span>
+                      </div>
                     </div>
                     <div className="gc-info">
-                      <h3>{game.title}</h3>
-                      <p>{game.desc}</p>
+                      <h3>{rec.effectiveTitle}</h3>
+                      <p>{rec.effectiveDesc}</p>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                         <div
                           className="gc-ct-badge"
@@ -297,6 +404,11 @@ const Games: React.FC = () => {
                           <span>{pillar.name}</span>
                         </div>
                         <BloomTaxonomyBadge level={getActivityBloomLevel('fun', game.id)} size="sm" />
+                        {rec.targetUnits.length > 0 && (
+                          <span className="gc-unit-badge">
+                            📚 หน่วยที่ {Array.from(new Set(rec.targetUnits.map((u) => u.unitNo))).join(', ')}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="gc-cta">
@@ -305,8 +417,8 @@ const Games: React.FC = () => {
                         type="button"
                         className={`gc-speak-btn ${isSpeaking ? 'speaking' : ''}`}
                         title={isSpeaking ? 'หยุดอ่าน' : 'ฟังเสียงอ่านคำอธิบายเกม'}
-                        aria-label={isSpeaking ? 'หยุดอ่าน' : `ฟังเสียงอ่านเกม ${game.title}`}
-                        onClick={(e) => handleToggleSpeak(e, game.id, game.title, game.level, game.desc)}
+                        aria-label={isSpeaking ? 'หยุดอ่าน' : `ฟังเสียงอ่านเกม ${rec.effectiveTitle}`}
+                        onClick={(e) => handleToggleSpeak(e, game.id, rec.effectiveTitle, game.level, rec.effectiveDesc)}
                       >
                         <Volume2 size={15} />
                       </button>
@@ -327,6 +439,7 @@ const Games: React.FC = () => {
                 setQuery('');
                 setGradeFilter('all');
                 setCtFilter('all');
+                setPlayStatusFilter('all');
               }}
             >
               แสดงเกมทั้งหมด

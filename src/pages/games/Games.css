@@ -942,3 +942,111 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+/* Unified Database Hub Summary Bar */
+.unified-hub-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
+  background: rgba(4, 31, 26, 0.88);
+  border: 2px solid rgba(248, 200, 75, 0.45);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+}
+
+.uhs-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.uhs-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e2e8f0;
+  font-size: 0.8rem;
+}
+
+.uhs-stat-pill strong {
+  color: #f8c84b;
+  font-weight: 800;
+}
+
+.uhs-status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.uhs-filter-btn {
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.uhs-filter-btn:hover {
+  border-color: #f8c84b;
+  color: #ffffff;
+}
+
+.uhs-filter-btn.active {
+  background: #f8c84b;
+  border-color: #f8c84b;
+  color: #0f172a;
+}
+
+.gc-played-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #047857;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.gc-custom-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #b45309;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.gc-unit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-top: 0.35rem;
+}
+
+
