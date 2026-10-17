@@ -25,6 +25,26 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
   const exam = examMaxScores(summary.classroom);
   const weights = getGradingPolicy(summary.classroom);
 
+  const totalStudents = summary.rows.length;
+  const maleCount = summary.rows.filter((r) => !r.prefix.includes('หญิง') && !r.prefix.includes('นางสาว')).length;
+  const femaleCount = totalStudents - maleCount;
+  const msCount = summary.rows.filter((r) => r.attendanceStatus === 'มส').length;
+  const rCount = summary.rows.filter((r) => r.evaluationText === 'คะแนนยังไม่ครบ').length;
+
+  const charCounts = {
+    3: summary.rows.filter((r) => (r.characteristicsScore ?? 3) === 3).length,
+    2: summary.rows.filter((r) => r.characteristicsScore === 2).length,
+    1: summary.rows.filter((r) => r.characteristicsScore === 1).length,
+    0: summary.rows.filter((r) => r.characteristicsScore === 0).length,
+  };
+  const readCounts = {
+    3: summary.rows.filter((r) => (r.readingThinkingScore ?? 3) === 3).length,
+    2: summary.rows.filter((r) => r.readingThinkingScore === 2).length,
+    1: summary.rows.filter((r) => r.readingThinkingScore === 1).length,
+    0: summary.rows.filter((r) => r.readingThinkingScore === 0).length,
+  };
+  const toPct = (n: number) => (totalStudents > 0 ? Math.round((n / totalStudents) * 1000) / 10 : 0);
+
   const handlePrint = () => {
     window.print();
   };
@@ -37,7 +57,7 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
           <strong>แบบบันทึกผลการพัฒนาคุณภาพผู้เรียน (ปพ.5) — {summary.classroom}</strong>
           <span>
             {summary.subjectTitle} ({summary.subjectCode}) • จำนวน {summary.stats.totalStudents} คน
-            {printMode === 'full_booklet' ? ' • พิมพ์เล่มสมบูรณ์ (หน้าปก+ข้อมูล+คะแนน+คุณลักษณะ)' : ' • พิมพ์ตารางสรุปคะแนน A4 แนวนอน'}
+            {printMode === 'full_booklet' ? ' • พิมพ์เล่มสมบูรณ์ 4 หมวด (หน้าปก+ข้อมูลเวลาเรียน+ตารางคะแนนตัวชี้วัด+คุณลักษณะ/อ่านคิด)' : ' • พิมพ์ตารางสรุปคะแนน A4 แนวนอน'}
           </span>
         </div>
 
@@ -55,7 +75,7 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
               className={`pp5-mode-btn ${printMode === 'full_booklet' ? 'active' : ''}`}
               onClick={() => setPrintMode('full_booklet')}
             >
-              <BookOpen size={15} /> เล่ม ปพ.5 สมบูรณ์
+              <BookOpen size={15} /> เล่ม ปพ.5 สมบูรณ์ (ครบทุกหน้า)
             </button>
           </div>
 
@@ -116,14 +136,14 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
               <thead>
                 <tr>
                   <th rowSpan={2} className="w-no">เลขที่</th>
-                  <th rowSpan={2} className="w-code">รหัส</th>
+                  <th rowSpan={2} className="w-code">เลขประจำตัว</th>
                   <th rowSpan={2} className="w-name">ชื่อ - นามสกุล</th>
                   {summary.indicators.map((ind) => (
                     <th key={ind.id} colSpan={3} className="w-ind">
                       {ind.code}
                     </th>
                   ))}
-                  <th colSpan={4} className="w-col-total">คะแนนเก็บ</th>
+                  <th colSpan={4} className="w-col-total">คะแนนเก็บระหว่างเรียน</th>
                   {exam.midterm > 0 && <th rowSpan={2} className="w-exam">กลางภาค<br/>({exam.midterm})</th>}
                   <th rowSpan={2} className="w-exam">ปลายภาค<br/>({exam.final})</th>
                   <th rowSpan={2} className="w-exam">รวมสอบ<br/>({weights.EXAM})</th>
@@ -197,6 +217,8 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
                     <th>1.5</th>
                     <th>1</th>
                     <th>0</th>
+                    <th>ร</th>
+                    <th>มส</th>
                     <th>รวม</th>
                   </tr>
                 </thead>
@@ -211,6 +233,8 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
                     <td>{summary.stats.gradeCounts['1.5']}</td>
                     <td>{summary.stats.gradeCounts['1']}</td>
                     <td>{summary.stats.gradeCounts['0']}</td>
+                    <td>{rCount}</td>
+                    <td>{msCount}</td>
                     <td><strong>{summary.stats.totalStudents}</strong></td>
                   </tr>
                   <tr>
@@ -223,6 +247,8 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
                     <td>{summary.stats.gradePercentages['1.5']}%</td>
                     <td>{summary.stats.gradePercentages['1']}%</td>
                     <td>{summary.stats.gradePercentages['0']}%</td>
+                    <td>{toPct(rCount)}%</td>
+                    <td>{toPct(msCount)}%</td>
                     <td><strong>100%</strong></td>
                   </tr>
                 </tbody>
@@ -274,48 +300,56 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
           </div>
         </div>
       ) : (
-        /* โหมด 2: เล่ม ปพ.5 สมบูรณ์ (Booklet Pages) */
+        /* โหมด 2: เล่ม ปพ.5 สมบูรณ์ 4 แผ่นครบตามแบบฟอร์มโรงเรียนบ้านคลองมดแดง (Booklet Pages) */
         <div className="pp5-booklet-container">
-          {/* หน้าที่ 1: หน้าปกเล่ม ปพ.5 */}
+          {/* หน้าที่ 1: หน้าปกเล่ม ปพ.5 มาตรฐาน สพฐ. */}
           <div className="pp5-booklet-page pp5-page-break">
             <div className="pp5-cover-inner">
               <div className="pp5-cover-badge">แบบ ปพ.5</div>
               <div className="pp5-cover-logo">🏫</div>
-              <h1 className="pp5-cover-title">แบบบันทึกผลการพัฒนาคุณภาพผู้เรียน</h1>
-              <h2 className="pp5-cover-sub">ตามหลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน พุทธศักราช 2551</h2>
+              <h1 className="pp5-cover-title">แบบบันทึกผลการพัฒนาคุณภาพผู้เรียนประจำรายวิชา (ปพ.5)</h1>
+              <h2 className="pp5-cover-sub">
+                หลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน พุทธศักราช 2551 (ฉบับปรับปรุง พ.ศ. 2560) • {summary.classroom.startsWith('ป.') ? 'ระดับประถมศึกษา' : 'ระดับมัธยมศึกษาตอนต้น'}
+              </h2>
 
-              <div className="pp5-cover-subject-box">
-                <div className="pp5-cover-line"><strong>รายวิชา:</strong> {summary.subjectTitle}</div>
-                <div className="pp5-cover-line"><strong>รหัสวิชา:</strong> {summary.subjectCode} ({summary.classroom.startsWith('ป.') ? `${summary.totalHours} ชั่วโมง` : `${summary.credit} หน่วยกิต`})</div>
-                <div className="pp5-cover-line"><strong>กลุ่มสาระการเรียนรู้:</strong> วิทยาศาสตร์และเทคโนโลยี</div>
-                <div className="pp5-cover-line"><strong>ระดับชั้น:</strong> {summary.classroom} • <strong>ภาคเรียนที่:</strong> {summary.term} ปีการศึกษา {summary.academicYear}</div>
-                <div className="pp5-cover-line"><strong>ครูผู้สอน:</strong> {summary.teacherName}</div>
-                <div className="pp5-cover-line"><strong>ครูประจำชั้น:</strong> {summary.advisorName}</div>
-                <div className="pp5-cover-line"><strong>สถานศึกษา:</strong> {summary.schoolName}</div>
-                <div className="pp5-cover-line"><strong>สังกัด:</strong> {summary.affiliation}</div>
+              <div className="pp5-cover-subject-box" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 18px', maxWidth: '880px', padding: '10px 16px', marginBottom: '10px', fontSize: '0.92rem', lineHeight: 1.55 }}>
+                <div><strong>สถานศึกษา:</strong> {summary.schoolName}</div>
+                <div><strong>สังกัด:</strong> {summary.affiliation}</div>
+                <div><strong>กลุ่มสาระการเรียนรู้:</strong> วิทยาศาสตร์และเทคโนโลยี</div>
+                <div><strong>ระดับชั้น:</strong> {summary.classroom} • <strong>ภาคเรียนที่:</strong> {summary.term}/{summary.academicYear}</div>
+                <div><strong>รายวิชา:</strong> {summary.subjectTitle} ({summary.subjectCode})</div>
+                <div><strong>เวลาเรียน/หน่วยกิต:</strong> {summary.totalHours} ชั่วโมง/ภาค ({summary.credit} หน่วยกิต)</div>
+                <div><strong>ครูผู้สอน:</strong> {summary.teacherName}</div>
+                <div><strong>ครูประจำชั้น/ที่ปรึกษา:</strong> {summary.advisorName}</div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <strong>จำนวนนักเรียนทั้งหมด:</strong> {totalStudents} คน (ชาย {maleCount} คน • หญิง {femaleCount} คน)
+                </div>
               </div>
 
-              {/* สรุปสถิติผลการเรียนหน้าปก */}
-              <div className="pp5-cover-stats">
-                <h3>สรุปการตัดสินผลการเรียน</h3>
+              {/* 1. ตารางสรุปผลการเรียน (4 - 0, ร, มส) */}
+              <div className="pp5-cover-stats" style={{ maxWidth: '880px', marginBottom: '8px' }}>
+                <h3 style={{ margin: '0 0 4px', fontSize: '0.95rem' }}>1. สรุปผลการประเมินระดับผลการเรียน</h3>
                 <table className="pp5-stat-table">
                   <thead>
                     <tr>
-                      <th>ระดับ</th>
-                      <th>4</th>
-                      <th>3.5</th>
-                      <th>3</th>
-                      <th>2.5</th>
-                      <th>2</th>
-                      <th>1.5</th>
-                      <th>1</th>
-                      <th>0</th>
-                      <th>รวม</th>
+                      <th>จำนวนนักเรียนทั้งหมด</th>
+                      <th>เกรด 4</th>
+                      <th>เกรด 3.5</th>
+                      <th>เกรด 3</th>
+                      <th>เกรด 2.5</th>
+                      <th>เกรด 2</th>
+                      <th>เกรด 1.5</th>
+                      <th>เกรด 1</th>
+                      <th>เกรด 0</th>
+                      <th>ร</th>
+                      <th>มส</th>
+                      <th>เฉลี่ย (X̄)</th>
+                      <th>S.D.</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td><strong>คน</strong></td>
+                      <td><strong>{summary.stats.totalStudents} คน</strong></td>
                       <td>{summary.stats.gradeCounts['4']}</td>
                       <td>{summary.stats.gradeCounts['3.5']}</td>
                       <td>{summary.stats.gradeCounts['3']}</td>
@@ -324,46 +358,143 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
                       <td>{summary.stats.gradeCounts['1.5']}</td>
                       <td>{summary.stats.gradeCounts['1']}</td>
                       <td>{summary.stats.gradeCounts['0']}</td>
-                      <td>{summary.stats.totalStudents}</td>
+                      <td>{rCount}</td>
+                      <td>{msCount}</td>
+                      <td><strong>{summary.stats.meanScore}</strong></td>
+                      <td><strong>{summary.stats.sdScore}</strong></td>
+                    </tr>
+                    <tr>
+                      <td><strong>คิดเป็นร้อยละ (%)</strong></td>
+                      <td>{summary.stats.gradePercentages['4']}%</td>
+                      <td>{summary.stats.gradePercentages['3.5']}%</td>
+                      <td>{summary.stats.gradePercentages['3']}%</td>
+                      <td>{summary.stats.gradePercentages['2.5']}%</td>
+                      <td>{summary.stats.gradePercentages['2']}%</td>
+                      <td>{summary.stats.gradePercentages['1.5']}%</td>
+                      <td>{summary.stats.gradePercentages['1']}%</td>
+                      <td>{summary.stats.gradePercentages['0']}%</td>
+                      <td>{toPct(rCount)}%</td>
+                      <td>{toPct(msCount)}%</td>
+                      <td colSpan={2}><strong>ระดับ 3 ขึ้นไป: {summary.stats.qualityPercentage}%</strong></td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              {/* ลงนาม 4 ฝ่ายหน้าปก */}
-              <div className="pp5-signatures" style={{ marginTop: '30px' }}>
-                <div className="signature-col">
-                  <div className="sig-line">ลงชื่อ..................................................</div>
-                  <div className="sig-name">({COURSE_TEACHER_NAME})</div>
-                  <div className="sig-role">ครูผู้สอน</div>
+              {/* 2. ตารางสรุปคุณลักษณะอันพึงประสงค์ และการอ่าน คิดวิเคราะห์ และเขียนสื่อความ (ตรงตามหน้าปกไฟล์ Excel ต้นฉบับ) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', maxWidth: '880px', margin: '0 auto 10px' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 4px', fontSize: '0.92rem' }}>2. ผลการประเมินคุณลักษณะอันพึงประสงค์</h3>
+                  <table className="pp5-stat-table">
+                    <thead>
+                      <tr>
+                        <th>รายการ</th>
+                        <th>จำนวนประเมิน</th>
+                        <th>ดีเยี่ยม (3)</th>
+                        <th>ดี (2)</th>
+                        <th>ผ่าน (1)</th>
+                        <th>ไม่ผ่าน (0)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>จำนวน (คน)</strong></td>
+                        <td>{totalStudents}</td>
+                        <td>{charCounts[3]}</td>
+                        <td>{charCounts[2]}</td>
+                        <td>{charCounts[1]}</td>
+                        <td>{charCounts[0]}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>ร้อยละ (%)</strong></td>
+                        <td>100%</td>
+                        <td>{toPct(charCounts[3])}%</td>
+                        <td>{toPct(charCounts[2])}%</td>
+                        <td>{toPct(charCounts[1])}%</td>
+                        <td>{toPct(charCounts[0])}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-                <div className="signature-col">
-                  <div className="sig-line">ลงชื่อ..................................................</div>
-                  <div className="sig-name">({ACADEMIC_HEAD_NAME})</div>
-                  <div className="sig-role">หัวหน้างานวิชาการ</div>
+
+                <div>
+                  <h3 style={{ margin: '0 0 4px', fontSize: '0.92rem' }}>3. ผลการประเมินการอ่าน คิดวิเคราะห์ และเขียน</h3>
+                  <table className="pp5-stat-table">
+                    <thead>
+                      <tr>
+                        <th>รายการ</th>
+                        <th>จำนวนประเมิน</th>
+                        <th>ดีเยี่ยม (3)</th>
+                        <th>ดี (2)</th>
+                        <th>ผ่าน (1)</th>
+                        <th>ไม่ผ่าน (0)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>จำนวน (คน)</strong></td>
+                        <td>{totalStudents}</td>
+                        <td>{readCounts[3]}</td>
+                        <td>{readCounts[2]}</td>
+                        <td>{readCounts[1]}</td>
+                        <td>{readCounts[0]}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>ร้อยละ (%)</strong></td>
+                        <td>100%</td>
+                        <td>{toPct(readCounts[3])}%</td>
+                        <td>{toPct(readCounts[2])}%</td>
+                        <td>{toPct(readCounts[1])}%</td>
+                        <td>{toPct(readCounts[0])}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-                <div className="signature-col">
-                  <div className="sig-line">ลงชื่อ..................................................</div>
-                  <div className="sig-name">({SCHOOL_DIRECTOR_NAME})</div>
-                  <div className="sig-role">ผู้อำนวยการโรงเรียน</div>
+              </div>
+
+              {/* 3. การอนุมัติผลการเรียน (ตรงตามหน้าปกไฟล์ Excel ต้นฉบับ) */}
+              <div style={{ maxWidth: '880px', margin: '8px auto 0', border: '1px solid #475569', borderRadius: '8px', padding: '10px 14px', textAlign: 'left', fontSize: '0.88rem' }}>
+                <div style={{ fontWeight: 'bold', textAlign: 'center', marginBottom: '8px', fontSize: '0.95rem' }}>
+                  การอนุมัติผลการเรียนประจำรายวิชา
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.15fr', gap: '12px', textAlign: 'center', alignItems: 'end' }}>
+                  <div>
+                    <div>ลงชื่อ..................................................ครูผู้สอน</div>
+                    <div style={{ fontWeight: 600 }}>({COURSE_TEACHER_NAME})</div>
+                    <div style={{ fontSize: '0.8rem', color: '#475569' }}>ครูผู้สอนรายวิชา {summary.subjectTitle}</div>
+                  </div>
+                  <div>
+                    <div>ลงชื่อ..................................................หัวหน้าวิชาการ</div>
+                    <div style={{ fontWeight: 600 }}>({ACADEMIC_HEAD_NAME})</div>
+                    <div style={{ fontSize: '0.8rem', color: '#475569' }}>หัวหน้ากลุ่มสาระ / งานวัดผลการศึกษา</div>
+                  </div>
+                  <div style={{ borderLeft: '1px dashed #94a3b8', paddingLeft: '10px' }}>
+                    <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                      เรียนเสนอเพื่อพิจารณา &nbsp; [ &nbsp; ] อนุมัติ &nbsp; [ &nbsp; ] ไม่อนุมัติ
+                    </div>
+                    <div>ลงชื่อ..................................................ผู้อำนวยการ</div>
+                    <div style={{ fontWeight: 600 }}>({SCHOOL_DIRECTOR_NAME})</div>
+                    <div style={{ fontSize: '0.8rem', color: '#475569' }}>ผู้อำนวยการ{summary.schoolName}</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* หน้าที่ 2: ข้อมูลนักเรียนและเวลาเรียน */}
+          {/* หน้าที่ 2: ข้อมูลเกี่ยวกับนักเรียนและบันทึกสรุปเวลาเรียน */}
           <div className="pp5-booklet-page pp5-page-break">
-            <h2 className="pp5-booklet-h2">1. ข้อมูลเกี่ยวกับนักเรียนและสรุปเวลาเรียน</h2>
+            <h2 className="pp5-booklet-h2">หมวดที่ 1: ข้อมูลเกี่ยวกับนักเรียนและสรุปเวลาเรียน ({summary.classroom} • เวลาเรียนเต็ม {summary.totalHours} ชั่วโมง)</h2>
             <table className="pp5-table" style={{ fontSize: '0.82rem' }}>
               <thead>
                 <tr>
                   <th>เลขที่</th>
-                  <th>รหัส</th>
-                  <th>เลข ปชช. 13 หลัก</th>
+                  <th>เลขประจำตัว</th>
+                  <th>เลขประจำตัวประชาชน 13 หลัก</th>
                   <th>ชื่อ - นามสกุล</th>
                   <th>เพศ</th>
-                  <th>วันเกิด</th>
-                  <th>ชื่อบิดา - มารดา</th>
+                  <th>วันเดือนปีเกิด</th>
+                  <th>ชื่อบิดา / มารดา</th>
+                  <th>เวลาเต็ม</th>
                   <th>มาเรียน</th>
                   <th>ลา</th>
                   <th>ขาด</th>
@@ -378,9 +509,10 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
                     <td className="text-center">{r.studentCode}</td>
                     <td className="text-center" style={{ fontFamily: 'monospace' }}>{r.citizenId || '-'}</td>
                     <td className="text-left font-sarabun">{r.fullName}</td>
-                    <td className="text-center">{r.prefix.includes('หญิง') ? 'หญิง' : 'ชาย'}</td>
+                    <td className="text-center">{r.prefix.includes('หญิง') || r.prefix.includes('นางสาว') ? 'หญิง' : 'ชาย'}</td>
                     <td className="text-center">{r.birthDate || '-'}</td>
                     <td className="text-left font-small">{r.fatherName || '-'} / {r.motherName || '-'}</td>
+                    <td className="text-center">{r.attendanceTotalHours}</td>
                     <td className="text-center font-bold">{r.attendancePresent}</td>
                     <td className="text-center">{r.attendanceSick}</td>
                     <td className="text-center">{r.attendanceAbsent}</td>
@@ -394,45 +526,139 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
             </table>
           </div>
 
-          {/* หน้าที่ 3: สรุปการประเมินคุณลักษณะและอ่านคิดวิเคราะห์ */}
-          <div className="pp5-booklet-page">
-            <h2 className="pp5-booklet-h2">2. สรุปผลการประเมินคุณลักษณะอันพึงประสงค์และการอ่าน คิดวิเคราะห์และเขียน</h2>
-            <table className="pp5-table" style={{ fontSize: '0.85rem' }}>
+          {/* หน้าที่ 3: โครงสร้างตัวชี้วัดและตารางสรุปคะแนนรายตัวชี้วัด */}
+          <div className="pp5-booklet-page pp5-page-break">
+            <h2 className="pp5-booklet-h2">หมวดที่ 2: โครงสร้างตัวชี้วัดและสรุปคะแนนผลการเรียนรู้รายตัวชี้วัด ({summary.subjectTitle} {summary.subjectCode})</h2>
+            <div style={{ marginBottom: '8px', fontSize: '0.8rem', display: 'flex', flexWrap: 'wrap', gap: '6px 14px', background: '#f8fafc', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+              {summary.indicators.map((ind, idx) => (
+                <span key={ind.id}>
+                  <strong>{idx + 1}. {ind.code}:</strong> {ind.title}
+                </span>
+              ))}
+            </div>
+            <table className="pp5-table" style={{ fontSize: '0.8rem' }}>
               <thead>
                 <tr>
-                  <th>เลขที่</th>
-                  <th>รหัส</th>
-                  <th>ชื่อ - นามสกุล</th>
-                  <th>คะแนนรวม ({weights.TOTAL})</th>
-                  <th>ระดับผลการเรียน</th>
-                  <th>คุณลักษณะอันพึงประสงค์ (8 ข้อ)</th>
-                  <th>การอ่าน คิดวิเคราะห์และเขียน (5 ข้อ)</th>
-                  <th>สมรรถนะสำคัญของผู้เรียน (5 ด้าน)</th>
-                  <th>ผลการตัดสิน</th>
+                  <th rowSpan={2}>เลขที่</th>
+                  <th rowSpan={2}>เลขประจำตัว</th>
+                  <th rowSpan={2}>ชื่อ - นามสกุล</th>
+                  {summary.indicators.map((ind) => (
+                    <th key={`bk_${ind.id}`} colSpan={3}>{ind.code}</th>
+                  ))}
+                  <th colSpan={4}>คะแนนเก็บระหว่างเรียน</th>
+                  {exam.midterm > 0 && <th rowSpan={2}>กลางภาค<br/>({exam.midterm})</th>}
+                  <th rowSpan={2}>ปลายภาค<br/>({exam.final})</th>
+                  <th rowSpan={2}>รวม 100</th>
+                  <th rowSpan={2}>เกรด</th>
+                  <th rowSpan={2}>ผลตัดสิน</th>
+                </tr>
+                <tr>
+                  {summary.indicators.map((ind) => (
+                    <React.Fragment key={`bk_sub_${ind.id}`}>
+                      <th className="sub-th">K</th>
+                      <th className="sub-th">P</th>
+                      <th className="sub-th">A</th>
+                    </React.Fragment>
+                  ))}
+                  <th className="sub-th">K ({weights.COLLECTED * weights.K_RATIO})</th>
+                  <th className="sub-th">P ({weights.COLLECTED * weights.P_RATIO})</th>
+                  <th className="sub-th">A ({weights.COLLECTED * weights.A_RATIO})</th>
+                  <th className="sub-th">รวม ({weights.COLLECTED})</th>
                 </tr>
               </thead>
               <tbody>
                 {summary.rows.map((r) => (
-                  <tr key={r.studentCode}>
+                  <tr key={`bk_row_${r.studentCode}`}>
                     <td className="text-center">{r.studentNo}</td>
                     <td className="text-center">{r.studentCode}</td>
                     <td className="text-left font-sarabun">{r.fullName}</td>
+                    {summary.indicators.map((ind) => {
+                      const s = r.indicatorScores[ind.id] || { k: 0, p: 'พอใช้', a: false };
+                      return (
+                        <React.Fragment key={`bk_cell_${r.studentCode}_${ind.id}`}>
+                          <td className="text-center">{s.k}</td>
+                          <td className="text-center font-small">{s.p}</td>
+                          <td className="text-center">{s.a ? 'ผ' : 'มผ'}</td>
+                        </React.Fragment>
+                      );
+                    })}
+                    <td className="text-center">{r.collectedK}</td>
+                    <td className="text-center">{r.collectedP}</td>
+                    <td className="text-center">{r.collectedA}</td>
+                    <td className="text-center font-bold">{r.totalCollected}</td>
+                    {exam.midterm > 0 && <td className="text-center">{r.midtermExam}</td>}
+                    <td className="text-center">{r.finalExam}</td>
                     <td className="text-center font-bold">{r.totalScore}</td>
                     <td className="text-center font-bold grade-cell">{r.grade}</td>
-                    <td className="text-center font-bold">
-                      {r.characteristicsScore === 3 ? 'ดีเยี่ยม (3)' : r.characteristicsScore === 2 ? 'ดี (2)' : r.characteristicsScore === 1 ? 'ผ่าน (1)' : 'ดีเยี่ยม (3)'}
-                    </td>
-                    <td className="text-center font-bold">
-                      {r.readingThinkingScore === 3 ? 'ดีเยี่ยม (3)' : r.readingThinkingScore === 2 ? 'ดี (2)' : r.readingThinkingScore === 1 ? 'ผ่าน (1)' : 'ดีเยี่ยม (3)'}
-                    </td>
-                    <td className="text-center font-bold">
-                      {r.competencyScore === 3 ? 'ดีเยี่ยม (3)' : r.competencyScore === 2 ? 'ดี (2)' : r.competencyScore === 1 ? 'ผ่าน (1)' : 'ดีเยี่ยม (3)'}
-                    </td>
-                    <td className={`text-center font-bold ${r.isPassed ? 'eval-pass' : 'eval-fail'}`}>
-                      {r.evaluationText}
-                    </td>
+                    <td className={`text-center font-bold ${r.isPassed ? 'eval-pass' : 'eval-fail'}`}>{r.evaluationText}</td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* หน้าที่ 4: แบบประเมินคุณลักษณะอันพึงประสงค์ 8 ข้อ และการอ่าน คิดวิเคราะห์ และเขียน 5 ข้อ */}
+          <div className="pp5-booklet-page">
+            <h2 className="pp5-booklet-h2">หมวดที่ 3: แบบประเมินคุณลักษณะอันพึงประสงค์ (8 ข้อ) และการอ่าน คิดวิเคราะห์ และเขียน (5 ข้อ)</h2>
+            <table className="pp5-table" style={{ fontSize: '0.8rem' }}>
+              <thead>
+                <tr>
+                  <th rowSpan={2}>เลขที่</th>
+                  <th rowSpan={2}>เลขประจำตัว</th>
+                  <th rowSpan={2}>ชื่อ - นามสกุล</th>
+                  <th colSpan={9}>คุณลักษณะอันพึงประสงค์ 8 ประการ (ระดับ 0-3)</th>
+                  <th colSpan={6}>การอ่าน คิดวิเคราะห์ และเขียน 5 ข้อ (ระดับ 0-3)</th>
+                  <th rowSpan={2}>สมรรถนะสำคัญ</th>
+                </tr>
+                <tr>
+                  <th className="sub-th">1</th>
+                  <th className="sub-th">2</th>
+                  <th className="sub-th">3</th>
+                  <th className="sub-th">4</th>
+                  <th className="sub-th">5</th>
+                  <th className="sub-th">6</th>
+                  <th className="sub-th">7</th>
+                  <th className="sub-th">8</th>
+                  <th className="sub-th">สรุป</th>
+                  <th className="sub-th">1</th>
+                  <th className="sub-th">2</th>
+                  <th className="sub-th">3</th>
+                  <th className="sub-th">4</th>
+                  <th className="sub-th">5</th>
+                  <th className="sub-th">สรุป</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.rows.map((r) => {
+                  const cScore = r.characteristicsScore ?? 3;
+                  const rScore = r.readingThinkingScore ?? 3;
+                  const cLabel = cScore === 3 ? 'ดีเยี่ยม' : cScore === 2 ? 'ดี' : cScore === 1 ? 'ผ่าน' : 'ไม่ผ่าน';
+                  const rLabel = rScore === 3 ? 'ดีเยี่ยม' : rScore === 2 ? 'ดี' : rScore === 1 ? 'ผ่าน' : 'ไม่ผ่าน';
+                  const compLabel = (r.competencyScore ?? 3) === 3 ? 'ดีเยี่ยม' : r.competencyScore === 2 ? 'ดี' : 'ผ่าน';
+                  return (
+                    <tr key={`attr_${r.studentCode}`}>
+                      <td className="text-center">{r.studentNo}</td>
+                      <td className="text-center">{r.studentCode}</td>
+                      <td className="text-left font-sarabun">{r.fullName}</td>
+                      <td className="text-center">{cScore}</td>
+                      <td className="text-center">{cScore}</td>
+                      <td className="text-center">{cScore}</td>
+                      <td className="text-center">{cScore}</td>
+                      <td className="text-center">{cScore}</td>
+                      <td className="text-center">{cScore}</td>
+                      <td className="text-center">{cScore}</td>
+                      <td className="text-center">{cScore}</td>
+                      <td className="text-center font-bold eval-pass">{cLabel}</td>
+                      <td className="text-center">{rScore}</td>
+                      <td className="text-center">{rScore}</td>
+                      <td className="text-center">{rScore}</td>
+                      <td className="text-center">{rScore}</td>
+                      <td className="text-center">{rScore}</td>
+                      <td className="text-center font-bold eval-pass">{rLabel}</td>
+                      <td className="text-center font-bold">{compLabel}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -781,15 +1007,28 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
             background: white !important;
           }
 
-          .pp5-no-print {
+          body:has(.pp5-print-container) * {
+            visibility: hidden !important;
+          }
+
+          .pp5-print-container,
+          .pp5-print-container * {
+            visibility: visible !important;
+          }
+
+          .pp5-no-print,
+          .pp5-no-print * {
             display: none !important;
           }
 
           .pp5-print-container {
-            position: static;
-            background: white;
-            padding: 0;
-            overflow: visible;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            background: white !important;
+            padding: 0 !important;
+            overflow: visible !important;
           }
 
           .pp5-page, .pp5-booklet-page {

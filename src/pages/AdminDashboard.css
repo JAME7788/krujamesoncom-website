@@ -2017,7 +2017,7 @@
 /* Print styles for GradeBook */
 @media print {
   /* Hide navbar, footer, sidebar, scrollbars, tabs and non-printable containers */
-  body * {
+  body:has(.gradebook.print-mode) * {
     visibility: hidden;
   }
   .gradebook.print-mode, .gradebook.print-mode * {

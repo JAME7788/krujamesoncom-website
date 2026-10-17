@@ -750,15 +750,28 @@ export const StudentGradeSlipPrintLayout: React.FC<StudentGradeSlipPrintLayoutPr
             background: white !important;
           }
 
-          .slip-no-print {
+          body:has(.slip-print-container) * {
+            visibility: hidden !important;
+          }
+
+          .slip-print-container,
+          .slip-print-container * {
+            visibility: visible !important;
+          }
+
+          .slip-no-print,
+          .slip-no-print * {
             display: none !important;
           }
 
           .slip-print-container {
-            position: static;
-            background: white;
-            padding: 0;
-            overflow: visible;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            background: white !important;
+            padding: 0 !important;
+            overflow: visible !important;
           }
 
           .slip-pages-wrapper {

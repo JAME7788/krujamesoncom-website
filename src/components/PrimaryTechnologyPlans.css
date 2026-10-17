@@ -947,7 +947,7 @@
 }
 
 @media print {
-  body * {
+  body:has(.ptplan-shell) * {
     visibility: hidden !important;
   }
 

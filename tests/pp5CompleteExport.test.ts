@@ -115,4 +115,28 @@ describe('PP5 and PP6 Complete Generator Service', () => {
     expect(syncRes.totalStudents).toBe(113);
     expect(syncRes.syncedCount).toBe(9);
   });
+
+  it('ensures @media print styles are properly scoped and never blank out PP5/PP6 print views', async () => {
+    const fs = await import('node:fs');
+    const cssFiles = [
+      'src/components/P1TechnologyPlan.css',
+      'src/components/PrimaryTechnologyPlans.css',
+      'src/components/StudentAssessmentHub.css',
+      'src/pages/AdminDashboard.css',
+      'src/components/OfficialPp5PrintLayout.tsx',
+      'src/components/StudentGradeSlipPrintLayout.tsx',
+    ];
+    for (const file of cssFiles) {
+      const content = fs.readFileSync(file, 'utf8');
+      // Must NOT contain unscoped `body * {` inside @media print which would hide other printable views
+      expect(content).not.toMatch(/^\s*body\s*\*\s*\{/m);
+    }
+
+    const summary = getClassroomExportSummary('ป.1', 'main');
+    const docxHtml = generatePp5CompleteDocxHtml(summary);
+    expect(docxHtml).toContain('๒. สรุปผลการประเมินคุณลักษณะอันพึงประสงค์ และการอ่าน คิดวิเคราะห์ และเขียนสื่อความ');
+    expect(docxHtml).toContain('๓. การอนุมัติผลการเรียน');
+    expect(docxHtml).toContain('เรียนเสนอเพื่อพิจารณา');
+  });
 });
+

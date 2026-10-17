@@ -865,7 +865,7 @@
 }
 
 @media print {
-  body * {
+  body:has(.student-assessment-hub) * {
     visibility: hidden;
   }
 

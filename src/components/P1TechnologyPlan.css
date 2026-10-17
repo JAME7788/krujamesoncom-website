@@ -994,7 +994,7 @@
     margin: 1.5cm;
   }
 
-  body * {
+  body:has(.p1plan-print-document) * {
     visibility: hidden !important;
   }
 

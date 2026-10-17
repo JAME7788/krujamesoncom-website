@@ -42,6 +42,22 @@ const escapeHtml = (value: string | number | undefined | null): string => {
 export const generatePp5CompleteDocxHtml = (summary: ClassroomExportSummary): string => {
   const isPrimary = summary.classroom.startsWith('ป.');
   const gradeLevels = ['4', '3.5', '3', '2.5', '2', '1.5', '1', '0'] as const;
+  const totalStudents = summary.rows.length;
+  const maleCount = summary.rows.filter((r) => !r.prefix.includes('หญิง') && !r.prefix.includes('นางสาว')).length;
+  const femaleCount = totalStudents - maleCount;
+  const charCounts = {
+    3: summary.rows.filter((r) => (r.characteristicsScore ?? 3) === 3).length,
+    2: summary.rows.filter((r) => r.characteristicsScore === 2).length,
+    1: summary.rows.filter((r) => r.characteristicsScore === 1).length,
+    0: summary.rows.filter((r) => r.characteristicsScore === 0).length,
+  };
+  const readCounts = {
+    3: summary.rows.filter((r) => (r.readingThinkingScore ?? 3) === 3).length,
+    2: summary.rows.filter((r) => r.readingThinkingScore === 2).length,
+    1: summary.rows.filter((r) => r.readingThinkingScore === 1).length,
+    0: summary.rows.filter((r) => r.readingThinkingScore === 0).length,
+  };
+  const toPct = (n: number) => (totalStudents > 0 ? Math.round((n / totalStudents) * 1000) / 10 : 0);
 
   return `
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -190,13 +206,12 @@ th {
   <div class="info-box">
     <p><strong>รายวิชา:</strong> ${escapeHtml(summary.subjectTitle)} &nbsp;&nbsp;&nbsp;&nbsp; <strong>รหัสวิชา:</strong> ${escapeHtml(summary.subjectCode)}</p>
     <p><strong>ระดับชั้น:</strong> ${escapeHtml(summary.classroom)} &nbsp;&nbsp;&nbsp;&nbsp; <strong>ภาคเรียนที่:</strong> ${escapeHtml(summary.term)} &nbsp;&nbsp;&nbsp;&nbsp; <strong>ปีการศึกษา:</strong> ${escapeHtml(summary.academicYear)}</p>
-    <p><strong>จำนวนหน่วยกิต:</strong> ${summary.credit} หน่วยกิต &nbsp;&nbsp;&nbsp;&nbsp; <strong>เวลาเรียน:</strong> ${summary.totalHours} ชั่วโมง/ภาค</p>
-    <p><strong>ครูผู้สอน:</strong> ${escapeHtml(summary.teacherName)}</p>
-    <p><strong>ครูประจำชั้น:</strong> ${escapeHtml(summary.advisorName)}</p>
+    <p><strong>จำนวนหน่วยกิต:</strong> ${summary.credit} หน่วยกิต &nbsp;&nbsp;&nbsp;&nbsp; <strong>เวลาเรียน:</strong> ${summary.totalHours} ชั่วโมง/ภาค &nbsp;&nbsp;&nbsp;&nbsp; <strong>จำนวนนักเรียน:</strong> ${totalStudents} คน (ชาย ${maleCount} / หญิง ${femaleCount})</p>
+    <p><strong>ครูผู้สอน:</strong> ${escapeHtml(summary.teacherName)} &nbsp;&nbsp;&nbsp;&nbsp; <strong>ครูประจำชั้น:</strong> ${escapeHtml(summary.advisorName)}</p>
     <p><strong>ผู้อำนวยการโรงเรียน:</strong> ${escapeHtml(summary.directorName)}</p>
   </div>
 
-  <p class="bold" style="font-size: 15pt; margin-top: 14pt;">สรุปผลการประเมินและการกระจายระดับผลการเรียน</p>
+  <p class="bold" style="font-size: 15pt; margin-top: 10pt;">๑. สรุปผลการประเมินและการกระจายระดับผลการเรียน</p>
   
   <table class="stat-summary-table">
     <tr>
@@ -231,8 +246,37 @@ th {
     </tr>
   </table>
 
-  <!-- ลายมือชื่อ 4 ฝ่าย -->
-  <table class="no-border signature-grid">
+  <p class="bold" style="font-size: 15pt; margin-top: 8pt;">๒. สรุปผลการประเมินคุณลักษณะอันพึงประสงค์ และการอ่าน คิดวิเคราะห์ และเขียนสื่อความ</p>
+  <table class="stat-summary-table" style="margin-top: 4pt;">
+    <tr>
+      <th>รายการประเมิน</th>
+      <th>จำนวนประเมิน</th>
+      <th>ดีเยี่ยม (3)</th>
+      <th>ดี (2)</th>
+      <th>ผ่าน (1)</th>
+      <th>ไม่ผ่าน (0)</th>
+    </tr>
+    <tr>
+      <td class="bold text-left">คุณลักษณะอันพึงประสงค์ (คน / ร้อยละ)</td>
+      <td class="text-center bold">${totalStudents} (100%)</td>
+      <td class="text-center">${charCounts[3]} (${toPct(charCounts[3])}%)</td>
+      <td class="text-center">${charCounts[2]} (${toPct(charCounts[2])}%)</td>
+      <td class="text-center">${charCounts[1]} (${toPct(charCounts[1])}%)</td>
+      <td class="text-center">${charCounts[0]} (${toPct(charCounts[0])}%)</td>
+    </tr>
+    <tr>
+      <td class="bold text-left">การอ่าน คิดวิเคราะห์ และเขียน (คน / ร้อยละ)</td>
+      <td class="text-center bold">${totalStudents} (100%)</td>
+      <td class="text-center">${readCounts[3]} (${toPct(readCounts[3])}%)</td>
+      <td class="text-center">${readCounts[2]} (${toPct(readCounts[2])}%)</td>
+      <td class="text-center">${readCounts[1]} (${toPct(readCounts[1])}%)</td>
+      <td class="text-center">${readCounts[0]} (${toPct(readCounts[0])}%)</td>
+    </tr>
+  </table>
+
+  <!-- การอนุมัติผลการเรียน & ลายมือชื่อ 4 ฝ่าย -->
+  <p class="bold" style="font-size: 15pt; margin-top: 8pt;">๓. การอนุมัติผลการเรียน &nbsp; ( เรียนเสนอเพื่อพิจารณา &nbsp; [ &nbsp; ] อนุมัติ &nbsp;&nbsp; [ &nbsp; ] ไม่อนุมัติ )</p>
+  <table class="no-border signature-grid" style="margin-top: 8pt;">
     <tr>
       <td class="signature-box" style="width: 50%;">
         ลงชื่อ........................................................ครูผู้สอน<br>
@@ -246,12 +290,12 @@ th {
       </td>
     </tr>
     <tr>
-      <td class="signature-box" style="padding-top: 18pt;">
+      <td class="signature-box" style="padding-top: 12pt;">
         ลงชื่อ........................................................หัวหน้าวิชาการ<br>
         (นายอนันตชัย เพ็ชรรี่)<br>
         หัวหน้าฝ่ายวิชาการและงานวัดผลประเมินผล
       </td>
-      <td class="signature-box" style="padding-top: 18pt;">
+      <td class="signature-box" style="padding-top: 12pt;">
         ลงชื่อ........................................................ผู้อนุมัติ<br>
         (${escapeHtml(summary.directorName)})<br>
         ผู้อำนวยการโรงเรียนบ้านคลองมดแดง
