@@ -85,6 +85,13 @@ describe('Unified Classroom Action Research (CAR) & ว.PA Agreement (P.1 Mouse 
     expect(paDoc).toContain('ร้อยละ ๑๐๐');
     expect(paDoc).toContain('เกณฑ์ร้อยละ ๗๐');
 
+    // Part 1: Standard position agreement & 3 Domains 15 Indicators
+    expect(paDoc).toContain('ส่วนที่ ๑: ข้อตกลงในการพัฒนางานตามมาตรฐานตำแหน่ง');
+    expect(paDoc).toContain('ภาระงานสอนตามที่ ก.ค.ศ. กำหนด');
+    expect(paDoc).toContain('ด้านที่ ๑: ด้านการจัดการเรียนรู้ (๘ ตัวชี้วัด)');
+    expect(paDoc).toContain('ด้านที่ ๒: ด้านการส่งเสริมและสนับสนุนการจัดการเรียนรู้ (๔ ตัวชี้วัด)');
+    expect(paDoc).toContain('ด้านที่ ๓: ด้านการพัฒนาตนเองและวิชาชีพ (๓ ตัวชี้วัด)');
+
     // All 11 students listed in PA document
     records.forEach((r) => {
       expect(paDoc).toContain(r.name);
