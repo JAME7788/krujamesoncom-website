@@ -115,17 +115,47 @@ export interface Submission {
 
 const ASS_KEY = 'krujames_assignments_v1';
 const SUB_KEY = 'krujames_submissions_v1';
+const GDRIVE_CONFIG_KEY = 'krujames_gdrive_bridge_v1';
+const GDRIVE_CONFIG_DOC_ID = '__gdrive_bridge_config__';
 const ASS_COLLECTION = 'homeworkAssignments';
 const SUB_COLLECTION = 'homeworkSubmissions';
-const MAX_FIRESTORE_CONTENT_DATA_LEN = 700_000;
+const MAX_FIRESTORE_CONTENT_DATA_LEN = 120_000; // จำกัดขนาดรูปย่อสำรองไม่เกิน ~90 KB เพื่อไม่ให้เปลืองความจำฐานข้อมูล
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+export interface GoogleDriveBridgeConfig {
+  /** URL ของ Google Apps Script Web App ของครูสำหรับรับไฟล์นักเรียนเข้า Google Drive ครูโดยตรง (ไม่ต้องใช้ Gmail นักเรียน) */
+  scriptWebAppUrl: string;
+  /** ลิงก์โฟลเดอร์ Google Drive กลางของครู (สำหรับเปิดดูไฟล์ทั้งหมด หรือให้นักเรียนเปิดดู) */
+  sharedFolderUrl: string;
+  /** ลบข้อมูลไบนารีออกจากฐานข้อมูลเว็บทันทีเมื่อได้ลิงก์ Google Drive แล้ว (เก็บเฉพาะลิงก์ ประหยัดความจำ 100%) */
+  storeLinkOnly: boolean;
+  updatedAt?: number;
+}
+
+const DEFAULT_GDRIVE_CONFIG: GoogleDriveBridgeConfig = {
+  scriptWebAppUrl: import.meta.env.VITE_GOOGLE_DRIVE_SCRIPT_URL || '',
+  sharedFolderUrl: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_URL || '',
+  storeLinkOnly: true,
+};
 
 const firebaseAvailable = () => {
   try { return !!db && !!import.meta.env.VITE_FIREBASE_PROJECT_ID; } catch { return false; }
 };
 
 const cache = <T>(key: string, value: T) => {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch (error) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    // กรณี localStorage เต็ม ให้ตัด contentData ออกจากสำเนาในเครื่องโดยอัตโนมัติ (เก็บเฉพาะลิงก์)
+    if (key === SUB_KEY && Array.isArray(value)) {
+      try {
+        const slim = (value as Submission[]).map((s) => ({ ...s, contentData: undefined }));
+        localStorage.setItem(key, JSON.stringify(slim));
+        return;
+      } catch {
+        // ignore
+      }
+    }
     console.warn(`cache ${key} failed`, error);
   }
 };
@@ -141,7 +171,51 @@ const loadCache = <T>(key: string, fallback: T): T => {
 
 const cleanForFirestore = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-export const loadAssignments = (): Assignment[] => loadCache(ASS_KEY, []);
+export const loadGoogleDriveBridgeConfig = (): GoogleDriveBridgeConfig => {
+  const saved = loadCache<Partial<GoogleDriveBridgeConfig>>(GDRIVE_CONFIG_KEY, {});
+  return {
+    scriptWebAppUrl: saved.scriptWebAppUrl ?? DEFAULT_GDRIVE_CONFIG.scriptWebAppUrl,
+    sharedFolderUrl: saved.sharedFolderUrl ?? DEFAULT_GDRIVE_CONFIG.sharedFolderUrl,
+    storeLinkOnly: saved.storeLinkOnly ?? true,
+    updatedAt: saved.updatedAt,
+  };
+};
+
+export const saveGoogleDriveBridgeConfig = async (
+  config: Partial<GoogleDriveBridgeConfig>,
+): Promise<GoogleDriveBridgeConfig> => {
+  const current = loadGoogleDriveBridgeConfig();
+  const next: GoogleDriveBridgeConfig = {
+    scriptWebAppUrl: normalizeHomeworkUrl(config.scriptWebAppUrl ?? current.scriptWebAppUrl),
+    sharedFolderUrl: normalizeHomeworkUrl(config.sharedFolderUrl ?? current.sharedFolderUrl),
+    storeLinkOnly: config.storeLinkOnly ?? current.storeLinkOnly,
+    updatedAt: Date.now(),
+  };
+  cache(GDRIVE_CONFIG_KEY, next);
+
+  if (firebaseAvailable()) {
+    try {
+      // บันทึกเป็นเอกสารตั้งค่าระบบใน homeworkAssignments เพื่อให้คอมพิวเตอร์นักเรียนทุกเครื่องดึงไปใช้ได้อัตโนมัติ
+      await setDoc(doc(db, ASS_COLLECTION, GDRIVE_CONFIG_DOC_ID), {
+        id: GDRIVE_CONFIG_DOC_ID,
+        title: '__GDRIVE_BRIDGE_CONFIG__',
+        description: JSON.stringify(next),
+        classroom: 'all',
+        dueDate: '2099-12-31',
+        maxScore: 0,
+        createdBy: 'teacher',
+        targetType: 'all',
+        createdAt: next.updatedAt,
+      });
+    } catch (err) {
+      console.warn('saveGoogleDriveBridgeConfig remote sync failed:', err);
+    }
+  }
+  return next;
+};
+
+export const loadAssignments = (): Assignment[] =>
+  loadCache<Assignment[]>(ASS_KEY, []).filter((a) => a.id !== GDRIVE_CONFIG_DOC_ID);
 export const loadSubmissions = (): Submission[] => loadCache(SUB_KEY, []);
 
 const saveAssignmentRemote = async (assignment: Assignment) => {
@@ -149,21 +223,44 @@ const saveAssignmentRemote = async (assignment: Assignment) => {
   await setDoc(doc(db, ASS_COLLECTION, assignment.id), cleanForFirestore(assignment));
 };
 
+const isExternalCloudUrl = (url?: string): boolean => {
+  if (!url) return false;
+  return /^https?:\/\//i.test(url) && !/^https?:\/\/krujames\.school\.local\//i.test(url);
+};
+
 const saveSubmissionRemote = async (submission: Submission) => {
   if (!firebaseAvailable()) return;
   const remote = { ...submission };
-  if (remote.contentData && remote.contentData.length > MAX_FIRESTORE_CONTENT_DATA_LEN) {
+  // หากมีลิงก์ Google Drive หรือ Cloud URL จริงแล้ว ไม่ต้องเก็บไฟล์ไบนารีซ้ำใน Firestore (ประหยัดความจำ 100%)
+  if (isExternalCloudUrl(remote.contentUrl)) {
+    delete remote.contentData;
+  } else if (remote.contentData && remote.contentData.length > MAX_FIRESTORE_CONTENT_DATA_LEN) {
     delete remote.contentData;
   }
   await setDoc(doc(db, SUB_COLLECTION, submission.id), cleanForFirestore(remote));
 };
 
-/** ดึงรายการงานกลาง และย้ายข้อมูลเก่าในเครื่องขึ้น Firebase เมื่อฐานข้อมูลยังว่าง */
+/** ดึงรายการงานกลาง และซิงก์ค่าตั้งค่า Google Drive Bridge จากครูไปยังเครื่องนักเรียนอัตโนมัติ */
 export const fetchAssignmentsFromFirebase = async (): Promise<Assignment[]> => {
   if (!firebaseAvailable()) return loadAssignments();
   try {
     const snap = await getDocs(collection(db, ASS_COLLECTION));
-    const remote = snap.docs.map((item) => item.data() as Assignment);
+    const allDocs = snap.docs.map((item) => item.data() as Assignment);
+    const configDoc = allDocs.find((item) => item.id === GDRIVE_CONFIG_DOC_ID);
+    if (configDoc?.description) {
+      try {
+        const parsed = JSON.parse(configDoc.description) as Partial<GoogleDriveBridgeConfig>;
+        if (parsed && typeof parsed === 'object') {
+          cache(GDRIVE_CONFIG_KEY, {
+            ...loadGoogleDriveBridgeConfig(),
+            ...parsed,
+          });
+        }
+      } catch {
+        // ignore invalid config JSON
+      }
+    }
+    const remote = allDocs.filter((item) => item.id !== GDRIVE_CONFIG_DOC_ID);
     if (remote.length > 0) {
       const sorted = remote.sort((a, b) => b.createdAt - a.createdAt);
       cache(ASS_KEY, sorted);
@@ -598,7 +695,7 @@ const readBlobAsDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
-const compressImageFileToDataUrl = async (file: Blob, maxDim = 1280, quality = 0.76): Promise<{ dataUrl: string; mimeType: string }> => {
+const compressImageFileToDataUrl = async (file: Blob, maxDim = 680, quality = 0.52): Promise<{ dataUrl: string; mimeType: string }> => {
   const rawDataUrl = await readBlobAsDataUrl(file);
   if (typeof document === 'undefined' || typeof Image === 'undefined') {
     return { dataUrl: rawDataUrl, mimeType: file.type || 'image/png' };
@@ -607,8 +704,8 @@ const compressImageFileToDataUrl = async (file: Blob, maxDim = 1280, quality = 0
     const img = new Image();
     img.onload = () => {
       try {
-        let width = img.naturalWidth || img.width || 800;
-        let height = img.naturalHeight || img.height || 600;
+        let width = img.naturalWidth || img.width || 640;
+        let height = img.naturalHeight || img.height || 480;
         if (width > maxDim || height > maxDim) {
           if (width >= height) {
             height = Math.round((height * maxDim) / width);
@@ -631,12 +728,12 @@ const compressImageFileToDataUrl = async (file: Blob, maxDim = 1280, quality = 0
         ctx.drawImage(img, 0, 0, width, height);
         let compressed = canvas.toDataURL('image/webp', quality);
         let outMime = 'image/webp';
-        if (!compressed.startsWith('data:image/webp') || compressed.length > 650_000) {
-          compressed = canvas.toDataURL('image/jpeg', 0.72);
+        if (!compressed.startsWith('data:image/webp') || compressed.length > 95_000) {
+          compressed = canvas.toDataURL('image/jpeg', 0.48);
           outMime = 'image/jpeg';
         }
-        if (compressed.length > 680_000) {
-          compressed = canvas.toDataURL('image/jpeg', 0.55);
+        if (compressed.length > 110_000) {
+          compressed = canvas.toDataURL('image/jpeg', 0.36);
           outMime = 'image/jpeg';
         }
         resolve({ dataUrl: compressed, mimeType: outMime });
@@ -650,16 +747,217 @@ const compressImageFileToDataUrl = async (file: Blob, maxDim = 1280, quality = 0
 };
 
 /**
- * แปลงไฟล์ภาพแคปหน้าจอ / ไฟล์โปรเจกต์จากคอมพิวเตอร์โรงเรียนให้พร้อมส่งทันทีโดยไม่ต้องใช้ Gmail หรือ Google Drive
- * - บีบอัดรูปภาพอัตโนมัติเพื่อให้เก็บใน Firestore ได้โดยตรง (ครูเปิดดูได้ทันทีจากทุกเครื่อง)
- * - พยายามอัปโหลดขึ้น Firebase Storage เพื่อสร้างลิงก์จริง (หากติดสิทธิ์หรือออฟไลน์จะสร้าง Portal Auto-Link อัตโนมัติ)
+ * สร้างโค้ด Google Apps Script สำเร็จรูปสำหรับให้คุณครูวางใน script.google.com
+ * เพื่อให้เด็กส่งไฟล์เข้า Google Drive ของครูได้โดยตรง (ใช้พื้นที่ Google Drive ฟรี 15 GB ของครู ไม่เปลืองความจำเว็บ และเด็กไม่ต้องมี Gmail!)
+ */
+export const getGoogleDriveAppsScriptTemplate = (sharedFolderUrl = ''): string => {
+  const folderPathMatch = sharedFolderUrl.match(/\/folders\/([a-zA-Z0-9_-]{8,})/);
+  const tokenMatch = sharedFolderUrl.match(/[-\w]{25,}/);
+  const defaultFolderId = folderPathMatch ? folderPathMatch[1] : tokenMatch ? tokenMatch[0] : '';
+  return `// ============================================================================
+// ☁️ ระบบรับไฟล์งานนักเรียนเข้า Google Drive ของครูเจมส์โดยตรง (KruJames Drive Bridge)
+// เด็กไม่ต้องล็อกอิน Gmail • ไม่ต้องใช้โทรศัพท์ • ไม่เปลืองความจำฐานข้อมูลเว็บไซต์ (เก็บเฉพาะลิงก์!)
+// ============================================================================
+// วิธีติดตั้ง (ทำครั้งเดียวใช้ได้ตลอดปี):
+// 1. เข้าเว็บ https://script.google.com ด้วยบัญชี Gmail ของคุณครู -> กด "โปรเจกต์ใหม่ (New project)"
+// 2. ลบโค้ดเดิมออกทั้งหมด แล้ววางโค้ดนี้ลงไป -> กดปุ่มรูปแผ่นดิสก์ (บันทึก)
+// 3. กดปุ่มสีน้ำเงินมุมขวาบน "การทำให้ใช้งานได้ (Deploy)" -> "การทำให้ใช้งานได้รายการใหม่ (New deployment)"
+// 4. กดรูปเฟือง -> เลือก "เว็บแอป (Web app)"
+//    - ดำเนินการในฐานะ (Execute as): เลือก "ฉัน (Me)"
+//    - ผู้ที่มีสิทธิ์เข้าถึง (Who has access): เลือก "ทุกคน (Anyone)"  <-- สำคัญมาก เพื่อให้เด็กส่งได้โดยไม่ต้องล็อกอิน Gmail
+// 5. กด "การทำให้ใช้งานได้ (Deploy)" -> กดอนุญาตสิทธิ์ (Authorize access) -> คัดลอก "URL ของเว็บแอป" มาวางในหน้าเว็บครูเจมส์!
+
+const ROOT_FOLDER_ID = "${defaultFolderId}"; // หากว่างไว้ ระบบจะสร้างโฟลเดอร์ชื่อ "งานนักเรียน_KruJamesOnCom" ใน Google Drive ให้อัตโนมัติ
+
+function getOrCreateSubFolder(parent, name) {
+  const safeName = String(name || "ทั่วไป").trim();
+  const iter = parent.getFoldersByName(safeName);
+  if (iter.hasNext()) return iter.next();
+  return parent.createFolder(safeName);
+}
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    let rootFolder;
+    if (ROOT_FOLDER_ID && ROOT_FOLDER_ID.length > 10) {
+      rootFolder = DriveApp.getFolderById(ROOT_FOLDER_ID);
+    } else {
+      const iter = DriveApp.getFoldersByName("งานนักเรียน_KruJamesOnCom");
+      rootFolder = iter.hasNext() ? iter.next() : DriveApp.createFolder("งานนักเรียน_KruJamesOnCom");
+    }
+
+    const classFolder = getOrCreateSubFolder(rootFolder, payload.classroom || "รวมชั้นเรียน");
+    const taskFolder = getOrCreateSubFolder(classFolder, payload.assignmentTitle || "ใบงาน");
+
+    const base64Data = String(payload.base64Data || "").replace(/^data:[^;]+;base64,/, "");
+    const decoded = Utilities.base64Decode(base64Data);
+    const blob = Utilities.newBlob(decoded, payload.mimeType || "application/octet-stream", payload.fileName || "work.png");
+
+    const file = taskFolder.createFile(blob);
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (shareErr) {
+      // กรณีบัญชีองค์กรจำกัดสิทธิ์สาธารณะ ลิงก์ยังเปิดได้โดยครูเจ้าของไดรฟ์
+    }
+
+    const fileId = file.getId();
+    const fileUrl = "https://drive.google.com/file/d/" + fileId + "/view?usp=sharing";
+
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: true,
+      fileId: fileId,
+      fileUrl: fileUrl,
+      fileName: file.getName()
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: false,
+      error: String(err)
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+};
+
+/**
+ * อัปโหลดไฟล์ของนักเรียนพุ่งตรงเข้า Google Drive ของคุณครูผ่าน Apps Script Web App
+ * คืนค่าลิงก์ https://drive.google.com/file/d/.../view เมื่อสำเร็จ (ไม่ต้องเก็บไฟล์ในเว็บเลย!)
+ */
+export const uploadFileToTeacherGoogleDrive = async (
+  file: Blob,
+  meta: {
+    fileName: string;
+    mimeType: string;
+    classroom: string;
+    assignmentTitle?: string;
+    studentNo?: number;
+    studentName?: string;
+    studentId: string;
+  },
+): Promise<string | null> => {
+  const config = loadGoogleDriveBridgeConfig();
+  const scriptUrl = config.scriptWebAppUrl?.trim();
+  if (!scriptUrl || !/^https:\/\/script\.google\.com\/macros\/s\//i.test(scriptUrl)) {
+    return null;
+  }
+
+  const dataUrl = await readBlobAsDataUrl(file);
+  const base64Data = dataUrl.replace(/^data:[^;]+;base64,/, '');
+  const prefixNo = meta.studentNo ? `เลขที่${String(meta.studentNo).padStart(2, '0')}_` : '';
+  const prefixName = meta.studentName ? `${meta.studentName.replace(/\s+/g, '_')}_` : '';
+  const cleanFileName = `${prefixNo}${prefixName}${meta.fileName}`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        fileName: cleanFileName,
+        mimeType: meta.mimeType,
+        classroom: meta.classroom,
+        assignmentTitle: meta.assignmentTitle || 'ใบงาน',
+        studentId: meta.studentId,
+        base64Data,
+      }),
+      signal: controller.signal,
+    });
+    const json = (await res.json()) as { ok?: boolean; fileUrl?: string; error?: string };
+    if (json?.ok && json.fileUrl && /^https:\/\/drive\.google\.com\//i.test(json.fileUrl)) {
+      return json.fileUrl;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Google Drive Bridge upload failed, falling back:', err);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+/** คำนวณขนาดความจำที่ใช้เก็บไฟล์สำรองในระบบ เพื่อแสดงให้ครูเห็นและกดล้างความจำได้ */
+export const getSubmissionStorageUsageSummary = (): {
+  totalSubmissions: number;
+  cloudLinkCount: number;
+  embeddedBinaryCount: number;
+  embeddedBinaryKB: number;
+  driveLinkedCount: number;
+  inlineFallbackCount: number;
+  inlineBytesApprox: number;
+  inlineKB: number;
+} => {
+  const subs = loadSubmissions();
+  let driveLinkedCount = 0;
+  let inlineFallbackCount = 0;
+  let inlineBytesApprox = 0;
+  for (const s of subs) {
+    if (s.contentUrl && isExternalCloudUrl(s.contentUrl)) {
+      driveLinkedCount += 1;
+    }
+    if (s.contentData && s.contentData.length > 0) {
+      inlineFallbackCount += 1;
+      inlineBytesApprox += s.contentData.length;
+    }
+  }
+  const inlineKB = Math.round((inlineBytesApprox / 1024) * 10) / 10;
+  return {
+    totalSubmissions: subs.length,
+    cloudLinkCount: driveLinkedCount,
+    embeddedBinaryCount: inlineFallbackCount,
+    embeddedBinaryKB: inlineKB,
+    driveLinkedCount,
+    inlineFallbackCount,
+    inlineBytesApprox,
+    inlineKB,
+  };
+};
+
+/** ล้างข้อมูลไบนารีสำรอง (contentData) ออกจากความจำเว็บ โดยคงคะแนนและลิงก์งานไว้ครบ 100% */
+export const purgeSubmissionBinaryCache = async (
+  onlyReviewed = false,
+): Promise<{ purgedCount: number; freedKB: number }> => {
+  const subs = loadSubmissions();
+  let purgedCount = 0;
+  let freedBytes = 0;
+  const updated = subs.map((s) => {
+    if (!s.contentData) return s;
+    if (onlyReviewed && !s.reviewedAt && !isExternalCloudUrl(s.contentUrl)) return s;
+    purgedCount += 1;
+    freedBytes += s.contentData.length;
+    const cleaned: Submission = { ...s };
+    delete cleaned.contentData;
+    return cleaned;
+  });
+  cache(SUB_KEY, updated);
+  if (firebaseAvailable() && purgedCount > 0) {
+    await Promise.all(
+      updated
+        .filter((_, idx) => subs[idx]?.contentData && !updated[idx]?.contentData)
+        .map((s) => saveSubmissionRemote(s)),
+    );
+  }
+  return {
+    purgedCount,
+    freedKB: Math.round((freedBytes / 1024) * 10) / 10,
+  };
+};
+
+/**
+ * แปลงไฟล์ภาพแคปหน้าจอ / ไฟล์โปรเจกต์จากคอมพิวเตอร์โรงเรียนให้พร้อมส่งทันทีโดยไม่ต้องใช้ Gmail ของนักเรียน:
+ * 1) หากครูตั้งค่า Google Drive Bridge ไว้ -> อัปโหลดเข้า Google Drive ของครูโดยตรง ได้ลิงก์ https://drive.google.com/... และไม่เก็บไฟล์ในเว็บเลย (ใช้ความจำเว็บ 0 KB!)
+ * 2) หากเปิด Firebase Storage ไว้ -> อัปโหลดขึ้น Cloud Storage และเก็บเฉพาะลิงก์ (ใช้ความจำฐานข้อมูล 0 KB!)
+ * 3) กรณีสำรอง (ยังไม่ผูก Google Drive) -> บีบอัดภาพขนาดจิ๋วประหยัดความจำพิเศษ (Ultra-Light ~15-25 KB)
  */
 export const prepareDirectStudentSubmissionFile = async (
   file: File | Blob,
   options: {
     studentId: string;
+    studentName?: string;
+    studentNo?: number;
     classroom: string;
     assignmentId: string;
+    assignmentTitle?: string;
     fileName?: string;
   },
 ): Promise<{
@@ -667,47 +965,55 @@ export const prepareDirectStudentSubmissionFile = async (
   contentUrl: string;
   attachmentFileName: string;
   attachmentMimeType: string;
+  uploadedToDrive: boolean;
 }> => {
   const originalName =
     options.fileName ||
     (file instanceof File && file.name ? file.name : `screenshot-${Date.now()}.png`);
   const mimeType = file.type || 'application/octet-stream';
   const isImage = mimeType.startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp)$/i.test(originalName);
+  const gdriveConfig = loadGoogleDriveBridgeConfig();
 
-  let contentData = '';
-  let finalMimeType = mimeType;
-
-  if (isImage) {
-    const compressed = await compressImageFileToDataUrl(file);
-    contentData = compressed.dataUrl;
-    finalMimeType = compressed.mimeType;
-  } else {
-    // ไฟล์งานทั่วไป เช่น .sb3 (Scratch), .py, .html, .txt, .pdf, .docx, .pptx
-    if (file.size > 520 * 1024) {
-      throw new Error(
-        `ไฟล์ "${originalName}" มีขนาดใหญ่เกินไป (${Math.round(file.size / 1024)} KB) กรุณาใช้ปุ่ม "📸 แคปหน้าจอโปรแกรมส่งทันที" หรือเลือกไฟล์ไม่เกิน 500 KB ครับ`,
-      );
+  // 1. ลองอัปโหลดเข้า Google Drive กลางของคุณครูก่อนเป็นอันดับแรก (รองรับไฟล์ใหญ่ถึง 15 MB และไม่เปลืองความจำเว็บเลย!)
+  if (gdriveConfig.scriptWebAppUrl) {
+    if (file.size > 15 * 1024 * 1024) {
+      throw new Error('ไฟล์มีขนาดใหญ่เกิน 15 MB กรุณาเลือกไฟล์ขนาดไม่เกิน 15 MB ครับ');
     }
-    contentData = await readBlobAsDataUrl(file);
+    const uploadBlob = isImage
+      ? await (async () => {
+          const c = await compressImageFileToDataUrl(file, 1280, 0.8);
+          const res = await fetch(c.dataUrl);
+          return await res.blob();
+        })()
+      : file;
+
+    const driveUrl = await uploadFileToTeacherGoogleDrive(uploadBlob, {
+      fileName: originalName,
+      mimeType: isImage ? 'image/jpeg' : mimeType,
+      classroom: options.classroom,
+      assignmentTitle: options.assignmentTitle,
+      studentNo: options.studentNo,
+      studentName: options.studentName,
+      studentId: options.studentId,
+    });
+
+    if (driveUrl) {
+      return {
+        contentData: '', // ไม่เก็บไฟล์ลงฐานข้อมูลเว็บเลย ประหยัดความจำ 100%!
+        contentUrl: driveUrl,
+        attachmentFileName: originalName,
+        attachmentMimeType: mimeType,
+        uploadedToDrive: true,
+      };
+    }
   }
 
-  if (contentData.length > MAX_FIRESTORE_CONTENT_DATA_LEN) {
-    throw new Error('ขนาดข้อมูลไฟล์ใหญ่เกินกำหนด กรุณาใช้โหมดแคปภาพหน้าจอแทนครับ');
-  }
-
-  let contentUrl = buildDirectSubmissionPortalUrl(
-    options.assignmentId,
-    options.studentId,
-    originalName,
-    'direct-file',
-  );
-
-  // พยายามอัปโหลดขึ้น Firebase Storage (ตั้งเวลา timeout สั้นๆ 2.5 วินาที เพื่อไม่ให้นักเรียนรอนานหากไม่ได้เปิด Storage)
+  // 2. ลองอัปโหลดขึ้น Firebase Storage (หากสำเร็จ จะได้ลิงก์ Cloud และไม่เก็บไฟล์ลง Firestore!)
   try {
     const safePath = `homework_uploads/${encodeURIComponent(options.classroom || 'class')}/${encodeURIComponent(options.assignmentId)}/${encodeURIComponent(options.studentId)}_${Date.now()}_${originalName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const storageRef = ref(storage, safePath);
     const uploadPromise = (async () => {
-      await uploadBytes(storageRef, file, { contentType: finalMimeType });
+      await uploadBytes(storageRef, file, { contentType: mimeType });
       return await getDownloadURL(storageRef);
     })();
     const timeoutPromise = new Promise<string>((_, reject) =>
@@ -715,17 +1021,52 @@ export const prepareDirectStudentSubmissionFile = async (
     );
     const remoteUrl = await Promise.race([uploadPromise, timeoutPromise]);
     if (remoteUrl && /^https?:\/\//i.test(remoteUrl)) {
-      contentUrl = remoteUrl;
+      return {
+        contentData: '', // ได้ลิงก์ Cloud แล้ว ไม่ต้องเก็บ base64 ในฐานข้อมูล!
+        contentUrl: remoteUrl,
+        attachmentFileName: originalName,
+        attachmentMimeType: mimeType,
+        uploadedToDrive: true,
+      };
     }
   } catch {
-    // ใช้ Portal Auto-Link + contentData ใน Firestore แทนได้ทันทีโดยไม่เกิด Error
+    // ไปยังโหมดประหยัดความจำสำรอง
   }
+
+  // 3. โหมดสำรอง (กรณีครูยังไม่ได้ผูก Google Drive Bridge): บีบอัดภาพขนาดประหยัดความจำสูงสุด (~15-25 KB)
+  let contentData = '';
+  let finalMimeType = mimeType;
+
+  if (isImage) {
+    const compressed = await compressImageFileToDataUrl(file, 640, 0.5);
+    contentData = compressed.dataUrl;
+    finalMimeType = compressed.mimeType;
+  } else {
+    if (file.size > 90 * 1024) {
+      throw new Error(
+        `ขณะนี้คุณครูยังไม่ได้เชื่อมโฟลเดอร์ Google Drive กลาง จึงแนบไฟล์ตรงได้เฉพาะไฟล์เล็กไม่เกิน 90 KB หรือใช้ปุ่ม "📸 แคปหน้าจอโปรแกรม (ประหยัดความจำ)" แทนครับ`,
+      );
+    }
+    contentData = await readBlobAsDataUrl(file);
+  }
+
+  if (contentData.length > MAX_FIRESTORE_CONTENT_DATA_LEN) {
+    throw new Error('ขนาดข้อมูลเกินขีดจำกัดประหยัดความจำ กรุณาใช้ปุ่มแคปหน้าจอแทนครับ');
+  }
+
+  const contentUrl = buildDirectSubmissionPortalUrl(
+    options.assignmentId,
+    options.studentId,
+    originalName,
+    'direct-file',
+  );
 
   return {
     contentData,
     contentUrl,
     attachmentFileName: originalName,
     attachmentMimeType: finalMimeType,
+    uploadedToDrive: false,
   };
 };
 

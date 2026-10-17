@@ -28,6 +28,7 @@ import {
   prepareDirectStudentSubmissionFile,
   ensureAssignmentForManualAssessment,
   isDirectPortalSubmissionUrl,
+  loadGoogleDriveBridgeConfig,
   type Assignment,
   type MissingManualAssessmentItem,
   type SubmissionMethod,
@@ -60,6 +61,8 @@ const HomeworkStudent: React.FC = () => {
   const [contentUrl, setContentUrl] = useState('');
   const [comment, setComment] = useState('');
   const [contentData, setContentData] = useState('');
+  const [localPreviewUrl, setLocalPreviewUrl] = useState('');
+  const [uploadedToDrive, setUploadedToDrive] = useState(false);
   const [attachmentFileName, setAttachmentFileName] = useState('');
   const [attachmentMimeType, setAttachmentMimeType] = useState('');
   const [workstationNo, setWorkstationNo] = useState('');
@@ -119,9 +122,12 @@ const HomeworkStudent: React.FC = () => {
       ? getStudentSubmissionForAssignment(assignment.id, user.id, user.classroom, parseInt(user.studentNumber))
       : null;
     const prevUrl = previous?.contentUrl || '';
+    const isDriveOrCloud = Boolean(prevUrl && /drive\.google\.com|firebasestorage\.googleapis\.com/i.test(prevUrl));
     setContentUrl(isDirectPortalSubmissionUrl(prevUrl) ? '' : prevUrl);
     setComment(previous?.comment || '');
     setContentData(previous?.contentData || '');
+    setLocalPreviewUrl(previous?.contentData || '');
+    setUploadedToDrive(isDriveOrCloud);
     setAttachmentFileName(previous?.attachmentFileName || '');
     setAttachmentMimeType(previous?.attachmentMimeType || '');
     setWorkstationNo(previous?.workstationNo || '');
@@ -131,7 +137,7 @@ const HomeworkStudent: React.FC = () => {
       setSubmitModeTab('workstation');
     } else if (previous?.submissionMethod === 'canvas_drawing') {
       setSubmitModeTab('canvas_draw');
-    } else if (prevUrl && !isDirectPortalSubmissionUrl(prevUrl) && !previous?.contentData) {
+    } else if (prevUrl && !isDirectPortalSubmissionUrl(prevUrl) && !previous?.contentData && !previous?.attachmentFileName) {
       setSubmitModeTab('link_text');
     } else {
       setSubmitModeTab('direct_file');
@@ -149,6 +155,8 @@ const HomeworkStudent: React.FC = () => {
     setContentUrl('');
     setComment('');
     setContentData('');
+    setLocalPreviewUrl('');
+    setUploadedToDrive(false);
     setAttachmentFileName('');
     setAttachmentMimeType('');
     setWorkstationNo('');
@@ -269,18 +277,35 @@ const HomeworkStudent: React.FC = () => {
     );
   }
 
-  /** แนบไฟล์หรือภาพแคปหน้าจอและสร้างลิงก์ส่งงานอัตโนมัติ (ไม่ต้องใช้ Gmail / Google Drive) */
+  /** แนบไฟล์หรือภาพแคปหน้าจอ -> ส่งเข้า Google Drive กลางของครูโดยตรง (เก็บเฉพาะลิงก์ ไม่เปลืองความจำเว็บ!) */
   const handleDirectFileAttach = async (file: File | Blob, customFileName?: string, method: SubmissionMethod = 'screenshot_file') => {
     if (!selected) return;
     setProcessingFile(true);
     try {
+      if (file.type.startsWith('image/')) {
+        try {
+          setLocalPreviewUrl(URL.createObjectURL(file));
+        } catch {
+          // ignore
+        }
+      }
       const prepared = await prepareDirectStudentSubmissionFile(file, {
         studentId: user.id,
+        studentName: user.name,
+        studentNo: parseInt(user.studentNumber),
         classroom: user.classroom,
         assignmentId: selected.id,
+        assignmentTitle: selected.title,
         fileName: customFileName,
       });
       setContentData(prepared.contentData);
+      if (prepared.contentData && !localPreviewUrl) {
+        setLocalPreviewUrl(prepared.contentData);
+      }
+      setUploadedToDrive(prepared.uploadedToDrive);
+      if (prepared.uploadedToDrive && prepared.contentUrl) {
+        setContentUrl(prepared.contentUrl);
+      }
       setAttachmentFileName(prepared.attachmentFileName);
       setAttachmentMimeType(prepared.attachmentMimeType);
       setSubmissionMethod(method);
@@ -289,7 +314,9 @@ const HomeworkStudent: React.FC = () => {
       }
       if (!comment.trim()) {
         setComment(
-          method === 'canvas_drawing'
+          prepared.uploadedToDrive
+            ? `อัปโหลดไฟล์เข้า Google Drive กลางของครูเรียบร้อยแล้ว (${prepared.attachmentFileName})`
+            : method === 'canvas_drawing'
             ? `วาดภาพ/เขียนผังงานในระบบ (${prepared.attachmentFileName})`
             : `ส่งไฟล์ผลงาน/ภาพแคปหน้าจอจากเครื่องคอมพิวเตอร์ (${prepared.attachmentFileName})`,
         );
@@ -408,12 +435,40 @@ const HomeworkStudent: React.FC = () => {
     isDrawingRef.current = false;
   };
 
-  const saveCanvasToAttachment = async (): Promise<{ dataUrl: string; fileName: string } | null> => {
+  const saveCanvasToAttachment = async (): Promise<{ dataUrl: string; contentUrl?: string; fileName: string } | null> => {
     const canvas = drawCanvasRef.current;
-    if (!canvas) return null;
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-    const fileName = `กระดานวาดภาพ_${selected?.title || 'ใบงาน'}.jpg`;
+    if (!canvas || !selected) return null;
+    const fileName = `กระดานวาดภาพ_${selected.title || 'ใบงาน'}.jpg`;
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.65),
+    );
+    if (blob) {
+      const prepared = await prepareDirectStudentSubmissionFile(blob, {
+        studentId: user.id,
+        studentName: user.name,
+        studentNo: parseInt(user.studentNumber),
+        classroom: user.classroom,
+        assignmentId: selected.id,
+        assignmentTitle: selected.title,
+        fileName,
+      });
+      setContentData(prepared.contentData);
+      setLocalPreviewUrl(canvas.toDataURL('image/jpeg', 0.65));
+      setUploadedToDrive(prepared.uploadedToDrive);
+      if (prepared.uploadedToDrive && prepared.contentUrl) {
+        setContentUrl(prepared.contentUrl);
+      }
+      setAttachmentFileName(fileName);
+      setAttachmentMimeType('image/jpeg');
+      setSubmissionMethod('canvas_drawing');
+      if (!comment.trim()) {
+        setComment(`วาดภาพ/เขียนผังงานส่งในระบบ (${fileName})`);
+      }
+      return { dataUrl: prepared.contentData, contentUrl: prepared.contentUrl, fileName };
+    }
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.55);
     setContentData(dataUrl);
+    setLocalPreviewUrl(dataUrl);
     setAttachmentFileName(fileName);
     setAttachmentMimeType('image/jpeg');
     setSubmissionMethod('canvas_drawing');
@@ -441,22 +496,25 @@ const HomeworkStudent: React.FC = () => {
     if (!selected) return;
 
     let finalContentData = contentData;
+    let finalUrl = contentUrl.trim();
     let finalFileName = attachmentFileName;
     let finalMimeType = attachmentMimeType;
     let finalMethod: SubmissionMethod = submissionMethod;
 
     // หากนักเรียนวาดภาพบนกระดานไว้แล้วกด "ส่งงาน" ทันที ให้บันทึกภาพจากกระดานอัตโนมัติ
-    if (submitModeTab === 'canvas_draw' && hasCanvasStrokes && !finalContentData) {
+    if (submitModeTab === 'canvas_draw' && hasCanvasStrokes && !finalContentData && !finalUrl) {
       const savedCanvas = await saveCanvasToAttachment();
       if (savedCanvas) {
         finalContentData = savedCanvas.dataUrl;
+        if (savedCanvas.contentUrl && !isDirectPortalSubmissionUrl(savedCanvas.contentUrl)) {
+          finalUrl = savedCanvas.contentUrl;
+        }
         finalFileName = savedCanvas.fileName;
         finalMimeType = 'image/jpeg';
         finalMethod = 'canvas_drawing';
       }
     }
 
-    const finalUrl = contentUrl.trim();
     const finalWorkstation = workstationNo.trim();
     let finalComment = comment.trim();
     let dtSteps = undefined;
@@ -1209,7 +1267,7 @@ const HomeworkStudent: React.FC = () => {
                     }}
                   >
                     <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#0369a1', marginBottom: 8 }}>
-                      📸 วิธีที่ง่ายที่สุด (ไม่ต้องล็อกอิน Gmail / ไม่ต้องใช้โทรศัพท์):
+                      ☁️ ส่งไฟล์เข้า Google Drive กลางของครูอัตโนมัติ (เด็กไม่ต้องมี Gmail / ไม่เปลืองความจำเว็บ!):
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
                       <button
@@ -1249,7 +1307,7 @@ const HomeworkStudent: React.FC = () => {
                           gap: 6,
                         }}
                       >
-                        <FolderUp size={16} /> 📁 เลือกไฟล์งาน/รูปภาพจากเครื่องคอมฯ
+                        <FolderUp size={16} /> 📁 เลือกไฟล์ส่งเข้าไดรฟ์ครู (.sb3, รูป, Word, PPT, PDF)
                         <input
                           type="file"
                           accept="image/*,.sb3,.py,.html,.pdf,.docx,.pptx,.txt"
@@ -1260,9 +1318,32 @@ const HomeworkStudent: React.FC = () => {
                           }}
                         />
                       </label>
+
+                      {loadGoogleDriveBridgeConfig().sharedFolderUrl && (
+                        <a
+                          href={loadGoogleDriveBridgeConfig().sharedFolderUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: 10,
+                            border: '1.5px solid #16a34a',
+                            background: '#f0fdf4',
+                            color: '#15803d',
+                            fontWeight: 800,
+                            fontSize: '0.8rem',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                          }}
+                        >
+                          <ExternalLink size={15} /> 📂 เปิดโฟลเดอร์ Google Drive ห้องเรียน
+                        </a>
+                      )}
                     </div>
                     <div style={{ fontSize: '0.76rem', color: '#475569' }}>
-                      💡 <strong>เคล็ดลับ:</strong> กดปุ่ม <kbd style={{ background: '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>PrtSc</kbd> บนคีย์บอร์ด แล้วกด <kbd style={{ background: '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>Ctrl + V</kbd> ในหน้าต่างนี้เพื่อวางภาพหน้าจอได้ทันที หรือแนบไฟล์ Scratch (<code>.sb3</code>), รูปภาพ, Word, PowerPoint, PDF ได้เลย ระบบจะสร้างลิงก์ส่งครูให้อัตโนมัติ!
+                      💡 <strong>ระบบประหยัดความจำ 100%:</strong> เมื่อเลือกไฟล์หรือกด <kbd style={{ background: '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>Ctrl + V</kbd> วางภาพหน้าจอ ระบบจะส่งไฟล์เข้า <strong>Google Drive กลางของคุณครู</strong> โดยตรงและเก็บเฉพาะลิงก์ในเว็บ (ไม่กินความจำฐานข้อมูลเว็บ และนักเรียนไม่ต้องล็อกอิน Gmail ตัวเองครับ)
                     </div>
                   </div>
                 )}
@@ -1435,8 +1516,8 @@ const HomeworkStudent: React.FC = () => {
                   </div>
                 )}
 
-                {/* แสดงตัวอย่างไฟล์/ภาพแคปหน้าจอที่แนบแล้ว + ป้ายยืนยันการสร้างลิงก์อัตโนมัติ */}
-                {contentData && (
+                {/* แสดงตัวอย่างไฟล์/ภาพแคปหน้าจอที่แนบแล้ว + ป้ายยืนยันการส่งเข้า Google Drive ประหยัดความจำ */}
+                {(uploadedToDrive || contentData || attachmentFileName) && (
                   <div
                     style={{
                       padding: '10px 12px',
@@ -1446,37 +1527,63 @@ const HomeworkStudent: React.FC = () => {
                       marginBottom: 12,
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#166534' }}>
-                        ✅ แนบผลงานพร้อมส่งแล้ว: {attachmentFileName || 'ภาพหน้าจอผลงาน'} (สร้างลิงก์ส่งงานในระบบโรงเรียนอัตโนมัติแล้ว)
+                        {uploadedToDrive
+                          ? `☁️ อัปโหลดเข้า Google Drive ของคุณครูสำเร็จแล้ว: ${attachmentFileName || 'ไฟล์ผลงาน'} (เก็บเฉพาะลิงก์ ไม่เปลืองความจำเว็บ 100%)`
+                          : `✅ แนบผลงานพร้อมส่งแล้ว: ${attachmentFileName || 'ภาพหน้าจอผลงาน'} (โหมดภาพย่อประหยัดความจำ)`}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setContentData('');
-                          setAttachmentFileName('');
-                          setAttachmentMimeType('');
-                        }}
-                        style={{
-                          padding: '4px 8px',
-                          borderRadius: 6,
-                          border: '1px solid #fca5a5',
-                          background: '#fef2f2',
-                          color: '#dc2626',
-                          fontSize: '0.74rem',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        <Trash2 size={13} /> ลบไฟล์แนบ
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {uploadedToDrive && contentUrl && (
+                          <a
+                            href={contentUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              padding: '4px 8px',
+                              borderRadius: 6,
+                              background: '#e0f2fe',
+                              color: '#0369a1',
+                              border: '1px solid #7dd3fc',
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              textDecoration: 'none',
+                            }}
+                          >
+                            🔗 เปิดดูใน Google Drive
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setContentData('');
+                            setLocalPreviewUrl('');
+                            if (uploadedToDrive) setContentUrl('');
+                            setUploadedToDrive(false);
+                            setAttachmentFileName('');
+                            setAttachmentMimeType('');
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: 6,
+                            border: '1px solid #fca5a5',
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            fontSize: '0.74rem',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          <Trash2 size={13} /> ลบไฟล์แนบ
+                        </button>
+                      </div>
                     </div>
-                    {contentData.startsWith('data:image/') && (
+                    {(localPreviewUrl || contentData).startsWith('data:image/') || (localPreviewUrl || '').startsWith('blob:') ? (
                       <div style={{ marginTop: 8, textAlign: 'center' }}>
                         <img
-                          src={contentData}
+                          src={localPreviewUrl || contentData}
                           alt="ตัวอย่างผลงานที่แนบ"
                           style={{
                             maxWidth: '100%',
@@ -1487,7 +1594,7 @@ const HomeworkStudent: React.FC = () => {
                           }}
                         />
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 )}
 

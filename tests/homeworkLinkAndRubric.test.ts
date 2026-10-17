@@ -24,6 +24,11 @@ import {
   isDirectPortalSubmissionUrl,
   submitTeacherClassroomCheckIn,
   ensureAssignmentForManualAssessment,
+  loadGoogleDriveBridgeConfig,
+  saveGoogleDriveBridgeConfig,
+  getGoogleDriveAppsScriptTemplate,
+  getSubmissionStorageUsageSummary,
+  purgeSubmissionBinaryCache,
 } from '../src/services/homeworkService';
 
 describe('ระบบรับงานผ่านลิงก์และตรวจงานด้วยรูบริก (Link & Rubric Verification)', () => {
@@ -479,5 +484,67 @@ describe('ระบบรับงานผ่านลิงก์และต�
       expect(created.linkedAssessmentId).toBe('ma_test_01');
       expect(created.classroom).toBe('ป.5');
     });
+
+    it('รองรับการตั้งค่า Google Drive Bridge และโหมด Zero-Bloat (เก็บเฉพาะลิงก์ ไม่เปลืองความจำเว็บ)', async () => {
+      const cfg = await saveGoogleDriveBridgeConfig({
+        scriptWebAppUrl: 'https://script.google.com/macros/s/AKfycb_test_123/exec',
+        sharedFolderUrl: 'drive.google.com/drive/folders/1AbCdEfG999',
+        storeLinkOnly: true,
+      });
+
+      expect(cfg.scriptWebAppUrl).toBe('https://script.google.com/macros/s/AKfycb_test_123/exec');
+      expect(cfg.sharedFolderUrl).toBe('https://drive.google.com/drive/folders/1AbCdEfG999');
+      expect(loadGoogleDriveBridgeConfig().scriptWebAppUrl).toBe('https://script.google.com/macros/s/AKfycb_test_123/exec');
+
+      const scriptCode = getGoogleDriveAppsScriptTemplate(cfg.sharedFolderUrl);
+      expect(scriptCode).toContain('function doPost(e)');
+      expect(scriptCode).toContain('1AbCdEfG999');
+
+      const task = await createAssignment({
+        title: 'งานทดสอบ Google Drive Zero-Bloat',
+        description: 'ฝากไฟล์ใน Google Drive ของครู',
+        classroom: 'ป.6',
+        dueDate: '2026-10-31',
+        maxScore: 10,
+        createdBy: 'teacher',
+        targetType: 'all',
+      });
+
+      // กรณีส่งผ่านลิงก์ Google Drive: ต้องนับเป็น cloudLinkCount และไม่กินพื้นที่เว็บ
+      await submitWork({
+        assignmentId: task.id,
+        studentId: 'p6_01_drive',
+        studentName: 'เด็กชายต้นกล้า',
+        classroom: 'ป.6',
+        studentNo: 1,
+        contentUrl: 'https://drive.google.com/file/d/1xyz987/view',
+        submissionMethod: 'direct_file',
+      });
+
+      // กรณีส่งออฟไลน์สำรองที่มีภาพขนาดย่อ
+      const fallbackSub = await submitWork({
+        assignmentId: task.id,
+        studentId: 'p6_02_fallback',
+        studentName: 'เด็กหญิงใบบัว',
+        classroom: 'ป.6',
+        studentNo: 2,
+        contentData: 'data:image/jpeg;base64,' + 'A'.repeat(2048),
+        submissionMethod: 'screenshot',
+      });
+
+      const beforeSummary = getSubmissionStorageUsageSummary();
+      expect(beforeSummary.cloudLinkCount).toBe(1);
+      expect(beforeSummary.embeddedBinaryCount).toBe(1);
+
+      // ครูตรวจงานแล้วสั่งล้างไฟล์ภาพสำรองเพื่อคืนความจำเว็บ
+      await reviewSubmission(fallbackSub.id, { kScore: 5, pScore: 5 }, 'ตรวจแล้ว');
+      const purgeRes = await purgeSubmissionBinaryCache(true);
+      expect(purgeRes.purgedCount).toBe(1);
+
+      const afterSummary = getSubmissionStorageUsageSummary();
+      expect(afterSummary.embeddedBinaryCount).toBe(0);
+      expect(afterSummary.embeddedBinaryKB).toBe(0);
+    });
   });
 });
+

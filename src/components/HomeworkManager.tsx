@@ -21,7 +21,13 @@ import {
   generate3TierAssignments,
   isDirectPortalSubmissionUrl,
   submitTeacherClassroomCheckIn,
+  loadGoogleDriveBridgeConfig,
+  saveGoogleDriveBridgeConfig,
+  getGoogleDriveAppsScriptTemplate,
+  getSubmissionStorageUsageSummary,
+  purgeSubmissionBinaryCache,
   type AssignmentDifficulty, type AssignmentTargetType, type AbilityTier,
+  type GoogleDriveBridgeConfig,
 } from '../services/homeworkService';
 import type { Assignment, Submission } from '../services/homeworkService';
 import { allClassrooms2569 } from '../data/students2569';
@@ -46,6 +52,10 @@ const HomeworkManager: React.FC = () => {
   const [list, setList] = useState(loadAssignments());
   const [show, setShow] = useState(false);
   const [showAuto3Tier, setShowAuto3Tier] = useState(false);
+  const [showDriveSetup, setShowDriveSetup] = useState(false);
+  const [driveConfig, setDriveConfig] = useState<GoogleDriveBridgeConfig>(() => loadGoogleDriveBridgeConfig());
+  const [storageSummary, setStorageSummary] = useState(() => getSubmissionStorageUsageSummary());
+  const [copiedScript, setCopiedScript] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleCopyLink = (id: string) => {
@@ -125,19 +135,67 @@ const HomeworkManager: React.FC = () => {
     [autoDraft.classroom, autoDraft.subject]
   );
 
-  const reload = () => setList(loadAssignments());
+  const reload = () => {
+    setList(loadAssignments());
+    setDriveConfig(loadGoogleDriveBridgeConfig());
+    setStorageSummary(getSubmissionStorageUsageSummary());
+  };
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([fetchAssignmentsFromFirebase(), fetchSubmissionsFromFirebase()])
       .then(([assignments]) => {
-        if (!cancelled) setList(assignments);
+        if (!cancelled) {
+          setList(assignments);
+          setDriveConfig(loadGoogleDriveBridgeConfig());
+          setStorageSummary(getSubmissionStorageUsageSummary());
+        }
       })
       .finally(() => {
         if (!cancelled) setSyncing(false);
       });
     return () => { cancelled = true; };
   }, []);
+
+  const handleSaveDriveBridge = async () => {
+    setSyncing(true);
+    try {
+      await saveGoogleDriveBridgeConfig(driveConfig);
+      setDriveConfig(loadGoogleDriveBridgeConfig());
+      setStorageSummary(getSubmissionStorageUsageSummary());
+      alert('บันทึกการตั้งค่า Google Drive สำเร็จ! เครื่องคอมนักเรียนทุกเครื่องจะอัปโหลดงานเข้า Google Drive ของคุณครูโดยอัตโนมัติ (ไม่เปลืองความจำเว็บ 100%) ☁️');
+    } catch (err) {
+      console.error(err);
+      alert('เกิดข้อผิดพลาดในการบันทึกตั้งค่า Google Drive');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleCopyAppsScript = () => {
+    const code = getGoogleDriveAppsScriptTemplate(driveConfig.sharedFolderUrl);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(code).then(() => {
+        setCopiedScript(true);
+        setTimeout(() => setCopiedScript(false), 3000);
+      });
+    }
+  };
+
+  const handlePurgeBinaryCache = async (onlyReviewed: boolean) => {
+    const label = onlyReviewed ? 'เฉพาะงานที่ครูตรวจให้คะแนนแล้ว' : 'ไฟล์สำรองทั้งหมดในความจำเว็บ';
+    if (!window.confirm(`ยืนยันการล้างข้อมูลภาพสำรอง (${label}) เพื่อคืนพื้นที่ฐานข้อมูลเว็บ?\n(ประวัติการส่งงาน คะแนน และลิงก์ Google Drive ของเด็กจะยังอยู่ครบ 100%)`)) {
+      return;
+    }
+    setSyncing(true);
+    try {
+      const res = await purgeSubmissionBinaryCache(onlyReviewed);
+      setStorageSummary(getSubmissionStorageUsageSummary());
+      alert(`🧹 ล้างไฟล์สำรองสำเร็จ ${res.purgedCount} รายการ! คืนพื้นที่ฐานข้อมูลเว็บได้ ${res.freedKB} KB`);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleAddHint = () => {
     setDraft((prev) => ({
@@ -299,7 +357,147 @@ const HomeworkManager: React.FC = () => {
         >
           <Wand2 size={16} /> ⚡ สร้างชุดงาน 3 ระดับอัตโนมัติ (Differentiated 3-Tier)
         </button>
+        <button
+          className="btn-secondary"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: driveConfig.scriptWebAppUrl ? '#dcfce7' : '#e0f2fe',
+            color: driveConfig.scriptWebAppUrl ? '#166534' : '#0369a1',
+            border: `1px solid ${driveConfig.scriptWebAppUrl ? '#86efac' : '#7dd3fc'}`,
+            fontWeight: 700,
+          }}
+          onClick={() => {
+            setStorageSummary(getSubmissionStorageUsageSummary());
+            setShowDriveSetup(!showDriveSetup);
+          }}
+        >
+          ☁️ {driveConfig.scriptWebAppUrl ? 'เชื่อม Google Drive ครูแล้ว (ความจำเว็บ 0 KB)' : 'ตั้งค่า Google Drive รับงานเด็ก (ไม่เปลืองความจำเว็บ)'}
+        </button>
       </div>
+
+      {/* Teacher Google Drive Bridge & Zero-Bloat Memory Manager */}
+      {showDriveSetup && (
+        <div className="card" style={{ marginTop: 12, background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', border: '1.5px solid #38bdf8', padding: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+            <div>
+              <h3 style={{ margin: 0, color: '#0c4a6e', display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.02rem' }}>
+                ☁️ ระบบฝากไฟล์งานนักเรียนเข้า Google Drive ของครูโดยตรง (Zero-Bloat Cloud Bridge)
+              </h3>
+              <p style={{ margin: '4px 0 0', fontSize: '0.84rem', color: '#0369a1', lineHeight: 1.5 }}>
+                แก้ปัญหา <strong>เด็กไม่มี Gmail + ห้ามใช้โทรศัพท์ + ไม่เปลืองความจำเว็บ</strong>: เมื่อเด็กกดแคปหน้าจอหรือแนบไฟล์จากคอมโรงเรียน ระบบจะส่งไฟล์เข้า <strong>Google Drive ของครู (ฟรี 15 GB / Google Workspace โรงเรียน)</strong> ทันที แล้วบันทึกเฉพาะลิงก์สั้นๆ ลงฐานข้อมูลเว็บ (ใช้ความจำเว็บ 0 KB!)
+              </p>
+            </div>
+            <button className="btn-ghost" onClick={() => setShowDriveSetup(false)}><X size={16} /></button>
+          </div>
+
+          {/* Storage Usage Bar */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'space-between', background: 'white', padding: '10px 14px', borderRadius: 10, border: '1px solid #bae6fd', marginBottom: 14 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center', fontSize: '0.83rem' }}>
+              <span>📊 <strong>งานที่ส่งทั้งหมด:</strong> {storageSummary.totalSubmissions} ชิ้น</span>
+              <span style={{ color: '#0369a1', fontWeight: 700 }}>☁️ <strong>เก็บเป็นลิงก์ Cloud / Google Drive (0 KB):</strong> {storageSummary.cloudLinkCount} ชิ้น</span>
+              <span style={{ color: storageSummary.embeddedBinaryKB > 250 ? '#b45309' : '#475569', fontWeight: 600 }}>
+                💾 <strong>ไฟล์ภาพสำรองในความจำเว็บ:</strong> {storageSummary.embeddedBinaryCount} ชิ้น ({storageSummary.embeddedBinaryKB} KB)
+              </span>
+            </div>
+            {storageSummary.embeddedBinaryCount > 0 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => handlePurgeBinaryCache(true)}
+                  style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  🧹 ล้างเฉพาะงานที่ตรวจแล้ว
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePurgeBinaryCache(false)}
+                  style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fef2f2', color: '#b91c1c', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  🗑️ ล้างไฟล์สำรองทั้งหมด ({storageSummary.embeddedBinaryKB} KB)
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#0c4a6e', marginBottom: 4 }}>
+                1. ลิงก์โฟลเดอร์ Google Drive กลางของครู (แชร์ให้เด็กเปิดดู/ส่งงานได้)
+              </label>
+              <input
+                type="url"
+                value={driveConfig.sharedFolderUrl}
+                onChange={(e) => setDriveConfig({ ...driveConfig, sharedFolderUrl: e.target.value })}
+                placeholder="เช่น https://drive.google.com/drive/folders/1AbCdEfG..."
+                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #7dd3fc', background: 'white', fontSize: '0.84rem' }}
+              />
+              <div style={{ fontSize: '0.76rem', color: '#0369a1', marginTop: 4 }}>
+                * สร้างโฟลเดอร์ใน Google Drive ของครู แล้วยังช่วยแยกโฟลเดอร์ย่อยตามชั้นเรียน (ป.1–ป.6) และชื่องานให้อัตโนมัติ
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#0c4a6e', marginBottom: 4 }}>
+                2. Google Apps Script Web App URL (ตัวรับไฟล์เข้า Drive ครูโดยเด็กไม่ต้องล็อกอิน)
+              </label>
+              <input
+                type="url"
+                value={driveConfig.scriptWebAppUrl}
+                onChange={(e) => setDriveConfig({ ...driveConfig, scriptWebAppUrl: e.target.value })}
+                placeholder="เช่น https://script.google.com/macros/s/AKfycb.../exec"
+                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #7dd3fc', background: 'white', fontSize: '0.84rem' }}
+              />
+              <div style={{ fontSize: '0.76rem', color: '#0369a1', marginTop: 4 }}>
+                * เมื่อใส่ลิงก์นี้แล้ว เวลาเด็กกดแคปหน้าจอหรือแนบไฟล์ ไฟล์จะวิ่งเข้า Google Drive ครูทันที (ความจำเว็บ = 0 KB)
+              </div>
+            </div>
+          </div>
+
+          {/* Step-by-step 1-Minute Setup Guide */}
+          <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.85)', border: '1px dashed #38bdf8', fontSize: '0.8rem', color: '#0f172a' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+              <strong style={{ color: '#0369a1' }}>💡 วิธีเชื่อมต่อ Google Drive ของครูใน 1 นาที (ทำครั้งเดียวใช้ได้ตลอดปี):</strong>
+              <button
+                type="button"
+                onClick={handleCopyAppsScript}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 8,
+                  border: '1px solid #0284c7',
+                  background: copiedScript ? '#16a34a' : '#0284c7',
+                  color: 'white',
+                  fontWeight: 700,
+                  fontSize: '0.79rem',
+                  cursor: 'pointer',
+                }}
+              >
+                {copiedScript ? '✅ คัดลอกโค้ด Apps Script แล้ว!' : '📋 คัดลอกโค้ด Google Apps Script สำเร็จรูป'}
+              </button>
+            </div>
+            <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.65 }}>
+              <li>เปิดเว็บ <a href="https://script.google.com" target="_blank" rel="noreferrer" style={{ color: '#0284c7', fontWeight: 700 }}>script.google.com</a> ด้วยบัญชี Gmail ของครู แล้วกด <strong>โครงการใหม่ (New Project)</strong></li>
+              <li>กดปุ่ม <strong>"📋 คัดลอกโค้ด Google Apps Script สำเร็จรูป"</strong> ด้านบน แล้วนำไปวางทับในช่องโค้ดทั้งหมด</li>
+              <li>กดปุ่มสีน้ำเงินมุมขวาบน <strong>การทำให้ใช้งานได้ (Deploy) &rarr; การทำให้ใช้งานได้รายการใหม่ (New deployment)</strong></li>
+              <li>เลือกประเภทเป็น <strong>เว็บแอป (Web app)</strong> &bull; ช่อง <em>ดำเนินการในฐานะ (Execute as)</em> เลือก <strong>"ฉัน (Me)"</strong> &bull; ช่อง <em>ผู้ที่มีสิทธิ์เข้าถึง (Who has access)</em> เลือก <strong>"ทุกคน (Anyone)"</strong></li>
+              <li>คัดลอก <strong>Web App URL (`https://script.google.com/macros/s/.../exec`)</strong> มาวางในช่องที่ 2 ด้านบน แล้วกดบันทึก!</li>
+            </ol>
+          </div>
+
+          <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleSaveDriveBridge}
+              disabled={syncing}
+              style={{ background: '#0284c7', borderColor: '#0284c7' }}
+            >
+              <Save size={15} /> บันทึกและซิงค์ไปคอมนักเรียนทุกเครื่อง
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Auto 3-Tier Generator Modal */}
       {showAuto3Tier && (
