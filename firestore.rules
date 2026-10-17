@@ -248,24 +248,33 @@ service cloud.firestore {
 
     match /homeworkSubmissions/{id} {
       allow read: if isTeacher() || isStudentOwner(resource.data.studentId);
-      allow create: if isStudentOwner(request.resource.data.studentId)
-                   && isAcademicStudentId(request.resource.data.studentId)
-                   && baseWrite(30)
-                   && strOk('studentName', 300)
-                   && strOk('classroom', 20)
-                   && strOk('contentUrl', 3000)
-                   && strOk('comment', 5000)
-                   && !('score' in request.resource.data)
-                   && !('kScore' in request.resource.data)
-                   && !('pScore' in request.resource.data)
-                   && !('feedback' in request.resource.data)
-                   && !('reviewedAt' in request.resource.data);
+      allow create: if (isTeacher() && baseWrite(30))
+                   || (isStudentOwner(request.resource.data.studentId)
+                     && isAcademicStudentId(request.resource.data.studentId)
+                     && baseWrite(30)
+                     && strOk('studentName', 300)
+                     && strOk('classroom', 20)
+                     && strOk('contentUrl', 3000)
+                     && strOk('comment', 5000)
+                     && strOk('contentData', 750000)
+                     && strOk('attachmentFileName', 300)
+                     && strOk('attachmentMimeType', 150)
+                     && strOk('workstationNo', 100)
+                     && strOk('submissionMethod', 60)
+                     && !('score' in request.resource.data)
+                     && !('kScore' in request.resource.data)
+                     && !('pScore' in request.resource.data)
+                     && !('feedback' in request.resource.data)
+                     && !('reviewedAt' in request.resource.data));
       allow update: if isTeacher()
                    || (isStudentOwner(resource.data.studentId)
                      && request.resource.data.studentId == resource.data.studentId
                      && !('reviewedAt' in resource.data)
+                     && strOk('contentData', 750000)
                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                       'contentUrl', 'comment', 'submittedAt', 'designThinkingSteps'
+                       'contentUrl', 'comment', 'submittedAt', 'designThinkingSteps',
+                       'contentData', 'attachmentFileName', 'attachmentMimeType',
+                       'workstationNo', 'submissionMethod'
                      ]));
       allow delete: if isTeacher();
     }

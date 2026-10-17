@@ -1,6 +1,7 @@
 // ระบบการบ้านกลาง: localStorage เป็น cache และ Firebase เป็นแหล่งข้อมูลจริงร่วมกันทุกเครื่อง
 import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from './firebase';
 import {
   createManualAssessment,
   updateManualAssessmentScore,
@@ -21,6 +22,12 @@ import { writeAuditLog } from './auditLogService';
 export type AssignmentDifficulty = 'foundation' | 'standard' | 'advanced';
 export type AssignmentTargetType = 'all' | 'ability_tier' | 'specific_students';
 export type AbilityTier = 'intervention' | 'developing' | 'proficient' | 'advanced';
+export type SubmissionMethod =
+  | 'screenshot_file'
+  | 'canvas_drawing'
+  | 'workstation'
+  | 'written_answer'
+  | 'external_link';
 
 export interface Assignment {
   id: string;
@@ -85,8 +92,16 @@ export interface Submission {
   classroom: string;
   studentNo: number;
   contentUrl?: string;
-  /** รองรับข้อมูลเก่าที่เคยเก็บในเครื่อง แต่ข้อมูลใหม่อัปโหลดไฟล์ไป Storage */
+  /** ข้อมูลไฟล์หรือภาพแคปหน้าจอที่บีบอัดแล้ว (Data URL ≤ 700 KB) สำหรับส่งงานจากคอมโรงเรียนโดยไม่ต้องใช้ Gmail */
   contentData?: string;
+  /** ชื่อไฟล์ที่แนบจากเครื่องคอมพิวเตอร์โรงเรียน เช่น งานแมวเดิน.sb3, ภาพหน้าจอ.webp */
+  attachmentFileName?: string;
+  /** ชนิดของไฟล์ (MIME type) */
+  attachmentMimeType?: string;
+  /** หมายเลขเครื่องคอมพิวเตอร์ในห้องปฏิบัติการ (เช่น เครื่องที่ 05) */
+  workstationNo?: string;
+  /** ช่องทางที่ใช้ส่งงาน */
+  submissionMethod?: SubmissionMethod;
   comment?: string;
   submittedAt: number;
   score?: number;
@@ -102,6 +117,7 @@ const ASS_KEY = 'krujames_assignments_v1';
 const SUB_KEY = 'krujames_submissions_v1';
 const ASS_COLLECTION = 'homeworkAssignments';
 const SUB_COLLECTION = 'homeworkSubmissions';
+const MAX_FIRESTORE_CONTENT_DATA_LEN = 700_000;
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 const firebaseAvailable = () => {
@@ -136,7 +152,9 @@ const saveAssignmentRemote = async (assignment: Assignment) => {
 const saveSubmissionRemote = async (submission: Submission) => {
   if (!firebaseAvailable()) return;
   const remote = { ...submission };
-  delete remote.contentData;
+  if (remote.contentData && remote.contentData.length > MAX_FIRESTORE_CONTENT_DATA_LEN) {
+    delete remote.contentData;
+  }
   await setDoc(doc(db, SUB_COLLECTION, submission.id), cleanForFirestore(remote));
 };
 
@@ -172,7 +190,7 @@ export const fetchSubmissionsFromFirebase = async (): Promise<Submission[]> => {
       return sorted;
     }
     const local = loadSubmissions();
-    await Promise.all(local.filter((item) => !item.contentData).map(saveSubmissionRemote));
+    await Promise.all(local.map(saveSubmissionRemote));
     return local;
   } catch (error) {
     console.warn('fetch submissions failed, using local cache', error);
@@ -554,9 +572,169 @@ export const isValidSubmissionUrl = (url?: string): boolean => {
   }
 };
 
-/** ตรวจสอบความสมบูรณ์ของเนื้อหางานก่อนส่ง (ป้องกันลิงก์ปลอมและข้อความพิมพ์เล่น) */
+/** สร้างลิงก์ระบบส่งงานภายในโรงเรียนอัตโนมัติ (สำหรับนักเรียนที่ไม่มี Gmail / ไม่ใช้โทรศัพท์) */
+export const buildDirectSubmissionPortalUrl = (
+  assignmentId: string,
+  studentId: string,
+  fileName = 'student-work',
+  mode: 'direct-file' | 'workstation' = 'direct-file',
+): string => {
+  const safeAssign = encodeURIComponent(assignmentId || 'task');
+  const safeStudent = encodeURIComponent(studentId || 'student');
+  const safeName = encodeURIComponent(fileName.replace(/\s+/g, '-').slice(0, 80) || 'work');
+  return `https://krujames.school.local/${mode}/${safeAssign}/${safeStudent}/${safeName}`;
+};
+
+export const isDirectPortalSubmissionUrl = (url?: string): boolean => {
+  if (!url) return false;
+  return /^https?:\/\/krujames\.school\.local\/(direct-file|workstation)\//i.test(url.trim());
+};
+
+const readBlobAsDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์ได้'));
+    reader.readAsDataURL(blob);
+  });
+
+const compressImageFileToDataUrl = async (file: Blob, maxDim = 1280, quality = 0.76): Promise<{ dataUrl: string; mimeType: string }> => {
+  const rawDataUrl = await readBlobAsDataUrl(file);
+  if (typeof document === 'undefined' || typeof Image === 'undefined') {
+    return { dataUrl: rawDataUrl, mimeType: file.type || 'image/png' };
+  }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        let width = img.naturalWidth || img.width || 800;
+        let height = img.naturalHeight || img.height || 600;
+        if (width > maxDim || height > maxDim) {
+          if (width >= height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve({ dataUrl: rawDataUrl, mimeType: file.type || 'image/png' });
+          return;
+        }
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        let compressed = canvas.toDataURL('image/webp', quality);
+        let outMime = 'image/webp';
+        if (!compressed.startsWith('data:image/webp') || compressed.length > 650_000) {
+          compressed = canvas.toDataURL('image/jpeg', 0.72);
+          outMime = 'image/jpeg';
+        }
+        if (compressed.length > 680_000) {
+          compressed = canvas.toDataURL('image/jpeg', 0.55);
+          outMime = 'image/jpeg';
+        }
+        resolve({ dataUrl: compressed, mimeType: outMime });
+      } catch {
+        resolve({ dataUrl: rawDataUrl, mimeType: file.type || 'image/png' });
+      }
+    };
+    img.onerror = () => resolve({ dataUrl: rawDataUrl, mimeType: file.type || 'image/png' });
+    img.src = rawDataUrl;
+  });
+};
+
+/**
+ * แปลงไฟล์ภาพแคปหน้าจอ / ไฟล์โปรเจกต์จากคอมพิวเตอร์โรงเรียนให้พร้อมส่งทันทีโดยไม่ต้องใช้ Gmail หรือ Google Drive
+ * - บีบอัดรูปภาพอัตโนมัติเพื่อให้เก็บใน Firestore ได้โดยตรง (ครูเปิดดูได้ทันทีจากทุกเครื่อง)
+ * - พยายามอัปโหลดขึ้น Firebase Storage เพื่อสร้างลิงก์จริง (หากติดสิทธิ์หรือออฟไลน์จะสร้าง Portal Auto-Link อัตโนมัติ)
+ */
+export const prepareDirectStudentSubmissionFile = async (
+  file: File | Blob,
+  options: {
+    studentId: string;
+    classroom: string;
+    assignmentId: string;
+    fileName?: string;
+  },
+): Promise<{
+  contentData: string;
+  contentUrl: string;
+  attachmentFileName: string;
+  attachmentMimeType: string;
+}> => {
+  const originalName =
+    options.fileName ||
+    (file instanceof File && file.name ? file.name : `screenshot-${Date.now()}.png`);
+  const mimeType = file.type || 'application/octet-stream';
+  const isImage = mimeType.startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp)$/i.test(originalName);
+
+  let contentData = '';
+  let finalMimeType = mimeType;
+
+  if (isImage) {
+    const compressed = await compressImageFileToDataUrl(file);
+    contentData = compressed.dataUrl;
+    finalMimeType = compressed.mimeType;
+  } else {
+    // ไฟล์งานทั่วไป เช่น .sb3 (Scratch), .py, .html, .txt, .pdf, .docx, .pptx
+    if (file.size > 520 * 1024) {
+      throw new Error(
+        `ไฟล์ "${originalName}" มีขนาดใหญ่เกินไป (${Math.round(file.size / 1024)} KB) กรุณาใช้ปุ่ม "📸 แคปหน้าจอโปรแกรมส่งทันที" หรือเลือกไฟล์ไม่เกิน 500 KB ครับ`,
+      );
+    }
+    contentData = await readBlobAsDataUrl(file);
+  }
+
+  if (contentData.length > MAX_FIRESTORE_CONTENT_DATA_LEN) {
+    throw new Error('ขนาดข้อมูลไฟล์ใหญ่เกินกำหนด กรุณาใช้โหมดแคปภาพหน้าจอแทนครับ');
+  }
+
+  let contentUrl = buildDirectSubmissionPortalUrl(
+    options.assignmentId,
+    options.studentId,
+    originalName,
+    'direct-file',
+  );
+
+  // พยายามอัปโหลดขึ้น Firebase Storage (ตั้งเวลา timeout สั้นๆ 2.5 วินาที เพื่อไม่ให้นักเรียนรอนานหากไม่ได้เปิด Storage)
+  try {
+    const safePath = `homework_uploads/${encodeURIComponent(options.classroom || 'class')}/${encodeURIComponent(options.assignmentId)}/${encodeURIComponent(options.studentId)}_${Date.now()}_${originalName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const storageRef = ref(storage, safePath);
+    const uploadPromise = (async () => {
+      await uploadBytes(storageRef, file, { contentType: finalMimeType });
+      return await getDownloadURL(storageRef);
+    })();
+    const timeoutPromise = new Promise<string>((_, reject) =>
+      setTimeout(() => reject(new Error('storage-timeout')), 2500),
+    );
+    const remoteUrl = await Promise.race([uploadPromise, timeoutPromise]);
+    if (remoteUrl && /^https?:\/\//i.test(remoteUrl)) {
+      contentUrl = remoteUrl;
+    }
+  } catch {
+    // ใช้ Portal Auto-Link + contentData ใน Firestore แทนได้ทันทีโดยไม่เกิด Error
+  }
+
+  return {
+    contentData,
+    contentUrl,
+    attachmentFileName: originalName,
+    attachmentMimeType: finalMimeType,
+  };
+};
+
+/** ตรวจสอบความสมบูรณ์ของเนื้อหางานก่อนส่ง (รองรับโหมดไร้ Gmail: แคปหน้าจอ, แนบไฟล์, วาดผังงาน, ระบุเครื่องคอมฯ) */
 export const validateSubmissionContent = (data: {
   contentUrl?: string;
+  contentData?: string;
+  workstationNo?: string;
+  submissionMethod?: SubmissionMethod;
   comment?: string;
   isDesignThinking?: boolean;
   dtDefine?: string;
@@ -565,6 +743,8 @@ export const validateSubmissionContent = (data: {
 }): { valid: boolean; error?: string } => {
   const url = data.contentUrl?.trim();
   const comment = data.comment?.trim();
+  const hasDirectFile = Boolean(data.contentData && data.contentData.trim().length > 20);
+  const hasWorkstation = Boolean(data.workstationNo && data.workstationNo.trim().length >= 1);
 
   if (data.isDesignThinking) {
     const define = data.dtDefine?.trim() || '';
@@ -582,11 +762,11 @@ export const validateSubmissionContent = (data: {
     return { valid: true };
   }
 
-  // ถ้ามีการกรอกลิงก์มา ต้องตรวจความถูกต้องของโดเมน
+  // ถ้ามีการกรอกลิงก์มา ต้องตรวจความถูกต้องของโดเมนก่อนเสมอ
   if (url && !isValidSubmissionUrl(url)) {
     return {
       valid: false,
-      error: '❌ ลิงก์ผลงานไม่ถูกต้อง: กรุณาใส่ URL เว็บไซต์จริง (เช่น https://www.canva.com/... หรือ https://scratch.mit.edu/...) ไม่สามารถใส่ข้อความทั่วไปได้ครับ',
+      error: '❌ ลิงก์ผลงานไม่ถูกต้อง: กรุณาใส่ URL เว็บไซต์จริง (เช่น https://www.canva.com/... หรือ https://scratch.mit.edu/...) หรือเปลี่ยนไปใช้โหมด "📸 แคปจอ/แนบไฟล์ (ไม่ต้องใช้ Gmail)" แทนครับ',
     };
   }
 
@@ -600,34 +780,43 @@ export const validateSubmissionContent = (data: {
     return false;
   };
 
-  // กรณีไม่มีลิงก์ ส่งเฉพาะข้อความตอบคำถาม
-  if (!url) {
-    if (comment && isSpamText(comment)) {
-      return {
-        valid: false,
-        error: '❌ ข้อความไม่ถูกต้อง: กรุณาพิมพ์คำตอบหรืออธิบายงานจริง ไม่พิมพ์ตัวอักษรซ้ำหรือพิมพ์เล่นครับ',
-      };
-    }
-    if (!comment || comment.length < 10) {
-      return {
-        valid: false,
-        error: '❌ ข้อความสั้นเกินไป: กรุณาพิมพ์คำตอบหรืออธิบายผลงานอย่างน้อย 10 ตัวอักษร',
-      };
-    }
-  }
-
-  // กรณีมีลิงก์และมีข้อความด้วย แต่ข้อความเป็นสแปม
   if (comment && isSpamText(comment)) {
     return {
       valid: false,
-      error: '❌ ข้อความคำอธิบายไม่ถูกต้อง: ไม่พิมพ์ตัวอักษรซ้ำหรือพิมพ์เล่นครับ',
+      error: '❌ ข้อความไม่ถูกต้อง: กรุณาพิมพ์คำตอบหรืออธิบายงานจริง ไม่พิมพ์ตัวอักษรซ้ำหรือพิมพ์เล่นครับ',
     };
+  }
+
+  // กรณีแนบภาพแคปหน้าจอ / ไฟล์จากคอมฯ / กระดานวาดภาพ -> ผ่านทันทีโดยไม่ต้องมี Gmail หรือลิงก์ภายนอก!
+  if (hasDirectFile) {
+    return { valid: true };
+  }
+
+  // กรณีส่งงานหน้าเครื่องคอมพิวเตอร์ห้องเรียน (ระบุหมายเลขเครื่อง PC)
+  if (hasWorkstation) {
+    if (!comment || comment.length < 3) {
+      return {
+        valid: false,
+        error: '❌ กรุณาพิมพ์ชื่อไฟล์ที่บันทึกไว้ หรือสรุปสั้นๆ ว่าทำอะไรเสร็จที่เครื่องคอมพิวเตอร์นี้ครับ (อย่างน้อย 3 ตัวอักษร)',
+      };
+    }
+    return { valid: true };
+  }
+
+  // กรณีไม่มีลิงก์ ส่งเฉพาะข้อความตอบคำถาม
+  if (!url) {
+    if (!comment || comment.length < 10) {
+      return {
+        valid: false,
+        error: '❌ ข้อความสั้นเกินไป: กรุณาพิมพ์คำตอบอย่างน้อย 10 ตัวอักษร หรือใช้ปุ่ม "📸 แคปหน้าจอโปรแกรมส่งทันที" ด้านบนครับ',
+      };
+    }
   }
 
   if (!url && !comment) {
     return {
       valid: false,
-      error: '❌ กรุณาแนบลิงก์ผลงาน หรือพิมพ์คำตอบ/คำอธิบายผลงาน',
+      error: '❌ กรุณาแคปหน้าจอ/แนบไฟล์ หรือเลือกเครื่องคอมพิวเตอร์ หรือพิมพ์คำตอบก่อนส่งงานครับ',
     };
   }
 
@@ -643,17 +832,37 @@ export const submitWork = async (
   const previous = loadSubmissions().find(s => alternatives.has(s.assignmentId) && s.studentId === data.studentId);
   if (previous?.reviewedAt) throw new Error('ครูตรวจงานนี้แล้ว กรุณาติดต่อครูก่อนแก้ไข');
 
-  if (data.contentUrl?.trim() && !isValidSubmissionUrl(data.contentUrl)) {
+  const hasDirectFile = Boolean(data.contentData && data.contentData.trim().length > 20);
+  const hasWorkstation = Boolean(data.workstationNo && data.workstationNo.trim().length >= 1);
+
+  let effectiveUrl = data.contentUrl?.trim() || '';
+  if (!effectiveUrl && hasDirectFile) {
+    effectiveUrl = buildDirectSubmissionPortalUrl(
+      data.assignmentId,
+      data.studentId,
+      data.attachmentFileName || 'student-file',
+      'direct-file',
+    );
+  } else if (!effectiveUrl && hasWorkstation) {
+    effectiveUrl = buildDirectSubmissionPortalUrl(
+      data.assignmentId,
+      data.studentId,
+      data.workstationNo || 'pc',
+      'workstation',
+    );
+  }
+
+  if (effectiveUrl && !isValidSubmissionUrl(effectiveUrl)) {
     throw new Error('ลิงก์ผลงานไม่ถูกต้อง กรุณาใส่ URL เว็บไซต์จริง เช่น Canva หรือ Scratch');
   }
   if (data.designThinkingSteps?.prototypeUrl?.trim() && !isValidSubmissionUrl(data.designThinkingSteps.prototypeUrl)) {
     throw new Error('ลิงก์ผลงานต้นแบบไม่ถูกต้อง กรุณาใส่ URL เว็บไซต์จริง');
   }
-  if (!data.contentUrl?.trim() && !data.comment?.trim() && !data.designThinkingSteps) {
-    throw new Error('กรุณาระบุลิงก์ผลงานหรือคำตอบของงาน');
+  if (!effectiveUrl && !hasDirectFile && !hasWorkstation && !data.comment?.trim() && !data.designThinkingSteps) {
+    throw new Error('กรุณาแนบภาพหน้าจอ/ไฟล์งาน หรือระบุลิงก์ผลงาน หรือพิมพ์คำตอบของงาน');
   }
 
-  const normalizedContentUrl = normalizeHomeworkUrl(data.contentUrl);
+  const normalizedContentUrl = normalizeHomeworkUrl(effectiveUrl);
   const normalizedDtSteps = data.designThinkingSteps ? {
     ...data.designThinkingSteps,
     prototypeUrl: normalizeHomeworkUrl(data.designThinkingSteps.prototypeUrl),
@@ -662,6 +871,19 @@ export const submitWork = async (
   const submission: Submission = {
     ...data,
     contentUrl: normalizedContentUrl || undefined,
+    contentData: hasDirectFile ? data.contentData : undefined,
+    attachmentFileName: data.attachmentFileName?.trim() || undefined,
+    attachmentMimeType: data.attachmentMimeType?.trim() || undefined,
+    workstationNo: data.workstationNo?.trim() || undefined,
+    submissionMethod:
+      data.submissionMethod ||
+      (hasDirectFile
+        ? 'screenshot_file'
+        : hasWorkstation
+        ? 'workstation'
+        : normalizedContentUrl
+        ? 'external_link'
+        : 'written_answer'),
     designThinkingSteps: normalizedDtSteps,
     id: previous?.id || uid(),
     submittedAt: Date.now(),
@@ -1067,4 +1289,117 @@ export const getStudentWorkStatusOverview = (
     completionPercent,
   };
 };
+
+/**
+ * ครูรับงานและให้คะแนนหน้าชั้นเรียนทันที (สำหรับนักเรียนที่ทำเสร็จในห้องคอมฯ หรือส่งกระดาษ/ตรวจหน้าเครื่องโดยยังไม่กดส่งเอง)
+ */
+export const submitTeacherClassroomCheckIn = async (params: {
+  assignmentId: string;
+  studentId: string;
+  studentName: string;
+  studentNo: number;
+  classroom: string;
+  workstationNo?: string;
+  scores: { kScore?: number; pScore?: number };
+  feedback?: string;
+}): Promise<Submission> => {
+  const assignment = loadAssignments().find((a) => a.id === params.assignmentId);
+  if (!assignment) throw new Error('ไม่พบใบงานนี้');
+
+  const existing = getStudentSubmissionForAssignment(
+    params.assignmentId,
+    params.studentId,
+    params.classroom,
+    params.studentNo,
+  );
+
+  let targetSubId = existing?.id;
+  if (!existing) {
+    const portalUrl = buildDirectSubmissionPortalUrl(
+      params.assignmentId,
+      params.studentId,
+      params.workstationNo || 'classroom-checkin',
+      'workstation',
+    );
+    const created: Submission = {
+      id: uid(),
+      assignmentId: params.assignmentId,
+      studentId: params.studentId,
+      studentName: params.studentName,
+      studentNo: params.studentNo,
+      classroom: params.classroom,
+      contentUrl: portalUrl,
+      workstationNo: params.workstationNo || 'ตรวจรับหน้าชั้นเรียน',
+      submissionMethod: 'workstation',
+      comment: params.workstationNo
+        ? `ส่งงานหน้าชั้นเรียน (${params.workstationNo})`
+        : 'ครูตรวจรับผลงานหน้าชั้นเรียนเรียบร้อยแล้ว',
+      submittedAt: Date.now(),
+    };
+    await saveSubmissionRemote(created);
+    const list = loadSubmissions().filter((item) => item.id !== created.id);
+    cache(SUB_KEY, [created, ...list]);
+    targetSubId = created.id;
+  }
+
+  await reviewSubmission(
+    targetSubId!,
+    params.scores,
+    params.feedback?.trim() || 'ตรวจรับผลงานหน้าชั้นเรียนเรียบร้อยแล้ว ยอดเยี่ยมมาก!',
+  );
+
+  return loadSubmissions().find((s) => s.id === targetSubId)!;
+};
+
+/**
+ * เชื่อมหรือสร้างใบงานออนไลน์อัตโนมัติจากรายการใบงานในชั้นเรียน (ManualAssessment)
+ * เพื่อให้นักเรียนกด "ส่งใบงานนี้ผ่านเว็บ" ได้ทันทีโดยไม่ต้องใช้ Gmail
+ */
+export const ensureAssignmentForManualAssessment = async (
+  classroom: string,
+  item: MissingManualAssessmentItem,
+): Promise<Assignment> => {
+  const allAssignments = loadAssignments();
+  const existing = allAssignments.find(
+    (a) =>
+      a.classroom === classroom &&
+      (a.linkedAssessmentId === item.assessmentId ||
+        a.linkedKnowledgeAssessmentId === item.assessmentId ||
+        a.linkedPracticeAssessmentId === item.assessmentId ||
+        (a.title.trim() === item.title.trim() && (a.subject || 'main') === item.subject)),
+  );
+  if (existing) return existing;
+
+  const isPractice = item.category === 'p';
+  const kMax = isPractice ? 0 : item.maxScore;
+  const pMax = isPractice ? item.maxScore : 0;
+  const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+
+  const created: Assignment = {
+    id: uid(),
+    title: item.title,
+    description: `ส่งผลงานใบงาน "${item.title}" (${item.indicatorCode}) สามารถแคปภาพหน้าจอ แนบไฟล์จากเครื่องคอมพิวเตอร์ วาดผังงาน หรือระบุหมายเลขเครื่องคอมฯ ได้ทันทีโดยไม่ต้องใช้ Gmail`,
+    classroom,
+    subject: item.subject,
+    dueDate,
+    maxScore: item.maxScore,
+    knowledgeMaxScore: kMax,
+    practiceMaxScore: pMax,
+    indicatorId: item.indicatorId,
+    category: item.category,
+    linkedAssessmentId: item.assessmentId,
+    linkedKnowledgeAssessmentId: !isPractice ? item.assessmentId : undefined,
+    linkedPracticeAssessmentId: isPractice ? item.assessmentId : undefined,
+    resourceUrl: item.resourceUrl,
+    createdBy: 'teacher',
+    targetType: 'all',
+    difficulty: 'standard',
+    createdAt: Date.now(),
+  };
+
+  await saveAssignmentRemote(created);
+  cache(ASS_KEY, [created, ...allAssignments]);
+  return created;
+};
+
 

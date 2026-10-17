@@ -21,6 +21,9 @@ import {
   normalizeHomeworkUrl,
   isValidSubmissionUrl,
   validateSubmissionContent,
+  isDirectPortalSubmissionUrl,
+  submitTeacherClassroomCheckIn,
+  ensureAssignmentForManualAssessment,
 } from '../src/services/homeworkService';
 
 describe('ระบบรับงานผ่านลิงก์และตรวจงานด้วยรูบริก (Link & Rubric Verification)', () => {
@@ -354,6 +357,127 @@ describe('ระบบรับงานผ่านลิงก์และต�
           comment: 'งานส่งครับ',
         }),
       ).rejects.toThrow('ลิงก์ผลงานไม่ถูกต้อง');
+    });
+  });
+
+  describe('5. ระบบส่งงานไร้ Gmail / ไม่ต้องใช้โทรศัพท์มือถือ (No-Gmail & No-Phone Classroom Submission)', () => {
+    it('ส่งงานด้วยภาพแคปหน้าจอหรือไฟล์จากเครื่องคอมพิวเตอร์โดยไม่ต้องใส่ลิงก์ภายนอก (Auto-Link Generator)', async () => {
+      const task = await createAssignment({
+        title: 'เขียนโปรแกรมแมวเดินใน Scratch (ส่งภาพแคปหน้าจอ)',
+        description: 'สำหรับนักเรียนที่ไม่มี Gmail',
+        classroom: 'ป.4',
+        dueDate: '2026-10-31',
+        maxScore: 10,
+        knowledgeMaxScore: 5,
+        practiceMaxScore: 5,
+        createdBy: 'teacher',
+        targetType: 'all',
+      });
+
+      const fakeScreenshotDataUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+
+      const validation = validateSubmissionContent({
+        contentData: fakeScreenshotDataUrl,
+        submissionMethod: 'screenshot_file',
+      });
+      expect(validation.valid).toBe(true);
+
+      const submission = await submitWork({
+        assignmentId: task.id,
+        studentId: 'p4_01_nogmail',
+        studentName: 'เด็กชายกิตติภพ ไร้จีเมล',
+        classroom: 'ป.4',
+        studentNo: 1,
+        contentData: fakeScreenshotDataUrl,
+        attachmentFileName: 'แคปหน้าจอ_Scratch_ป4.jpg',
+        attachmentMimeType: 'image/jpeg',
+        submissionMethod: 'screenshot_file',
+      });
+
+      expect(submission.contentData).toBe(fakeScreenshotDataUrl);
+      expect(submission.attachmentFileName).toBe('แคปหน้าจอ_Scratch_ป4.jpg');
+      expect(submission.contentUrl).toBeDefined();
+      expect(isDirectPortalSubmissionUrl(submission.contentUrl)).toBe(true);
+    });
+
+    it('ส่งงานด้วยการแจ้งหมายเลขเครื่องคอมพิวเตอร์ห้องเรียน (Workstation Mode)', async () => {
+      const task = await createAssignment({
+        title: 'วาดภาพระบายสีด้วยโปรแกรม Paint',
+        description: 'บันทึกไว้ในคอมพิวเตอร์โรงเรียน',
+        classroom: 'ป.2',
+        dueDate: '2026-10-31',
+        maxScore: 10,
+        createdBy: 'teacher',
+        targetType: 'all',
+      });
+
+      const validation = validateSubmissionContent({
+        workstationNo: 'เครื่องที่ 08',
+        comment: 'บันทึกชื่อไฟล์ บ้านของฉัน.png ที่หน้าจอ Desktop',
+      });
+      expect(validation.valid).toBe(true);
+
+      const submission = await submitWork({
+        assignmentId: task.id,
+        studentId: 'p2_05_pc',
+        studentName: 'เด็กหญิงนารี ห้องคอม',
+        classroom: 'ป.2',
+        studentNo: 5,
+        workstationNo: 'เครื่องที่ 08',
+        submissionMethod: 'workstation',
+        comment: 'บันทึกชื่อไฟล์ บ้านของฉัน.png ที่หน้าจอ Desktop',
+      });
+
+      expect(submission.workstationNo).toBe('เครื่องที่ 08');
+      expect(submission.submissionMethod).toBe('workstation');
+      expect(isDirectPortalSubmissionUrl(submission.contentUrl)).toBe(true);
+    });
+
+    it('ครูสามารถกดรับงานหน้าชั้นและให้คะแนนได้ในคลิกเดียว (submitTeacherClassroomCheckIn)', async () => {
+      const task = await createAssignment({
+        title: 'ใบงานอัลกอริทึมในชั้นเรียน',
+        description: 'ตรวจหน้าเครื่องคอมพิวเตอร์',
+        classroom: 'ป.3',
+        dueDate: '2026-10-31',
+        maxScore: 10,
+        knowledgeMaxScore: 5,
+        practiceMaxScore: 5,
+        createdBy: 'teacher',
+        targetType: 'all',
+      });
+
+      const checkedIn = await submitTeacherClassroomCheckIn({
+        assignmentId: task.id,
+        studentId: 'p3_02_checkin',
+        studentName: 'เด็กชายมานะ ตั้งใจเรียน',
+        studentNo: 2,
+        classroom: 'ป.3',
+        workstationNo: 'เครื่องที่ 12',
+        scores: { kScore: 5, pScore: 4 },
+        feedback: 'ตรวจหน้าเครื่องที่ 12 เรียบร้อย ทำงานครบถ้วน',
+      });
+
+      expect(checkedIn.score).toBe(9);
+      expect(checkedIn.kScore).toBe(5);
+      expect(checkedIn.pScore).toBe(4);
+      expect(checkedIn.workstationNo).toBe('เครื่องที่ 12');
+    });
+
+    it('สร้างใบงานออนไลน์อัตโนมัติจากรายการใบงานในชั้นเรียน (ensureAssignmentForManualAssessment)', async () => {
+      const created = await ensureAssignmentForManualAssessment('ป.5', {
+        assessmentId: 'ma_test_01',
+        title: 'ใบงานที่ 3 การแก้ปัญหาด้วยเหตุผลเชิงตรรกะ',
+        subject: 'main',
+        subjectTitle: 'เทคโนโลยี (วิทยาการคำนวณ)',
+        indicatorId: 'ว 4.2 ป.5/1',
+        indicatorCode: 'ว 4.2 ป.5/1',
+        category: 'p',
+        maxScore: 10,
+      });
+
+      expect(created.id).toBeDefined();
+      expect(created.linkedAssessmentId).toBe('ma_test_01');
+      expect(created.classroom).toBe('ป.5');
     });
   });
 });

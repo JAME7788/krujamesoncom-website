@@ -19,6 +19,8 @@ import {
   getSubmissionsByAssignment, reviewSubmission,
   fetchAssignmentsFromFirebase, fetchSubmissionsFromFirebase,
   generate3TierAssignments,
+  isDirectPortalSubmissionUrl,
+  submitTeacherClassroomCheckIn,
   type AssignmentDifficulty, type AssignmentTargetType, type AbilityTier,
 } from '../services/homeworkService';
 import type { Assignment, Submission } from '../services/homeworkService';
@@ -786,6 +788,9 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
   const [subs, setSubs] = useState<Submission[]>(getSubmissionsByAssignment(assignment.id));
   const [syncing, setSyncing] = useState(true);
   const [grading, setGrading] = useState<Submission | null>(null);
+  const [checkInTarget, setCheckInTarget] = useState<{ studentCode: string; name: string; no: number } | null>(null);
+  const [checkInWorkstation, setCheckInWorkstation] = useState('ตรวจรับหน้าชั้นเรียน');
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [kScore, setKScore] = useState(0);
   const [pCriteria, setPCriteria] = useState([0, 0, 0, 0]);
   const [pOverride, setPOverride] = useState<number | null>(null);
@@ -807,6 +812,7 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
   }, [assignment.id]);
 
   const openScore = (submission: Submission) => {
+    setCheckInTarget(null);
     setGrading(submission);
     setKScore(submission.kScore || 0);
     const existingRatio = pMax > 0 ? (submission.pScore || 0) / pMax : 0;
@@ -816,20 +822,48 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
     setFeedback(submission.feedback || '');
   };
 
+  const openClassroomCheckIn = (student: { studentCode: string; name: string; no: number }) => {
+    setGrading(null);
+    setCheckInTarget(student);
+    setCheckInWorkstation('ตรวจรับหน้าชั้นเรียน');
+    setKScore(kMax);
+    setPCriteria([3, 3, 3, 3]);
+    setPOverride(null);
+    setFeedback('ตรวจรับผลงานหน้าชั้นเรียนเรียบร้อยแล้ว ยอดเยี่ยมมาก!');
+  };
+
   const saveScore = async () => {
-    if (!grading) return;
+    if (!grading && !checkInTarget) return;
     setSyncing(true);
     try {
-      await reviewSubmission(
-        grading.id,
-        {
-          kScore: Math.max(0, Math.min(kMax, kScore)),
-          pScore: Math.max(0, Math.min(pMax, pScore)),
-        },
-        feedback,
-      );
-      reload();
-      setGrading(null);
+      if (checkInTarget) {
+        await submitTeacherClassroomCheckIn({
+          assignmentId: assignment.id,
+          studentId: checkInTarget.studentCode,
+          studentName: checkInTarget.name,
+          studentNo: checkInTarget.no,
+          classroom: assignment.classroom || '',
+          workstationNo: checkInWorkstation,
+          scores: {
+            kScore: Math.max(0, Math.min(kMax, kScore)),
+            pScore: Math.max(0, Math.min(pMax, pScore)),
+          },
+          feedback,
+        });
+        reload();
+        setCheckInTarget(null);
+      } else if (grading) {
+        await reviewSubmission(
+          grading.id,
+          {
+            kScore: Math.max(0, Math.min(kMax, kScore)),
+            pScore: Math.max(0, Math.min(pMax, pScore)),
+          },
+          feedback,
+        );
+        reload();
+        setGrading(null);
+      }
     } catch (error) {
       console.error(error);
       alert('บันทึกคะแนนไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
@@ -927,15 +961,25 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
           <div className="homework-submission-list">
             {rosterRows.map(({ student, submission: s }) => (
               <div key={student.studentCode} className={`homework-submission-row ${s ? '' : 'missing'}`}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                   <div>
                     <strong>{student.no}. {student.name}</strong>
                     {s ? (
-                      <div className="submission-status-line">
+                      <div className="submission-status-line" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         {s.submittedAt > dueTime
                           ? <span className="late"><Clock3 size={13} /> ส่งช้า</span>
                           : <span className="submitted"><CheckCircle2 size={13} /> ส่งแล้ว</span>}
                         <small>{new Date(s.submittedAt).toLocaleString('th-TH')}</small>
+                        {s.workstationNo && (
+                          <span style={{ background: '#ede9fe', color: '#5b21b6', padding: '1px 8px', borderRadius: 999, fontSize: '0.73rem', fontWeight: 700 }}>
+                            🖥️ {s.workstationNo}
+                          </span>
+                        )}
+                        {s.submissionMethod === 'canvas_drawing' && (
+                          <span style={{ background: '#dcfce7', color: '#166534', padding: '1px 8px', borderRadius: 999, fontSize: '0.73rem', fontWeight: 700 }}>
+                            🎨 วาดผังงานในระบบ
+                          </span>
+                        )}
                       </div>
                     ) : (
                       <span className="missing-label"><AlertTriangle size={13} /> ยังไม่ส่ง</span>
@@ -946,7 +990,7 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                         <strong style={{ color: '#0f766e', display: 'block', marginBottom: 4 }}>💡 รายละเอียดกระบวนการ Design Thinking:</strong>
                         {s.designThinkingSteps.define && <div style={{ marginBottom: 2 }}><strong>1. ปัญหา (Define):</strong> {s.designThinkingSteps.define}</div>}
                         {s.designThinkingSteps.ideate && <div style={{ marginBottom: 2 }}><strong>2. ไอเดีย (Ideate):</strong> {s.designThinkingSteps.ideate}</div>}
-                        {s.designThinkingSteps.prototypeUrl && (() => {
+                        {s.designThinkingSteps.prototypeUrl && !isDirectPortalSubmissionUrl(s.designThinkingSteps.prototypeUrl) && (() => {
                           const safeProto = /^https?:\/\//i.test(s.designThinkingSteps.prototypeUrl) ? s.designThinkingSteps.prototypeUrl : `https://${s.designThinkingSteps.prototypeUrl}`;
                           return (
                             <div style={{ marginBottom: 2 }}><strong>3. ต้นแบบ (Prototype):</strong> <a href={safeProto} target="_blank" rel="noreferrer" style={{ color: '#0284c7' }}>เปิดลิงก์ชิ้นงาน</a></div>
@@ -969,43 +1013,106 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                       <button className="btn-primary" disabled={syncing} onClick={() => openScore(s)} style={{ padding: '4px 12px', fontSize: '0.85rem' }}>
                         ให้คะแนน
                       </button>
-                    ) : <span className="no-score">-</span>}
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        disabled={syncing}
+                        onClick={() => openClassroomCheckIn(student)}
+                        style={{ padding: '4px 10px', fontSize: '0.76rem', fontWeight: 700, color: '#0369a1', borderColor: '#7dd3fc', background: '#f0f9ff' }}
+                        title="สำหรับนักเรียนที่ทำเสร็จในห้องคอมฯ หรือส่งกระดาษโดยไม่ได้กดส่งในเว็บ"
+                      >
+                        ⚡ รับงานหน้าชั้น / ให้คะแนน
+                      </button>
+                    )}
                   </div>
                 </div>
                 {s && (s.contentUrl || s.contentData) && (
-                  <div style={{ marginTop: 8 }}>
-                    {s.contentUrl && (() => {
-                      const safeUrl = /^https?:\/\//i.test(s.contentUrl) ? s.contentUrl : `https://${s.contentUrl}`;
-                      const badge = getSubmissionLinkBadge(safeUrl);
-                      return (
-                        <a
-                          href={safeUrl}
-                          target="_blank"
-                          rel="noreferrer"
+                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      {s.contentUrl && !isDirectPortalSubmissionUrl(s.contentUrl) && (() => {
+                        const safeUrl = /^https?:\/\//i.test(s.contentUrl) ? s.contentUrl : `https://${s.contentUrl}`;
+                        const badge = getSubmissionLinkBadge(safeUrl);
+                        return (
+                          <a
+                            href={safeUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '4px 10px',
+                              borderRadius: 6,
+                              background: badge.bg,
+                              color: badge.color,
+                              border: `1px solid ${badge.border}`,
+                              fontSize: '0.8rem',
+                              fontWeight: 600,
+                              textDecoration: 'none',
+                            }}
+                          >
+                            <span>{badge.label}</span>
+                            <ExternalLink size={12} />
+                          </a>
+                        );
+                      })()}
+                      {s.contentUrl && isDirectPortalSubmissionUrl(s.contentUrl) && (
+                        <span
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: 6,
+                            gap: 5,
+                            padding: '3px 10px',
+                            borderRadius: 6,
+                            background: '#ecfeff',
+                            color: '#0e7490',
+                            border: '1px solid #a5f3fc',
+                            fontSize: '0.76rem',
+                            fontWeight: 700,
+                          }}
+                        >
+                          🛡️ ส่งตรงผ่านระบบโรงเรียน (ไม่ต้องใช้ Gmail)
+                        </span>
+                      )}
+                      {s.contentData && (
+                        <a
+                          href={s.contentData}
+                          download={s.attachmentFileName || `งาน_${student.no}_${student.name}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
                             padding: '4px 10px',
                             borderRadius: 6,
-                            background: badge.bg,
-                            color: badge.color,
-                            border: `1px solid ${badge.border}`,
-                            fontSize: '0.8rem',
-                            fontWeight: 600,
+                            background: '#f0fdf4',
+                            color: '#166534',
+                            border: '1px solid #86efac',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
                             textDecoration: 'none',
                           }}
                         >
-                          <span>{badge.label}</span>
-                          <ExternalLink size={12} />
+                          📥 ดาวน์โหลดไฟล์แนบ: {s.attachmentFileName || 'ไฟล์ผลงาน'}
                         </a>
-                      );
-                    })()}
+                      )}
+                    </div>
                     {s.contentData?.startsWith('data:image') && (
-                      <img src={s.contentData} alt="งานนักเรียน" style={{ maxWidth: '100%', maxHeight: 200, marginTop: 8, borderRadius: 8 }} />
-                    )}
-                    {s.contentData?.startsWith('data:application/pdf') && (
-                      <a href={s.contentData} download="งาน.pdf">📄 ดาวน์โหลด PDF</a>
+                      <div>
+                        <img
+                          src={s.contentData}
+                          alt="งานนักเรียน"
+                          onClick={() => setZoomedImage(s.contentData || null)}
+                          title="คลิกเพื่อขยายดูภาพขนาดใหญ่"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: 220,
+                            borderRadius: 8,
+                            border: '1px solid #cbd5e1',
+                            cursor: 'zoom-in',
+                          }}
+                        />
+                      </div>
                     )}
                   </div>
                 )}
@@ -1014,16 +1121,59 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
           </div>
         )}
 
-        {grading && (
+        {zoomedImage && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.82)',
+              zIndex: 1200,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+            }}
+            onClick={() => setZoomedImage(null)}
+          >
+            <img
+              src={zoomedImage}
+              alt="ขยายผลงานนักเรียน"
+              style={{ maxWidth: '94vw', maxHeight: '90vh', borderRadius: 12, boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+            />
+          </div>
+        )}
+
+        {(grading || checkInTarget) && (
           <div className="homework-score-overlay">
             <div className="homework-score-dialog">
               <div className="homework-score-heading">
                 <div>
-                  <span>ตรวจงานและบันทึกเข้า K/P/A</span>
-                  <h3>{grading.studentName}</h3>
+                  <span>{checkInTarget ? '⚡ ตรวจรับงานหน้าชั้นเรียนและบันทึกคะแนน' : 'ตรวจงานและบันทึกเข้า K/P/A'}</span>
+                  <h3>{grading ? grading.studentName : `${checkInTarget?.no}. ${checkInTarget?.name}`}</h3>
                 </div>
-                <button type="button" className="btn-ghost" onClick={() => setGrading(null)}><X size={17} /></button>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => {
+                    setGrading(null);
+                    setCheckInTarget(null);
+                  }}
+                >
+                  <X size={17} />
+                </button>
               </div>
+              {checkInTarget && (
+                <label style={{ display: 'block', marginBottom: 10, fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>
+                  รูปแบบการส่งงานหน้าชั้นเรียน / เครื่องคอมพิวเตอร์:
+                  <input
+                    type="text"
+                    value={checkInWorkstation}
+                    onChange={(e) => setCheckInWorkstation(e.target.value)}
+                    placeholder="เช่น ตรวจหน้าเครื่องที่ 05 หรือ ส่งใบงานกระดาษ"
+                    style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #cbd5e1', marginTop: 4 }}
+                  />
+                </label>
+              )}
 
               {kMax > 0 && (
                 <section>

@@ -1,5 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Upload, CheckCircle2, Clock, AlertCircle, FileText, Sparkles, ExternalLink, ClipboardList } from 'lucide-react';
+import {
+  Upload,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  FileText,
+  Sparkles,
+  ExternalLink,
+  ClipboardList,
+  Camera,
+  Monitor,
+  PenTool,
+  FolderUp,
+  Trash2,
+  Link2,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
   getAssignmentsForStudent,
@@ -10,7 +25,12 @@ import {
   fetchSubmissionsFromFirebase,
   recommendAssignment,
   validateSubmissionContent,
+  prepareDirectStudentSubmissionFile,
+  ensureAssignmentForManualAssessment,
+  isDirectPortalSubmissionUrl,
   type Assignment,
+  type MissingManualAssessmentItem,
+  type SubmissionMethod,
 } from '../services/homeworkService';
 import { isScoreEligibleUser } from '../services/userAccessService';
 
@@ -26,12 +46,35 @@ type HomeworkFilterTab =
   | 'advanced'
   | 'submitted';
 
+type StudentSubmitModeTab = 'direct_file' | 'canvas_draw' | 'workstation' | 'link_text';
+
+const WORKSTATION_OPTIONS = [
+  ...Array.from({ length: 30 }, (_, idx) => `เครื่องที่ ${String(idx + 1).padStart(2, '0')}`),
+  'ส่งสมุด/ใบงานกระดาษที่โต๊ะครู',
+];
+
 const HomeworkStudent: React.FC = () => {
   const { user } = useAuth();
   const [selected, setSelected] = useState<Assignment | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [contentUrl, setContentUrl] = useState('');
   const [comment, setComment] = useState('');
+  const [contentData, setContentData] = useState('');
+  const [attachmentFileName, setAttachmentFileName] = useState('');
+  const [attachmentMimeType, setAttachmentMimeType] = useState('');
+  const [workstationNo, setWorkstationNo] = useState('');
+  const [submissionMethod, setSubmissionMethod] = useState<SubmissionMethod>('screenshot_file');
+  const [submitModeTab, setSubmitModeTab] = useState<StudentSubmitModeTab>('direct_file');
+  const [processingFile, setProcessingFile] = useState(false);
+
+  // Drawing Canvas State
+  const drawCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isDrawingRef = useRef(false);
+  const [hasCanvasStrokes, setHasCanvasStrokes] = useState(false);
+  const [penColor, setPenColor] = useState('#1e3a8a');
+  const [penSize, setPenSize] = useState(4);
+  const [isEraser, setIsEraser] = useState(false);
+
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [usingCachedAssignments, setUsingCachedAssignments] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -46,16 +89,58 @@ const HomeworkStudent: React.FC = () => {
 
   const [packChoices, setPackChoices] = useState<Record<string, string>>({});
 
+  const initDrawingCanvas = useCallback(() => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Draw subtle grid lines for flowchart / worksheet convenience
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < canvas.width; x += 28) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += 28) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    setHasCanvasStrokes(false);
+  }, []);
+
   const openSubmission = useCallback((assignment: Assignment) => {
     const previous = user
       ? getStudentSubmissionForAssignment(assignment.id, user.id, user.classroom, parseInt(user.studentNumber))
       : null;
-    setContentUrl(previous?.contentUrl || '');
+    const prevUrl = previous?.contentUrl || '';
+    setContentUrl(isDirectPortalSubmissionUrl(prevUrl) ? '' : prevUrl);
     setComment(previous?.comment || '');
+    setContentData(previous?.contentData || '');
+    setAttachmentFileName(previous?.attachmentFileName || '');
+    setAttachmentMimeType(previous?.attachmentMimeType || '');
+    setWorkstationNo(previous?.workstationNo || '');
+    const prevMethod = previous?.submissionMethod || 'screenshot_file';
+    setSubmissionMethod(prevMethod);
+    if (previous?.workstationNo) {
+      setSubmitModeTab('workstation');
+    } else if (previous?.submissionMethod === 'canvas_drawing') {
+      setSubmitModeTab('canvas_draw');
+    } else if (prevUrl && !isDirectPortalSubmissionUrl(prevUrl) && !previous?.contentData) {
+      setSubmitModeTab('link_text');
+    } else {
+      setSubmitModeTab('direct_file');
+    }
     setDtDefine(previous?.designThinkingSteps?.define || '');
     setDtIdeate(previous?.designThinkingSteps?.ideate || '');
-    setDtPrototypeUrl(previous?.designThinkingSteps?.prototypeUrl || previous?.contentUrl || '');
+    setDtPrototypeUrl(previous?.designThinkingSteps?.prototypeUrl || prevUrl);
     setDtTestFeedback(previous?.designThinkingSteps?.testFeedback || '');
+    setHasCanvasStrokes(false);
     setSelected(assignment);
   }, [user]);
 
@@ -63,11 +148,24 @@ const HomeworkStudent: React.FC = () => {
     setSelected(null);
     setContentUrl('');
     setComment('');
+    setContentData('');
+    setAttachmentFileName('');
+    setAttachmentMimeType('');
+    setWorkstationNo('');
+    setHasCanvasStrokes(false);
     setDtDefine('');
     setDtIdeate('');
     setDtPrototypeUrl('');
     setDtTestFeedback('');
   };
+
+  useEffect(() => {
+    if (selected && submitModeTab === 'canvas_draw') {
+      const timer = window.setTimeout(() => initDrawingCanvas(), 30);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
+  }, [selected, submitModeTab, initDrawingCanvas]);
 
   useEffect(() => {
     if (!isScoreEligibleUser(user)) return;
@@ -171,11 +269,201 @@ const HomeworkStudent: React.FC = () => {
     );
   }
 
+  /** แนบไฟล์หรือภาพแคปหน้าจอและสร้างลิงก์ส่งงานอัตโนมัติ (ไม่ต้องใช้ Gmail / Google Drive) */
+  const handleDirectFileAttach = async (file: File | Blob, customFileName?: string, method: SubmissionMethod = 'screenshot_file') => {
+    if (!selected) return;
+    setProcessingFile(true);
+    try {
+      const prepared = await prepareDirectStudentSubmissionFile(file, {
+        studentId: user.id,
+        classroom: user.classroom,
+        assignmentId: selected.id,
+        fileName: customFileName,
+      });
+      setContentData(prepared.contentData);
+      setAttachmentFileName(prepared.attachmentFileName);
+      setAttachmentMimeType(prepared.attachmentMimeType);
+      setSubmissionMethod(method);
+      if (selected.isDesignThinking && !dtPrototypeUrl.trim()) {
+        setDtPrototypeUrl(prepared.contentUrl);
+      }
+      if (!comment.trim()) {
+        setComment(
+          method === 'canvas_drawing'
+            ? `วาดภาพ/เขียนผังงานในระบบ (${prepared.attachmentFileName})`
+            : `ส่งไฟล์ผลงาน/ภาพแคปหน้าจอจากเครื่องคอมพิวเตอร์ (${prepared.attachmentFileName})`,
+        );
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'ไม่สามารถแนบไฟล์นี้ได้ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setProcessingFile(false);
+    }
+  };
+
+  /** ปุ่มแคปหน้าจอโปรแกรมที่เปิดอยู่บนคอมพิวเตอร์โรงเรียนใน 1 คลิก */
+  const handleOneClickScreenCapture = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      alert('เบราว์เซอร์นี้ไม่รองรับการแคปหน้าจออัตโนมัติ กรุณากดปุ่ม PrtSc บนคีย์บอร์ดแล้วกด Ctrl + V เพื่อวางภาพ หรือกดปุ่ม "เลือกไฟล์จากคอมพิวเตอร์" ครับ');
+      return;
+    }
+    try {
+      setProcessingFile(true);
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { cursor: 'always' } as MediaTrackConstraints,
+        audio: false,
+      });
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.muted = true;
+      await video.play();
+      // รอ 150ms ให้ภาพหน้าจอเรนเดอร์ครบ
+      await new Promise((r) => setTimeout(r, 150));
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
+      stream.getTracks().forEach((track) => track.stop());
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.82),
+      );
+      if (blob) {
+        await handleDirectFileAttach(blob, `แคปหน้าจอ_${selected?.title || 'งาน'}_${Date.now()}.jpg`, 'screenshot_file');
+      }
+    } catch (err: unknown) {
+      console.warn('Screen capture cancelled or failed:', err);
+    } finally {
+      setProcessingFile(false);
+    }
+  };
+
+  /** รองรับการกด Ctrl + V วางภาพหน้าจอที่แคปมาลงในกล่องส่งงานทันที */
+  const handleModalPaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i += 1) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if (blob) {
+          await handleDirectFileAttach(blob, `ภาพวางจากคลิปบอร์ด_${Date.now()}.png`, 'screenshot_file');
+        }
+        return;
+      }
+    }
+  };
+
+  /** วาดเส้นลงบนกระดาน Canvas */
+  const getCanvasPoint = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ('touches' in e) {
+      const t = e.touches[0] || e.changedTouches[0];
+      return {
+        x: (t.clientX - rect.left) * scaleX,
+        y: (t.clientY - rect.top) * scaleY,
+      };
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  };
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    isDrawingRef.current = true;
+    setHasCanvasStrokes(true);
+    const { x, y } = getCanvasPoint(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const drawMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current) return;
+    const canvas = drawCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const { x, y } = getCanvasPoint(e);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = isEraser ? '#ffffff' : penColor;
+    ctx.lineWidth = isEraser ? penSize * 4 : penSize;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    isDrawingRef.current = false;
+  };
+
+  const saveCanvasToAttachment = async (): Promise<{ dataUrl: string; fileName: string } | null> => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas) return null;
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    const fileName = `กระดานวาดภาพ_${selected?.title || 'ใบงาน'}.jpg`;
+    setContentData(dataUrl);
+    setAttachmentFileName(fileName);
+    setAttachmentMimeType('image/jpeg');
+    setSubmissionMethod('canvas_drawing');
+    if (!comment.trim()) {
+      setComment(`วาดภาพ/เขียนผังงานส่งในระบบ (${fileName})`);
+    }
+    return { dataUrl, fileName };
+  };
+
+  const handleOpenManualAssessmentSubmission = async (ma: MissingManualAssessmentItem) => {
+    try {
+      setSyncing(true);
+      const linkedAssign = await ensureAssignmentForManualAssessment(user.classroom, ma);
+      setAssignments(getAssignmentsForStudent(user.classroom, user.id, parseInt(user.studentNumber)));
+      setDataVersion((v) => v + 1);
+      openSubmission(linkedAssign);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'ไม่สามารถเปิดหน้าส่งใบงานได้');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!selected) return;
+
+    let finalContentData = contentData;
+    let finalFileName = attachmentFileName;
+    let finalMimeType = attachmentMimeType;
+    let finalMethod: SubmissionMethod = submissionMethod;
+
+    // หากนักเรียนวาดภาพบนกระดานไว้แล้วกด "ส่งงาน" ทันที ให้บันทึกภาพจากกระดานอัตโนมัติ
+    if (submitModeTab === 'canvas_draw' && hasCanvasStrokes && !finalContentData) {
+      const savedCanvas = await saveCanvasToAttachment();
+      if (savedCanvas) {
+        finalContentData = savedCanvas.dataUrl;
+        finalFileName = savedCanvas.fileName;
+        finalMimeType = 'image/jpeg';
+        finalMethod = 'canvas_drawing';
+      }
+    }
+
     const finalUrl = contentUrl.trim();
+    const finalWorkstation = workstationNo.trim();
     let finalComment = comment.trim();
     let dtSteps = undefined;
+
+    if (finalWorkstation && !finalComment) {
+      finalComment = `ทำเสร็จที่ ${finalWorkstation} เรียบร้อยแล้วครับ/ค่ะ`;
+    }
 
     if (selected.isDesignThinking) {
       const proto = dtPrototypeUrl.trim();
@@ -192,6 +480,9 @@ const HomeworkStudent: React.FC = () => {
 
     const validation = validateSubmissionContent({
       contentUrl: finalUrl,
+      contentData: finalContentData,
+      workstationNo: finalWorkstation,
+      submissionMethod: finalMethod,
       comment: finalComment,
       isDesignThinking: selected.isDesignThinking,
       dtDefine,
@@ -213,6 +504,11 @@ const HomeworkStudent: React.FC = () => {
         classroom: user.classroom,
         studentNo: parseInt(user.studentNumber),
         contentUrl: finalUrl,
+        contentData: finalContentData || undefined,
+        attachmentFileName: finalFileName || undefined,
+        attachmentMimeType: finalMimeType || undefined,
+        workstationNo: finalWorkstation || undefined,
+        submissionMethod: finalMethod,
         comment: finalComment,
         designThinkingSteps: dtSteps,
       });
@@ -484,21 +780,32 @@ const HomeworkStudent: React.FC = () => {
                       (วิชา{ma.subjectTitle} • {ma.indicatorCode} • คะแนนเต็ม {ma.maxScore} คะแนน — ยังไม่มีคะแนนในสมุด ปพ.5)
                     </span>
                   </div>
-                  {ma.resourceUrl ? (
-                    <a
-                      href={ma.resourceUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn-secondary"
-                      style={{ padding: '5px 10px', fontSize: '0.78rem' }}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    {ma.resourceUrl && (
+                      <a
+                        href={ma.resourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-secondary"
+                        style={{ padding: '5px 10px', fontSize: '0.78rem' }}
+                      >
+                        <ExternalLink size={13} /> เปิดใบงาน
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={syncing}
+                      onClick={() => void handleOpenManualAssessmentSubmission(ma)}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '0.78rem',
+                        background: 'linear-gradient(135deg, #0ea5e9, #4f46e5)',
+                      }}
                     >
-                      <ExternalLink size={13} /> เปิดใบงาน
-                    </a>
-                  ) : (
-                    <span style={{ fontSize: '0.78rem', color: '#b45309', fontWeight: 700 }}>
-                      ติดต่อส่งใบงานกับคุณครูในคาบเรียน
-                    </span>
-                  )}
+                      <Camera size={13} /> ส่งใบงานนี้ผ่านเว็บ (ไม่ต้องใช้ Gmail)
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -629,6 +936,16 @@ const HomeworkStudent: React.FC = () => {
                         <div style={{ color: '#22c55e', fontWeight: 700 }}>
                           <CheckCircle2 size={16} style={{ verticalAlign: 'middle' }} /> ส่งแล้ว
                         </div>
+                        {sub.attachmentFileName && (
+                          <div style={{ fontSize: '0.74rem', color: '#0369a1', marginTop: 2 }}>
+                            📸 {sub.attachmentFileName}
+                          </div>
+                        )}
+                        {sub.workstationNo && (
+                          <div style={{ fontSize: '0.74rem', color: '#4f46e5', marginTop: 2 }}>
+                            🖥️ {sub.workstationNo}
+                          </div>
+                        )}
                         {sub.score !== undefined ? (
                           <div style={{ marginTop: 4, padding: '4px 12px', background: '#dcfce7', borderRadius: 999, fontSize: '0.85rem' }}>
                             ได้ {sub.score}/{a.maxScore} (K {sub.kScore ?? '-'} / P {sub.pScore ?? '-'})
@@ -665,16 +982,39 @@ const HomeworkStudent: React.FC = () => {
         </div>
       )}
 
-      {/* Submit modal */}
+      {/* Submit modal (5-in-1 No-Gmail / No-Phone Direct Classroom Submission System) */}
       {selected && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-          zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '1rem',
-        }} onClick={() => { if (!syncing) closeSubmission(); }}>
-          <div className="card" style={{ width: '100%', maxWidth: 520, background: 'white' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <h2 style={{ margin: 0 }}>{selected.title}</h2>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            overflowY: 'auto',
+          }}
+          onClick={() => {
+            if (!syncing) closeSubmission();
+          }}
+        >
+          <div
+            className="card"
+            onPaste={(e) => void handleModalPaste(e)}
+            style={{
+              width: '100%',
+              maxWidth: 640,
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              background: 'white',
+              padding: '1.35rem',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+              <h2 style={{ margin: 0, fontSize: '1.2rem' }}>{selected.title}</h2>
               {selected.difficulty === 'foundation' ? (
                 <span style={{ background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
                   🟢 พื้นฐาน
@@ -690,7 +1030,28 @@ const HomeworkStudent: React.FC = () => {
                 💡 {selected.recommendedReason}
               </div>
             )}
-            <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>{selected.description}</p>
+            <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: '0 0 10px' }}>{selected.description}</p>
+
+            {/* ป้ายแนะนำระบบส่งงานไร้ Gmail / ไม่ต้องใช้โทรศัพท์ */}
+            <div
+              style={{
+                padding: '8px 12px',
+                background: 'linear-gradient(135deg, #ecfeff 0%, #f0fdf4 100%)',
+                border: '1px solid #67e8f9',
+                borderRadius: 10,
+                fontSize: '0.79rem',
+                color: '#0f766e',
+                marginBottom: 12,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <Sparkles size={16} color="#0284c7" style={{ flexShrink: 0 }} />
+              <div>
+                <strong>ส่งงานได้ทันทีโดยไม่ต้องมี Gmail และไม่ต้องใช้โทรศัพท์มือถือ!</strong> เลือกแคปหน้าจอโปรแกรม แนบไฟล์จากเครื่องคอมฯ วาดผังงาน หรือแจ้งหมายเลขเครื่องคอมพิวเตอร์ได้เลยครับ
+              </div>
+            </div>
 
             {selected.hints && selected.hints.length > 0 && (
               <div style={{ margin: '10px 0', padding: '8px 12px', background: '#eff6ff', borderRadius: 8, border: '1px solid #bfdbfe' }}>
@@ -727,12 +1088,38 @@ const HomeworkStudent: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0f766e' }}>🛠️ ขั้นที่ 3: ลิงก์ชิ้นงานต้นแบบ (Prototype เช่น Canva, Scratch หรือไฟล์)</label>
+                  <label style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0f766e' }}>🛠️ ขั้นที่ 3: ชิ้นงานต้นแบบ (แคปหน้าจอแนบไฟล์โดยไม่ต้องใช้ Gmail หรือวางลิงก์)</label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={processingFile}
+                      onClick={() => void handleOneClickScreenCapture()}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', background: '#0284c7' }}
+                    >
+                      <Camera size={14} /> แคปหน้าจอโปรแกรมต้นแบบ (1 คลิก)
+                    </button>
+                    <label
+                      className="btn-secondary"
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                    >
+                      <FolderUp size={14} /> เลือกไฟล์/รูปภาพต้นแบบ
+                      <input
+                        type="file"
+                        accept="image/*,.sb3,.py,.html,.pdf,.docx,.pptx,.txt"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void handleDirectFileAttach(f, f.name, 'screenshot_file');
+                        }}
+                      />
+                    </label>
+                  </div>
                   <input
                     value={dtPrototypeUrl}
                     onChange={(e) => setDtPrototypeUrl(e.target.value)}
-                    placeholder="https://canva.com/... หรือ https://scratch.mit.edu/..."
-                    style={{ width: '100%', padding: 8, border: '1px solid #e5e7eb', borderRadius: 6, marginTop: 4, fontFamily: 'inherit', boxSizing: 'border-box' }}
+                    placeholder="https://canva.com/... หรือ https://scratch.mit.edu/... (ถ้าแนบไฟล์ระบบจะสร้างลิงก์ให้อัตโนมัติ)"
+                    style={{ width: '100%', padding: 8, border: '1px solid #e5e7eb', borderRadius: 6, marginTop: 6, fontFamily: 'inherit', boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
@@ -748,30 +1135,391 @@ const HomeworkStudent: React.FC = () => {
               </div>
             ) : (
               <>
-                <div style={{ marginTop: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
-                    <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>📎 ลิงก์ผลงาน (Canva, Scratch, Google Drive ฯลฯ)</label>
-                    <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>💡 แนะนำ: เปิดสิทธิ์ &ldquo;ทุกคนที่มีลิงก์ดูได้&rdquo; ก่อนส่ง</span>
-                  </div>
-                  <input
-                    value={contentUrl}
-                    onChange={(e) => setContentUrl(e.target.value)}
-                    placeholder="https://www.canva.com/design/... หรือ https://scratch.mit.edu/projects/..."
-                    style={{ width: '100%', padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, marginTop: 4, fontFamily: 'inherit', boxSizing: 'border-box' }}
-                  />
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6, fontSize: '0.74rem', color: '#4b5563' }}>
-                    <span style={{ background: '#ede9fe', color: '#6d28d9', padding: '2px 8px', borderRadius: 4 }}>🎨 Canva: ปุ่มแชร์ ➔ ลิงก์สำหรับดูเท่านั้น</span>
-                    <span style={{ background: '#fef3c7', color: '#b45309', padding: '2px 8px', borderRadius: 4 }}>🐱 Scratch: กด Share ➔ Copy Link</span>
-                    <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: 4 }}>📁 Google Drive: เปิดสิทธิ์ &ldquo;ทุกคนที่มีลิงก์&rdquo;</span>
-                  </div>
+                {/* 4 โหมดส่งงานสำหรับนักเรียนที่ไม่มี Gmail / ไม่มีโทรศัพท์ */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
+                    gap: 6,
+                    marginBottom: 12,
+                  }}
+                >
+                  {[
+                    {
+                      id: 'direct_file' as const,
+                      label: '📸 แคปจอ / แนบไฟล์',
+                      sub: 'ไม่ต้องใช้ Gmail (แนะนำ)',
+                      icon: <Camera size={15} />,
+                    },
+                    {
+                      id: 'canvas_draw' as const,
+                      label: '🎨 วาดภาพ / ผังงาน',
+                      sub: 'ทำใบงานบนเว็บเลย',
+                      icon: <PenTool size={15} />,
+                    },
+                    {
+                      id: 'workstation' as const,
+                      label: '🖥️ แจ้งเลขเครื่องคอมฯ',
+                      sub: 'บันทึกไว้ในคอมโรงเรียน',
+                      icon: <Monitor size={15} />,
+                    },
+                    {
+                      id: 'link_text' as const,
+                      label: '🔗 วางลิงก์ / พิมพ์ตอบ',
+                      sub: 'ลิงก์เว็บหรือพิมพ์ข้อความ',
+                      icon: <Link2 size={15} />,
+                    },
+                  ].map((m) => {
+                    const active = submitModeTab === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setSubmitModeTab(m.id)}
+                        style={{
+                          padding: '8px 10px',
+                          borderRadius: 10,
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          border: active ? '2px solid #0284c7' : '1px solid #cbd5e1',
+                          background: active ? '#f0f9ff' : '#f8fafc',
+                          color: active ? '#0369a1' : '#334155',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 800, fontSize: '0.8rem' }}>
+                          {m.icon} {m.label}
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: active ? '#0284c7' : '#64748b', marginTop: 2 }}>
+                          {m.sub}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <div style={{ marginTop: 12 }}>
-                  <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>💬 คำตอบหรือคำอธิบายผลงาน (ส่งข้อความแทนลิงก์ได้)</label>
+                {/* แท็บที่ 1: 📸 แคปหน้าจอโปรแกรม / แนบไฟล์จากคอมพิวเตอร์โรงเรียนโดยตรง */}
+                {submitModeTab === 'direct_file' && (
+                  <div
+                    style={{
+                      padding: '12px',
+                      borderRadius: 12,
+                      background: '#f8fafc',
+                      border: '1.5px dashed #38bdf8',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#0369a1', marginBottom: 8 }}>
+                      📸 วิธีที่ง่ายที่สุด (ไม่ต้องล็อกอิน Gmail / ไม่ต้องใช้โทรศัพท์):
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => void handleOneClickScreenCapture()}
+                        disabled={processingFile}
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: 10,
+                          border: 'none',
+                          background: 'linear-gradient(135deg, #0284c7, #2563eb)',
+                          color: 'white',
+                          fontWeight: 800,
+                          fontSize: '0.84rem',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
+                        }}
+                      >
+                        <Camera size={16} /> 🖥️ แคปหน้าจอโปรแกรมที่ทำอยู่ (1 คลิก)
+                      </button>
+
+                      <label
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: 10,
+                          border: '1.5px solid #0284c7',
+                          background: '#ffffff',
+                          color: '#0369a1',
+                          fontWeight: 800,
+                          fontSize: '0.84rem',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <FolderUp size={16} /> 📁 เลือกไฟล์งาน/รูปภาพจากเครื่องคอมฯ
+                        <input
+                          type="file"
+                          accept="image/*,.sb3,.py,.html,.pdf,.docx,.pptx,.txt"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) void handleDirectFileAttach(file, file.name, 'screenshot_file');
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div style={{ fontSize: '0.76rem', color: '#475569' }}>
+                      💡 <strong>เคล็ดลับ:</strong> กดปุ่ม <kbd style={{ background: '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>PrtSc</kbd> บนคีย์บอร์ด แล้วกด <kbd style={{ background: '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>Ctrl + V</kbd> ในหน้าต่างนี้เพื่อวางภาพหน้าจอได้ทันที หรือแนบไฟล์ Scratch (<code>.sb3</code>), รูปภาพ, Word, PowerPoint, PDF ได้เลย ระบบจะสร้างลิงก์ส่งครูให้อัตโนมัติ!
+                    </div>
+                  </div>
+                )}
+
+                {/* แท็บที่ 2: 🎨 กระดานวาดภาพ / เขียนผังงาน (Flowchart) ในเว็บ */}
+                {submitModeTab === 'canvas_draw' && (
+                  <div
+                    style={{
+                      padding: '12px',
+                      borderRadius: 12,
+                      background: '#f8fafc',
+                      border: '1.5px solid #cbd5e1',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                      <strong style={{ fontSize: '0.85rem', color: '#1e293b' }}>
+                        🎨 กระดานวาดภาพ / เขียนผังงานอัลกอริทึม (วาดด้วยเมาส์ได้เลย):
+                      </strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                        {['#1e3a8a', '#0f172a', '#dc2626', '#16a34a', '#d97706', '#7c3aed'].map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => {
+                              setPenColor(color);
+                              setIsEraser(false);
+                            }}
+                            style={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: '50%',
+                              background: color,
+                              border: !isEraser && penColor === color ? '3px solid #38bdf8' : '1px solid #cbd5e1',
+                              cursor: 'pointer',
+                            }}
+                            title="เลือกสีปากกา"
+                          />
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setIsEraser(!isEraser)}
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            border: '1px solid #cbd5e1',
+                            background: isEraser ? '#fee2e2' : '#ffffff',
+                            color: isEraser ? '#b91c1c' : '#334155',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          🧽 ยางลบ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={initDrawingCanvas}
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            border: '1px solid #cbd5e1',
+                            background: '#ffffff',
+                            color: '#475569',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ล้างกระดาน
+                        </button>
+                      </div>
+                    </div>
+
+                    <canvas
+                      ref={drawCanvasRef}
+                      width={560}
+                      height={280}
+                      onMouseDown={startDrawing}
+                      onMouseMove={drawMove}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                      onTouchStart={startDrawing}
+                      onTouchMove={drawMove}
+                      onTouchEnd={stopDrawing}
+                      style={{
+                        width: '100%',
+                        height: 240,
+                        background: '#ffffff',
+                        border: '1.5px solid #94a3b8',
+                        borderRadius: 8,
+                        cursor: isEraser ? 'cell' : 'crosshair',
+                        touchAction: 'none',
+                      }}
+                    />
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                      <label style={{ fontSize: '0.75rem', color: '#475569', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        ขนาดเส้น:
+                        <input
+                          type="range"
+                          min={2}
+                          max={12}
+                          value={penSize}
+                          onChange={(e) => setPenSize(Number(e.target.value))}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => void saveCanvasToAttachment()}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          border: 'none',
+                          background: '#16a34a',
+                          color: 'white',
+                          fontWeight: 700,
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        📌 แนบภาพที่วาดนี้ส่งครู
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* แท็บที่ 3: 🖥️ แจ้งหมายเลขเครื่องคอมพิวเตอร์ห้องเรียน */}
+                {submitModeTab === 'workstation' && (
+                  <div
+                    style={{
+                      padding: '12px',
+                      borderRadius: 12,
+                      background: '#f5f3ff',
+                      border: '1.5px solid #c4b5fd',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <label style={{ fontWeight: 800, fontSize: '0.85rem', color: '#4c1d95', display: 'block', marginBottom: 6 }}>
+                      🖥️ เลือกหมายเลขเครื่องคอมพิวเตอร์ที่เธอนั่งทำ (หรือส่งสมุดที่โต๊ะครู):
+                    </label>
+                    <select
+                      aria-label="หมายเลขเครื่องคอมพิวเตอร์"
+                      value={workstationNo}
+                      onChange={(e) => {
+                        setWorkstationNo(e.target.value);
+                        setSubmissionMethod('workstation');
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '9px 10px',
+                        borderRadius: 8,
+                        border: '1px solid #a78bfa',
+                        background: '#ffffff',
+                        fontSize: '0.88rem',
+                        fontWeight: 700,
+                        color: '#1e293b',
+                      }}
+                    >
+                      <option value="">-- คลิกเลือกหมายเลขเครื่องคอมพิวเตอร์ (เครื่องที่ 01 - 30) --</option>
+                      {WORKSTATION_OPTIONS.map((ws) => (
+                        <option key={ws} value={ws}>
+                          🖥️ {ws}
+                        </option>
+                      ))}
+                    </select>
+                    <div style={{ fontSize: '0.76rem', color: '#5b21b6', marginTop: 6 }}>
+                      💡 เหมาะสำหรับน้องๆ ที่บันทึกไฟล์งานไว้ในเครื่องคอมพิวเตอร์โรงเรียน (เช่น บนหน้าจอ Desktop หรือโฟลเดอร์ชื่อตัวเอง) แล้วพิมพ์บอกชื่อไฟล์ในช่องคำอธิบายด้านล่างครับ
+                    </div>
+                  </div>
+                )}
+
+                {/* แสดงตัวอย่างไฟล์/ภาพแคปหน้าจอที่แนบแล้ว + ป้ายยืนยันการสร้างลิงก์อัตโนมัติ */}
+                {contentData && (
+                  <div
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      background: '#f0fdf4',
+                      border: '1.5px solid #86efac',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#166534' }}>
+                        ✅ แนบผลงานพร้อมส่งแล้ว: {attachmentFileName || 'ภาพหน้าจอผลงาน'} (สร้างลิงก์ส่งงานในระบบโรงเรียนอัตโนมัติแล้ว)
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setContentData('');
+                          setAttachmentFileName('');
+                          setAttachmentMimeType('');
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: 6,
+                          border: '1px solid #fca5a5',
+                          background: '#fef2f2',
+                          color: '#dc2626',
+                          fontSize: '0.74rem',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <Trash2 size={13} /> ลบไฟล์แนบ
+                      </button>
+                    </div>
+                    {contentData.startsWith('data:image/') && (
+                      <div style={{ marginTop: 8, textAlign: 'center' }}>
+                        <img
+                          src={contentData}
+                          alt="ตัวอย่างผลงานที่แนบ"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: 190,
+                            borderRadius: 8,
+                            border: '1px solid #bbf7d0',
+                            objectFit: 'contain',
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ช่องวางลิงก์ (แสดงเมื่อเลือกแท็บวางลิงก์ หรือกรอกเพิ่มเติมได้) */}
+                {submitModeTab === 'link_text' && (
+                  <div style={{ marginTop: 8, marginBottom: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
+                      <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>📎 ลิงก์ผลงาน (กรณีมีลิงก์ Canva, Scratch, เว็บไซต์)</label>
+                      <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>💡 หากไม่มี Gmail ใช้แท็บ &ldquo;📸 แคปจอ / แนบไฟล์&rdquo; ด้านบนแทนได้เลย</span>
+                    </div>
+                    <input
+                      value={contentUrl}
+                      onChange={(e) => setContentUrl(e.target.value)}
+                      placeholder="https://www.canva.com/design/... หรือ https://scratch.mit.edu/projects/..."
+                      style={{ width: '100%', padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, marginTop: 4, fontFamily: 'inherit', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                )}
+
+                <div style={{ marginTop: 8 }}>
+                  <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>
+                    💬 คำตอบ / ชื่อไฟล์ที่บันทึก / คำอธิบายผลงาน {contentData ? '(ไม่บังคับ)' : '(ส่งข้อความแทนลิงก์ได้)'}
+                  </label>
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    rows={5}
+                    placeholder={
+                      workstationNo
+                        ? `เช่น บันทึกไฟล์ชื่อ งานของฉัน.sb3 ไว้ที่หน้าจอ Desktop ${workstationNo} ครับ`
+                        : 'พิมพ์คำตอบของใบงาน หรืออธิบายสั้นๆ เกี่ยวกับผลงานที่ทำครับ...'
+                    }
+                    rows={3}
                     style={{ width: '100%', padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, marginTop: 4, fontFamily: 'inherit', boxSizing: 'border-box' }}
                   />
                 </div>
@@ -779,9 +1527,9 @@ const HomeworkStudent: React.FC = () => {
             )}
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-              <button onClick={closeSubmission} className="btn-secondary" disabled={syncing}>ยกเลิก</button>
-              <button onClick={() => void handleSubmit()} className="btn-primary" disabled={syncing}>
-                {syncing ? 'กำลังส่ง...' : 'ส่งงาน'}
+              <button onClick={closeSubmission} className="btn-secondary" disabled={syncing || processingFile}>ยกเลิก</button>
+              <button onClick={() => void handleSubmit()} className="btn-primary" disabled={syncing || processingFile}>
+                {syncing ? 'กำลังส่ง...' : processingFile ? 'กำลังเตรียมไฟล์...' : 'ส่งงาน'}
               </button>
             </div>
           </div>
