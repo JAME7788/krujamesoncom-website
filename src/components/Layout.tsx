@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Menu, X, Home, Award, LogOut, Gamepad2,
-  LayoutDashboard, Library, GraduationCap, Mail, Phone, MapPin, Globe, Box
+  LayoutDashboard, Library, GraduationCap, Mail, Phone, MapPin, Globe, Box, Briefcase
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
@@ -97,6 +97,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'แหล่งเรียนรู้', path: '/resources', icon: <Library size={18} /> },
     { name: 'เกมฝึก', path: '/games', icon: <Gamepad2 size={18} /> },
     { name: 'ห้องเรียน 3D', path: '/world', icon: <Box size={18} /> },
+    { name: 'พอร์ต ว.PA', path: '/portfolio', icon: <Briefcase size={18} /> },
   ];
 
   if (scoreEligible) {
@@ -310,6 +311,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </p>
             <div className="footer-school-tag">
               🏫 โรงเรียนบ้านคลองมดแดง (สพป.กำแพงเพชร เขต 2)
+            </div>
+            <div style={{ marginTop: '0.85rem' }}>
+              <Link
+                to="/portfolio"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.45rem 0.95rem',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.25) 100%)',
+                  color: '#fbbf24',
+                  fontWeight: 700,
+                  fontSize: '0.86rem',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(245, 158, 11, 0.4)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                }}
+              >
+                💼 แฟ้มสะสมงาน ว.PA ครูเจมส์ (Portfolio) ↗
+              </Link>
             </div>
           </div>
           

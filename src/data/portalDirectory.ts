@@ -31,6 +31,7 @@ export function portalDirectory(user?: Partial<PortalUserIdentity> | null): Port
     { title: 'เอกสารวัดผล', detail: 'ส่งออก ปพ.5 และเอกสารคะแนน', path: '/admin?tab=export-grades', section: 'teach' },
     { title: 'สมุดสะท้อนคิดการเรียนรู้', detail: 'ร่องรอยหลักฐานการเรียนรู้เชิงประจักษ์ (GBL) จากการเล่นจริง 36 เกม', path: '/admin?tab=reflections', section: 'teach', keywords: 'สะท้อนคิด บันทึก journal gbl' },
     { title: 'วิจัย ๕ บท & ว.PA', detail: 'เล่มวิจัยในชั้นเรียน และข้อตกลงพัฒนางาน ว.PA', path: '/admin?tab=research', section: 'teach' },
+    { title: 'แฟ้มผลงาน ว.PA (Portfolio)', detail: 'รายงานผลการพัฒนางานตามข้อตกลง ว.PA รอบ 2569 ฉบับเต็ม', path: '/portfolio', section: 'teach', keywords: 'pa portfolio แฟ้มสะสมงาน ครูเจมส์ ว.pa vercel' },
     { title: 'เครื่องมือครู', detail: 'เครื่องมือสำหรับกิจกรรมในชั้นเรียน', path: '/tools', section: 'teach' },
   );
   return entries;

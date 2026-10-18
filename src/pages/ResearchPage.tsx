@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, BookOpen, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, BookOpen, ShieldCheck, Briefcase, ExternalLink } from 'lucide-react';
 import ResearchGenerator from '../components/ResearchGenerator';
 
 const ResearchPage: React.FC = () => {
@@ -67,6 +67,46 @@ const ResearchPage: React.FC = () => {
             <span>🏷️ ตำแหน่ง: <strong>ครูผู้ช่วย</strong></span>
             <span>🏫 <strong>โรงเรียนบ้านคลองมดแดง</strong></span>
             <span>📅 ปีการศึกษา <strong>๒๕๖๙</strong></span>
+          </div>
+          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.2)', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+            <Link
+              to="/portfolio"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: '#fbbf24',
+                color: '#1e3a8a',
+                padding: '0.55rem 1.15rem',
+                borderRadius: 10,
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                textDecoration: 'none',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+            >
+              <Briefcase size={16} /> เปิดเว็บไซต์แฟ้มสะสมงาน ว.PA (Portfolio) ↗
+            </Link>
+            <a
+              href="https://pa-krujames-portfolio.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                background: 'rgba(255,255,255,0.15)',
+                color: '#ffffff',
+                padding: '0.55rem 1.15rem',
+                borderRadius: 10,
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                textDecoration: 'none',
+                border: '1px solid rgba(255,255,255,0.3)',
+              }}
+            >
+              <ExternalLink size={15} /> pa-krujames-portfolio.vercel.app
+            </a>
           </div>
         </div>
 

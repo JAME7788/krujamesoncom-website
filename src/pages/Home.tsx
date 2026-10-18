@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, Play, Book, BarChart3, UploadCloud, ShieldCheck, Heart, Users, Target, Zap, Globe, Sparkles } from 'lucide-react';
+import { ChevronRight, Play, Book, BarChart3, UploadCloud, ShieldCheck, Heart, Users, Target, Zap, Globe, Sparkles, Briefcase } from 'lucide-react';
 import LeaderboardSection from '../components/LeaderboardSection';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import './Home.css';
@@ -42,6 +42,9 @@ const Home: React.FC = () => {
             <div className="hero-btns">
               <button className="btn-primary" onClick={() => navigate('/courses')}>
                 เริ่มเข้าสู่บทเรียน <ChevronRight size={20} />
+              </button>
+              <button className="btn-secondary" onClick={() => navigate('/portfolio')} style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.22) 100%)', borderColor: '#f59e0b', color: '#b45309', fontWeight: 700 }}>
+                <Briefcase size={18} /> 💼 แฟ้มผลงาน ว.PA
               </button>
               <button className="btn-secondary" onClick={() => navigate('/games')}>
                 🎮 คลังเกมฝึกทักษะ (38 เกม)
