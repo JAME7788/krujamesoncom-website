@@ -6,9 +6,10 @@ import {
   XCircle, BookOpen, Award, FileText, Gamepad2, PlayCircle,
   LogOut, Pencil, Lock, MonitorPlay,
   Globe2, FileSpreadsheet, Layers,
-  ChevronDown,
+  ChevronDown, Briefcase, ExternalLink,
 } from 'lucide-react';
 import AdminGate from '../components/AdminGate';
+import { PA_PORTFOLIO_URL } from './PaPortfolioPage';
 import CourseBuilder from '../components/CourseBuilder';
 import GradeBook from '../components/GradeBook';
 import { OfficialGradeExportModal } from '../components/OfficialGradeExportModal';
@@ -53,7 +54,7 @@ import type { ActivityLog } from '../services/progressService';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 
-type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'export-grades' | 'media-reports' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'reflections' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
+type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'export-grades' | 'media-reports' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'pa-portfolio' | 'reflections' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -132,6 +133,7 @@ const NAVIGATION_GROUPS: NavGroup[] = [
         items: [
           { id: 'media-reports', label: 'รายงานผลิตสื่อ (A4)', icon: <Layers size={16} /> },
           { id: 'research', label: 'วิจัย ๕ บท และ ว.PA', icon: <FileText size={16} /> },
+          { id: 'pa-portfolio', label: 'แฟ้มผลงาน ว.PA (Portfolio)', icon: <Briefcase size={16} /> },
           { id: 'reflections', label: 'บันทึกสะท้อนคิด (GBL)', icon: <BookOpen size={16} /> },
         ],
       },
@@ -1144,6 +1146,74 @@ const AdminDashboardInner: React.FC = () => {
                   </p>
                 </div>
                 <ResearchGenerator />
+              </motion.div>
+            )}
+
+            {/* TAB: PA PORTFOLIO — แฟ้มผลงาน ว.PA ครูเจมส์ */}
+            {tab === 'pa-portfolio' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: '1rem' }}>
+                  <div>
+                    <h2 style={{ margin: '0 0 0.25rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Briefcase size={22} style={{ color: '#d97706' }} /> แฟ้มผลงาน ว.PA ครูเจมส์ (Portfolio)
+                    </h2>
+                    <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
+                      รายงานผลการพัฒนางานตามข้อตกลง ว.PA รอบ 2569 ฉบับเต็ม (3 ด้าน 15 ตัวชี้วัด + ประเด็นท้าทายทักษะเมาส์ ป.1)
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <a
+                      href="/portfolio"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-primary"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        textDecoration: 'none',
+                        fontSize: '0.85rem',
+                        padding: '8px 14px',
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                        border: 'none',
+                        borderRadius: 8,
+                        color: '#fff',
+                        fontWeight: 700,
+                      }}
+                    >
+                      เปิดพอร์ตในแท็บใหม่ ↗
+                    </a>
+                    <a
+                      href={PA_PORTFOLIO_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        background: '#f8fafc',
+                        color: '#334155',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: 8,
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        padding: '8px 14px',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <ExternalLink size={15} /> เว็บภายนอก Vercel ↗
+                    </a>
+                  </div>
+                </div>
+                <div style={{ width: '100%', height: '760px', borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', background: '#fff' }}>
+                  <iframe
+                    src={PA_PORTFOLIO_URL}
+                    title="แฟ้มผลงาน ว.PA ครูเจมส์"
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                    loading="lazy"
+                  />
+                </div>
               </motion.div>
             )}
 

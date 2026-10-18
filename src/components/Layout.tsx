@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Menu, X, Home, Award, LogOut, Gamepad2,
-  LayoutDashboard, Library, GraduationCap, Mail, Phone, MapPin, Globe, Box, Briefcase
+  LayoutDashboard, Library, GraduationCap, Mail, Phone, MapPin, Globe, Box
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
@@ -97,7 +97,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'แหล่งเรียนรู้', path: '/resources', icon: <Library size={18} /> },
     { name: 'เกมฝึก', path: '/games', icon: <Gamepad2 size={18} /> },
     { name: 'ห้องเรียน 3D', path: '/world', icon: <Box size={18} /> },
-    { name: 'พอร์ต ว.PA', path: '/portfolio', icon: <Briefcase size={18} /> },
   ];
 
   if (scoreEligible) {
