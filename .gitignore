@@ -45,6 +45,13 @@ sss*/
 แผน*/
 *.docx
 !public/downloads/media-use-record-with-header-98.docx
+!public/downloads/Lesson_Plan_P1_40Hours_With_Reflection_2569.docx
+!public/downloads/Media_Usage_Log_2569_KruJames.docx
+!public/docs/Lesson_Plan_P1_40Hours_With_Reflection_2569.docx
+!public/docs/Media_Usage_Log_2569_KruJames.docx
+!public/docs/PA1_Agreement_2569_KruJames.docx
+!public/docs/PA_Challenge_BlockCoding_P5_2569.docx
+!public/docs/PA_Report_2569_KruJames.docx
 
 # Temporary & scratch
 .codex-remote-attachments/
@@ -56,6 +63,7 @@ inspect-*.mjs
 p1_unit1_extracted.txt
 p1_unit2_extracted.txt
 claw-empire-main/
+antigravity-gemini-argon-bridge/
 backups/
 output_pptx/
 artifacts/

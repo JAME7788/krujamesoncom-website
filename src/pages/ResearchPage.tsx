@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, BookOpen, ShieldCheck, Briefcase, ExternalLink } from 'lucide-react';
+import { ArrowLeft, BookOpen, ShieldCheck, Briefcase, ExternalLink, Download, FileText } from 'lucide-react';
 import ResearchGenerator from '../components/ResearchGenerator';
 
 const ResearchPage: React.FC = () => {
@@ -57,16 +57,18 @@ const ResearchPage: React.FC = () => {
             </span>
           </div>
           <h1 style={{ margin: '0 0 0.5rem', fontSize: '1.8rem', fontWeight: 800, lineHeight: 1.3 }}>
-            ระบบจัดทำเล่มวิจัยในชั้นเรียน ๕ บท & ข้อตกลงพัฒนางาน ว.PA
+            ระบบจัดทำเล่มวิจัยในชั้นเรียน ๕ บท & ข้อตกลงพัฒนางาน ว.PA (ปี ๒๕๖๙)
           </h1>
-          <p style={{ margin: 0, opacity: 0.9, fontSize: '1.05rem', lineHeight: 1.5, maxWidth: 900 }}>
-            เรื่อง: การพัฒนาทักษะปฏิบัติการใช้เมาส์ด้วยเกมมิฟิเคชัน (Gamification) ร่วมกับ Active Learning วิชาวิทยาการคำนวณและเทคโนโลยี ชั้นประถมศึกษาปีที่ ๑ (๑๑ คน)
+          <p style={{ margin: 0, opacity: 0.9, fontSize: '1.02rem', lineHeight: 1.5, maxWidth: 960 }}>
+            • <strong>ข้อตกลง ว.PA ปี ๒๕๖๙ (คศ.๑):</strong> การพัฒนาทักษะการเขียนโปรแกรมแบบบล็อก (Block-based Coding) ด้วย Active Learning ชั้นประถมศึกษาปีที่ ๕
+            <br />
+            • <strong>วิจัยชั้นเรียน ๕ บท (CAR):</strong> การพัฒนาทักษะปฏิบัติการใช้เมาส์ด้วยเกมมิฟิเคชัน (Gamification) ร่วมกับ Active Learning ชั้นประถมศึกษาปีที่ ๑ (๑๑ คน)
           </p>
           <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', fontSize: '0.9rem', opacity: 0.95 }}>
             <span>👤 ผู้วิจัย/ผู้จัดทำ: <strong>นายอนันตชัย เพ็ชรรี่</strong></span>
-            <span>🏷️ ตำแหน่ง: <strong>ครูผู้ช่วย</strong></span>
+            <span>🏷️ ตำแหน่ง: <strong>ครู (ยังไม่มีวิทยฐานะ) อันดับ คศ.๑</strong></span>
             <span>🏫 <strong>โรงเรียนบ้านคลองมดแดง</strong></span>
-            <span>📅 ปีการศึกษา <strong>๒๕๖๙</strong></span>
+            <span>📅 ปีงบประมาณ/ปีการศึกษา <strong>๒๕๖๙ (ภาระงาน ๓๑ ชม./สัปดาห์)</strong></span>
           </div>
           <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.2)', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
             <Link
@@ -88,6 +90,44 @@ const ResearchPage: React.FC = () => {
               <Briefcase size={16} /> เปิดเว็บไซต์แฟ้มสะสมงาน ว.PA (Portfolio) ↗
             </Link>
             <a
+              href="/docs/PA1_Agreement_2569_KruJames.docx"
+              download="แบบข้อตกลงในการพัฒนางาน_ไม่มีวิทยฐานะ_อนันตชัย_2569_ฉบับปรับปรุงใหม่.docx"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                background: 'rgba(255,255,255,0.2)',
+                color: '#ffffff',
+                padding: '0.55rem 1.05rem',
+                borderRadius: 10,
+                fontWeight: 700,
+                fontSize: '0.86rem',
+                textDecoration: 'none',
+                border: '1px solid rgba(255,255,255,0.35)',
+              }}
+            >
+              <Download size={15} /> โหลดแบบข้อตกลง PA 1/ส ปี ๒๕๖๙ (.docx)
+            </a>
+            <a
+              href="/docs/PA_Report_2569_KruJames.docx"
+              download="รูปเล่มรายงานPAครูคศ1_อนันตชัย_2569.docx"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                background: 'rgba(255,255,255,0.2)',
+                color: '#ffffff',
+                padding: '0.55rem 1.05rem',
+                borderRadius: 10,
+                fontWeight: 700,
+                fontSize: '0.86rem',
+                textDecoration: 'none',
+                border: '1px solid rgba(255,255,255,0.35)',
+              }}
+            >
+              <FileText size={15} /> โหลดรูปเล่มรายงาน PA คศ.๑ ปี ๒๕๖๙ (.docx)
+            </a>
+            <a
               href="https://pa-krujames-portfolio.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
@@ -95,14 +135,14 @@ const ResearchPage: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.45rem',
-                background: 'rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.12)',
                 color: '#ffffff',
-                padding: '0.55rem 1.15rem',
+                padding: '0.55rem 1rem',
                 borderRadius: 10,
                 fontWeight: 600,
-                fontSize: '0.88rem',
+                fontSize: '0.85rem',
                 textDecoration: 'none',
-                border: '1px solid rgba(255,255,255,0.3)',
+                border: '1px solid rgba(255,255,255,0.25)',
               }}
             >
               <ExternalLink size={15} /> pa-krujames-portfolio.vercel.app

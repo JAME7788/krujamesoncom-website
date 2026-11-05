@@ -1,14 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Download, Users, Plus, Trash2, Save } from 'lucide-react';
+import { RefreshCw, Download, Users, Plus, Trash2, Save, BookOpen, Printer, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import IsKnowledgeBlog from '../pages/IsKnowledgeBlog';
 import {
   loadSkillGradeData, saveSkillGradeData,
   fetchSkillGradeDataFromFirebase, resetSkillStudentsFromRoster,
   addSkillAssignment, renameSkillAssignment, deleteSkillAssignment,
   updateSkillStudentScore, updateSkillStudentP, totalSkillK,
+  applyIsSkillTemplate,
 } from '../services/skillGradeService';
 import type { SkillGradeData, SkillAssignment } from '../services/skillGradeService';
 import type { Skill } from '../services/gradeService';
 import { loadAllRosters } from '../services/rosterService';
+import { seedIsAgriAssignmentsForClassroom } from '../services/homeworkService';
+import {
+  IS_CAREER_CURRICULUM,
+  buildPrintableIsWorksheetHtml,
+  type IsStepModule,
+} from '../data/isCareerCurriculum';
 import { useToast } from './Toast';
 
 const SkillGradeTable: React.FC = () => {
@@ -18,7 +27,38 @@ const SkillGradeTable: React.FC = () => {
   const [data, setData] = useState<SkillGradeData>(() => loadSkillGradeData('ม.1'));
   const [loading, setLoading] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [showIsCurriculum, setShowIsCurriculum] = useState<boolean>(true);
+  const [showIsKnowledgeBlog, setShowIsKnowledgeBlog] = useState<boolean>(false);
+  const [selectedIsStepNo, setSelectedIsStepNo] = useState<number>(1);
+  const [showAnswerKey, setShowAnswerKey] = useState<boolean>(false);
   const toast = useToast();
+  const isCourse = classroom === 'ม.1' || classroom === 'ม.2' ? IS_CAREER_CURRICULUM[classroom] : null;
+  const activeStep: IsStepModule | undefined = isCourse?.steps.find((s) => s.stepNo === selectedIsStepNo) || isCourse?.steps[0];
+
+  const handlePrintIsWorksheet = (step?: IsStepModule, withKey = false) => {
+    if (!isCourse) return;
+    const html = buildPrintableIsWorksheetHtml(isCourse, step, withKey);
+    const win = window.open('', '_blank', 'width=960,height=800');
+    if (!win) {
+      toast.show('กรุณาอนุญาตให้เปิดหน้าต่างป๊อปอัปเพื่อพิมพ์ใบงาน', 'error');
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    window.setTimeout(() => win.print(), 250);
+  };
+
+  const handleSeedIsHomework = async () => {
+    if (classroom !== 'ม.1' && classroom !== 'ม.2') return;
+    const res = await seedIsAgriAssignmentsForClassroom(classroom);
+    if (res.createdCount > 0) {
+      toast.show(`สร้างใบงานออนไลน์ IS นวัตกรรมการเกษตร ${res.createdCount} ขั้นตอนเข้าสู่ระบบการบ้านเรียบร้อย`, 'success');
+    } else {
+      toast.show(`ใบงานออนไลน์ IS นวัตกรรมการเกษตรทั้ง ${res.totalCount} ขั้นตอนมีอยู่ในระบบการบ้านแล้ว`, 'info');
+    }
+  };
 
   // โหลด + sync จาก Firebase ตอนเปลี่ยนห้อง
   useEffect(() => {
@@ -102,6 +142,12 @@ const SkillGradeTable: React.FC = () => {
     toast.show(`รีเซ็ตรายชื่อห้อง ${classroom} แล้ว`, 'success');
   };
 
+  const handleApplyIsTemplate = () => {
+    applyIsSkillTemplate(classroom);
+    refresh();
+    toast.show(`โหลดแม่แบบคะแนน IS 5 ขั้นตอน สำหรับห้อง ${classroom} เรียบร้อย`, 'success');
+  };
+
   const handleExport = () => {
     const headers = ['เลขที่', 'ชื่อ-สกุล', ...data.assignments.map((a) => `${a.title} (${a.maxScore})`), 'รวม K', 'รวมเต็ม', 'P'];
     let csv = headers.join(',') + '\n';
@@ -145,6 +191,11 @@ const SkillGradeTable: React.FC = () => {
         <button className="btn-secondary" onClick={handleAddAssignment}>
           <Plus size={14} /> เพิ่มช่อง K (ใบงาน/กิจกรรม)
         </button>
+        {(classroom === 'ม.1' || classroom === 'ม.2') && (
+          <button className="btn-secondary" onClick={handleApplyIsTemplate}>
+            <Plus size={14} /> แม่แบบ IS 5 ขั้นตอน
+          </button>
+        )}
         <button className="btn-secondary" onClick={handleResetStudents}>
           <RefreshCw size={14} /> รีเซ็ตรายชื่อจาก roster
         </button>
@@ -155,13 +206,270 @@ const SkillGradeTable: React.FC = () => {
       </div>
 
       <div style={{ padding: 12, background: '#f0fdf4', borderRadius: 10, border: '1px dashed #86efac', marginBottom: 12 }}>
-        <strong>📝 วิชาทักษะอาชีพ ({classroom})</strong> — Logo / Poster / Canva / Online Marketing
-        <br />
-        <small style={{ color: '#6b7280' }}>
-          ครูสร้างช่อง K ได้กี่ช่องก็ได้ (เช่น ใบงาน 1, กิจกรรม Logo, สอบกลางภาค) แต่ละช่องตั้งคะแนนเต็มของตัวเอง |
-          P เลือกจาก dropdown | บันทึกอัตโนมัติทันทีลง Firebase
-        </small>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <strong>💼 วิชาทักษะอาชีพ {classroom === 'ม.2' ? '2 (ง 22201)' : classroom === 'ม.1' ? '1 (ง 21201)' : `(${classroom})`} — สอนแบบ IS (Independent Study 5 ขั้นตอน) &amp; ตลาดนัดอาชีพ</strong>
+            <br />
+            <small style={{ color: '#6b7280' }}>
+              ครอบคลุมกระบวนการ IS 5 ขั้นตอน: (1) ตั้งประเด็นคำถาม (2) สืบค้นข้อมูลอาชีพ (3) สรุปองค์ความรู้และสร้างชิ้นงาน (4) สื่อสารนำเสนอ Logo/Poster/Canva (5) บริการสังคมและออกบูธตลาดนัดอาชีพ |
+              สามารถเปิดสมุดคะแนน K/P/A และออกเล่ม ปพ.5 ฉบับสมบูรณ์ได้ที่แท็บ &ldquo;สมุดคะแนน ปพ.5&rdquo; เลือกวิชา &ldquo;ทักษะอาชีพ (IS)&rdquo;
+            </small>
+          </div>
+          {isCourse && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShowIsCurriculum((v) => !v)}
+              >
+                <BookOpen size={14} /> {showIsCurriculum ? 'ซ่อนเนื้อหา & ใบงาน IS' : 'ดูเนื้อหา & ใบงาน IS 5 ขั้นตอน'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => handlePrintIsWorksheet(undefined, false)}
+                title="พิมพ์ใบงาน IS ทั้ง 5 ขั้นตอนสำหรับแจกนักเรียน"
+              >
+                <Printer size={14} /> พิมพ์ใบงานครบ 5 ขั้น
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => handlePrintIsWorksheet(undefined, true)}
+                title="พิมพ์ใบงาน IS ทั้ง 5 ขั้นตอนพร้อมแนวคำตอบและเฉลยครู"
+              >
+                <Printer size={14} /> พิมพ์ฉบับเฉลยครู
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => void handleSeedIsHomework()}
+                title="สร้างชุดการบ้านออนไลน์ IS นวัตกรรมการเกษตร 5 ขั้นตอนให้นักเรียนส่งงานผ่านเว็บ"
+              >
+                <Plus size={14} /> ส่งเข้าคลังการบ้านออนไลน์
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShowIsKnowledgeBlog((v) => !v)}
+                style={{ background: showIsKnowledgeBlog ? '#059669' : undefined, color: showIsKnowledgeBlog ? '#fff' : undefined }}
+              >
+                <BookOpen size={14} /> {showIsKnowledgeBlog ? 'ซ่อนบล็อกคลังความรู้ IS (I20201)' : '📰 เปิดบล็อกคลังความรู้ IS (คาบ 1–7 + ใบงาน)'}
+              </button>
+              <Link
+                to="/is-blog"
+                className="btn-secondary"
+                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                <ExternalLink size={14} /> หน้าบล็อก IS เต็มจอ
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
+
+      {isCourse && showIsKnowledgeBlog && (
+        <div style={{ marginBottom: 16 }}>
+          <IsKnowledgeBlog embedded />
+        </div>
+      )}
+
+      {isCourse && showIsCurriculum && activeStep && (
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 16,
+            boxShadow: '0 1px 4px rgba(15, 23, 42, 0.05)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+            <div>
+              <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1rem' }}>
+                📘 คลังเนื้อหา ใบงาน และแบบฝึกหัด {isCourse.courseTitle} ({isCourse.courseCode})
+              </h4>
+              <small style={{ color: '#475569' }}>
+                ตารางเรียน: {isCourse.scheduleText} | รวม {isCourse.totalHours} ชั่วโมง ({isCourse.credit} หน่วยกิต)
+              </small>
+              <div style={{ marginTop: 4, fontSize: '0.84rem', color: '#15803d', fontWeight: 700 }}>
+                {isCourse.themeTitle}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#334155', marginTop: 2 }}>
+                💡 <strong>ตัวอย่างหัวข้อโครงงานนวัตกรรมการเกษตร:</strong> {isCourse.projectIdeas.join(' • ')}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', cursor: 'pointer', color: '#047857', fontWeight: 600 }}>
+                <input
+                  type="checkbox"
+                  checked={showAnswerKey}
+                  onChange={(e) => setShowAnswerKey(e.target.checked)}
+                />
+                แสดงแนวคำตอบและเฉลยแบบฝึกหัด
+              </label>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => handlePrintIsWorksheet(activeStep, showAnswerKey)}
+              >
+                <Printer size={13} /> พิมพ์ใบงานขั้นที่ {activeStep.stepNo}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+            {isCourse.steps.map((step) => {
+              const active = step.stepNo === activeStep.stepNo;
+              return (
+                <button
+                  key={step.stepNo}
+                  type="button"
+                  onClick={() => setSelectedIsStepNo(step.stepNo)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 999,
+                    border: active ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                    background: active ? '#eff6ff' : '#f8fafc',
+                    color: active ? '#1d4ed8' : '#334155',
+                    fontWeight: active ? 700 : 500,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ขั้นที่ {step.stepNo} ({step.isStage}) • {step.maxScore} คะแนน
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ background: '#f8fafc', borderRadius: 10, padding: 12, border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+              <div>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    background: '#dbeafe',
+                    color: '#1e40af',
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    marginRight: 8,
+                  }}
+                >
+                  {activeStep.indicatorCode} ({activeStep.isStage})
+                </span>
+                <strong style={{ color: '#0f172a' }}>{activeStep.title}</strong>
+                <div style={{ fontSize: '0.83rem', color: '#475569', marginTop: 2 }}>{activeStep.subtitle}</div>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600 }}>
+                ⏱️ {activeStep.hours} ชั่วโมง | 🎯 คะแนนเต็ม {activeStep.maxScore} คะแนน
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 10 }}>
+              <strong style={{ fontSize: '0.85rem', color: '#1e293b' }}>1) เนื้อหาสาระสำคัญประจำขั้น:</strong>
+              <ul style={{ margin: '4px 0 0 18px', padding: 0, fontSize: '0.84rem', color: '#334155' }}>
+                {activeStep.coreConcepts.map((c, idx) => (
+                  <li key={idx} style={{ marginBottom: 2 }}>{c}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div style={{ marginBottom: 10 }}>
+              <strong style={{ fontSize: '0.85rem', color: '#1e293b' }}>2) {activeStep.worksheetTitle}:</strong>
+              <div style={{ display: 'grid', gap: 8, marginTop: 6 }}>
+                {activeStep.worksheetItems.map((item) => (
+                  <div
+                    key={item.partNo}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: '0.83rem',
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                      ตอนที่ {item.partNo}: {item.title}
+                    </div>
+                    <div style={{ color: '#475569', marginBottom: 4 }}>คำชี้แจง: {item.instruction}</div>
+                    <ul style={{ margin: '0 0 0 16px', padding: 0, color: '#1e293b' }}>
+                      {item.prompts.map((p, pIdx) => (
+                        <li key={pIdx}>{p}</li>
+                      ))}
+                    </ul>
+                    {showAnswerKey && (
+                      <div
+                        style={{
+                          marginTop: 6,
+                          padding: '6px 10px',
+                          background: '#ecfdf5',
+                          borderLeft: '3px solid #10b981',
+                          borderRadius: 4,
+                          color: '#065f46',
+                        }}
+                      >
+                        <strong>🔑 แนวคำตอบตัวอย่าง:</strong> {item.sampleAnswer}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <strong style={{ fontSize: '0.85rem', color: '#1e293b' }}>
+                3) แบบฝึกหัดปรนัยวัดความรู้ K ({activeStep.indicatorCode}) จำนวน {activeStep.quiz.length} ข้อ:
+              </strong>
+              <div style={{ display: 'grid', gap: 6, marginTop: 6 }}>
+                {activeStep.quiz.map((q, qIdx) => (
+                  <div
+                    key={qIdx}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: '0.82rem',
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, color: '#0f172a' }}>
+                      ข้อ {qIdx + 1}. {q.q}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 4, color: '#334155' }}>
+                      {q.options.map((opt, oIdx) => {
+                        const isCorrect = showAnswerKey && oIdx === q.answer;
+                        return (
+                          <span
+                            key={oIdx}
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              background: isCorrect ? '#dcfce7' : '#f1f5f9',
+                              color: isCorrect ? '#166534' : '#334155',
+                              fontWeight: isCorrect ? 700 : 400,
+                            }}
+                          >
+                            {['ก', 'ข', 'ค', 'ง'][oIdx]}) {opt}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    {showAnswerKey && (
+                      <div style={{ marginTop: 4, color: '#047857', fontSize: '0.78rem' }}>
+                        ✓ เฉลยข้อ {['ก', 'ข', 'ค', 'ง'][q.answer]} — {q.explain}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '2rem' }}>

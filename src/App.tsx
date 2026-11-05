@@ -23,6 +23,7 @@ const Lesson = React.lazy(() => import('./pages/Lesson'));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 const ResearchPage = React.lazy(() => import('./pages/ResearchPage'));
 const PaPortfolioPage = React.lazy(() => import('./pages/PaPortfolioPage'));
+const IsKnowledgeBlog = React.lazy(() => import('./pages/IsKnowledgeBlog'));
 const Resources = React.lazy(() => import('./pages/Resources'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 const ReportCard = React.lazy(() => import('./pages/ReportCard'));
@@ -119,6 +120,7 @@ function App() {
                   <Route path="/research" element={<ResearchPage />} />
                   <Route path="/portfolio" element={<PaPortfolioPage />} />
                   <Route path="/pa-portfolio" element={<PaPortfolioPage />} />
+                  <Route path="/is-blog" element={<IsKnowledgeBlog />} />
                   <Route path="/pa" element={<Navigate to="/portfolio" replace />} />
                   <Route path="/resources" element={<LoginPromptOverlay><Resources /></LoginPromptOverlay>} />
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

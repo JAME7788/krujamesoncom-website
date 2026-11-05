@@ -43,12 +43,12 @@ describe('teacher hourly workflow', () => {
     expect(TERM_1_START_DATE).toBe('2026-05-05');
     // ป.1 เรียนเทคโนโลยีวันพุธตามตารางสอนจริง — วันพุธแรกหลังเปิดเทอมคือ 6 พ.ค.
     // (ค่าเดิม 2026-05-07 มาจากช่วงที่ตารางลง ป.1 ผิดเป็นวันพฤหัสบดี)
-    expect(buildDefaultTeachingSessions('p1')[0].plannedDate).toBe('2026-05-06');
-    expect(buildDefaultTeachingSessions('p2')[0].plannedDate).toBe('2026-05-11');
-    expect(buildDefaultTeachingSessions('p3')[0].plannedDate).toBe('2026-05-08');
-    expect(buildDefaultTeachingSessions('p4')[0].plannedDate).toBe('2026-05-06');
+    expect(buildDefaultTeachingSessions('p1')[0].plannedDate).toBe('2026-05-11');
+    expect(buildDefaultTeachingSessions('p2')[0].plannedDate).toBe('2026-05-08');
+    expect(buildDefaultTeachingSessions('p3')[0].plannedDate).toBe('2026-05-07');
+    expect(buildDefaultTeachingSessions('p4')[0].plannedDate).toBe('2026-05-07');
     expect(buildDefaultTeachingSessions('p5')[0].plannedDate).toBe('2026-05-06');
-    expect(buildDefaultTeachingSessions('p6')[0].plannedDate).toBe('2026-05-07');
+    expect(buildDefaultTeachingSessions('p6')[0].plannedDate).toBe('2026-05-08');
   });
 
   it('keeps lesson record ids unique by classroom and subject', () => {

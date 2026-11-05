@@ -34,7 +34,7 @@ export interface QuizQuestion {
 
 export type GradeLevel = 'lower' | 'upper' | 'middle';
 
-export const QUESTIONS_BY_LEVEL: Record<GradeLevel, QuizQuestion[]> = {
+const QUESTIONS_BY_LEVEL: Record<GradeLevel, QuizQuestion[]> = {
   lower: [
     {
       id: 'l1',

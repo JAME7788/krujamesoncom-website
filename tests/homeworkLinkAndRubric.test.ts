@@ -29,6 +29,7 @@ import {
   getGoogleDriveAppsScriptTemplate,
   getSubmissionStorageUsageSummary,
   purgeSubmissionBinaryCache,
+  prepareDirectStudentSubmissionFile,
 } from '../src/services/homeworkService';
 
 describe('ระบบรับงานผ่านลิงก์และตรวจงานด้วยรูบริก (Link & Rubric Verification)', () => {
@@ -544,6 +545,28 @@ describe('ระบบรับงานผ่านลิงก์และต�
       const afterSummary = getSubmissionStorageUsageSummary();
       expect(afterSummary.embeddedBinaryCount).toBe(0);
       expect(afterSummary.embeddedBinaryKB).toBe(0);
+    });
+
+    it('รองรับไฟล์ส่งเข้า Google Drive สูงสุด 35 MB และบล็อกไฟล์ที่เกิน 35 MB เพื่อรักษาประสิทธิภาพ', async () => {
+      await saveGoogleDriveBridgeConfig({
+        scriptWebAppUrl: 'https://script.google.com/macros/s/AKfycb_test_large/exec',
+        sharedFolderUrl: 'drive.google.com/drive/folders/testLarge',
+      });
+
+      // จำลองไฟล์ขนาด 36 MB (เกิน 35 MB)
+      const fakeTooLargeBlob = {
+        size: 36 * 1024 * 1024,
+        type: 'application/octet-stream',
+      } as unknown as File;
+
+      await expect(
+        prepareDirectStudentSubmissionFile(fakeTooLargeBlob, {
+          studentId: 'p6_99_large',
+          classroom: 'ป.6',
+          assignmentId: 'assign_large',
+          fileName: 'project.sb3',
+        }),
+      ).rejects.toThrow('ไฟล์มีขนาดใหญ่เกิน 35 MB');
     });
   });
 });

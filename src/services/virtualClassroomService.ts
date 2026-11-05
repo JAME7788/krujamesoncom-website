@@ -100,6 +100,14 @@ const PLAYER_COLLECTION = 'virtualPlayers';
 const ROOM_COLLECTION = 'virtualRooms';
 const EVENT_COLLECTION = 'virtualActivityEvents';
 
+const firebaseAvailable = (): boolean => {
+  try {
+    return !!db && !!import.meta.env.VITE_FIREBASE_PROJECT_ID;
+  } catch {
+    return false;
+  }
+};
+
 /**
  * คำนวณรหัสสัปดาห์ตามมาตรฐาน ISO-8601 (ขึ้นต้นสัปดาห์ใหม่ทุกวันจันทร์)
  * เช่น 2026-W36, 2026-W37 เพื่อรีแมพโลกเสมือนอัตโนมัติทุกสัปดาห์
@@ -248,6 +256,10 @@ export const subscribeVirtualRoomState = (
   onSyncMode?.('connecting');
   const channel = new BroadcastChannel(channelName(roomId));
   channel.onmessage = () => onChange(getLocalVirtualRoomState(roomId, classroom));
+  if (!firebaseAvailable()) {
+    onSyncMode?.('local');
+    return () => channel.close();
+  }
   const unsubscribe = onSnapshot(
     doc(db, ROOM_COLLECTION, roomId),
     (snapshot) => {
@@ -282,6 +294,7 @@ export const updateVirtualRoomState = async (
   });
   writeLocal(roomKey(roomId), next);
   emit(roomId);
+  if (!firebaseAvailable()) return false;
   try {
     await setDoc(doc(db, ROOM_COLLECTION, roomId), next, { merge: true });
     return true;
@@ -346,6 +359,9 @@ export const subscribeWorldBlocks = (
   onChange(getLocalWorldBlocks(roomId, weekKey));
   const channel = new BroadcastChannel(channelKey);
   channel.onmessage = () => onChange(getLocalWorldBlocks(roomId, weekKey));
+  if (!firebaseAvailable()) {
+    return () => channel.close();
+  }
 
   const unsubscribe = onSnapshot(
     doc(db, WORLD_COLLECTION, docId),
@@ -379,6 +395,7 @@ export const addWorldBlock = async (
   const next = [...current, block];
   writeLocal(blockKey(roomId, weekKey), next);
   emitWorldBlocks(roomId, weekKey);
+  if (!firebaseAvailable()) return true;
   try {
     const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
       roomId,
@@ -405,6 +422,7 @@ export const removeWorldBlock = async (
   const next = getLocalWorldBlocks(roomId, weekKey).filter((item) => item.id !== block.id);
   writeLocal(blockKey(roomId, weekKey), next);
   emitWorldBlocks(roomId, weekKey);
+  if (!firebaseAvailable()) return;
   try {
     const writePromise = updateDoc(doc(db, WORLD_COLLECTION, docId), {
       blocks: arrayRemove(block),
@@ -427,6 +445,7 @@ export const clearWorldBlocks = async (
   const docId = getWorldDocId(roomId, weekKey);
   writeLocal(blockKey(roomId, weekKey), []);
   emitWorldBlocks(roomId, weekKey);
+  if (!firebaseAvailable()) return;
   try {
     const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
       roomId,
@@ -476,6 +495,7 @@ export const updateWorldPlayer = async (player: WorldPlayer): Promise<void> => {
   if (previous && now - previous.at < 2_500) return;
   if (previous?.signature === signature && now - previous.at < 7_500) return;
   remotePresence.set(id, { at: now, signature });
+  if (!firebaseAvailable()) return;
   try {
     await setDoc(doc(db, PLAYER_COLLECTION, id), player, { merge: true });
   } catch (error) {
@@ -491,6 +511,7 @@ export const removeWorldPlayer = async (roomId: string, playerId: string): Promi
   emit(roomId);
   const id = playerDocId(roomId, playerId);
   remotePresence.delete(id);
+  if (!firebaseAvailable()) return;
   try {
     await deleteDoc(doc(db, PLAYER_COLLECTION, id));
   } catch { /* presence expires automatically in the UI */ }
@@ -505,6 +526,10 @@ export const subscribeWorldPlayers = (
   onSyncMode?.('connecting');
   const channel = new BroadcastChannel(channelName(roomId));
   channel.onmessage = () => onChange(getLocalPlayers(roomId));
+  if (!firebaseAvailable()) {
+    onSyncMode?.('local');
+    return () => channel.close();
+  }
 
   const playersQuery = query(collection(db, PLAYER_COLLECTION), where('roomId', '==', roomId));
   const unsubscribe = onSnapshot(
@@ -548,6 +573,7 @@ export const recordWorldActivityEvent = async (
     emit(event.roomId);
   }
   try {
+    if (!firebaseAvailable()) return false;
     await setDoc(doc(db, EVENT_COLLECTION, id), nextEvent, { merge: false });
     return true;
   } catch (error) {
@@ -563,6 +589,9 @@ export const subscribeWorldActivityEvents = (
   onChange(getLocalEvents(roomId));
   const channel = new BroadcastChannel(channelName(roomId));
   channel.onmessage = () => onChange(getLocalEvents(roomId));
+  if (!firebaseAvailable()) {
+    return () => channel.close();
+  }
   const eventsQuery = query(collection(db, EVENT_COLLECTION), where('roomId', '==', roomId));
   const unsubscribe = onSnapshot(
     eventsQuery,
@@ -586,6 +615,16 @@ export const subscribeWorldActivityEvents = (
 /** ล้างข้อมูลห้องทดสอบอัตโนมัติ ไม่อนุญาตให้ใช้กับห้องเรียนจริง */
 export const cleanupVirtualQaRoom = async (roomId: string): Promise<void> => {
   if (!roomId.includes('-qa-')) return;
+  if (!firebaseAvailable()) {
+    try {
+      localStorage.removeItem(blockKey(roomId));
+      localStorage.removeItem(`kj_virtual_world_${roomId}`);
+      localStorage.removeItem(playerKey(roomId));
+      localStorage.removeItem(roomKey(roomId));
+      localStorage.removeItem(eventKey(roomId));
+    } catch { /* cleanup cache is best effort */ }
+    return;
+  }
   const playersQuery = query(collection(db, PLAYER_COLLECTION), where('roomId', '==', roomId));
   const eventsQuery = query(collection(db, EVENT_COLLECTION), where('roomId', '==', roomId));
   try {

@@ -211,6 +211,15 @@ export const MediaReportHub: React.FC = () => {
           </button>
           <a
             className="btn-hub btn-hub-word"
+            style={{ background: '#1e3a8a', borderColor: '#172554', color: '#ffffff' }}
+            href="/docs/Media_Usage_Log_2569_KruJames.docx"
+            download="แบบบันทึกการใช้สื่อ_นวัตกรรม_และเทคโนโลยี_2569_ครูอนันตชัย.docx"
+            title="ดาวน์โหลดเล่มแบบบันทึกการใช้สื่อ นวัตกรรม และเทคโนโลยี ว.PA ประจำปีการศึกษา ๒๕๖๙ (ฉบับสมบูรณ์)"
+          >
+            <FileText size={16} /> เล่มบันทึกใช้สื่อ ว.PA ๒๕๖๙ (.docx)
+          </a>
+          <a
+            className="btn-hub btn-hub-word"
             href="/downloads/media-use-record-with-header-98.docx"
             download
             title="ดาวน์โหลดไฟล์ Word A4 ตามแบบบันทึกการใช้สื่อของโรงเรียน รวม Canva 62 รายการ และเกม 36 เกม"

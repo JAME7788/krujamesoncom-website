@@ -50,11 +50,12 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
   // Adjust subject when classroom changes
   const activeSubject: Subject = useMemo(() => {
     if (selectedClassroom.startsWith('ป.')) return 'main';
-    if (selectedSubject === 'main') return 'cs';
+    if (!subjects.some((s) => s.id === selectedSubject)) return subjects[0]?.id || 'cs';
     return selectedSubject;
-  }, [selectedClassroom, selectedSubject]);
+  }, [selectedClassroom, selectedSubject, subjects]);
 
   const summary: ClassroomExportSummary = useMemo(() => {
+    void rosterVersion;
     return getClassroomExportSummary(selectedClassroom, activeSubject);
   }, [selectedClassroom, activeSubject, rosterVersion]);
 

@@ -42,8 +42,35 @@ const fbAvailable = (): boolean => {
 const uid = () => `a_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const storageKey = (classroom: string) => `krujames_skill_grades_${classroom}`;
 
+/** แม่แบบคะแนนมาตรฐาน 5 ขั้นตอนของการศึกษาค้นคว้าด้วยตนเอง (IS) ด้านนวัตกรรมการเกษตร สำหรับวิชาทักษะอาชีพ 1 (ม.1) และทักษะอาชีพ 2 (ม.2) */
+export const getDefaultIsSkillAssignments = (classroom: string): SkillAssignment[] => {
+  const now = Date.now();
+  if (classroom === 'ม.2') {
+    return [
+      { id: 'is_step_1', title: 'IS ขั้นที่ 1: ตั้งประเด็น/สมมติฐาน Smart Farm & แปรรูปเกษตร', maxScore: 15, createdAt: now },
+      { id: 'is_step_2', title: 'IS ขั้นที่ 2: สืบค้นเทคโนโลยีเกษตรอัจฉริยะและคำนวณจุดคุ้มทุน', maxScore: 15, createdAt: now },
+      { id: 'is_step_3', title: 'IS ขั้นที่ 3: สร้างต้นแบบนวัตกรรมเกษตร/แปรรูปและ QC', maxScore: 25, createdAt: now },
+      { id: 'is_step_4', title: 'IS ขั้นที่ 4: การตลาดเกษตรดิจิทัล 4Ps & ฉลาก QR Code', maxScore: 20, createdAt: now },
+      { id: 'is_step_5', title: 'IS ขั้นที่ 5: ตลาดนัดอาชีพเกษตรนวัตกรรมและบริการสังคม', maxScore: 25, createdAt: now },
+    ];
+  }
+  if (classroom === 'ม.1') {
+    return [
+      { id: 'is_step_1', title: 'IS ขั้นที่ 1: ตั้งประเด็นคำถาม/สำรวจปัญหาเกษตรในชุมชน', maxScore: 15, createdAt: now },
+      { id: 'is_step_2', title: 'IS ขั้นที่ 2: สืบค้นความรู้เกษตรอินทรีย์และคำนวณต้นทุน', maxScore: 15, createdAt: now },
+      { id: 'is_step_3', title: 'IS ขั้นที่ 3: สร้างชุดนวัตกรรมเพาะปลูก/น้ำหมักชีวภาพ', maxScore: 25, createdAt: now },
+      { id: 'is_step_4', title: 'IS ขั้นที่ 4: สื่อสารนำเสนอแบรนด์เกษตรปลอดสาร (Canva)', maxScore: 20, createdAt: now },
+      { id: 'is_step_5', title: 'IS ขั้นที่ 5: ออกบูธตลาดนัดอาชีพเกษตรและจิตสาธารณะ', maxScore: 25, createdAt: now },
+    ];
+  }
+  return [];
+};
+
 const empty = (classroom: string): SkillGradeData => ({
-  classroom, assignments: [], students: [], updatedAt: Date.now(),
+  classroom,
+  assignments: getDefaultIsSkillAssignments(classroom),
+  students: [],
+  updatedAt: Date.now(),
 });
 
 /** แปลง schema เก่า (k: number) → schema ใหม่ (scores: Record<string, number>) */
@@ -52,7 +79,14 @@ const migrateLegacy = (raw: unknown, classroom: string): SkillGradeData => {
   const r = raw as Record<string, unknown>;
   // schema ใหม่ครบแล้ว
   if (Array.isArray(r.assignments) && Array.isArray(r.students)) {
-    return r as unknown as SkillGradeData;
+    const parsed = r as unknown as SkillGradeData;
+    if (parsed.assignments.length === 0) {
+      const defaults = getDefaultIsSkillAssignments(classroom);
+      if (defaults.length > 0) {
+        return { ...parsed, assignments: defaults };
+      }
+    }
+    return parsed;
   }
   // schema เก่า — เป็น SkillScore[] ที่มี k: number ตรงๆ
   if (Array.isArray(r)) {
@@ -163,6 +197,20 @@ export const deleteSkillAssignment = (classroom: string, assignmentId: string) =
   // ลบช่อง score ของทุกนักเรียนด้วย
   data.students.forEach((s) => { delete s.scores[assignmentId]; });
   saveSkillGradeData(data);
+};
+
+/** โหลด/เติมช่องคะแนนแม่แบบ IS 5 ขั้นตอน โดยไม่ล้างคะแนนเดิม */
+export const applyIsSkillTemplate = (classroom: string): SkillGradeData => {
+  const data = loadSkillGradeData(classroom);
+  const defaults = getDefaultIsSkillAssignments(classroom);
+  const existingIds = new Set(data.assignments.map((a) => a.id));
+  defaults.forEach((def) => {
+    if (!existingIds.has(def.id)) {
+      data.assignments.push(def);
+    }
+  });
+  saveSkillGradeData(data);
+  return data;
 };
 
 // ---------- Student score CRUD ----------

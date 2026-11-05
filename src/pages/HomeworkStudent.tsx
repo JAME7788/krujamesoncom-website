@@ -82,7 +82,10 @@ const HomeworkStudent: React.FC = () => {
   const [usingCachedAssignments, setUsingCachedAssignments] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
-  const [filter, setFilter] = useState<HomeworkFilterTab>('all');
+  const [filter, setFilter] = useState<HomeworkFilterTab>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get('filter') as HomeworkFilterTab | null) || 'all';
+  });
   const openedFromUrlRef = useRef(false);
 
   const [dtDefine, setDtDefine] = useState('');
@@ -211,10 +214,6 @@ const HomeworkStudent: React.FC = () => {
     if (openedFromUrlRef.current || !assignments.length) return;
     const params = new URLSearchParams(window.location.search);
     const targetId = params.get('id') || params.get('assignmentId');
-    const urlFilter = params.get('filter') as HomeworkFilterTab | null;
-    if (urlFilter) {
-      setFilter(urlFilter);
-    }
     if (targetId) {
       const match = assignments.find((a) => a.id === targetId);
       if (match) {
@@ -1266,8 +1265,11 @@ const HomeworkStudent: React.FC = () => {
                       marginBottom: 12,
                     }}
                   >
-                    <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#0369a1', marginBottom: 8 }}>
-                      ☁️ ส่งไฟล์เข้า Google Drive กลางของครูอัตโนมัติ (เด็กไม่ต้องมี Gmail / ไม่เปลืองความจำเว็บ!):
+                    <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#0369a1', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                      <span>☁️ แนบไฟล์ / แคปหน้าจอ ผูก Google Drive ของครูโดยตรง</span>
+                      <span style={{ fontSize: '0.74rem', padding: '2px 8px', borderRadius: 6, background: '#dcfce7', color: '#166534', border: '1px solid #86efac', fontWeight: 700 }}>
+                        ⚡ Cloud Firestore เก็บเฉพาะลิงก์ (0 KB)
+                      </span>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
                       <button
@@ -1343,7 +1345,7 @@ const HomeworkStudent: React.FC = () => {
                       )}
                     </div>
                     <div style={{ fontSize: '0.76rem', color: '#475569' }}>
-                      💡 <strong>ระบบประหยัดความจำ 100%:</strong> เมื่อเลือกไฟล์หรือกด <kbd style={{ background: '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>Ctrl + V</kbd> วางภาพหน้าจอ ระบบจะส่งไฟล์เข้า <strong>Google Drive กลางของคุณครู</strong> โดยตรงและเก็บเฉพาะลิงก์ในเว็บ (ไม่กินความจำฐานข้อมูลเว็บ และนักเรียนไม่ต้องล็อกอิน Gmail ตัวเองครับ)
+                      💡 <strong>ระบบ Zero-Bloat Cloud Drive:</strong> เมื่อเลือกไฟล์ (ขนาดสูงสุด 35 MB) หรือกด <kbd style={{ background: '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>Ctrl + V</kbd> วางภาพหน้าจอ ไฟล์จะส่งเข้า <strong>Google Drive กลางของครู</strong> ทันที โดย Cloud Firestore จะเก็บเฉพาะลิงก์และข้อมูลตัวหนังสือสั้นๆ (&lt; 1 KB) ไม่เก็บไฟล์หนักในฐานข้อมูลเว็บเลยครับ
                     </div>
                   </div>
                 )}

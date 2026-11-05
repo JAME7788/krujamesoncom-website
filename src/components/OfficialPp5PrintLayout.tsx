@@ -121,7 +121,7 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
             <h1 className="pp5-title">{summary.schoolName}</h1>
             <h2 className="pp5-subtitle">แบบบันทึกผลการพัฒนาคุณภาพผู้เรียน (ปพ.5)</h2>
             <div className="pp5-meta-grid">
-              <div><strong>กลุ่มสาระการเรียนรู้:</strong> วิทยาศาสตร์และเทคโนโลยี</div>
+              <div><strong>กลุ่มสาระการเรียนรู้:</strong> {summary.subject === 'is' ? 'การงานอาชีพ (การศึกษาค้นคว้าด้วยตนเอง IS)' : 'วิทยาศาสตร์และเทคโนโลยี'}</div>
               <div><strong>รายวิชา:</strong> {summary.subjectTitle} ({summary.subjectCode})</div>
               <div><strong>ระดับชั้น:</strong> {summary.classroom}</div>
               <div><strong>ภาคเรียน/ปีการศึกษา:</strong> {summary.term}/{summary.academicYear}</div>
@@ -315,7 +315,7 @@ export const OfficialPp5PrintLayout: React.FC<OfficialPp5PrintLayoutProps> = ({
               <div className="pp5-cover-subject-box" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 18px', maxWidth: '880px', padding: '10px 16px', marginBottom: '10px', fontSize: '0.92rem', lineHeight: 1.55 }}>
                 <div><strong>สถานศึกษา:</strong> {summary.schoolName}</div>
                 <div><strong>สังกัด:</strong> {summary.affiliation}</div>
-                <div><strong>กลุ่มสาระการเรียนรู้:</strong> วิทยาศาสตร์และเทคโนโลยี</div>
+                <div><strong>กลุ่มสาระการเรียนรู้:</strong> {summary.subject === 'is' ? 'การงานอาชีพ (การศึกษาค้นคว้าด้วยตนเอง IS)' : 'วิทยาศาสตร์และเทคโนโลยี'}</div>
                 <div><strong>ระดับชั้น:</strong> {summary.classroom} • <strong>ภาคเรียนที่:</strong> {summary.term}/{summary.academicYear}</div>
                 <div><strong>รายวิชา:</strong> {summary.subjectTitle} ({summary.subjectCode})</div>
                 <div><strong>เวลาเรียน/หน่วยกิต:</strong> {summary.totalHours} ชั่วโมง/ภาค ({summary.credit} หน่วยกิต)</div>

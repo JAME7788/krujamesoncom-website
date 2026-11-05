@@ -303,12 +303,18 @@ export const getClassroomExportSummary = (
   const subjects = getSubjectsForClassroom(classroom);
   const currentSubj = subjects.find((s) => s.id === subject) || {
     id: subject,
-    title: classroom.startsWith('ป.') ? 'เทคโนโลยี (วิทยาการคำนวณ)' : (subject === 'cs' ? 'วิทยาการคำนวณ' : 'ออกแบบและเทคโนโลยี'),
-    code: subject === 'dt' ? 'ว 4.1' : 'ว 4.2',
+    title: classroom.startsWith('ป.')
+      ? 'เทคโนโลยี (วิทยาการคำนวณ)'
+      : subject === 'cs'
+        ? 'วิทยาการคำนวณ'
+        : subject === 'is'
+          ? (classroom === 'ม.2' ? 'ทักษะอาชีพ 2 (IS)' : 'ทักษะอาชีพ 1 (IS)')
+          : 'ออกแบบและเทคโนโลยี',
+    code: subject === 'dt' ? 'ว 4.1' : subject === 'is' ? (classroom === 'ม.2' ? 'ง 22201' : 'ง 21201') : 'ว 4.2',
   };
 
-  const totalHours = classroom.startsWith('ม.') ? 20 : 20;
-  const credit = classroom.startsWith('ม.') ? 0.5 : 1.0;
+  const totalHours = subject === 'is' ? 40 : (classroom.startsWith('ม.') ? 20 : 20);
+  const credit = subject === 'is' ? 1.0 : (classroom.startsWith('ม.') ? 0.5 : 1.0);
   const advisorName = CLASSROOM_ADVISORS[classroom] || 'ครูประจำชั้น';
 
   const rows: StudentExportRow[] = grades.map((g) => {
@@ -669,7 +675,7 @@ export const downloadFile = (content: string, filename: string, mimeType: string
 
 export const downloadClassroomCsvFile = (classroom: string, subject: Subject = 'main') => {
   const csv = generateClassroomCsv(classroom, subject);
-  const subjLabel = subject === 'cs' ? '_วิทยาการคำนวณ' : subject === 'dt' ? '_ออกแบบ' : '';
+  const subjLabel = subject === 'cs' ? '_วิทยาการคำนวณ' : subject === 'dt' ? '_ออกแบบ' : subject === 'is' ? '_ทักษะอาชีพ_IS' : '';
   downloadFile('\uFEFF' + csv, `ปพ5_คะแนน_${classroom}${subjLabel}_${getCurrentAcademicYear()}_ท${getCurrentTerm()}.csv`, 'text/csv;charset=utf-8');
 };
 
@@ -680,12 +686,12 @@ export const downloadMasterCsvFile = () => {
 
 export const downloadSchoolMisCsvFile = (classroom: string, subject: Subject = 'main') => {
   const csv = generateSchoolMisCsv(classroom, subject);
-  const subjLabel = subject === 'cs' ? '_CS' : subject === 'dt' ? '_DT' : '';
+  const subjLabel = subject === 'cs' ? '_CS' : subject === 'dt' ? '_DT' : subject === 'is' ? '_IS' : '';
   downloadFile('\uFEFF' + csv, `SchoolMIS_${classroom}${subjLabel}_${getCurrentAcademicYear()}_ท${getCurrentTerm()}.csv`, 'text/csv;charset=utf-8');
 };
 
 export const downloadClassroomExcelFile = (classroom: string, subject: Subject = 'main') => {
   const html = generateExcelHtml(classroom, subject);
-  const subjLabel = subject === 'cs' ? '_วิทยาการคำนวณ' : subject === 'dt' ? '_ออกแบบ' : '';
+  const subjLabel = subject === 'cs' ? '_วิทยาการคำนวณ' : subject === 'dt' ? '_ออกแบบ' : subject === 'is' ? '_ทักษะอาชีพ_IS' : '';
   downloadFile(html, `ปพ5_${classroom}${subjLabel}_${getCurrentAcademicYear()}_ท${getCurrentTerm()}.xls`, 'application/vnd.ms-excel;charset=utf-8');
 };

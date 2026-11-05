@@ -46,36 +46,47 @@ export default function GameLearningJourney({ game, children }: { game: GameInfo
   const reviewRef = useRef<HTMLElement>(null);
 
   // State สำหรับปรับแต่งเกมและภารกิจ (Customizable Config)
-  const [customObjectiveInput, setCustomObjectiveInput] = useState('');
-  const [customQuestionInput, setCustomQuestionInput] = useState('');
-  const [speedMultInput, setSpeedMultInput] = useState<number>(1);
-  const [timerBonusInput, setTimerBonusInput] = useState<number>(0);
-  const [showHintsInput, setShowHintsInput] = useState<boolean>(true);
+  const [customObjectiveInput, setCustomObjectiveInput] = useState(
+    () => unifiedRecord?.customOverride?.customObjective || '',
+  );
+  const [customQuestionInput, setCustomQuestionInput] = useState(
+    () => unifiedRecord?.customOverride?.customQuestion || '',
+  );
+  const [speedMultInput, setSpeedMultInput] = useState<number>(
+    () => unifiedRecord?.effectiveSpeedMultiplier ?? 1,
+  );
+  const [timerBonusInput, setTimerBonusInput] = useState<number>(
+    () => unifiedRecord?.effectiveTimerBonusSeconds ?? 0,
+  );
+  const [showHintsInput, setShowHintsInput] = useState<boolean>(
+    () => unifiedRecord?.effectiveShowControlHints ?? true,
+  );
   const [configSavedMsg, setConfigSavedMsg] = useState('');
 
   useEffect(() => {
-    if (!unifiedRecord) return;
-    setCustomObjectiveInput(unifiedRecord.customOverride?.customObjective || '');
-    setCustomQuestionInput(unifiedRecord.customOverride?.customQuestion || '');
-    setSpeedMultInput(unifiedRecord.effectiveSpeedMultiplier);
-    setTimerBonusInput(unifiedRecord.effectiveTimerBonusSeconds);
-    setShowHintsInput(unifiedRecord.effectiveShowControlHints);
-  }, [unifiedRecord]);
-
-  useEffect(() => {
     let active = true;
+    const syncInputsFromRecord = () => {
+      const rec = getUnifiedGameRecord(game.id, user?.classroom || 'ป.4');
+      setConfigVersion((v) => v + 1);
+      if (rec) {
+        setCustomObjectiveInput(rec.customOverride?.customObjective || '');
+        setCustomQuestionInput(rec.customOverride?.customQuestion || '');
+        setSpeedMultInput(rec.effectiveSpeedMultiplier);
+        setTimerBonusInput(rec.effectiveTimerBonusSeconds);
+        setShowHintsInput(rec.effectiveShowControlHints);
+      }
+    };
     void fetchGameCustomConfigsFromCloud()
       .then(() => {
-        if (active) setConfigVersion((v) => v + 1);
+        if (active) syncInputsFromRecord();
       })
       .catch(() => {});
-    const onConfigUpdated = () => setConfigVersion((v) => v + 1);
-    window.addEventListener('unified-game-config-updated', onConfigUpdated);
+    window.addEventListener('unified-game-config-updated', syncInputsFromRecord);
     return () => {
       active = false;
-      window.removeEventListener('unified-game-config-updated', onConfigUpdated);
+      window.removeEventListener('unified-game-config-updated', syncInputsFromRecord);
     };
-  }, [game.id]);
+  }, [game.id, user?.classroom]);
 
   const history = useMemo(() => {
     void historyVersion;

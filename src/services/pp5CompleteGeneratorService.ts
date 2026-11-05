@@ -201,7 +201,7 @@ th {
   
   <div style="height: 0.8cm;"></div>
   <h1 class="doc-title">แบบบันทึกผลการพัฒนาคุณภาพผู้เรียน (ปพ.5)</h1>
-  <h2 class="doc-subtitle">กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี</h2>
+  <h2 class="doc-subtitle">${summary.subject === 'is' ? 'กลุ่มสาระการเรียนรู้การงานอาชีพ (การศึกษาค้นคว้าด้วยตนเอง IS)' : 'กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี'}</h2>
 
   <div class="info-box">
     <p><strong>รายวิชา:</strong> ${escapeHtml(summary.subjectTitle)} &nbsp;&nbsp;&nbsp;&nbsp; <strong>รหัสวิชา:</strong> ${escapeHtml(summary.subjectCode)}</p>
@@ -653,7 +653,7 @@ export const generatePp5CompleteSpreadsheetXml = (summary: ClassroomExportSummar
     <Cell ss:MergeAcross="8" ss:StyleID="HeaderTitle"><Data ss:Type="String">แบบบันทึกผลการพัฒนาคุณภาพผู้เรียน (ปพ.5)</Data></Cell>
    </Row>
    <Row ss:Height="22">
-    <Cell ss:MergeAcross="8" ss:StyleID="HeaderSub"><Data ss:Type="String">กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี รายวิชา ${escapeXml(summary.subjectTitle)} (${escapeXml(summary.subjectCode)})</Data></Cell>
+    <Cell ss:MergeAcross="8" ss:StyleID="HeaderSub"><Data ss:Type="String">${summary.subject === 'is' ? 'กลุ่มสาระการเรียนรู้การงานอาชีพ (การศึกษาค้นคว้าด้วยตนเอง IS)' : 'กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี'} รายวิชา ${escapeXml(summary.subjectTitle)} (${escapeXml(summary.subjectCode)})</Data></Cell>
    </Row>
    <Row ss:Height="22">
     <Cell ss:MergeAcross="8" ss:StyleID="HeaderSub"><Data ss:Type="String">ชั้น ${escapeXml(summary.classroom)} ภาคเรียนที่ ${escapeXml(summary.term)} ปีการศึกษา ${escapeXml(summary.academicYear)} • ${summary.credit} หน่วยกิต (${summary.totalHours} ชั่วโมง/ภาค)</Data></Cell>

@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'claw-empire-main']),
+  globalIgnores(['dist', 'claw-empire-main', 'antigravity-gemini-argon-bridge']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

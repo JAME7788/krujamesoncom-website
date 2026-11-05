@@ -41,7 +41,7 @@ export interface TeachingSession {
 
 const COLLECTION = 'teachingSessions';
 const ACADEMIC_YEAR = '2569';
-const LOCAL_KEY = 'krujames_teaching_sessions_v1';
+const LOCAL_KEY = 'krujames_teaching_sessions_v2';
 export const TERM_1_START_DATE = '2026-05-05';
 export const TERM_2_START_DATE = '2026-11-02';
 
@@ -60,15 +60,24 @@ const toIsoDate = (date: Date) => {
 // นี่คือสำเนาตารางสอนชุดที่ 3 ของระบบ (อีกสองชุดคือ schedule.ts และ WEEKLY_SLOTS)
 // ค่าทั้งหมดยึดตามตารางสอนจริงของโรงเรียน ไม่ใช่การอนุมานจาก log การใช้งาน
 const weekdayByGrade: Record<TechnologyGradeId, number> = {
-  p1: 3,
-  p2: 1,
-  p3: 5,
-  p4: 3,
+  p1: 1,
+  p2: 5,
+  p3: 4,
+  p4: 4,
   p5: 3,
-  p6: 4,
-  m1: 1,
-  m2: 5,
-  m3: 4,
+
+  p6: 5,
+  m1: 4,
+  m2: 4,
+  m3: 1,
+
+
+
+
+
+
+
+
 };
 
 const firstWeekdayOnOrAfter = (start: Date, weekday: number) => {

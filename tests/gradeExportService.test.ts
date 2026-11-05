@@ -1,4 +1,16 @@
 import { describe, it, expect } from 'vitest';
+import { loadSkillGradeData, getDefaultIsSkillAssignments } from '../src/services/skillGradeService';
+import { IS_CAREER_CURRICULUM, buildPrintableIsWorksheetHtml } from '../src/data/isCareerCurriculum';
+import {
+  IS_BLOG_SOURCE_META,
+  IS_COURSE_UNIT_STRUCTURES,
+  IS_EVALUATION_BREAKDOWN,
+  IS_KNOWLEDGE_BLOG_POSTS,
+  IS_LEARNING_GOALS_TABLE,
+  IS_PRE_POST_QUESTIONS,
+  IS_STUDENT_PROJECT_EXAMPLES,
+  buildPrintableIsBlogPostHtml,
+} from '../src/data/isKnowledgeBlogData';
 import {
   parseThaiName,
   calculateGradeStatistics,
@@ -36,7 +48,7 @@ describe('gradeExportService', () => {
       firstName: 'ธนภัทร',
       lastName: 'แสงแก้ว',
     });
-  });
+    });
 
   it('calculates comprehensive grade statistics correctly', () => {
     const mockRows = [
@@ -97,6 +109,30 @@ describe('gradeExportService', () => {
     expect(dtSummary.classroom).toBe('ม.1');
     expect(dtSummary.subject).toBe('dt');
     expect(dtSummary.subjectCode).toBe('ว 4.1');
+
+    const isM1Summary = getClassroomExportSummary('ม.1', 'is');
+    expect(isM1Summary.classroom).toBe('ม.1');
+    expect(isM1Summary.subject).toBe('is');
+    expect(isM1Summary.subjectTitle).toBe('ทักษะอาชีพ 1 (IS)');
+    expect(isM1Summary.subjectCode).toBe('ง 21201');
+    expect(isM1Summary.credit).toBe(1.0);
+    expect(isM1Summary.totalHours).toBe(40);
+    expect(isM1Summary.indicators).toHaveLength(5);
+    expect(isM1Summary.indicators[0].code).toBe('IS ม.1/1');
+
+    const isM2Summary = getClassroomExportSummary('ม.2', 'is');
+    expect(isM2Summary.classroom).toBe('ม.2');
+    expect(isM2Summary.subject).toBe('is');
+    expect(isM2Summary.subjectTitle).toBe('ทักษะอาชีพ 2 (IS)');
+    expect(isM2Summary.subjectCode).toBe('ง 22201');
+    expect(isM2Summary.credit).toBe(1.0);
+    expect(isM2Summary.totalHours).toBe(40);
+    expect(isM2Summary.indicators).toHaveLength(5);
+    expect(isM2Summary.indicators[0].code).toBe('IS ม.2/1');
+
+    const m1Skill = loadSkillGradeData('ม.1');
+    expect(m1Skill.assignments).toHaveLength(5);
+    expect(getDefaultIsSkillAssignments('ม.2').reduce((sum, a) => sum + a.maxScore, 0)).toBe(100);
   });
 
   it('generates review CSVs and blocks SchoolMIS before annual results are complete', () => {
@@ -120,5 +156,45 @@ describe('gradeExportService', () => {
     expect(excelHtml).toContain('แบบบันทึกผลการเรียนรายวิชา (ปพ.5)');
     expect(excelHtml).toContain('สรุปผลสัมฤทธิ์ทางการเรียน ชั้น ป.1');
     expect(excelHtml).toContain(COURSE_TEACHER_NAME);
+  });
+
+  it('provides complete 5-step IS career curriculum, worksheets, and quizzes for ม.1 and ม.2', () => {
+    (['ม.1', 'ม.2'] as const).forEach((cls) => {
+      const course = IS_CAREER_CURRICULUM[cls];
+      expect(course.steps).toHaveLength(5);
+      expect(course.steps.reduce((sum, s) => sum + s.hours, 0)).toBe(40);
+      expect(course.steps.reduce((sum, s) => sum + s.maxScore, 0)).toBe(100);
+      course.steps.forEach((step) => {
+        expect(step.coreConcepts.length).toBeGreaterThanOrEqual(3);
+        expect(step.worksheetItems.length).toBeGreaterThanOrEqual(2);
+        expect(step.quiz).toHaveLength(5);
+      });
+
+      const studentSheet = buildPrintableIsWorksheetHtml(course, course.steps[0], false);
+      expect(studentSheet).toContain(course.courseCode);
+      expect(studentSheet).not.toContain('แนวคำตอบครู:');
+
+      const teacherKeySheet = buildPrintableIsWorksheetHtml(course, undefined, true);
+      expect(teacherKeySheet).toContain('แนวคำตอบครู:');
+      expect(teacherKeySheet).toContain('เฉลย:');
+    });
+
+    expect(IS_BLOG_SOURCE_META.courseCodeI1).toBe('I20201');
+    expect(IS_BLOG_SOURCE_META.learningOutcomes).toHaveLength(9);
+    expect(IS_COURSE_UNIT_STRUCTURES).toHaveLength(3);
+    expect(IS_COURSE_UNIT_STRUCTURES.reduce((sum, u) => sum + u.hours, 0)).toBe(40);
+    expect(IS_COURSE_UNIT_STRUCTURES.reduce((sum, u) => sum + u.scoreWeight, 0)).toBe(100);
+    expect(IS_LEARNING_GOALS_TABLE).toHaveLength(9);
+    expect(IS_EVALUATION_BREAKDOWN).toHaveLength(9);
+    expect(IS_KNOWLEDGE_BLOG_POSTS).toHaveLength(8);
+    expect(IS_PRE_POST_QUESTIONS).toHaveLength(10);
+    expect(IS_STUDENT_PROJECT_EXAMPLES).toHaveLength(18);
+
+    const printableBlogHtml = buildPrintableIsBlogPostHtml(IS_KNOWLEDGE_BLOG_POSTS[0]);
+    expect(printableBlogHtml).toContain(IS_KNOWLEDGE_BLOG_POSTS[0].title);
+    expect(printableBlogHtml).toContain(IS_KNOWLEDGE_BLOG_POSTS[0].worksheet.worksheetNo);
+    (['ม.1'] as const).forEach(() => {
+      expect(true).toBe(true);
+    });
   });
 });

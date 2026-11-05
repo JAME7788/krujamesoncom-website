@@ -71,7 +71,7 @@ export const p1TechnologyCourse = {
   teacher: 'นายอนันตชัย เพ็ชรรี่',
   school: 'โรงเรียนบ้านคลองมดแดง',
   academicYear: '2569',
-  schedule: 'วันพุธ เวลา 08:30-09:20 น.',
+  schedule: 'วันจันทร์ เวลา 08:30-09:20 น.',
   totalPeriods: 40,
   periodMinutes: 50,
   model: 'บทเรียนผ่านเว็บ (WBI) ร่วมกับ Active Learning และเกมมิฟิเคชัน พัฒนาตามแนวคิด ADDIE',

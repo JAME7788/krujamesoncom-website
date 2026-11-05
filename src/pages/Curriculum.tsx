@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { BookOpen, Target, ChevronRight, X, ListChecks, Eye, Lock, ClipboardCheck } from 'lucide-react';
+import { BookOpen, Target, ChevronRight, X, ListChecks, Eye, Lock, ClipboardCheck, Download, FileText } from 'lucide-react';
 import { grades } from '../data/curriculum';
 import type { Grade, Unit, Indicator } from '../data/curriculum';
 import { useAuth } from '../context/AuthContext';
@@ -106,6 +106,91 @@ const Curriculum: React.FC = () => {
           📚 <strong>คอร์สสำหรับชั้น {user.classroom}</strong> — แสดง {visibleGrades.length} คอร์ส
         </div>
       )}
+
+      {/* Teacher & Lesson Plan Resource Bar */}
+      <div style={{
+        background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+        border: '1px solid #bfdbfe',
+        borderRadius: '12px',
+        padding: '1rem 1.25rem',
+        marginBottom: '1.5rem',
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.85rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{ background: '#2563eb', color: '#fff', borderRadius: '8px', padding: '0.5rem', display: 'flex' }}>
+            <FileText size={20} />
+          </div>
+          <div>
+            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e3a8a' }}>
+              แผนการจัดการเรียนรู้และบันทึกหลังสอน (ว.PA ตัวชี้วัด ๑.๒ - ๑.๓)
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569' }}>
+              แผนเทคโนโลยี ป.๑ ครบ ๔๐ คาบ พร้อมบันทึกหลังแผนฉบับสมบูรณ์ และแผนตามสมรรถนะ ป.๑–๖
+            </p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <a
+            href="/docs/Lesson_Plan_P1_40Hours_With_Reflection_2569.docx"
+            download="แผนการจัดการเรียนรู้_ป1_40แผน_พร้อมบันทึกหลังแผน_2569_ครูอนันตชัย.docx"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.45rem 0.85rem',
+              borderRadius: '8px',
+              background: '#2563eb',
+              color: '#ffffff',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+              boxShadow: '0 1px 3px rgba(37,99,235,0.2)'
+            }}
+          >
+            <Download size={14} /> ดาวน์โหลดแผน ป.๑ (๔๐ แผนพร้อมหลังสอน)
+          </a>
+          <Link
+            to="/is-blog"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.45rem 0.85rem',
+              borderRadius: '8px',
+              background: '#059669',
+              color: '#ffffff',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+              boxShadow: '0 1px 3px rgba(5,150,105,0.2)'
+            }}
+          >
+            <BookOpen size={14} /> 🌱 บล็อกคลังความรู้วิชา IS (I20201 & ทักษะอาชีพ 1–2) ➔
+          </Link>
+          <Link
+            to="/admin?tab=p1-plan"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.45rem 0.85rem',
+              borderRadius: '8px',
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              color: '#334155',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              textDecoration: 'none'
+            }}
+          >
+            <BookOpen size={14} /> ศูนย์แผนและบันทึกหลังสอน ➔
+          </Link>
+        </div>
+      </div>
       {visibleGrades.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
           <p>ไม่มีคอร์สสำหรับชั้นนี้</p>

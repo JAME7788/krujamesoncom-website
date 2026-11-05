@@ -249,7 +249,25 @@ const dtIndicatorsOnly: Record<string, IndicatorDef[]> = {
   ],
 };
 
-export type Subject = 'cs' | 'dt' | 'main';
+// วิชา "ทักษะอาชีพ 1–2 (สอนแบบ IS: การศึกษาค้นคว้าด้วยตนเอง 5 ขั้นตอน ด้านนวัตกรรมการเกษตร)" — 5 ผลการเรียนรู้ต่อชั้น
+const isIndicatorsM: Record<string, IndicatorDef[]> = {
+  'ม.1': [
+    { id: 'is_m1_1', code: 'IS ม.1/1', title: 'ขั้นที่ 1 การตั้งประเด็นคำถาม/สมมติฐาน (สำรวจปัญหาเกษตรในชุมชนและตั้งโจทย์นวัตกรรมการเกษตรอินทรีย์)', maxScore: 15 },
+    { id: 'is_m1_2', code: 'IS ม.1/2', title: 'ขั้นที่ 2 การสืบค้นและรวบรวมข้อมูล (ศึกษาเทคโนโลยีเพาะปลูกยุคใหม่ ปัจจัยพืช และคำนวณต้นทุนเกษตร)', maxScore: 15 },
+    { id: 'is_m1_3', code: 'IS ม.1/3', title: 'ขั้นที่ 3 การสรุปองค์ความรู้และฝึกปฏิบัติ (สร้างชุดนวัตกรรมเกษตรประหยัดน้ำ/ชีวภาพ และทดลองปลูกจริง)', maxScore: 15 },
+    { id: 'is_m1_4', code: 'IS ม.1/4', title: 'ขั้นที่ 4 การสื่อสารและการนำเสนออย่างมีประสิทธิภาพ (ออกแบบแบรนด์เกษตรอินทรีย์ ฉลากเขียว Canva และนำเสนอ)', maxScore: 15 },
+    { id: 'is_m1_5', code: 'IS ม.1/5', title: 'ขั้นที่ 5 การบริการสังคมและจิตสาธารณะ (จำหน่ายผลผลิตเกษตรในตลาดนัดอาชีพและแบ่งปันความรู้สู่ชุมชน)', maxScore: 15 },
+  ],
+  'ม.2': [
+    { id: 'is_m2_1', code: 'IS ม.2/1', title: 'ขั้นที่ 1 การตั้งประเด็นคำถาม/สมมติฐาน (วิเคราะห์ปัญหาเกษตรกรและตั้งโจทย์ Smart Farm / แปรรูปเพิ่มมูลค่า)', maxScore: 15 },
+    { id: 'is_m2_2', code: 'IS ม.2/2', title: 'ขั้นที่ 2 การสืบค้นและรวบรวมข้อมูล (ศึกษาเซนเซอร์เกษตรอัจฉริยะ สำรวจตลาด และคำนวณจุดคุ้มทุน)', maxScore: 15 },
+    { id: 'is_m2_3', code: 'IS ม.2/3', title: 'ขั้นที่ 3 การสรุปองค์ความรู้และฝึกปฏิบัติ (สร้างต้นแบบ Smart Farm / แปรรูปผลผลิตเกษตร และควบคุมคุณภาพ QC)', maxScore: 15 },
+    { id: 'is_m2_4', code: 'IS ม.2/4', title: 'ขั้นที่ 4 การสื่อสารและการนำเสนออย่างมีประสิทธิภาพ (การตลาดเกษตรดิจิทัล 4Ps ฉลาก QR ย้อนรอย และรายงาน IS)', maxScore: 15 },
+    { id: 'is_m2_5', code: 'IS ม.2/5', title: 'ขั้นที่ 5 การบริการสังคมและจิตสาธารณะ (บริหารบูธเกษตรนวัตกรรมในตลาดนัดอาชีพและถ่ายทอดเทคโนโลยีสู่ชุมชน)', maxScore: 15 },
+  ],
+};
+
+export type Subject = 'cs' | 'dt' | 'is' | 'main';
 
 export interface SubjectInfo {
   id: Subject;
@@ -267,6 +285,11 @@ export const getSubjectsForClassroom = (classroom: string): SubjectInfo[] => {
     return [
       { id: 'cs', title: 'วิทยาการคำนวณ', code: 'ว 4.2', emoji: '💻' },
       { id: 'dt', title: 'ออกแบบและเทคโนโลยี', code: 'ว 4.1', emoji: '🛠️' },
+      ...(classroom === 'ม.1'
+        ? [{ id: 'is' as const, title: 'ทักษะอาชีพ 1 (IS)', code: 'ง 21201', emoji: '💼' }]
+        : classroom === 'ม.2'
+          ? [{ id: 'is' as const, title: 'ทักษะอาชีพ 2 (IS)', code: 'ง 22201', emoji: '💼' }]
+          : []),
     ];
   }
   return [];
@@ -278,6 +301,7 @@ export const getIndicators = (classroom: string, subject: Subject = 'main'): Ind
   }
   if (classroom.startsWith('ม.')) {
     if (subject === 'dt') return dtIndicatorsOnly[classroom] || [];
+    if (subject === 'is') return isIndicatorsM[classroom] || [];
     return csIndicatorsM[classroom] || [];
   }
   return [];
@@ -1010,7 +1034,7 @@ export const applyManualAssessmentsToGrades = (
 
   if (studentsUpdated > 0) {
     cacheGradesLocally(classroom, grades, subject);
-    void mergeClassroomGradesToFirebase(classroom, grades, subject, 'manual')
+    if (firebaseAvailable()) void mergeClassroomGradesToFirebase(classroom, grades, subject, 'manual')
       .catch((error) => console.warn('manual grade upsert failed', error));
   }
   return { studentsUpdated, indicatorsUpdated, assessmentsUsed: assessments.length };
@@ -1033,7 +1057,7 @@ export const applyPostLessonAssessmentToGrades = (
 
   if (result.summary.studentsUpdated > 0) {
     cacheGradesLocally(assessment.classroom, result.grades as StudentGrade[], subject);
-    void mergeClassroomGradesToFirebase(assessment.classroom, result.grades as StudentGrade[], subject)
+    if (firebaseAvailable()) void mergeClassroomGradesToFirebase(assessment.classroom, result.grades as StudentGrade[], subject)
       .catch((error) => console.warn('post-lesson grade upsert failed', error));
   }
   return { ...result.summary, subject };
@@ -1089,7 +1113,7 @@ export const seedUnit1ScoresForAllClasses = (
         g.updatedAt = Date.now();
       });
       cacheGradesLocally(classroom, grades, subj.id);
-      void mergeClassroomGradesToFirebase(classroom, grades, subj.id)
+      if (firebaseAvailable()) void mergeClassroomGradesToFirebase(classroom, grades, subj.id)
         .catch((error) => console.warn('seed grade upsert failed', error));
       result.push({
         classroom,
@@ -2517,7 +2541,7 @@ export const downloadCSV = (classroom: string, subject: Subject = 'main') => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  const subjLabel = subject === 'cs' ? '_วิทยาการคำนวณ' : subject === 'dt' ? '_ออกแบบ' : '';
+  const subjLabel = subject === 'cs' ? '_วิทยาการคำนวณ' : subject === 'dt' ? '_ออกแบบ' : subject === 'is' ? '_ทักษะอาชีพ_IS' : '';
   a.download = `เก็บคะแนน_${classroom}${subjLabel}_2569.csv`;
   a.click();
   URL.revokeObjectURL(url);

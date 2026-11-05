@@ -22,7 +22,11 @@ export interface AdminSession {
 }
 
 export const adminLogin = (user: string, pass: string): boolean => {
-  if (ALLOW_LEGACY_ADMIN_LOGIN && user.trim() === ADMIN_USER && pass === ADMIN_PASS) {
+  const normalizedUser = user.trim().toLowerCase();
+  const allowedUsers = String(ADMIN_USER).split(',').map((u: string) => u.trim().toLowerCase()).filter(Boolean);
+  const isMatchUser = allowedUsers.includes(normalizedUser);
+  const isMatchPass = Boolean(ADMIN_PASS) && pass === ADMIN_PASS;
+  if (ALLOW_LEGACY_ADMIN_LOGIN && isMatchUser && isMatchPass) {
     const session: AdminSession = {
       user,
       loginAt: Date.now(),

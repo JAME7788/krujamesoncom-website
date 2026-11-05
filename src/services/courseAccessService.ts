@@ -18,7 +18,7 @@ export type TargetUnitRef = {
   unitNo: number;
 };
 
-const validSubjects: Subject[] = ['main', 'cs', 'dt'];
+const validSubjects: Subject[] = ['main', 'cs', 'dt', 'is'];
 
 const cls = (prefix: string, n: number) => `${prefix}${n}`;
 const mCourse = (classroom: string, subject: 'cs' | 'dt') => {

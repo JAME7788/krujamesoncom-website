@@ -96,6 +96,21 @@ describe('ระบบแบบบันทึกข้อมูลการผ�
     expect(existsSync(wordBundle)).toBe(true);
   });
 
+  it('มีไฟล์แบบบันทึกการใช้สื่อ นวัตกรรม และเทคโนโลยี ว.PA 2569 ฉบับสมบูรณ์พร้อมดาวน์โหลด', () => {
+    const officialDocs = [
+      'public/docs/Media_Usage_Log_2569_KruJames.docx',
+      'public/downloads/Media_Usage_Log_2569_KruJames.docx',
+      'public/docs/Lesson_Plan_P1_40Hours_With_Reflection_2569.docx',
+      'public/downloads/Lesson_Plan_P1_40Hours_With_Reflection_2569.docx',
+      'public/docs/PA1_Agreement_2569_KruJames.docx',
+      'public/docs/PA_Report_2569_KruJames.docx',
+      'public/docs/PA_Challenge_BlockCoding_P5_2569.docx',
+    ];
+    for (const docPath of officialDocs) {
+      expect(existsSync(docPath)).toBe(true);
+    }
+  });
+
   it('ทุกรายการสื่อต้องมี id ไม่ซ้ำกัน และกรอกข้อมูลฟิลด์สำคัญครบถ้วน', () => {
     const ids = DEFAULT_MEDIA_REPORTS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);

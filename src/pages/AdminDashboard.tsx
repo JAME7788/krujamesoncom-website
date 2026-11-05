@@ -1103,7 +1103,7 @@ const AdminDashboardInner: React.FC = () => {
                 <div style={{ marginBottom: '1rem' }}>
                   <h2 style={{ margin: '0 0 0.25rem' }}>🎨 เก็บคะแนนวิชาทักษะอาชีพ</h2>
                   <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
-                    Online Marketing / Canva / Logo / Poster — ครูใส่ K (0-100) + P (พอใช้/ปานกลาง/ดี) เอง บันทึกอัตโนมัติลง Firebase
+                    ทักษะอาชีพ 1–2 (ม.1–ม.2 สอนแบบ IS: การศึกษาค้นคว้าด้วยตนเอง 5 ขั้นตอน &amp; ตลาดนัดอาชีพ) — บันทึกอัตโนมัติลง Firebase และเชื่อมสมุดคะแนน ปพ.5
                   </p>
                 </div>
                 <SkillGradeTable />
@@ -1868,16 +1868,16 @@ const ScheduleEditor: React.FC<{ schedule: ClassSlot[]; setSchedule: (s: ClassSl
       <div className="schedule-grid">
         <div className="sg-cell sg-head">เวลา</div>
         {[1,2,3,4,5].map((d) => <div key={d} className="sg-cell sg-head">{dayNamesShort[d]}</div>)}
-        {['08:00','09:00','10:00','11:00','13:00','14:00','15:00'].map((t) => (
+        {['08:30','09:20','10:10','11:00','13:00','13:50','14:40'].map((t, idx) => (
           <React.Fragment key={t}>
-            <div className="sg-cell sg-time">{t}</div>
+            <div className="sg-cell sg-time">คาบ {idx + 1} ({t})</div>
             {[1,2,3,4,5].map((d) => {
-              const slot = draft.find((s) => s.day === d && s.start.startsWith(t.slice(0, 2)));
+              const slot = draft.find((s) => s.day === d && s.start === t);
               return (
                 <div key={d} className="sg-cell">
                   {slot ? (
                     <div className="sg-block">
-                      <strong>{slot.classroom}</strong>
+                      <strong>{slot.subject || 'เทคโนโลยี'} ({slot.classroom})</strong>
                       <small>{slot.start}-{slot.end}</small>
                     </div>
                   ) : null}

@@ -77,7 +77,7 @@ export const primaryTechnologyCompetencyPlans: PrimaryTechnologyCompetencyPlan[]
   {
     id: 'outcome5-p1',
     grade: 'ป.1',
-    schedule: 'วันพฤหัสบดี 13:00-14:00 น.',
+    schedule: 'วันจันทร์ 08:30-09:20 น.',
     title: 'นักสำรวจข้อมูลรอบตัว',
     childMission: 'ตามหาข้อมูลสัตว์และพืชในโรงเรียน แล้วเก็บให้หาเจอง่าย',
     context: 'ข้อมูลสิ่งมีชีวิตใกล้ตัวในโรงเรียน',
@@ -120,7 +120,7 @@ export const primaryTechnologyCompetencyPlans: PrimaryTechnologyCompetencyPlan[]
   {
     id: 'outcome5-p2',
     grade: 'ป.2',
-    schedule: 'วันจันทร์ 13:50-14:40 น.',
+    schedule: 'วันศุกร์ 11:00-11:50 น.',
     title: 'ผู้ดูแลคลังข้อมูลของห้องเรียน',
     childMission: 'คัดเลือกและจัดแฟ้มข้อมูลวัสดุใช้ซ้ำให้เพื่อนค้นเจอ',
     context: 'วัสดุใช้ซ้ำและการลดขยะในห้องเรียน',
@@ -163,7 +163,7 @@ export const primaryTechnologyCompetencyPlans: PrimaryTechnologyCompetencyPlan[]
   {
     id: 'outcome5-p3',
     grade: 'ป.3',
-    schedule: 'วันศุกร์ 11:00-11:50 น.',
+    schedule: 'วันพฤหัสบดี 11:00-11:50 น.',
     title: 'นักสำรวจสิ่งแวดล้อมด้วยข้อมูล',
     childMission: 'ค้นความรู้ สำรวจจำนวน และทำแผนภูมิเล่าเรื่องสิ่งแวดล้อมในโรงเรียน',
     context: 'การใช้ภาชนะส่วนตัวและขยะในโรงเรียน',
@@ -207,7 +207,7 @@ export const primaryTechnologyCompetencyPlans: PrimaryTechnologyCompetencyPlan[]
   {
     id: 'outcome5-p4',
     grade: 'ป.4',
-    schedule: 'วันพุธ 09:20-10:10 น.',
+    schedule: 'วันพฤหัสบดี 13:00-13:50 น.',
     title: 'นักสืบแหล่งข้อมูลน่าเชื่อถือ',
     childMission: 'เปรียบเทียบหลักฐานจากหลายแหล่ง แล้วสร้างคำอธิบายที่เชื่อได้',
     context: 'การประหยัดพลังงานไฟฟ้าในห้องเรียน',
@@ -251,7 +251,7 @@ export const primaryTechnologyCompetencyPlans: PrimaryTechnologyCompetencyPlan[]
   {
     id: 'outcome5-p5',
     grade: 'ป.5',
-    schedule: 'วันพุธ 13:50-14:40 น.',
+    schedule: 'วันพุธ 10:10-11:00 น.',
     title: 'นักวิเคราะห์ข้อมูลเพื่อโรงเรียน',
     childMission: 'รวบรวมข้อมูลการใช้น้ำ วิเคราะห์ และเสนอทางแก้ที่ทำได้จริง',
     context: 'การใช้น้ำอย่างคุ้มค่าในโรงเรียน',
@@ -295,7 +295,7 @@ export const primaryTechnologyCompetencyPlans: PrimaryTechnologyCompetencyPlan[]
   {
     id: 'outcome5-p6',
     grade: 'ป.6',
-    schedule: 'วันพฤหัสบดี 11:00-11:50 น.',
+    schedule: 'วันศุกร์ 10:10-11:00 น.',
     title: 'ห้องข่าวข้อมูลเพื่อชุมชน',
     childMission: 'ค้นอย่างมีประสิทธิภาพ ตรวจหลายแหล่ง และใช้ข้อมูลออกแบบข้อเสนอแก้ปัญหาชุมชน',
     context: 'ปัญหาขยะและสิ่งแวดล้อมในชุมชน',

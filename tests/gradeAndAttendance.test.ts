@@ -210,8 +210,8 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
     const indicator = getIndicators('ป.1')[0];
     const linked = getLinkedUnits('ป.1').find((item) => item.indicator.id === indicator.id);
     // ป.1 เรียนเทคโนโลยีวันพุธ 08:30-09:20 ตามตารางสอนจริง — 20 พ.ค. 2026 เป็นวันพุธ
-    const inClassTimestamp = new Date(2026, 4, 20, 8, 40).getTime();
-    const outsideTimestamp = new Date(2026, 4, 20, 10, 0).getTime();
+    const inClassTimestamp = new Date(2026, 4, 18, 8, 40).getTime();
+    const outsideTimestamp = new Date(2026, 4, 18, 10, 0).getTime();
     expect(linked?.units.length).toBeGreaterThan(0);
     const unit = linked!.units[0];
     grade.indicators[indicator.id] = {
@@ -278,7 +278,7 @@ describe('ระบบคำนวณเกรด K/P/A', () => {
         gradeId: unit.gradeId,
         unitNo: unit.unitNo,
         detail: `เกมที่ ${i + 1}`,
-        timestamp: new Date(2026, 4, 20, hour, 40).getTime(),
+        timestamp: new Date(2026, 4, 18, hour, 40).getTime(),
       })),
       attempts: [],
       daysActive: [],

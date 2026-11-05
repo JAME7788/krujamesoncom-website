@@ -1,6 +1,8 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import {
   clearWorldBlocks,
+  addWorldBlock,
+  removeWorldBlock,
   getLocalWorldBlocks,
   getWeekDisplayLabel,
   getWorldDocId,
@@ -73,6 +75,10 @@ describe('Virtual Classroom Weekly Remap & Partitioning', () => {
       expect(getLocalWorldBlocks(roomId, weekKey)).toHaveLength(1);
 
       await clearWorldBlocks(roomId, weekKey);
+      expect(getLocalWorldBlocks(roomId, weekKey)).toHaveLength(0);
+      expect(await addWorldBlock(roomId, dummyBlock, weekKey)).toBe(true);
+      expect(getLocalWorldBlocks(roomId, weekKey)).toHaveLength(1);
+      await removeWorldBlock(roomId, dummyBlock, weekKey);
       expect(getLocalWorldBlocks(roomId, weekKey)).toHaveLength(0);
     });
 

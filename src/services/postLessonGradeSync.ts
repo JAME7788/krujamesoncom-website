@@ -1,4 +1,4 @@
-type SubjectId = 'main' | 'cs' | 'dt';
+type SubjectId = 'main' | 'cs' | 'dt' | 'is';
 
 type SkillLabel = '\u0e1e\u0e2d\u0e43\u0e0a\u0e49' | '\u0e1b\u0e32\u0e19\u0e01\u0e25\u0e32\u0e07' | '\u0e14\u0e35';
 

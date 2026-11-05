@@ -1,5 +1,5 @@
 // ระบบการบ้านกลาง: localStorage เป็น cache และ Firebase เป็นแหล่งข้อมูลจริงร่วมกันทุกเครื่อง
-import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, setDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebase';
 import {
@@ -18,6 +18,7 @@ import type { Subject, AssessmentCategory } from './gradeService';
 import { loadRoster } from './rosterService';
 import { recordLearningEvidence } from './learningEvidenceService';
 import { writeAuditLog } from './auditLogService';
+import { IS_CAREER_CURRICULUM } from '../data/isCareerCurriculum';
 
 export type AssignmentDifficulty = 'foundation' | 'standard' | 'advanced';
 export type AssignmentTargetType = 'all' | 'ability_tier' | 'specific_students';
@@ -231,12 +232,10 @@ const isExternalCloudUrl = (url?: string): boolean => {
 const saveSubmissionRemote = async (submission: Submission) => {
   if (!firebaseAvailable()) return;
   const remote = { ...submission };
-  // หากมีลิงก์ Google Drive หรือ Cloud URL จริงแล้ว ไม่ต้องเก็บไฟล์ไบนารีซ้ำใน Firestore (ประหยัดความจำ 100%)
-  if (isExternalCloudUrl(remote.contentUrl)) {
-    delete remote.contentData;
-  } else if (remote.contentData && remote.contentData.length > MAX_FIRESTORE_CONTENT_DATA_LEN) {
-    delete remote.contentData;
-  }
+  // นโยบายความจำระดับองค์กร (Zero-Bloat Firestore Policy):
+  // Cloud Firestore เก็บเฉพาะข้อมูลขนาดเบา (< 1 KB ต่อชิ้น) เช่น รหัสนักเรียน คะแนน ข้อเสนอแนะ และลิงก์ Google Drive
+  // ห้ามบันทึก contentData หรือไฟล์ไบนารีลงใน Cloud Firestore โดยเด็ดขาด 100%!
+  delete remote.contentData;
   await setDoc(doc(db, SUB_COLLECTION, submission.id), cleanForFirestore(remote));
 };
 
@@ -280,7 +279,18 @@ export const fetchSubmissionsFromFirebase = async (): Promise<Submission[]> => {
   if (!firebaseAvailable()) return loadSubmissions();
   try {
     const snap = await getDocs(collection(db, SUB_COLLECTION));
-    const remote = snap.docs.map((item) => item.data() as Submission);
+    const remote = snap.docs.map((item) => {
+      const data = item.data() as Submission;
+      if (data.contentData) {
+        delete data.contentData;
+        try {
+          void updateDoc(item.ref, { contentData: deleteField() }).catch(() => {});
+        } catch {
+          // ignore background cleanup error
+        }
+      }
+      return data;
+    });
     if (remote.length > 0) {
       const sorted = remote.sort((a, b) => b.submittedAt - a.submittedAt);
       cache(SUB_KEY, sorted);
@@ -848,7 +858,7 @@ export const uploadFileToTeacherGoogleDrive = async (
   const cleanFileName = `${prefixNo}${prefixName}${meta.fileName}`;
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+  const timer = setTimeout(() => controller.abort(), 90000); // รองรับไฟล์ขนาดใหญ่ถึง 35 MB เข้า Google Drive ครู
   try {
     const res = await fetch(scriptUrl, {
       method: 'POST',
@@ -976,8 +986,8 @@ export const prepareDirectStudentSubmissionFile = async (
 
   // 1. ลองอัปโหลดเข้า Google Drive กลางของคุณครูก่อนเป็นอันดับแรก (รองรับไฟล์ใหญ่ถึง 15 MB และไม่เปลืองความจำเว็บเลย!)
   if (gdriveConfig.scriptWebAppUrl) {
-    if (file.size > 15 * 1024 * 1024) {
-      throw new Error('ไฟล์มีขนาดใหญ่เกิน 15 MB กรุณาเลือกไฟล์ขนาดไม่เกิน 15 MB ครับ');
+    if (file.size > 35 * 1024 * 1024) {
+      throw new Error('ไฟล์มีขนาดใหญ่เกิน 35 MB กรุณาเลือกไฟล์ขนาดไม่เกิน 35 MB ครับ');
     }
     const uploadBlob = isImage
       ? await (async () => {
@@ -1744,3 +1754,52 @@ export const ensureAssignmentForManualAssessment = async (
 };
 
 
+/**
+ * สร้างชุดการบ้าน/ใบงานออนไลน์ วิชาทักษะอาชีพ (IS นวัตกรรมการเกษตร 5 ขั้นตอน) สำหรับ ม.1 หรือ ม.2 อัตโนมัติ
+ */
+export const seedIsAgriAssignmentsForClassroom = async (
+  classroom: 'ม.1' | 'ม.2',
+): Promise<{ createdCount: number; totalCount: number }> => {
+  const course = IS_CAREER_CURRICULUM[classroom];
+  if (!course) return { createdCount: 0, totalCount: 0 };
+
+  let createdCount = 0;
+  for (const step of course.steps) {
+    const currentList = loadAssignments();
+    const exists = currentList.some(
+      (a) =>
+        a.classroom === classroom &&
+        a.subject === 'is' &&
+        (a.indicatorId === step.indicatorId || a.title === step.worksheetTitle),
+    );
+    if (exists) continue;
+
+    const dueDate = new Date(Date.now() + step.stepNo * 7 * 86400000).toISOString().slice(0, 10);
+    const kMax = Math.round(step.maxScore * 0.4);
+    const pMax = step.maxScore - kMax;
+    const taskLines = step.worksheetItems
+      .map((item) => `• ตอนที่ ${item.partNo} (${item.title}): ${item.instruction}`)
+      .join('\n');
+
+    await createAssignment({
+      title: step.worksheetTitle,
+      description: `${course.themeTitle}\n${step.title} (${step.indicatorCode})\n${taskLines}\nชิ้นงานที่ต้องส่ง: ${step.deliverable}`,
+      classroom,
+      subject: 'is',
+      indicatorId: step.indicatorId,
+      category: 'p',
+      dueDate,
+      maxScore: step.maxScore,
+      knowledgeMaxScore: kMax,
+      practiceMaxScore: pMax,
+      difficulty: 'standard',
+      targetType: 'all',
+      hints: step.coreConcepts,
+      recommendedReason: `ใบงาน IS ขั้นที่ ${step.stepNo} (${step.isStage}) ด้านนวัตกรรมการเกษตร เชื่อมโยงตลาดนัดอาชีพ`,
+      createdBy: 'teacher',
+    });
+    createdCount += 1;
+  }
+
+  return { createdCount, totalCount: course.steps.length };
+};

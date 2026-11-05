@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   ArrowLeft, ExternalLink, Globe, ShieldCheck, Sparkles,
   Maximize2, Minimize2, RotateCw, BookOpen, Award, CheckCircle2,
-  Users, Monitor
+  Users, Monitor, Download, FileText, FileCheck
 } from 'lucide-react';
 import './PaPortfolioPage.css';
 
@@ -47,19 +47,19 @@ const PaPortfolioPage: React.FC = () => {
               <div className="pa-hero-header">
                 <div className="pa-hero-info">
                   <span className="pa-kicker">
-                    <Sparkles size={14} /> OFFICIAL PA PERFORMANCE PORTFOLIO
+                    <Sparkles size={14} /> OFFICIAL PA PERFORMANCE PORTFOLIO (2569)
                   </span>
                   <h1 className="pa-hero-title">
                     แฟ้มสะสมงานและรายงานผล <span>ว.PA ครูเจมส์</span>
                   </h1>
                   <p className="pa-hero-subtitle">
                     รายงานผลการพัฒนางานตามข้อตกลง (PA) สำหรับข้าราชการครูและบุคลากรทางการศึกษา
-                    ตำแหน่ง ครูผู้ช่วย รอบการประเมิน ๑ ตุลาคม ๒๕๖๘ – ๓๐ กันยายน ๒๕๖๙
+                    ตำแหน่ง ครู (ยังไม่มีวิทยฐานะ) อันดับ คศ.๑ รอบการประเมิน ๑ ตุลาคม ๒๕๖๘ – ๓๐ กันยายน ๒๕๖๙
                   </p>
 
                   <div className="pa-meta-tags">
                     <span className="pa-meta-tag">
-                      👤 <strong>นายอนันตชัย เพ็ชรรี่</strong> (ครูผู้ช่วย)
+                      👤 <strong>นายอนันตชัย เพ็ชรรี่</strong> (ครู อันดับ คศ.๑)
                     </span>
                     <span className="pa-meta-tag">
                       🏫 <strong>โรงเรียนบ้านคลองมดแดง</strong>
@@ -68,7 +68,7 @@ const PaPortfolioPage: React.FC = () => {
                       📍 สพป.กำแพงเพชร เขต ๒
                     </span>
                     <span className="pa-meta-tag">
-                      📅 ปีงบประมาณ <strong>๒๕๖๙</strong>
+                      📅 ปีงบประมาณ <strong>๒๕๖๙ (๓๑ ชม./สัปดาห์)</strong>
                     </span>
                   </div>
                 </div>
@@ -89,16 +89,140 @@ const PaPortfolioPage: React.FC = () => {
               </div>
             </section>
 
+            {/* Official 2569 Word Documents Download Hub */}
+            <section
+              style={{
+                background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)',
+                border: '1.5px solid #bfdbfe',
+                borderRadius: 16,
+                padding: '1.25rem 1.5rem',
+                marginBottom: '1.5rem',
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.06)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 style={{ margin: '0 0 0.35rem', fontSize: '1.1rem', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <FileCheck size={20} color="#2563eb" /> คลังเอกสาร Word (.docx) ว.PA ประจำปีงบประมาณ ๒๕๖๙ (ฉบับสมบูรณ์)
+                  </h2>
+                  <p style={{ margin: 0, fontSize: '0.88rem', color: '#475569' }}>
+                    จัดทำตามเกณฑ์ ก.ค.ศ. ตำแหน่ง ครู (ยังไม่มีวิทยฐานะ) อันดับ คศ.๑ ครบ ๓ ด้าน ๑๕ ตัวชี้วัด (ร้อยเรียงคำเชื่อม Tasks ➔ Outcomes ➔ Indicators ไร้ร้อยละ) และประเด็นท้าทายการเขียนโปรแกรมแบบบล็อก ป.๕
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem' }}>
+                  <a
+                    href="/docs/PA1_Agreement_2569_KruJames.docx"
+                    download="แบบข้อตกลงในการพัฒนางาน_ไม่มีวิทยฐานะ_อนันตชัย_2569_ฉบับปรับปรุงใหม่.docx"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      padding: '0.6rem 1rem',
+                      borderRadius: 10,
+                      background: '#2563eb',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      textDecoration: 'none',
+                      boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
+                    }}
+                  >
+                    <Download size={15} /> ๑. แบบข้อตกลง PA 1/ส ปี ๒๕๖๙ (.docx)
+                  </a>
+
+                  <a
+                    href="/docs/PA_Report_2569_KruJames.docx"
+                    download="รูปเล่มรายงานPAครูคศ1_อนันตชัย_2569.docx"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      padding: '0.6rem 1rem',
+                      borderRadius: 10,
+                      background: '#4f46e5',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      textDecoration: 'none',
+                      boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)',
+                    }}
+                  >
+                    <FileText size={15} /> ๒. รูปเล่มรายงานผล PA ครู คศ.๑ (.docx)
+                  </a>
+
+                  <a
+                    href="/docs/PA_Challenge_BlockCoding_P5_2569.docx"
+                    download="ผลลัพธ์ประเด็นท้าทาย_การเขียนโปรแกรมแบบบล็อก_ป5_ครูอนันตชัย.docx"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      padding: '0.6rem 1rem',
+                      borderRadius: 10,
+                      background: '#059669',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      textDecoration: 'none',
+                      boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)',
+                    }}
+                  >
+                    <Download size={15} /> ๓. ผลลัพธ์ประเด็นท้าทาย Block Coding ป.๕ (.docx)
+                  </a>
+
+                  <a
+                    href="/docs/Media_Usage_Log_2569_KruJames.docx"
+                    download="แบบบันทึกการใช้สื่อ_นวัตกรรม_และเทคโนโลยี_2569_ครูอนันตชัย.docx"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      padding: '0.6rem 1rem',
+                      borderRadius: 10,
+                      background: '#d97706',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      textDecoration: 'none',
+                      boxShadow: '0 2px 8px rgba(217, 119, 6, 0.25)',
+                    }}
+                  >
+                    <FileCheck size={15} /> ๔. แบบบันทึกการใช้สื่อ นวัตกรรม & เทคโนโลยี ๒๕๖๙ (.docx)
+                  </a>
+
+                  <a
+                    href="/docs/Lesson_Plan_P1_40Hours_With_Reflection_2569.docx"
+                    download="แผนการจัดการเรียนรู้_ป1_40แผน_พร้อมบันทึกหลังแผน_2569_ครูอนันตชัย.docx"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      padding: '0.6rem 1rem',
+                      borderRadius: 10,
+                      background: '#0891b2',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      textDecoration: 'none',
+                      boxShadow: '0 2px 8px rgba(8, 145, 178, 0.25)',
+                    }}
+                  >
+                    <BookOpen size={15} /> ๕. แผนการสอน & บันทึกหลังสอน ๔๐ คาบ (.docx)
+                  </a>
+                </div>
+              </div>
+            </section>
+
             {/* 4 Pillars Summary */}
             <section className="pa-pillars-grid">
               <div className="pa-pillar-card">
                 <div className="pa-pillar-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
                   <Monitor size={22} />
                 </div>
-                <h3>ด้านที่ ๑: การจัดการเรียนรู้</h3>
+                <h3>ด้านที่ ๑: การจัดการเรียนรู้ (๘ ตัวชี้วัด)</h3>
                 <p>
-                  หลักสูตร Active Learning, สื่อนวัตกรรมเว็บไซต์ krujames.com,
-                  ระบบเกมมิฟิเคชัน (Gamification) และการวัดประเมินผล K/P/A ตามสภาพจริง
+                  ปรับประยุกต์หลักสูตรและแผนการสอน Active Learning, สื่อนวัตกรรมห้องเรียนออนไลน์ครูเจมส์ (Block-based Coding & Gamification) และประเมินผลตามสภาพจริง
                 </p>
               </div>
 
@@ -106,10 +230,9 @@ const PaPortfolioPage: React.FC = () => {
                 <div className="pa-pillar-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
                   <Users size={22} />
                 </div>
-                <h3>ด้านที่ ๒: การส่งเสริม & สนับสนุน</h3>
+                <h3>ด้านที่ ๒: การส่งเสริม & สนับสนุน (๔ ตัวชี้วัด)</h3>
                 <p>
-                  ระบบสารสนเทศนักเรียน DMC, ระบบออกเอกสาร ปพ.๕/ปพ.๖ ดิจิทัล
-                  และระบบดูแลช่วยเหลือนักเรียนรายบุคคล
+                  ระบบสารสนเทศผู้เรียนและออกเอกสาร ปพ.๕ ดิจิทัล, ระบบดูแลช่วยเหลือนักเรียน (เยี่ยมบ้าน/SDQ/กสศ.), หัวหน้างาน ICT และงานสินทรัพย์ OBEC Asset
                 </p>
               </div>
 
@@ -117,9 +240,9 @@ const PaPortfolioPage: React.FC = () => {
                 <div className="pa-pillar-icon" style={{ background: '#faf5ff', color: '#9333ea' }}>
                   <Award size={22} />
                 </div>
-                <h3>ด้านที่ ๓: การพัฒนาตนเอง</h3>
+                <h3>ด้านที่ ๓: การพัฒนาตนเอง & วิชาชีพ (๓ ตัวชี้วัด)</h3>
                 <p>
-                  การพัฒนาทักษะดิจิทัลและ AI ในการจัดการศึกษา พร้อมขับเคลื่อนชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC)
+                  พัฒนาสมรรถนะด้านเทคโนโลยีดิจิทัลและ AI เพื่อการศึกษาอย่างต่อเนื่อง ร่วมแลกเปลี่ยนเรียนรู้ทางวิชาชีพ (PLC) และนำผลมาพัฒนานวัตกรรมการสอน
                 </p>
               </div>
 
@@ -127,10 +250,9 @@ const PaPortfolioPage: React.FC = () => {
                 <div className="pa-pillar-icon" style={{ background: '#fffbeb', color: '#d97706' }}>
                   <CheckCircle2 size={22} />
                 </div>
-                <h3>ประเด็นท้าทาย (ป.๑)</h3>
+                <h3>ประเด็นท้าทาย ๒๕๖๙ (ป.๕ & ป.๑)</h3>
                 <p>
-                  การพัฒนาทักษะปฏิบัติการใช้เมาส์ด้วยเกมมิฟิเคชันร่วมกับ Active Learning
-                  (นักเรียน ป.๑ ผ่านเกณฑ์ครบ ๑๑ คน ร้อยละ ๑๐๐)
+                  การพัฒนาทักษะการเขียนโปรแกรมแบบบล็อก (Block-based Coding) ชั้น ป.๕ ด้วย Active Learning และวิจัยชั้นเรียนทักษะการใช้เมาส์ด้วยเกมมิฟิเคชัน ชั้น ป.๑
                 </p>
               </div>
             </section>

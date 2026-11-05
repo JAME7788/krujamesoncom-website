@@ -36,7 +36,7 @@ export interface HeroCharacter {
   color: string;
 }
 
-export const HEROES: HeroCharacter[] = [
+const HEROES: HeroCharacter[] = [
   {
     id: 'ceo-lobster',
     name: 'CEO Lobster',
@@ -387,6 +387,21 @@ const ClawPlatformerGame: React.FC = () => {
     setGameState('playing');
   }, [loadLevel, selectedHero]);
 
+  // Player Attack Action (Claw Snap)
+  const triggerAttack = useCallback(() => {
+    if (gameState !== 'playing' || activeQuiz) return;
+    const p = playerRef.current;
+    const attackX = p.facingRight ? p.x + p.w : p.x - 38;
+    attacksRef.current.push({
+      x: attackX,
+      y: p.y + 8,
+      w: 42,
+      h: p.h - 16,
+      life: 10, // Frames duration
+    });
+    playBeep(320, 0.08, 'sawtooth', 0.12);
+  }, [activeQuiz, gameState, playBeep]);
+
   // Keyboard Event Listeners
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -429,22 +444,7 @@ const ClawPlatformerGame: React.FC = () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [activeQuiz, gameState]);
-
-  // Player Attack Action (Claw Snap)
-  const triggerAttack = useCallback(() => {
-    if (gameState !== 'playing' || activeQuiz) return;
-    const p = playerRef.current;
-    const attackX = p.facingRight ? p.x + p.w : p.x - 38;
-    attacksRef.current.push({
-      x: attackX,
-      y: p.y + 8,
-      w: 42,
-      h: p.h - 16,
-      life: 10, // Frames duration
-    });
-    playBeep(320, 0.08, 'sawtooth', 0.12);
-  }, [activeQuiz, gameState, playBeep]);
+  }, [activeQuiz, gameState, triggerAttack]);
 
   // Handle Game Over
   const handleGameOver = useCallback(() => {
