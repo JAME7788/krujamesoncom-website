@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BookOpen,
@@ -19,6 +19,19 @@ import {
   Sparkles,
   Sprout,
 } from 'lucide-react';
+import { getIsLessonSlideImages } from '../data/slideImages';
+
+const IS_SLUG_TO_LESSON: Record<string, number> = {
+  'period-1-problem-identification-and-questioning': 1,
+  'period-2-hypothesis-formulation': 2,
+  'period-3-problem-hypothesis-and-5-research-steps': 3,
+  'period-4-experimental-design-and-variables': 4,
+  'period-5-data-collection-and-instruments': 5,
+  'period-6-human-knowledge-seeking-and-wisdom-skills': 6,
+  'period-7-human-learning-resources': 7,
+  'period-8-bibliographic-citation-and-academic-report': 8,
+};
+
 import {
   IS_BLOG_SOURCE_META,
   IS_COURSE_UNIT_STRUCTURES,
@@ -51,49 +64,14 @@ const IsKnowledgeBlog: React.FC<IsKnowledgeBlogProps> = ({ embedded = false }) =
   // ข้อมูลคลังสไลด์การสอนบน Google Drive (ประหยัดพื้นที่จัดเก็บบนเว็บ)
   const GOOGLE_DRIVE_SLIDES_FOLDER_URL =
     'https://drive.google.com/drive/folders/1kGE6QpzlRkDUnoydErt5XYZK1GsX05L_?usp=sharing';
-  const GOOGLE_DRIVE_FOLDER_ID = '1kGE6QpzlRkDUnoydErt5XYZK1GsX05L_';
 
-  const LESSON_1_SLIDES_META = useMemo(
-    () => [
-      {
-        no: 1,
-        title: 'สไลด์ที่ 1: ปกบทเรียน & การตั้งประเด็นปัญหา (Title Slide)',
-        desc: '3 เสาหลัก: การสังเกต ➔ คำถามระดับสูง ➔ สู่นวัตกรรมเกษตร',
-        fileName: '01_สไลด์บทที่1_ปกบทเรียน_IS1.png',
-      },
-      {
-        no: 2,
-        title: 'สไลด์ที่ 2: ความสำคัญของการตั้งคำถาม (4 เสาหลัก)',
-        desc: 'จุดเริ่มต้นเรียนรู้, พัฒนาความคิดใหม่, ขยายทักษะเชื่อมโยง, ปลุกความท้าทาย',
-        fileName: '02_สไลด์บทที่1_ความสำคัญของการตั้งคำถาม_4เสาหลัก.png',
-      },
-      {
-        no: 3,
-        title: 'สไลด์ที่ 3: จากการสังเกตสู่ประเด็นปัญหา & 5 คำถามนำ',
-        desc: 'กระบวนการสังเกต, คำถามนำ 5W1H (เป็นอะไร เมื่อไร ที่ไหน อย่างไร ทำไม)',
-        fileName: '03_สไลด์บทที่1_จากการสังเกตสู่ประเด็นปัญหา_5คำถามนำ.png',
-      },
-      {
-        no: 4,
-        title: 'สไลด์ที่ 4: คำถามระดับพื้นฐาน 4 ประเภท (Basic Questions)',
-        desc: 'คำถามให้สังเกต, ทบทวนความจำ, บอกนิยาม และบ่งชี้ระบุ พร้อมตัวอย่าง',
-        fileName: '04_สไลด์บทที่1_คำถามระดับพื้นฐาน_4ประเภท.png',
-      },
-      {
-        no: 5,
-        title: 'สไลด์ที่ 5: คำถามระดับสูง 8 ประเภท (Higher-Order Questions)',
-        desc: 'อธิบาย, เปรียบเทียบ, วิเคราะห์, ยกตัวอย่าง, สรุป, ประเมินเลือก, ประยุกต์ใช้, สร้างสรรค์',
-        fileName: '05_สไลด์บทที่1_คำถามระดับสูง_8ประเภทสู่นวัตกรรม.png',
-      },
-      {
-        no: 6,
-        title: 'สไลด์ที่ 6: ภารกิจใบงานที่ 1 & เกณฑ์ประเมิน K-P-C',
-        desc: '3 ภารกิจหลัก, เกณฑ์ประเมิน K-P-C และช่องทางส่งงาน',
-        fileName: '06_สไลด์บทที่1_ภารกิจใบงานที่1_และเกณฑ์ประเมิน.png',
-      },
-    ],
-    [],
-  );
+  // State สำหรับคลังสไลด์ภาพ 16:9 จาก ChatGPT DALL-E 3 (Google Cloud CDN)
+  const [isSlideIdx, setIsSlideIdx] = useState<number>(0);
+
+  // รีเซ็ตหน้าสไลด์เมื่อเปลี่ยนบทเรียน
+  useEffect(() => {
+    setIsSlideIdx(0);
+  }, [selectedSlug]);
 
   // State สำหรับกรองตัวอย่างรายงาน IS 18 เล่ม
   const [selectedRoom, setSelectedRoom] = useState<'all' | 'ม.2/1' | 'ม.2/5' | 'ม.2/10'>('all');
@@ -137,6 +115,15 @@ const IsKnowledgeBlog: React.FC<IsKnowledgeBlogProps> = ({ embedded = false }) =
   const currentIndex = useMemo(
     () => IS_KNOWLEDGE_BLOG_POSTS.findIndex((p) => p.slug === activePost.slug),
     [activePost],
+  );
+
+  const activeLessonNumber = useMemo(
+    () => IS_SLUG_TO_LESSON[activePost.slug] || 1,
+    [activePost.slug],
+  );
+  const activeSlides = useMemo(
+    () => getIsLessonSlideImages(activeLessonNumber),
+    [activeLessonNumber],
   );
 
   const filteredExamples = useMemo(() => {
@@ -676,19 +663,20 @@ const IsKnowledgeBlog: React.FC<IsKnowledgeBlogProps> = ({ embedded = false }) =
               </div>
             </div>
 
-            {/* Google Drive Slides Section (For Lesson 1 - Zero Disk Bloat) */}
-            {activePost.slug === 'period-1-problem-identification-and-questioning' && (
+            {/* Google Drive Slides Presentation Section (Zero Disk Bloat - ChatGPT DALL-E 3 16:9) */}
+            {activeSlides.length > 0 && (
               <div
                 style={{
-                  marginBottom: '1.75rem',
-                  background: 'linear-gradient(135deg, #064e3b 0%, #0f172a 100%)',
+                  marginBottom: '2rem',
+                  background: 'linear-gradient(145deg, #0b1329 0%, #111e3b 100%)',
                   borderRadius: 18,
-                  padding: embedded ? '1.1rem' : '1.5rem',
+                  padding: embedded ? '1rem' : '1.35rem',
                   color: '#ffffff',
-                  boxShadow: '0 10px 30px rgba(6, 78, 59, 0.2)',
-                  border: '1px solid #059669',
+                  boxShadow: '0 16px 36px rgba(0, 0, 0, 0.35)',
+                  border: '1px solid #1e3a8a',
                 }}
               >
+                {/* Header */}
                 <div
                   style={{
                     display: 'flex',
@@ -696,32 +684,36 @@ const IsKnowledgeBlog: React.FC<IsKnowledgeBlogProps> = ({ embedded = false }) =
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 12,
-                    marginBottom: '1.1rem',
+                    marginBottom: '1rem',
                   }}
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span
                         style={{
-                          background: '#10b981',
-                          color: '#064e3b',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          color: '#ffffff',
                           padding: '3px 10px',
                           borderRadius: 999,
                           fontSize: '0.74rem',
                           fontWeight: 800,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
                         }}
                       >
-                        ☁️ Google Drive Cloud Slides
+                        <Sparkles size={12} /> ChatGPT DALL-E 3 • 16:9
                       </span>
-                      <span style={{ fontSize: '0.78rem', color: '#a7f3d0' }}>
-                        ความคมชัด 100% • โหลดเร็วไม่กินพื้นที่เว็บ
+                      <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                        Google Drive Cloud CDN (ไม่เปลืองพื้นที่โปรเจกต์)
                       </span>
                     </div>
-                    <h3 style={{ margin: '6px 0 2px', fontSize: '1.25rem', fontWeight: 800 }}>
-                      คลังสไลด์การสอน: บทที่ 1 การตั้งประเด็นปัญหาหรือตั้งคำถาม (6 สไลด์)
+                    <h3 style={{ margin: '6px 0 2px', fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc' }}>
+                      สไลด์ประกอบการสอน: {activePost.periodLabel}
                     </h3>
                     <p style={{ margin: 0, fontSize: '0.84rem', color: '#cbd5e1' }}>
-                      ไฟล์สไลด์ทั้งหมดจัดเก็บบน Google Drive โฟลเดอร์: <strong>สไลด์สอน</strong>
+                      {activePost.title} (สไลด์ที่ {isSlideIdx + 1} จาก {activeSlides.length})
                     </p>
                   </div>
 
@@ -734,113 +726,165 @@ const IsKnowledgeBlog: React.FC<IsKnowledgeBlogProps> = ({ embedded = false }) =
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 6,
-                        padding: '8px 16px',
+                        padding: '8px 14px',
                         borderRadius: 10,
-                        background: '#10b981',
-                        color: '#064e3b',
+                        background: 'rgba(16, 185, 129, 0.15)',
+                        border: '1px solid #059669',
+                        color: '#34d399',
                         fontSize: '0.84rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         textDecoration: 'none',
-                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                        transition: 'all 0.15s ease',
                       }}
+                      title="เปิดดูโฟลเดอร์สไลด์ต้นฉบับบน Google Drive"
                     >
-                      <FolderOpen size={16} /> เปิดโฟลเดอร์บน Google Drive ➔
+                      <FolderOpen size={16} /> โฟลเดอร์ Google Drive ➔
                     </a>
                   </div>
                 </div>
 
-                {/* Embedded Google Drive Folder Viewer */}
+                {/* 16:9 Slide Viewport */}
                 <div
                   style={{
+                    position: 'relative',
+                    width: '100%',
+                    aspectRatio: '16/9',
                     borderRadius: 14,
                     overflow: 'hidden',
-                    background: '#ffffff',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-                    border: '2px solid #059669',
-                    marginBottom: '1.25rem',
+                    background: '#020617',
+                    border: '1px solid #1e293b',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  <iframe
-                    src={`https://drive.google.com/embeddedfolderview?id=${GOOGLE_DRIVE_FOLDER_ID}#grid`}
+                  <img
+                    src={activeSlides[isSlideIdx]}
+                    alt={`สไลด์ที่ ${isSlideIdx + 1} จาก ${activeSlides.length} - ${activePost.title}`}
                     style={{
                       width: '100%',
-                      height: 420,
-                      border: 'none',
+                      height: '100%',
+                      objectFit: 'contain',
                       display: 'block',
                     }}
-                    title="Google Drive Slides Folder"
+                    loading="eager"
                   />
+
+                  {/* Left / Right Nav Overlays */}
+                  {isSlideIdx > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsSlideIdx((prev) => Math.max(0, prev - 1))}
+                      style={{
+                        position: 'absolute',
+                        left: 14,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        background: 'rgba(15, 23, 42, 0.75)',
+                        backdropFilter: 'blur(8px)',
+                        border: '1px solid rgba(255, 255, 255, 0.25)',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        zIndex: 10,
+                      }}
+                      aria-label="สไลด์ก่อนหน้า"
+                      title="สไลด์ก่อนหน้า"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                  )}
+
+                  {isSlideIdx < activeSlides.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsSlideIdx((prev) => Math.min(activeSlides.length - 1, prev + 1))}
+                      style={{
+                        position: 'absolute',
+                        right: 14,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        background: 'rgba(15, 23, 42, 0.75)',
+                        backdropFilter: 'blur(8px)',
+                        border: '1px solid rgba(255, 255, 255, 0.25)',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        zIndex: 10,
+                      }}
+                      aria-label="สไลด์ถัดไป"
+                      title="สไลด์ถัดไป"
+                    >
+                      <ChevronRight size={24} />
+                    </button>
+                  )}
+
+                  {/* Slide Counter Badge */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 12,
+                      right: 12,
+                      background: 'rgba(2, 6, 23, 0.8)',
+                      backdropFilter: 'blur(6px)',
+                      padding: '4px 12px',
+                      borderRadius: 20,
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      color: '#6ee7b7',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                    }}
+                  >
+                    สไลด์ {isSlideIdx + 1} / {activeSlides.length}
+                  </div>
                 </div>
 
-                {/* 6 Slides Breakdown Grid */}
-                <div style={{ marginTop: '0.75rem' }}>
-                  <div
-                    style={{
-                      fontSize: '0.85rem',
-                      fontWeight: 700,
-                      color: '#6ee7b7',
-                      marginBottom: 8,
-                    }}
-                  >
-                    📑 โครงสร้างเนื้อหาสไลด์ทั้ง 6 หน้า (คลิกเพื่อเปิดใน Google Drive):
-                  </div>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                      gap: 10,
-                    }}
-                  >
-                    {LESSON_1_SLIDES_META.map((item) => (
-                      <a
-                        key={item.no}
-                        href={GOOGLE_DRIVE_SLIDES_FOLDER_URL}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          textDecoration: 'none',
-                          background: 'rgba(15, 23, 42, 0.65)',
-                          border: '1px solid #1e3a8a',
-                          borderRadius: 10,
-                          padding: '10px 14px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          gap: 6,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <div>
-                          <div
-                            style={{
-                              fontSize: '0.86rem',
-                              fontWeight: 700,
-                              color: '#ffffff',
-                              marginBottom: 4,
-                            }}
-                          >
-                            {item.title}
-                          </div>
-                          <div style={{ fontSize: '0.78rem', color: '#94a3b8', lineHeight: 1.4 }}>
-                            {item.desc}
-                          </div>
-                        </div>
-                        <div
-                          style={{
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            color: '#34d399',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            marginTop: 4,
-                          }}
-                        >
-                          <ExternalLink size={13} /> ดูไฟล์สไลด์ในไดรฟ์
-                        </div>
-                      </a>
-                    ))}
-                  </div>
+                {/* 6 Quick Jump Slide Buttons */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    marginTop: '1rem',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {activeSlides.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setIsSlideIdx(idx)}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        border: idx === isSlideIdx ? '2px solid #10b981' : '1px solid #334155',
+                        background: idx === isSlideIdx ? '#10b981' : 'rgba(30, 41, 59, 0.7)',
+                        color: idx === isSlideIdx ? '#064e3b' : '#cbd5e1',
+                        fontSize: '0.82rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        boxShadow: idx === isSlideIdx ? '0 0 12px rgba(16, 185, 129, 0.35)' : 'none',
+                      }}
+                      title={`ดูสไลด์ที่ ${idx + 1}`}
+                    >
+                      สไลด์ {idx + 1}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}

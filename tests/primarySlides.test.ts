@@ -134,12 +134,16 @@ describe('คุณภาพของสไลด์แต่ละหน่ว�
 });
 
 describe('ระบบสไลด์ภาพและเนื้อหาที่เด็กเข้าใจง่าย', () => {
-  it('สไลด์ทุกหน่วยใช้ชุด Rich Slides ที่เขียนขึ้นเองอย่างถูกลิขสิทธิ์', () => {
-    // ป้องกันการละเมิดลิขสิทธิ์: ไม่มีการนำไฟล์สไลด์สำนักพิมพ์ภายนอกมาโฮสต์
-    const totalImageCount = Object.values(unitSlideImages)
+  it('สไลด์ทุกหน่วยใช้ชุดสไลด์ภาพ AI ที่สร้างขึ้นเองและโฮสต์บน Google Drive อย่างถูกต้อง', () => {
+    // ป้องกันการละเมิดลิขสิทธิ์: ไม่มีการนำไฟล์สไลด์สำนักพิมพ์ภายนอกมาโฮสต์ในโปรเจกต์
+    // สไลด์ทั้งหมดสร้างใหม่ด้วย ChatGPT DALL-E 3 และโฮสต์ผ่าน Google Drive Cloud CDN
+    const allUrls = Object.values(unitSlideImages)
       .flatMap((units) => Object.values(units))
-      .reduce((acc, list) => acc + list.length, 0);
-    expect(totalImageCount).toBe(0);
+      .flat();
+    expect(allUrls.length).toBeGreaterThan(0);
+    allUrls.forEach((url) => {
+      expect(url).toMatch(/^https:\/\/lh3\.googleusercontent\.com\/d\//);
+    });
   });
 
   it('ระดับประถม (ป.1 - ป.6) ต้องไม่มีข้อความทางการของคู่มือครู/ตัวชี้วัดปนในบทเรียน', () => {

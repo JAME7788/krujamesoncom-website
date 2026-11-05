@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, PlayCircle, CheckCircle2, XCircle, RotateCcw, Sparkles, Video, Gamepad2, FileText, Award, BookOpen, Menu, Maximize, Minimize, Download, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlayCircle, CheckCircle2, XCircle, RotateCcw, Sparkles, Video, Gamepad2, FileText, Award, BookOpen, Menu, Maximize, Minimize, Download, Lock, FolderOpen } from 'lucide-react';
 import { findGrade, type Grade, type Unit } from '../data/curriculum';
 import { unitContent } from '../data/unitContent';
 import { unitExtras, type Article, type LearningFile, type LessonNotes, type QuizQuestion } from '../data/unitExtras';
@@ -37,6 +37,7 @@ import RichSlideViewer from '../components/RichSlideViewer';
 import '../components/RichSlideViewer.css';
 import ExitTicketModal from '../components/ExitTicketModal';
 import { enrichRichSlideDeck, hasRichSlides, getRichSlides, type RichSlide } from '../data/richSlides';
+import { hasUnitSlideImages, getUnitSlideImages } from '../data/slideImages';
 import { fetchCustomSlides } from '../services/slideService';
 import { detectLessonTheme, isArduinoLessonText, type LessonTheme } from '../utils/lessonTheme';
 import BloomTaxonomyBadge from '../components/BloomTaxonomyBadge';
@@ -1354,6 +1355,7 @@ const UnitDetail: React.FC = () => {
   const [courseAccessSettings, setCourseAccessSettings] = useState<CourseAccessSettings>(() => getCourseAccessSettings());
   const [showExitTicketModal, setShowExitTicketModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showSlideNotes, setShowSlideNotes] = useState(false);
 
   const quizItems = useMemo(
     () => grade && unit ? buildQuizItems(grade, unit, extras.quiz || []) : [],
@@ -1528,12 +1530,19 @@ const UnitDetail: React.FC = () => {
     ? authoredRichSlides
     : (grade ? enrichRichSlideDeck(grade.id, unitNumber, generatedRichSlides) : []);
 
+  const unitSlideImgs = (gradeId && hasUnitSlideImages(gradeId, unitNumber))
+    ? getUnitSlideImages(gradeId, unitNumber)
+    : [];
+  const hasSlideImages = unitSlideImgs.length > 0;
+
   const useRichSlides = richSlideList.length > 0;
   const useGeneratedSlides = !useRichSlides && shouldUseGeneratedSlides(slides);
   const displaySlides = useGeneratedSlides ? generatedSlides : slides;
-  const totalSlides = useRichSlides
-    ? richSlideList.length
-    : displaySlides.length;
+  const totalSlides = hasSlideImages && !showSlideNotes
+    ? unitSlideImgs.length
+    : useRichSlides
+      ? richSlideList.length
+      : displaySlides.length;
 
   // Track slide views — บันทึกทุกครั้งที่นักเรียนเปลี่ยนสไลด์
   useEffect(() => {
@@ -2063,12 +2072,73 @@ const UnitDetail: React.FC = () => {
                   
                   <div className="slide-container-inner">
                     <AnimatePresence mode="wait">
-                      {useRichSlides && richSlideList[slideIdx] ? (
-                        <RichSlideViewer
-                          slide={richSlideList[slideIdx]}
-                          current={slideIdx}
-                          total={richSlideList.length}
-                        />
+                      {hasSlideImages && !showSlideNotes ? (
+                        <motion.div
+                          key={`dalle-slide-${slideIdx}`}
+                          initial={{ opacity: 0, scale: 0.98 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.98 }}
+                          transition={{ duration: 0.2 }}
+                          className="slide-presentation-card"
+                        >
+                          <div className="slide-image-viewport">
+                            <img
+                              src={unitSlideImgs[slideIdx]}
+                              alt={`สไลด์ที่ ${slideIdx + 1} จาก ${totalSlides}`}
+                              className="slide-presentation-img"
+                              loading="eager"
+                            />
+                          </div>
+                          <div className="slide-footer-info">
+                            <div className="slide-badge-tag">
+                              <Sparkles size={14} className="sparkle-icon" />
+                              <span>สไลด์สร้างด้วย ChatGPT (DALL-E 3) • 16:9 Google Drive</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <button
+                                type="button"
+                                className="slide-mode-toggle-btn"
+                                onClick={() => setShowSlideNotes(true)}
+                                title="สลับไปดูบันทึกและคำอธิบายการสอน"
+                              >
+                                <BookOpen size={14} />
+                                <span>ดูบันทึกการสอน</span>
+                              </button>
+                              <a
+                                href="https://drive.google.com/drive/folders/1kGE6QpzlRkDUnoydErt5XYZK1GsX05L_?usp=sharing"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="slide-drive-btn"
+                                title="เปิดดูโฟลเดอร์สไลด์ต้นฉบับบน Google Drive"
+                              >
+                                <FolderOpen size={14} />
+                                <span>Google Drive</span>
+                              </a>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ) : useRichSlides && richSlideList[slideIdx] ? (
+                        <div style={{ position: 'relative' }}>
+                          {hasSlideImages && (
+                            <div style={{ padding: '8px 16px', background: '#0f172a', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                              <button
+                                type="button"
+                                className="slide-mode-toggle-btn"
+                                onClick={() => setShowSlideNotes(false)}
+                                style={{ background: '#2563eb', color: '#fff' }}
+                                title="กลับไปดูสไลด์ภาพ DALL-E 3"
+                              >
+                                <Sparkles size={14} />
+                                <span>กลับไปดูสไลด์ภาพ 16:9</span>
+                              </button>
+                            </div>
+                          )}
+                          <RichSlideViewer
+                            slide={richSlideList[slideIdx]}
+                            current={slideIdx}
+                            total={richSlideList.length}
+                          />
+                        </div>
                       ) : (
                         <motion.div key={slideIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className={`slide-content-big ${useGeneratedSlides ? 'generated-slide' : ''}`}>
                           {useGeneratedSlides && <div className="slide-mini-label">บทเรียนเรียบเรียงใหม่ตามตัวชี้วัด</div>}
