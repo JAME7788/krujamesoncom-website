@@ -56,7 +56,7 @@
 }
 
 .st-subtitle {
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   color: #94a3b8;
   margin: 2px 0 0 0;
 }
@@ -76,7 +76,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   color: #94a3b8;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -121,7 +121,7 @@
   justify-content: space-between;
   width: 100%;
   margin-bottom: 12px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #cbd5e1;
 }
 
@@ -210,7 +210,7 @@
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 10px;
   color: #f8fafc;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -247,7 +247,7 @@
   background: rgba(30, 41, 59, 0.8);
   border: 1px solid rgba(99, 102, 241, 0.3);
   border-radius: 8px;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   color: #e2e8f0;
 }
 
@@ -327,7 +327,7 @@
   border: 1px solid rgba(234, 179, 8, 0.3);
   border-radius: 10px;
   color: #fbbf24;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   margin-top: 10px;
@@ -388,7 +388,7 @@
   border-radius: 12px;
   text-decoration: none;
   color: #e2e8f0;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   transition: all 0.2s;
 }
 

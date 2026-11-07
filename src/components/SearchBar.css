@@ -14,8 +14,8 @@
   height: 36px;
 }
 .search-trigger:hover {
-  border-color: #6366f1;
-  color: #6366f1;
+  border-color: #B45309;
+  color: #B45309;
 }
 .search-hint { font-weight: 600; }
 .search-kbd {
@@ -148,7 +148,7 @@ html[data-theme=dark] .search-dialog .search-result.active { background:#264c40;
   transition: background 0.1s;
 }
 .search-result.active {
-  background: #eef2ff;
+  background: #FFF9E6;
 }
 .sr-emoji {
   font-size: 1.6rem;
@@ -184,7 +184,7 @@ html[data-theme=dark] .search-dialog .search-result.active { background:#264c40;
   flex-shrink: 0;
   align-self: center;
 }
-.type-unit { background: #ede9fe; color: #5b21b6; }
+.type-unit { background: #FEF3C7; color: #92400E; }
 .type-indicator { background: #fef3c7; color: #92400e; }
 .type-resource { background: #d1fae5; color: #065f46; }
 .type-topic { background: #f3f4f6; color: #4b5563; }

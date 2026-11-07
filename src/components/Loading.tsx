@@ -26,7 +26,7 @@ const Loading: React.FC<Props> = ({ text = 'กำลังโหลด...', ful
             width: 44,
             height: 44,
             border: '4px solid #e5e7eb',
-            borderTopColor: '#6366f1',
+            borderTopColor: '#B45309',
             borderRadius: '50%',
             animation: 'spinKJ 0.7s linear infinite',
           }}

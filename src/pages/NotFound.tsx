@@ -27,7 +27,7 @@ const NotFound: React.FC = () => {
             fontSize: '5rem',
             fontWeight: 900,
             margin: '0',
-            background: 'linear-gradient(135deg, #6366f1, #ec4899)',
+            background: 'linear-gradient(135deg, #B45309, #ec4899)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
           }}

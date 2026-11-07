@@ -85,12 +85,12 @@
 }
 
 .btn-hub-canva {
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  background: linear-gradient(135deg, #A16207, #B45309);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.32);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.32);
 }
 .btn-hub-canva:hover {
-  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  background: linear-gradient(135deg, #B45309, #92400E);
   transform: translateY(-1px);
 }
 

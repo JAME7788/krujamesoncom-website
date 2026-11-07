@@ -14,7 +14,7 @@
 }
 .maze-side h3, .prog-side h3 { margin: 0 0 0.5rem; font-size: 1.1rem; }
 .maze-hint {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #92400e;
   background: #fef3c7;
   padding: 6px 10px;
@@ -83,7 +83,7 @@
   cursor: pointer;
   font-family: inherit;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: white;
   transition: transform 0.1s;
 }
@@ -132,7 +132,7 @@
 .prog-right { background: #22c55e; }
 .prog-arrow { font-size: 1.3rem; line-height: 1; }
 .prog-loop {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   background: rgba(255,255,255,0.3);
   padding: 1px 5px;
   border-radius: 4px;
@@ -166,7 +166,7 @@
   cursor: pointer;
   font-family: inherit;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .level-pill:hover { border-color: #6366f1; }
 .level-pill.active {

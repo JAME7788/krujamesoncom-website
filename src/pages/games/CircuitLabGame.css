@@ -32,7 +32,7 @@
   padding: 0.55rem 1rem;
   border-right: 1px solid #e5e7eb;
   color: #526176;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
 }
 
 .circuit-status strong {
@@ -60,7 +60,7 @@
 
 .circuit-brief span {
   color: #b45309;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   font-weight: 900;
 }
 
@@ -73,7 +73,7 @@
 .circuit-brief p {
   margin: 0;
   color: #526176;
-  font-size: 0.83rem;
+  font-size: 0.875rem;
 }
 
 .circuit-wire-budget {
@@ -87,7 +87,7 @@
 }
 
 .circuit-wire-budget small {
-  font-size: 0.68rem;
+  font-size: 0.875rem;
 }
 
 .circuit-wire-budget strong {
@@ -97,7 +97,7 @@
 
 .circuit-wire-budget span {
   color: #7c4a03;
-  font-size: 0.66rem;
+  font-size: 0.875rem;
 }
 
 .circuit-board-wrap {
@@ -362,14 +362,14 @@
   align-items: center;
   gap: 0.45rem;
   color: #26364b;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
 .circuit-guide dd {
   margin: 0.25rem 0 0 1.75rem;
   color: #64748b;
-  font-size: 0.73rem;
+  font-size: 0.875rem;
   line-height: 1.45;
 }
 
@@ -390,7 +390,7 @@
 
 .circuit-concept p {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -409,7 +409,7 @@
   border-left: 5px solid #0ea5e9;
   background: #eff9fe;
   color: #164e63;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
 }
 
 .circuit-feedback svg {
@@ -446,7 +446,7 @@
   border-radius: 6px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -496,7 +496,7 @@
 
 .circuit-levels small {
   color: #64748b;
-  font-size: 0.7rem;
+  font-size: 0.875rem;
 }
 
 .circuit-level-buttons {
@@ -533,13 +533,13 @@
   place-items: center;
   border-radius: 50%;
   background: #e2e8f0;
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   font-weight: 900;
 }
 
 .circuit-level-buttons b {
   overflow: hidden;
-  font-size: 0.68rem;
+  font-size: 0.875rem;
   line-height: 1.25;
   text-overflow: ellipsis;
 }
@@ -583,7 +583,7 @@
 
 .circuit-complete p {
   margin-top: 0.2rem;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
 }
 
 .circuit-complete button {
@@ -642,7 +642,7 @@
     min-height: 40px;
     padding: 0.45rem 0.6rem;
     border-bottom: 1px solid #e5e7eb;
-    font-size: 0.72rem;
+    font-size: 0.875rem;
   }
 
   .circuit-brief {
@@ -654,7 +654,7 @@
   }
 
   .circuit-brief p {
-    font-size: 0.73rem;
+    font-size: 0.875rem;
   }
 
   .circuit-wire-budget {

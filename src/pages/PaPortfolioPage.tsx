@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, ExternalLink, Globe, ShieldCheck, Sparkles,
-  Maximize2, Minimize2, RotateCw, BookOpen, Award, CheckCircle2,
+  BookOpen, Award, CheckCircle2,
   Users, Monitor, Download, FileText, FileCheck
 } from 'lucide-react';
 import './PaPortfolioPage.css';
@@ -10,21 +10,11 @@ import './PaPortfolioPage.css';
 export const PA_PORTFOLIO_URL = 'https://pa-krujames-portfolio.vercel.app/';
 
 const PaPortfolioPage: React.FC = () => {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [frameKey, setFrameKey] = useState(0);
-
-  const toggleFullscreen = () => {
-    setIsFullscreen((prev) => !prev);
-  };
-
-  const handleRefresh = () => {
-    setFrameKey((prev) => prev + 1);
-  };
 
   return (
-    <div className={`pa-portfolio-page page-transition ${isFullscreen ? 'pa-frame-fullscreen' : ''}`}>
+    <div className="pa-portfolio-page page-transition">
       <div className="pa-portfolio-container">
-        {!isFullscreen && (
+        {/* page sections */}
           <>
             {/* Top Navigation */}
             <div className="pa-nav-bar">
@@ -140,12 +130,12 @@ const PaPortfolioPage: React.FC = () => {
                       gap: '0.45rem',
                       padding: '0.6rem 1rem',
                       borderRadius: 10,
-                      background: '#4f46e5',
+                      background: '#92400E',
                       color: '#ffffff',
                       fontWeight: 700,
                       fontSize: '0.85rem',
                       textDecoration: 'none',
-                      boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)',
+                      boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)',
                     }}
                   >
                     <FileText size={15} /> ๒. รูปเล่มรายงานผล PA ครู คศ.๑ (.docx)
@@ -237,7 +227,7 @@ const PaPortfolioPage: React.FC = () => {
               </div>
 
               <div className="pa-pillar-card">
-                <div className="pa-pillar-icon" style={{ background: '#faf5ff', color: '#9333ea' }}>
+                <div className="pa-pillar-icon" style={{ background: '#FFF9E6', color: '#A16207' }}>
                   <Award size={22} />
                 </div>
                 <h3>ด้านที่ ๓: การพัฒนาตนเอง & วิชาชีพ (๓ ตัวชี้วัด)</h3>
@@ -257,75 +247,18 @@ const PaPortfolioPage: React.FC = () => {
               </div>
             </section>
           </>
-        )}
 
-        {/* Live Embed Window */}
-        <section className="pa-frame-card">
-          <div className="pa-frame-toolbar">
-            <div className="pa-frame-address">
-              <Globe size={16} />
-              <span>{PA_PORTFOLIO_URL}</span>
-            </div>
-
-            <div className="pa-frame-controls">
-              <button
-                type="button"
-                className="pa-frame-btn"
-                onClick={handleRefresh}
-                title="รีเฟรชหน้าเว็บ"
-              >
-                <RotateCw size={14} /> รีเฟรช
-              </button>
-              <button
-                type="button"
-                className="pa-frame-btn"
-                onClick={toggleFullscreen}
-                title={isFullscreen ? 'ย่อหน้าจอ' : 'ขยายเต็มจอ'}
-              >
-                {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-                <span>{isFullscreen ? 'ย่อหน้าจอ' : 'เต็มจอ'}</span>
-              </button>
-              <a
-                href={PA_PORTFOLIO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pa-frame-btn"
-                style={{ background: '#2563eb', color: '#ffffff', borderColor: '#1d4ed8' }}
-              >
-                <ExternalLink size={14} /> เปิดแท็บใหม่ ↗
-              </a>
-            </div>
+        {/* External portfolio: the site sends X-Frame-Options: sameorigin, so it cannot be embedded. Link out instead. */}
+        <section className="pa-launch-card">
+          <div className="pa-launch-icon" aria-hidden><Globe size={30} /></div>
+          <div className="pa-launch-text">
+            <h3>เว็บไซต์พอร์ตโฟลิโอ ว.PA ฉบับเต็ม</h3>
+            <p>ดูกราฟ Interactive แกลเลอรีผลงาน และหลักฐานตามตัวชี้วัดครบทุกด้าน เว็บไซต์จะเปิดในแท็บใหม่</p>
+            <span className="pa-launch-url">pa-krujames-portfolio.vercel.app</span>
           </div>
-
-          <div className="pa-frame-wrapper" style={{ height: isFullscreen ? 'calc(100vh - 54px)' : '820px' }}>
-            <iframe
-              key={frameKey}
-              src={PA_PORTFOLIO_URL}
-              title="Kru James PA Portfolio"
-              className="pa-frame"
-              sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads"
-              loading="lazy"
-            />
-          </div>
-
-          {!isFullscreen && (
-            <div className="pa-fallback-banner">
-              <h4>💡 ต้องการดูฉบับเต็มพร้อมลูกเล่นและการโต้ตอบสมบูรณ์แบบ?</h4>
-              <p>
-                สามารถคลิกเปิดหน้าเว็บไซต์พอร์ตโฟลิโอ ว.PA ได้โดยตรง เพื่อสัมผัสกราฟ Interactive
-                และแกลเลอรีผลงานแบบเต็มจอ
-              </p>
-              <a
-                href={PA_PORTFOLIO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pa-btn-primary"
-                style={{ padding: '0.65rem 1.5rem', fontSize: '0.9rem' }}
-              >
-                <ExternalLink size={16} /> ไปที่ pa-krujames-portfolio.vercel.app ↗
-              </a>
-            </div>
-          )}
+          <a href={PA_PORTFOLIO_URL} target="_blank" rel="noopener noreferrer" className="pa-btn-primary pa-launch-btn">
+            <ExternalLink size={18} /> เปิดพอร์ตโฟลิโอ
+          </a>
         </section>
       </div>
     </div>

@@ -944,7 +944,7 @@ const GradeBook: React.FC = () => {
       {/* Info */}
       {!gradebookReady ? (
         <div className="empty-state-card">
-          <RefreshCw size={48} style={{ color: '#6366f1' }} />
+          <RefreshCw size={48} style={{ color: '#B45309' }} />
           <h3>กำลังดึงคะแนนจาก Firebase...</h3>
           <p>รอสักครู่ ระบบกำลังโหลดคะแนนจริงของห้อง {classroom}</p>
         </div>
@@ -956,7 +956,7 @@ const GradeBook: React.FC = () => {
         </div>
       ) : grades.length === 0 ? (
         <div className="empty-state-card">
-          <Users size={48} style={{ color: '#6366f1' }} />
+          <Users size={48} style={{ color: '#B45309' }} />
           <h3>ยังไม่ได้นำเข้ารายชื่อห้องนี้</h3>
           <button className="btn-primary" onClick={() => { initClassroom(classroom, subject); reload(); }}>
             นำเข้ารายชื่อนักเรียน 2569

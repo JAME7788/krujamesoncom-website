@@ -220,7 +220,7 @@ const StudentMissingWorkBanner: React.FC<Props> = ({
                   gap: 4,
                   padding: '4px 10px',
                   borderRadius: 8,
-                  background: '#4f46e5',
+                  background: '#92400E',
                   color: '#ffffff',
                   fontSize: '0.76rem',
                   fontWeight: 700,

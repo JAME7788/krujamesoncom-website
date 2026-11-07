@@ -57,8 +57,8 @@ const MasterCsvExport: React.FC = () => {
 
   return (
     <div style={{
-      padding: 16, background: 'linear-gradient(135deg, rgba(34,197,94,0.08), rgba(99,102,241,0.08))',
-      border: '1px solid rgba(99,102,241,0.18)', borderRadius: 12, marginBottom: 16,
+      padding: 16, background: 'linear-gradient(135deg, rgba(34,197,94,0.08), rgba(245, 158, 11,0.08))',
+      border: '1px solid rgba(245, 158, 11,0.18)', borderRadius: 12, marginBottom: 16,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
@@ -71,7 +71,7 @@ const MasterCsvExport: React.FC = () => {
           onClick={handleExport}
           disabled={busy}
           className="btn-export"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: 'white' }}
+          style={{ background: 'linear-gradient(135deg, #B45309, #92400E)', color: 'white' }}
         >
           {busy ? <Loader2 size={16} className="spin" /> : <Download size={16} />}
           {busy ? 'กำลังดึงข้อมูล...' : 'Export Master CSV'}

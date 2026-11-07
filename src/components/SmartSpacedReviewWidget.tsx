@@ -200,9 +200,9 @@ const SmartSpacedReviewWidgetContent: React.FC<SmartSpacedReviewWidgetProps> = (
                 optColor = '#991b1b';
               }
             } else if (isPicked) {
-              optBg = '#e0e7ff';
-              optBorder = '#818cf8';
-              optColor = '#3730a3';
+              optBg = '#FEF3C7';
+              optBorder = '#F59E0B';
+              optColor = '#78350F';
             }
 
             return (
@@ -293,7 +293,7 @@ const SmartSpacedReviewWidgetContent: React.FC<SmartSpacedReviewWidgetProps> = (
                   padding: '6px 14px',
                   borderRadius: 8,
                   border: 'none',
-                  background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+                  background: 'linear-gradient(135deg, #92400E 0%, #B45309 100%)',
                   color: '#ffffff',
                   fontWeight: 700,
                   fontSize: '0.8rem',

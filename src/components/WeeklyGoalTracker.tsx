@@ -45,8 +45,8 @@ const WeeklyGoalTrackerContent: React.FC<WeeklyGoalTrackerProps> = ({ studentId 
         background: achieved
           ? 'linear-gradient(135deg, rgba(236,253,245,0.95) 0%, rgba(240,253,250,0.95) 100%)'
           : 'linear-gradient(135deg, rgba(238,242,255,0.95) 0%, rgba(245,243,255,0.95) 100%)',
-        border: achieved ? '1.5px solid #10b981' : '1.5px solid #818cf8',
-        boxShadow: '0 4px 16px rgba(99, 102, 241, 0.05)',
+        border: achieved ? '1.5px solid #10b981' : '1.5px solid #F59E0B',
+        boxShadow: '0 4px 16px rgba(245, 158, 11, 0.05)',
       }}
     >
       {/* Header */}
@@ -79,8 +79,8 @@ const WeeklyGoalTrackerContent: React.FC<WeeklyGoalTrackerProps> = ({ studentId 
               fontWeight: 700,
               padding: '3px 10px',
               borderRadius: 999,
-              background: achieved ? '#d1fae5' : '#e0e7ff',
-              color: achieved ? '#065f46' : '#3730a3',
+              background: achieved ? '#d1fae5' : '#FEF3C7',
+              color: achieved ? '#065f46' : '#78350F',
             }}
           >
             {achieved ? '✓ บรรลุเป้าหมายแล้ว' : `สัปดาห์ ${record.weekKey}`}
@@ -92,7 +92,7 @@ const WeeklyGoalTrackerContent: React.FC<WeeklyGoalTrackerProps> = ({ studentId 
               style={{
                 fontSize: '0.78rem',
                 fontWeight: 600,
-                color: '#4f46e5',
+                color: '#92400E',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
@@ -132,8 +132,8 @@ const WeeklyGoalTrackerContent: React.FC<WeeklyGoalTrackerProps> = ({ studentId 
                   textAlign: 'left',
                   padding: '10px 12px',
                   borderRadius: 10,
-                  border: p.id === goal.id ? '2px solid #6366f1' : '1px solid #e2e8f0',
-                  background: p.id === goal.id ? '#f5f3ff' : '#f8fafc',
+                  border: p.id === goal.id ? '2px solid #B45309' : '1px solid #e2e8f0',
+                  background: p.id === goal.id ? '#FFF9E6' : '#f8fafc',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -172,7 +172,7 @@ const WeeklyGoalTrackerContent: React.FC<WeeklyGoalTrackerProps> = ({ studentId 
               <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b' }}>{goal.description}</p>
             </div>
           </div>
-          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: achieved ? '#15803d' : '#4338ca' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: achieved ? '#15803d' : '#92400E' }}>
             {currentCount} / {goal.targetCount} {goal.unit}
           </span>
         </div>
@@ -194,7 +194,7 @@ const WeeklyGoalTrackerContent: React.FC<WeeklyGoalTrackerProps> = ({ studentId 
               borderRadius: 999,
               background: achieved
                 ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
-                : 'linear-gradient(90deg, #6366f1 0%, #4f46e5 100%)',
+                : 'linear-gradient(90deg, #B45309 0%, #92400E 100%)',
               transition: 'width 0.4s ease',
             }}
           />

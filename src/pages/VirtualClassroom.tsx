@@ -930,11 +930,45 @@ const VirtualClassroom: React.FC = () => {
     entryPath.receiveShadow = true;
     scene.add(entryPath);
 
+    // พื้นไม้โอ๊กแบบแผ่น (พิกเซล) — แต่ละแผ่นสีต่างกันเล็กน้อย มีร่องระหว่างแผ่น
+    const makePlankTexture = () => {
+      const w = 64, h = 64, plankH = 8;
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d')!;
+      for (let row = 0; row < h / plankH; row += 1) {
+        const offset = (row % 2) * 24;
+        for (let seg = -1; seg < 3; seg += 1) {
+          const x0 = seg * 32 + offset;
+          const shade = 0.9 + (Math.abs(row * 7 + seg * 13) % 5) * 0.03;
+          const r = (0xd8 * shade) | 0, g = (0xa8 * shade) | 0, b = (0x6c * shade) | 0;
+          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+          ctx.fillRect(x0, row * plankH, 32, plankH);
+          for (let i = 0; i < 18; i += 1) {
+            const d = ((Math.random() - 0.5) * 26) | 0;
+            ctx.fillStyle = `rgba(${r + d}, ${g + d}, ${b + d}, 0.6)`;
+            ctx.fillRect(x0 + ((Math.random() * 32) | 0), row * plankH + ((Math.random() * plankH) | 0), 2, 1);
+          }
+          ctx.fillStyle = 'rgba(92, 58, 26, 0.55)';
+          ctx.fillRect(x0, row * plankH, 1, plankH);
+        }
+        ctx.fillStyle = 'rgba(92, 58, 26, 0.6)';
+        ctx.fillRect(0, row * plankH + plankH - 1, w, 1);
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(5, 4.25);
+      texture.magFilter = THREE.NearestFilter;
+      texture.minFilter = THREE.NearestFilter;
+      pixelTextures.push(texture);
+      return texture;
+    };
     const classroomFloor = new THREE.Mesh(
       new THREE.BoxGeometry(20, 0.25, 17),
       new THREE.MeshStandardMaterial({
-        map: makeRepeatedPixelTexture(0xc58b4c, 22, 10, 9),
-        roughness: 0.9,
+        map: makePlankTexture(),
+        roughness: 0.82,
       }),
     );
     classroomFloor.position.set(0, 0.08, 0);
@@ -952,7 +986,7 @@ const VirtualClassroom: React.FC = () => {
     const staticColliders: StaticCollider[] = [];
 
     const wallMaterial = new THREE.MeshStandardMaterial({
-      map: makeRepeatedPixelTexture(0xd9d6c9, 18, 12, 4),
+      map: makeRepeatedPixelTexture(0xf1ece0, 14, 12, 4),
       roughness: 0.95,
     });
     const addWall = (x: number, y: number, z: number, w: number, h: number, d: number) => {
@@ -973,6 +1007,25 @@ const VirtualClassroom: React.FC = () => {
     addWall(0, 2.75, -8.4, 20, 5.5, 0.35);
     addWall(-10, 2.75, 0, 0.35, 5.5, 17);
     addWall(10, 2.75, 0, 0.35, 5.5, 17);
+
+    // แถบผนังล่างสีเหลือง (ธีมเว็บ) + บัวไม้ บนด้านในของผนังทั้ง 3 ด้าน
+    const wainscotMaterial = new THREE.MeshStandardMaterial({ map: makePixelTexture(0xf4c542, 16), roughness: 0.85 });
+    const trimMaterial = new THREE.MeshStandardMaterial({ map: makePixelTexture(0x8a5a2e, 14), roughness: 0.8 });
+    const wallTrim = new THREE.Group();
+    const addTrim = (x: number, z: number, w: number, d: number) => {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(w, 1.1, d), wainscotMaterial);
+      panel.position.set(x, 0.75, z);
+      panel.receiveShadow = true;
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, d + 0.06), trimMaterial);
+      rail.position.set(x, 1.32, z);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(w, 0.22, d + 0.06), trimMaterial);
+      base.position.set(x, 0.32, z);
+      wallTrim.add(panel, rail, base);
+    };
+    addTrim(0, -8.2, 19.6, 0.06);
+    addTrim(-9.8, 0, 0.06, 16.6);
+    addTrim(9.8, 0, 0.06, 16.6);
+    scene.add(wallTrim);
 
     // ภูมิประเทศแบบว็อกเซลรอบพื้นที่เล่น ใช้ InstancedMesh เพื่อลด draw call
     const terrainGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -1048,15 +1101,38 @@ const VirtualClassroom: React.FC = () => {
     });
     scene.add(skyDecor);
 
+    // โครงหลังคาไม้แบบเปิดโล่ง (skylight) — คานหลัก + คานขวาง สีไม้อุ่นแทนสีเข้มเกือบดำ
     const roofBeams = new THREE.Group();
+    const beamMaterial = new THREE.MeshStandardMaterial({
+      map: makePixelTexture(0xa0703c, 16),
+      roughness: 0.85,
+      emissive: new THREE.Color(0x3a2410),
+      emissiveIntensity: 0.35,
+    });
     [-7.5, -2.5, 2.5, 7.5].forEach((x) => {
-      const beam = new THREE.Mesh(
-        new THREE.BoxGeometry(0.28, 0.28, 17),
-        new THREE.MeshStandardMaterial({ map: makePixelTexture(0x315b4c, 14), roughness: 0.9 }),
-      );
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.36, 17), beamMaterial);
       beam.position.set(x, 5.55, 0);
       roofBeams.add(beam);
     });
+    [-8.1, -4, 0, 4, 8.1].forEach((z) => {
+      const tie = new THREE.Mesh(new THREE.BoxGeometry(20, 0.24, 0.26), beamMaterial);
+      tie.position.set(0, 5.62, z);
+      roofBeams.add(tie);
+    });
+    // โคมไฟห้อยใต้คาน + แสงอุ่นเติมในห้อง (ไม่ใช้ shadow เพื่อประหยัด)
+    if (graphicsQuality !== 'low') {
+      const lampMaterial = new THREE.MeshBasicMaterial({ color: 0xfff1c2 });
+      [-5, 5].forEach((x) => {
+        [-4, 2.5].forEach((z) => {
+          const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 0.5), lampMaterial);
+          lamp.position.set(x, 5.3, z);
+          roofBeams.add(lamp);
+        });
+      });
+      const roomFill = new THREE.PointLight(0xffe2a8, 18, 22, 1.6);
+      roomFill.position.set(0, 4.8, -1);
+      scene.add(roomFill);
+    }
     scene.add(roofBeams);
 
     const boardMeshes: THREE.Object3D[] = [];
@@ -2003,6 +2079,14 @@ const VirtualClassroom: React.FC = () => {
       renderer.domElement.removeEventListener('pointermove', onTouchMove);
       renderer.domElement.removeEventListener('pointerup', onTouchEnd);
       if (document.pointerLockElement === renderer.domElement) document.exitPointerLock();
+      // คืนหน่วยความจำ GPU ของทุก mesh ในฉาก (dispose ซ้ำได้อย่างปลอดภัย)
+      scene.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        mesh.geometry?.dispose();
+        const material = mesh.material;
+        if (Array.isArray(material)) material.forEach((item) => item.dispose());
+        else material?.dispose();
+      });
       renderer.dispose();
       blockGeometry.dispose();
       terrainGeometry.dispose();
@@ -2292,11 +2376,11 @@ const VirtualClassroom: React.FC = () => {
 
       {mode === 'build' && currentBuildMission && (
         <div style={{ position: 'absolute', zIndex: 6, top: 146, right: 14, width: 204, background: 'rgba(255,255,255,0.94)', border: '1px solid rgba(15,23,42,0.12)', borderRadius: 10, boxShadow: '0 8px 24px rgba(15,23,42,0.14)', backdropFilter: 'blur(8px)', padding: '10px 12px' }}>
-          <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#4f46e5', display: 'flex', alignItems: 'center', gap: 5 }}>{currentBuildMission.icon} ภารกิจสร้าง {buildMissionIdx + 1}/{BUILD_MISSIONS.length}</div>
+          <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#92400E', display: 'flex', alignItems: 'center', gap: 5 }}>{currentBuildMission.icon} ภารกิจสร้าง {buildMissionIdx + 1}/{BUILD_MISSIONS.length}</div>
           <div style={{ fontWeight: 700, fontSize: '0.88rem', margin: '5px 0 2px', color: '#172033' }}>{currentBuildMission.goal}</div>
           <div style={{ fontSize: '0.72rem', color: '#64748b', lineHeight: 1.45 }}>💡 {currentBuildMission.concept}</div>
           <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f766e', margin: '7px 0' }}>{currentBuildMission.progress(buildStats)}</div>
-          <button onClick={checkBuildMission} style={{ width: '100%', padding: '8px', borderRadius: 8, border: 0, background: currentBuildMission.check(buildStats) ? '#22c55e' : '#6366f1', color: '#fff', fontWeight: 800, fontSize: '0.8rem', fontFamily: 'inherit', cursor: 'pointer' }}>✓ ตรวจภารกิจ (+{currentBuildMission.stars}⭐)</button>
+          <button onClick={checkBuildMission} style={{ width: '100%', padding: '8px', borderRadius: 8, border: 0, background: currentBuildMission.check(buildStats) ? '#16a34a' : 'linear-gradient(135deg, #FFD43B, #FAB005)', color: currentBuildMission.check(buildStats) ? '#fff' : '#1D1D1F', fontWeight: 800, fontSize: '0.8rem', fontFamily: 'inherit', cursor: 'pointer' }}>✓ ตรวจภารกิจ (+{currentBuildMission.stars}⭐)</button>
         </div>
       )}
       {mode === 'build' && !currentBuildMission && (

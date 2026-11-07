@@ -197,14 +197,14 @@ const QuickAttendance: React.FC = () => {
                     alignItems: 'flex-start',
                     padding: '8px 12px',
                     borderRadius: 10,
-                    border: isSelected ? '2px solid #4f46e5' : '1px solid #cbd5e1',
-                    background: isSelected ? '#eef2ff' : 'white',
+                    border: isSelected ? '2px solid #92400E' : '1px solid #cbd5e1',
+                    background: isSelected ? '#FFF9E6' : 'white',
                     color: '#0f172a',
                     cursor: 'pointer',
                     textAlign: 'left',
                   }}
                 >
-                  <span style={{ fontSize: '0.75rem', color: '#4f46e5', fontWeight: 700 }}>
+                  <span style={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 700 }}>
                     {periodNum ? `คาบที่ ${periodNum}` : 'คาบเรียน'} ({slot.start}–{slot.end})
                   </span>
                   <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>
@@ -267,7 +267,7 @@ const QuickAttendance: React.FC = () => {
                         padding: '6px 8px',
                         fontWeight: 700,
                         textAlign: 'center',
-                        background: selectedDay === dayNum ? '#e0e7ff' : '#f8fafc',
+                        background: selectedDay === dayNum ? '#FEF3C7' : '#f8fafc',
                       }}
                     >
                       วัน{dayNames[dayNum]}
@@ -285,7 +285,7 @@ const QuickAttendance: React.FC = () => {
                             textAlign: 'center',
                             cursor: slot ? 'pointer' : 'default',
                             background: isActive
-                              ? '#e0e7ff'
+                              ? '#FEF3C7'
                               : slot?.subject?.startsWith('⭐')
                                 ? '#fffbeb'
                                 : 'transparent',
@@ -327,7 +327,7 @@ const QuickAttendance: React.FC = () => {
                             textAlign: 'center',
                             cursor: slot ? 'pointer' : 'default',
                             background: isActive
-                              ? '#e0e7ff'
+                              ? '#FEF3C7'
                               : slot?.subject?.startsWith('⭐')
                                 ? '#fffbeb'
                                 : 'transparent',
@@ -410,8 +410,8 @@ const QuickAttendance: React.FC = () => {
               gap: 6,
               padding: '4px 12px',
               borderRadius: 999,
-              background: '#e0e7ff',
-              color: '#3730a3',
+              background: '#FEF3C7',
+              color: '#78350F',
               fontSize: '0.85rem',
               fontWeight: 700,
             }}

@@ -602,10 +602,10 @@ const AdminDashboardInner: React.FC = () => {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
                 <MasterCsvExport />
                 <div className="kpi-grid">
-                  <KPI icon={<Users />} color="#6366f1" label="นักเรียนทั้งหมด" value={stats.total} sub="คน" />
+                  <KPI icon={<Users />} color="#B45309" label="นักเรียนทั้งหมด" value={stats.total} sub="คน" />
                   <KPI icon={<Activity />} color="#22c55e" label="เข้าใช้วันนี้" value={stats.activeToday} sub={`จากทั้งหมด ${stats.total}`} />
                   <KPI icon={<TrendingUp />} color="#f59e0b" label="เข้าใน 7 วัน" value={stats.activeWeek} sub="คน" />
-                  <KPI icon={<FileText />} color="#a855f7" label="สไลด์ที่อ่านรวม" value={stats.totalSlides} sub="หน้า" />
+                  <KPI icon={<FileText />} color="#A16207" label="สไลด์ที่อ่านรวม" value={stats.totalSlides} sub="หน้า" />
                   <KPI icon={<Gamepad2 />} color="#ec4899" label="กิจกรรม/สื่อ" value={stats.totalActivities} sub="ครั้ง" />
                   <KPI icon={<Award />} color="#ef4444" label="แบบทดสอบรวม" value={stats.totalQuizzes} sub="ครั้ง" />
                 </div>
@@ -664,7 +664,7 @@ const AdminDashboardInner: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => navigateToTab('scores')}
-                    style={{ fontSize: '0.82rem', color: '#6366f1', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                    style={{ fontSize: '0.82rem', color: '#B45309', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600 }}
                   >
                     ดูนักเรียนทั้งหมด ({stats.total} คน) →
                   </button>
@@ -820,7 +820,7 @@ const AdminDashboardInner: React.FC = () => {
                       padding: '4px 12px',
                       fontSize: '0.82rem',
                       borderRadius: 999,
-                      background: activityFilter === 'all' ? '#6366f1' : '#f1f5f9',
+                      background: activityFilter === 'all' ? '#B45309' : '#f1f5f9',
                       color: activityFilter === 'all' ? '#fff' : '#475569',
                       border: 'none',
                       cursor: 'pointer',
@@ -952,7 +952,7 @@ const AdminDashboardInner: React.FC = () => {
                             <td className="text-center">{videos}</td>
                             <td className="text-center">{fun}</td>
                             <td className="text-center">{attempts}</td>
-                            <td className="text-center" style={{ fontWeight: 800, color: '#6366f1' }}>{p?.totalPoints || 0}</td>
+                            <td className="text-center" style={{ fontWeight: 800, color: '#B45309' }}>{p?.totalPoints || 0}</td>
                             <td style={{ fontSize: '0.78rem' }}>{fmtDateTime(p?.lastActive)}</td>
                             <td>
                               <button className="link-btn" onClick={() => { setSelectedStudent(s.id); setTab('development'); }}>
@@ -1026,7 +1026,7 @@ const AdminDashboardInner: React.FC = () => {
                   <StudentDetail student={students.find((s) => s.id === selectedStudent)!} />
                 ) : (
                   <div className="empty-state-card">
-                    <TrendingUp size={48} style={{ color: '#6366f1' }} />
+                    <TrendingUp size={48} style={{ color: '#B45309' }} />
                     <h3>เลือกนักเรียนเพื่อดูพัฒนาการ</h3>
                     <p>คุณจะเห็นกราฟคะแนนตามวัน รายการกิจกรรม และความก้าวหน้าทุกหน่วย</p>
                   </div>
@@ -1345,7 +1345,7 @@ const AdminDashboardInner: React.FC = () => {
                                 background: e.type === 'crash' ? '#fee2e2' : '#fef3c7',
                                 color: e.type === 'crash' ? '#991b1b' : '#92400e',
                               }}>{e.type}</span></td>
-                              <td><strong>{e.message}</strong>{e.stack && <details><summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: '#6366f1' }}>stack</summary><pre style={{ fontSize: '0.7rem', overflow: 'auto', maxHeight: 100 }}>{e.stack}</pre></details>}</td>
+                              <td><strong>{e.message}</strong>{e.stack && <details><summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: '#B45309' }}>stack</summary><pre style={{ fontSize: '0.7rem', overflow: 'auto', maxHeight: 100 }}>{e.stack}</pre></details>}</td>
                               <td style={{ fontSize: '0.78rem', color: '#6b7280' }}>{e.url.replace(window.location.origin, '')}</td>
                               <td style={{ fontSize: '0.78rem' }}>{e.user || '-'}</td>
                             </tr>
@@ -1527,7 +1527,7 @@ const StudentDetail: React.FC<{ student: StudentRecord }> = ({ student }) => {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 4, fontSize: '0.82rem', color: '#64748b' }}>
             <span>🕒 ใช้งานล่าสุด: {fmtDateTime(p?.lastActive)} ({getTimeAgo(p?.lastActive)})</span>
             {srlGoal && (
-              <span style={{ color: '#6366f1', fontWeight: 600 }}>
+              <span style={{ color: '#B45309', fontWeight: 600 }}>
                 🎯 เป้าหมายสัปดาห์: {srlGoal.goal.title} ({srlGoal.currentCount}/{srlGoal.goal.targetCount} {srlGoal.goal.unit})
               </span>
             )}
@@ -1541,8 +1541,8 @@ const StudentDetail: React.FC<{ student: StudentRecord }> = ({ student }) => {
       </div>
 
       <div className="kpi-grid" style={{ marginTop: '1.5rem' }}>
-        <KPI icon={<Award />} color="#6366f1" label="คะแนนรวม" value={p?.totalPoints || 0} sub="คะแนน" />
-        <KPI icon={<FileText />} color="#a855f7" label="สไลด์ที่อ่าน" value={p?.totalSlidesViewed || 0} sub="หน้า" />
+        <KPI icon={<Award />} color="#B45309" label="คะแนนรวม" value={p?.totalPoints || 0} sub="คะแนน" />
+        <KPI icon={<FileText />} color="#A16207" label="สไลด์ที่อ่าน" value={p?.totalSlidesViewed || 0} sub="หน้า" />
         <KPI icon={<Gamepad2 />} color="#ec4899" label="กิจกรรม" value={p?.totalActivities || 0} sub="ครั้ง" />
         <KPI icon={<CheckCircle2 />} color="#22c55e" label="หน่วยจบแล้ว" value={p?.unitsCompleted || 0} sub={`จาก ${Object.keys(p?.units || {}).length} หน่วย`} />
       </div>
@@ -1556,11 +1556,11 @@ const StudentDetail: React.FC<{ student: StudentRecord }> = ({ student }) => {
             <line x1="0" y1="20" x2="100" y2="20" stroke="#e5e7eb" strokeWidth="0.2" strokeDasharray="0.5"/>
             <line x1="0" y1="50" x2="100" y2="50" stroke="#e5e7eb" strokeWidth="0.2" strokeDasharray="0.5"/>
             <line x1="0" y1="80" x2="100" y2="80" stroke="#e5e7eb" strokeWidth="0.2" strokeDasharray="0.5"/>
-            <polyline points={polyline} fill="none" stroke="#6366f1" strokeWidth="0.8" />
+            <polyline points={polyline} fill="none" stroke="#B45309" strokeWidth="0.8" />
             {dev.map((d, i) => {
               const x = dev.length > 1 ? (i / (dev.length - 1)) * 100 : 50;
               const y = 100 - (d.avgPct / maxPct) * 100;
-              return <circle key={i} cx={x} cy={y} r="1.5" fill="#6366f1" />;
+              return <circle key={i} cx={x} cy={y} r="1.5" fill="#B45309" />;
             })}
           </svg>
           <div className="dev-x-labels">
@@ -1626,7 +1626,7 @@ const StudentDetail: React.FC<{ student: StudentRecord }> = ({ student }) => {
             padding: '3px 10px',
             fontSize: '0.78rem',
             borderRadius: 999,
-            background: actTypeFilter === 'all' ? '#6366f1' : '#f1f5f9',
+            background: actTypeFilter === 'all' ? '#B45309' : '#f1f5f9',
             color: actTypeFilter === 'all' ? '#fff' : '#475569',
             border: 'none',
             cursor: 'pointer',
@@ -1690,9 +1690,9 @@ const StudentDetail: React.FC<{ student: StudentRecord }> = ({ student }) => {
             padding: '3px 10px',
             fontSize: '0.78rem',
             borderRadius: 999,
-            background: actTypeFilter === 'video' ? '#8b5cf6' : '#f5f3ff',
-            color: actTypeFilter === 'video' ? '#fff' : '#6d28d9',
-            border: '1px solid #ddd6fe',
+            background: actTypeFilter === 'video' ? '#A16207' : '#FFF9E6',
+            color: actTypeFilter === 'video' ? '#fff' : '#92400E',
+            border: '1px solid #FDE68A',
             cursor: 'pointer',
             fontWeight: 600,
           }}
@@ -2059,7 +2059,7 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
   return (
     <div className="site-info">
       <div className="kpi-grid">
-        <KPI icon={<Users />} color="#6366f1" label="จำนวนผู้ใช้รวม" value={stats.total} sub="คน (จาก localStorage + Firebase)" />
+        <KPI icon={<Users />} color="#B45309" label="จำนวนผู้ใช้รวม" value={stats.total} sub="คน (จาก localStorage + Firebase)" />
         <KPI icon={<BarChart3 />} color="#22c55e" label="คะแนนสะสมในระบบ" value={stats.totalPoints} sub="คะแนนทั้งหมด" />
       </div>
 
@@ -2086,7 +2086,7 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
       <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '1rem' }}>
         คุณสามารถดาวน์โหลดข้อมูลทั้งหมดในระบบ (คะแนนนักเรียน, การเช็คชื่อ, ตารางสอน, กิจกรรม) เก็บไว้เป็นไฟล์สำรอง และนำกลับมากู้คืนได้ทุกเมื่อเพื่อป้องกันข้อมูลสูญหาย
       </p>
-      <div className="status-list" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', background: 'rgba(99, 102, 241, 0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.15)', marginBottom: '2rem' }}>
+      <div className="status-list" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', background: 'rgba(245, 158, 11, 0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.15)', marginBottom: '2rem' }}>
         <button className="btn-export" onClick={handleBackup} style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.75rem 1.25rem', borderRadius: '10px' }}>
           <Download size={16} /> ส่งออกข้อมูลสำรอง (Backup JSON)
         </button>
@@ -2180,17 +2180,17 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
       <h3 style={{ marginTop: '2rem' }}>📚 เนื้อหาในเว็บการสอน</h3>
       <div className="content-summary">
         <div className="cs-card">
-          <BookOpen size={32} style={{ color: '#6366f1' }} />
+          <BookOpen size={32} style={{ color: '#B45309' }} />
           <h4>คอร์สเรียน</h4>
           <p><strong>10 ระดับชั้น</strong> ป.1 - ม.3 + AI 3 คอร์ส</p>
         </div>
         <div className="cs-card">
-          <FileText size={32} style={{ color: '#a855f7' }} />
+          <FileText size={32} style={{ color: '#A16207' }} />
           <h4>สไลด์การสอน</h4>
           <p>มากกว่า <strong>500+ สไลด์</strong> เรียบเรียงใหม่ตามตัวชี้วัด</p>
         </div>
         <div className="cs-card">
-          <Award size={32} style={{ color: '#f59e0b' }} />
+          <Award size={32} style={{ color: '#B45309' }} />
           <h4>แบบทดสอบ</h4>
           <p><strong>200+ ข้อ</strong> พร้อมเฉลย</p>
         </div>
@@ -2249,8 +2249,8 @@ const AccessCodeEditor: React.FC = () => {
 
   return (
     <div style={{
-      background: 'rgba(99, 102, 241, 0.05)', padding: '1.25rem',
-      borderRadius: 12, border: '1px solid rgba(99, 102, 241, 0.15)',
+      background: 'rgba(245, 158, 11, 0.05)', padding: '1.25rem',
+      borderRadius: 12, border: '1px solid rgba(245, 158, 11, 0.15)',
       marginBottom: '2rem',
     }}>
       <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0 0 12px' }}>

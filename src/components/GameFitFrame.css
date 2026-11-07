@@ -1,0 +1,126 @@
+.game-fit-frame {
+  width: 100%;
+  scroll-margin-top: 84px;
+}
+
+.game-fit-inner {
+  width: 100%;
+}
+
+/* เกมที่ใช้ 100vh/100dvh ภายใน ต้องไม่ดันจอให้ยาวเกินพื้นที่จริง */
+.game-fit-inner > * {
+  max-width: 100%;
+}
+
+/* ================================================================
+   Fit-to-screen overrides ต่อเกม (ใช้เฉพาะเมื่อเล่นในกรอบเกม)
+   เป้าหมาย: พื้นที่เล่นหลักอยู่ในจอเดียวที่ 1366×768 ขึ้นไป
+   ================================================================ */
+
+/* หน้าเกมเดิมที่เคยเว้นที่ให้แถบเมนู หรือบังคับสูงเต็มจอ */
+.game-fit-inner .cyber-cop-container { padding-top: 1rem; }
+.game-fit-inner .cyber-shield-wrap,
+.game-fit-inner .ccp-page { min-height: 0; }
+
+/* ปุ่มลูกศรบนจอ: แสดงเฉพาะอุปกรณ์สัมผัส */
+@media (hover: hover) and (pointer: fine) {
+  .game-fit-inner .bc-touch-controls { display: none; }
+}
+
+/* แบนเนอร์โฆษณาเกมอื่นในหน้าเกม — ย้ายไปอยู่หน้ารวมเกมแล้ว */
+.game-fit-inner .cg-game-switcher-banner { display: none; }
+
+/* กระดาน/พื้นที่เล่น: ขนาดตามความสูงจอ */
+.game-fit-inner .snake-board { max-width: min(540px, calc(100dvh - 320px)); }
+.game-fit-inner .circuit-board-wrap { min-height: 0; }
+.game-fit-inner .circuit-board { max-width: min(100%, calc(100dvh - 250px)); }
+.game-fit-inner .robot-maker-shell { min-height: 0; }
+.game-fit-inner .robot-canvas { min-height: clamp(320px, calc(100dvh - 380px), 500px); }
+.game-fit-inner .pcb-workspace { min-height: 0; }
+.game-fit-inner .pcb-slot-card { min-height: 92px; }
+.game-fit-inner .cg-viewport { max-height: calc(100dvh - 330px); }
+.game-fit-inner .runner-stage { min-height: 320px; height: clamp(320px, calc(100dvh - 330px), 600px); }
+.game-fit-inner .mouse-arena { height: clamp(300px, calc(100dvh - 420px), 620px); }
+.game-fit-inner .od-canvas-wrap { height: clamp(380px, calc(100dvh - 340px), 820px); }
+
+/* แถบคีย์ลัด/คำแนะนำท้ายเกม ซ่อนบนจอเตี้ย (มีอยู่ในหน้าวิธีเล่นแล้ว) */
+@media (max-height: 860px) {
+  .game-fit-inner .cg-keys-hint,
+  .game-fit-inner .bc-instructions,
+  .game-fit-inner .od-instructions { display: none; }
+}
+
+/* รอบที่ 2: ปรับเลย์เอาต์เกมที่สูงเกินจอ */
+@media (hover: hover) and (pointer: fine) {
+  .game-fit-inner .cg-touch-controls { display: none; }
+}
+.game-fit-inner .snake-board { max-width: min(540px, calc(100dvh - 400px)); }
+.game-fit-inner .cg-viewport { max-height: calc(100dvh - 380px); }
+.game-fit-inner .circuit-board { max-width: min(100%, calc(100dvh - 330px)); margin-inline: auto; width: 100%; }
+
+/* จอกว้าง: วางพื้นที่เล่นกับแผงคำสั่งคู่กันแทนการเรียงลงล่าง */
+@media (min-width: 1100px) {
+  .game-fit-inner .runner-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    column-gap: 1rem;
+    align-items: start;
+  }
+  .game-fit-inner .runner-page > :not(.runner-stage):not(.runner-workbench) { grid-column: 1 / -1; }
+  .game-fit-inner .runner-workbench { grid-template-columns: 1fr; }
+  .game-fit-inner .runner-stage { height: clamp(320px, calc(100dvh - 300px), 600px); }
+
+  .game-fit-inner .pcb-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .game-fit-inner .pcb-workspace > :not(.pcb-slots-grid):not(.pcb-shelf) { grid-column: 1 / -1; }
+
+  /* Flowchart Bingo: การ์ดคำถามซ้าย กระดานขวา */
+  .game-fit-inner .fcb-container {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+    column-gap: 1.25rem;
+    align-items: start;
+    max-width: 1240px;
+  }
+  .game-fit-inner .fcb-container > :not(.fcb-caller-box):not(.fcb-board-wrap) { grid-column: 1 / -1; }
+  .game-fit-inner .fcb-caller-box { position: sticky; top: 96px; }
+}
+
+/* รอบที่ 3: เกมแนวเครื่องมือ — ล็อกความสูงพื้นที่ทำงานเท่าจอ แต่ละแผงเลื่อนภายในตัวเอง */
+@media (min-width: 1000px) {
+  .game-fit-inner .robot-maker-shell {
+    height: clamp(460px, calc(100dvh - 330px), 760px);
+  }
+  .game-fit-inner .robot-maker-shell > * {
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .game-fit-inner .robot-canvas { min-height: 0; height: 100%; }
+
+  .game-fit-inner .circuit-board-wrap {
+    height: clamp(360px, calc(100dvh - 450px), 640px);
+  }
+  .game-fit-inner .circuit-board-wrap > * {
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .game-fit-inner .circuit-board { max-width: min(100%, calc(100dvh - 470px)); }
+
+  .game-fit-inner .ccp-workspace {
+    height: clamp(440px, calc(100dvh - 300px), 760px);
+  }
+  .game-fit-inner .ccp-workspace > * {
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}

@@ -49,8 +49,8 @@ export const CurriculumExamWidget: React.FC<CurriculumExamWidgetProps> = ({
         padding: '1.25rem 1.5rem',
         borderRadius: 18,
         background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)',
-        border: '1.5px solid #e0e7ff',
-        boxShadow: '0 4px 20px rgba(99, 102, 241, 0.06)',
+        border: '1.5px solid #FEF3C7',
+        boxShadow: '0 4px 20px rgba(245, 158, 11, 0.06)',
       }}
     >
       {/* Header */}
@@ -80,11 +80,11 @@ export const CurriculumExamWidget: React.FC<CurriculumExamWidgetProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span
             style={{
-              background: '#e0e7ff',
+              background: '#FEF3C7',
               padding: '4px 10px',
               borderRadius: 999,
               fontSize: '0.8rem',
-              color: '#3730a3',
+              color: '#78350F',
               fontWeight: 700,
             }}
           >
@@ -109,7 +109,7 @@ export const CurriculumExamWidget: React.FC<CurriculumExamWidgetProps> = ({
             style={{
               fontSize: '0.85rem',
               fontWeight: 700,
-              color: '#4f46e5',
+              color: '#92400E',
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
@@ -155,8 +155,8 @@ export const CurriculumExamWidget: React.FC<CurriculumExamWidgetProps> = ({
                       style={{
                         fontSize: '0.75rem',
                         fontWeight: 800,
-                        background: '#e0e7ff',
-                        color: '#4338ca',
+                        background: '#FEF3C7',
+                        color: '#92400E',
                         padding: '2px 8px',
                         borderRadius: 6,
                       }}
@@ -202,10 +202,10 @@ export const CurriculumExamWidget: React.FC<CurriculumExamWidgetProps> = ({
 
                 <div style={{ display: 'flex', gap: 12, fontSize: '0.78rem', color: '#64748b', marginBottom: 12 }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <ListChecks size={14} color="#6366f1" /> {set.totalQuestions} ข้อ
+                    <ListChecks size={14} color="#B45309" /> {set.totalQuestions} ข้อ
                   </span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <Clock size={14} color="#6366f1" /> {set.timeLimitMinutes} นาที
+                    <Clock size={14} color="#B45309" /> {set.timeLimitMinutes} นาที
                   </span>
                 </div>
               </div>
@@ -237,13 +237,13 @@ export const CurriculumExamWidget: React.FC<CurriculumExamWidgetProps> = ({
                     gap: 6,
                     padding: '6px 14px',
                     borderRadius: 10,
-                    background: best ? '#f8fafc' : 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
-                    color: best ? '#4338ca' : '#ffffff',
-                    border: best ? '1px solid #c7d2fe' : 'none',
+                    background: best ? '#f8fafc' : 'linear-gradient(135deg, #92400E 0%, #B45309 100%)',
+                    color: best ? '#92400E' : '#ffffff',
+                    border: best ? '1px solid #FCD34D' : 'none',
                     fontWeight: 700,
                     fontSize: '0.82rem',
                     textDecoration: 'none',
-                    boxShadow: best ? 'none' : '0 2px 8px rgba(79, 70, 229, 0.25)',
+                    boxShadow: best ? 'none' : '0 2px 8px rgba(245, 158, 11, 0.25)',
                     cursor: 'pointer',
                   }}
                 >

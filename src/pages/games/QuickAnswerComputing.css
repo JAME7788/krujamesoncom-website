@@ -43,7 +43,7 @@
   border-radius: 999px;
   background: #fef3c7;
   color: #92400e;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -269,7 +269,7 @@
   border-radius: 999px;
   background: rgba(220, 252, 231, 0.95);
   color: #166534;
-  font-size: 0.68rem;
+  font-size: 0.875rem;
 }
 
 .quick-answer-card.wrong {
@@ -309,7 +309,7 @@
   display: inline-flex;
   margin-bottom: 0.2rem;
   color: #0891b2;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 900;
 }
 
@@ -399,7 +399,7 @@
 
 .quick-result-grid span {
   color: #64748b;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 

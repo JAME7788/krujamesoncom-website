@@ -184,26 +184,26 @@ const ResearchGenerator: React.FC = () => {
       {/* Banner: Unified Research and PA Agreement */}
       <div style={{
         padding: '16px 20px',
-        background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)',
+        background: 'linear-gradient(135deg, #FFF9E6 0%, #FFF9E6 100%)',
         borderRadius: 16,
-        border: '1.5px solid #818cf8',
+        border: '1.5px solid #F59E0B',
         marginBottom: 20,
-        boxShadow: '0 4px 12px rgba(99, 102, 241, 0.08)',
+        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.08)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <span style={{
-                background: '#4f46e5', color: '#fff', fontSize: '0.78rem',
+                background: '#92400E', color: '#fff', fontSize: '0.78rem',
                 fontWeight: 700, padding: '3px 10px', borderRadius: 9999,
               }}>
                 ✨ ทำทีเดียว จบทั้ง 2 งาน
               </span>
-              <strong style={{ fontSize: '1.05rem', color: '#1e1b4b' }}>
+              <strong style={{ fontSize: '1.05rem', color: '#1D1D1F' }}>
                 วิจัยในชั้นเรียน ๕ บท (CAR) 🤝 ข้อตกลงพัฒนางาน ว.PA (ประเด็นท้าทาย)
               </strong>
             </div>
-            <p style={{ margin: 0, fontSize: '0.88rem', color: '#4338ca', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: '#92400E', lineHeight: 1.5 }}>
               หัวข้อ: <strong>"{MOUSE_RESEARCH_TITLE}"</strong>
               <br />
               กลุ่มเป้าหมาย: <strong>นักเรียนชั้น ป.1 โรงเรียนบ้านคลองมดแดง 11 คนจริง</strong> • ผู้วิจัย/ผู้จัดทำ: <strong>นายอนันตชัย เพ็ชรรี่</strong>
@@ -220,7 +220,7 @@ const ResearchGenerator: React.FC = () => {
                 toast.show('⚡ สั่งดาวน์โหลด Word (.docx) ทั้ง 2 เล่มพร้อมกันเรียบร้อย!', 'success');
               }}
               style={{
-                background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                background: 'linear-gradient(135deg, #92400E 0%, #B45309 100%)',
                 color: '#fff',
                 fontWeight: 700,
                 fontSize: '0.86rem',
@@ -228,7 +228,7 @@ const ResearchGenerator: React.FC = () => {
                 borderRadius: 10,
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
@@ -247,7 +247,7 @@ const ResearchGenerator: React.FC = () => {
           <select
             value={selectedPresetId}
             onChange={(e) => handlePresetChange(e.target.value)}
-            style={{ ...inp, border: '2px solid #6366f1', background: '#f8fafc', fontWeight: 600 }}
+            style={{ ...inp, border: '2px solid #B45309', background: '#f8fafc', fontWeight: 600 }}
           >
             {RESEARCH_PRESETS.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -287,7 +287,7 @@ const ResearchGenerator: React.FC = () => {
             padding: '10px 18px',
             borderRadius: 12,
             border: 'none',
-            background: viewMode === 'car' ? '#4f46e5' : '#f1f5f9',
+            background: viewMode === 'car' ? '#92400E' : '#f1f5f9',
             color: viewMode === 'car' ? '#ffffff' : '#475569',
             fontWeight: 700,
             fontSize: '0.9rem',
@@ -308,7 +308,7 @@ const ResearchGenerator: React.FC = () => {
             padding: '10px 18px',
             borderRadius: 12,
             border: 'none',
-            background: viewMode === 'pa' ? '#7c3aed' : '#f1f5f9',
+            background: viewMode === 'pa' ? '#B45309' : '#f1f5f9',
             color: viewMode === 'pa' ? '#ffffff' : '#475569',
             fontWeight: 700,
             fontSize: '0.9rem',
@@ -368,7 +368,7 @@ const ResearchGenerator: React.FC = () => {
           onClick={aiExpand}
           disabled={busy}
           style={{
-            background: 'linear-gradient(135deg,#8b5cf6,#6366f1)',
+            background: 'linear-gradient(135deg,#A16207,#B45309)',
             color: 'white',
             border: 0,
             fontWeight: 600,
@@ -410,7 +410,7 @@ const ResearchGenerator: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
             <div>
               <h3 id="research-draft-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.05rem' }}>
-                <BookOpen size={20} color="#4f46e5" /> รายงานการวิจัยปฏิบัติการในชั้นเรียน ๕ บท (CAR)
+                <BookOpen size={20} color="#92400E" /> รายงานการวิจัยปฏิบัติการในชั้นเรียน ๕ บท (CAR)
               </h3>
               <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.84rem' }}>
                 โครงสร้าง 5 บทฉบับสมบูรณ์สำหรับ ป.1 (11 คน) พร้อมคำนวณ Pre/Post/t-test เรียบร้อยแล้ว สามารถกดเลือกอ่านและแก้ไขทีละบทได้
@@ -432,16 +432,16 @@ const ResearchGenerator: React.FC = () => {
                   minHeight: 84,
                   padding: '10px 12px',
                   textAlign: 'left',
-                  border: activePartKey === `chapter-${chapter.number}` ? '2px solid #4f46e5' : '1px solid #cbd5e1',
+                  border: activePartKey === `chapter-${chapter.number}` ? '2px solid #92400E' : '1px solid #cbd5e1',
                   borderRadius: 10,
-                  background: activePartKey === `chapter-${chapter.number}` ? '#eef2ff' : '#fff',
+                  background: activePartKey === `chapter-${chapter.number}` ? '#FFF9E6' : '#fff',
                   color: '#0f172a',
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   transition: 'all 0.15s ease',
                 }}
               >
-                <strong style={{ display: 'block', marginBottom: 4, color: '#4338ca' }}>บทที่ {chapter.number} {chapter.title}</strong>
+                <strong style={{ display: 'block', marginBottom: 4, color: '#92400E' }}>บทที่ {chapter.number} {chapter.title}</strong>
                 <span style={{ display: 'block', color: '#64748b', fontSize: '0.76rem', lineHeight: 1.4 }}>{chapter.sections}</span>
               </button>
             ))}
@@ -489,7 +489,7 @@ const ResearchGenerator: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
             <div>
               <h3 id="pa-draft-heading" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.05rem' }}>
-                <FileCheck size={20} color="#7c3aed" /> แบบข้อตกลงในการพัฒนางาน (ว.PA) ส่วนที่ ๒: ประเด็นท้าทาย
+                <FileCheck size={20} color="#B45309" /> แบบข้อตกลงในการพัฒนางาน (ว.PA) ส่วนที่ ๒: ประเด็นท้าทาย
               </h3>
               <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.84rem' }}>
                 จัดทำตามเกณฑ์ ว 9/2564 ก.ค.ศ. สำหรับครูผู้ช่วย สอดคล้องกับเล่มวิจัย 5 บท และคำนวณจากผลลัพธ์จริงของเด็ก 11 คน
@@ -500,8 +500,8 @@ const ResearchGenerator: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ padding: '10px 14px', background: '#f5f3ff', border: '1px solid #ddd6fe', borderBottom: 0, borderRadius: '10px 10px 0 0' }}>
-            <strong style={{ color: '#5b21b6' }}>เนื้อหาข้อตกลง ว.PA ประเด็นท้าทาย (PA 1/ส)</strong>
+          <div style={{ padding: '10px 14px', background: '#FFF9E6', border: '1px solid #FDE68A', borderBottom: 0, borderRadius: '10px 10px 0 0' }}>
+            <strong style={{ color: '#92400E' }}>เนื้อหาข้อตกลง ว.PA ประเด็นท้าทาย (PA 1/ส)</strong>
             <span style={{ display: 'block', marginTop: 2, color: '#6b7280', fontSize: '0.78rem' }}>
               สามารถแก้ไขปรับแต่งข้อความได้ เมื่อดาวน์โหลดเป็น Word (.docx) จะจัดหน้าและมีช่องลงชื่อผู้อำนวยการโรงเรียนตามแบบราชการ
             </span>
@@ -513,7 +513,7 @@ const ResearchGenerator: React.FC = () => {
             spellCheck={false}
             style={{
               width: '100%', minHeight: 650, padding: 18,
-              border: '1px solid #ddd6fe', borderRadius: '0 0 10px 10px',
+              border: '1px solid #FDE68A', borderRadius: '0 0 10px 10px',
               fontFamily: "'Sarabun', 'TH Sarabun New', sans-serif", fontSize: '0.94rem', lineHeight: 1.8,
               whiteSpace: 'pre-wrap', boxSizing: 'border-box', resize: 'vertical',
               background: '#ffffff',

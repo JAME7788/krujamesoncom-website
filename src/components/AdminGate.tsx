@@ -60,7 +60,7 @@ const AdminGate: React.FC<Props> = ({ children }) => {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '6rem 1rem 2rem',
-        background: 'linear-gradient(135deg, #1f2937 0%, #4338ca 100%)',
+        background: 'radial-gradient(circle at 15% 10%, rgba(255, 212, 59, 0.28) 0%, transparent 45%), linear-gradient(160deg, #FFFDF5 0%, #FFF3BF 100%)',
       }}
     >
       <motion.div
@@ -72,7 +72,7 @@ const AdminGate: React.FC<Props> = ({ children }) => {
           background: 'white',
           borderRadius: 20,
           padding: '2.5rem',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+          boxShadow: '0 18px 48px rgba(51, 41, 0, 0.12)', border: '1px solid rgba(15, 23, 42, 0.07)',
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -81,11 +81,11 @@ const AdminGate: React.FC<Props> = ({ children }) => {
               width: 72,
               height: 72,
               borderRadius: 20,
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              background: 'linear-gradient(135deg, #FFD43B, #FAB005)',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'white',
+              color: '#1D1D1F',
               marginBottom: '1rem',
             }}
           >
@@ -167,8 +167,8 @@ const AdminGate: React.FC<Props> = ({ children }) => {
             disabled={submitting}
             style={{
               padding: '0.85rem',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: 'white',
+              background: 'linear-gradient(135deg, #FFD43B, #FAB005)',
+              color: '#1D1D1F',
               border: 0,
               borderRadius: 10,
               fontSize: '1rem',

@@ -18,7 +18,7 @@
 }
 
 .admin-header h1 span {
-  color: var(--primary);
+  color: var(--primary-ink);
 }
 
 .btn-export {
@@ -182,7 +182,7 @@ th.sticky-col {
 
 .total-points {
   font-weight: 900;
-  color: var(--primary-dark);
+  color: var(--primary-ink);
   background: var(--primary-soft);
 }
 

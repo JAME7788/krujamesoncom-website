@@ -223,7 +223,7 @@ const StudentManager: React.FC = () => {
         จำนวนนักเรียนใน <strong>{classroom}</strong>:
         <span className="sm-count">{list.length} คน</span>
         {filtered.length !== list.length && (
-          <span style={{ color: '#6366f1', fontWeight: 600 }}>
+          <span style={{ color: '#B45309', fontWeight: 600 }}>
             (กรองอยู่ {filtered.length} คน)
           </span>
         )}

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { BookOpen, Target, ChevronRight, X, ListChecks, Eye, Lock, ClipboardCheck, Download, FileText } from 'lucide-react';
+import { BookOpen, Target, ChevronRight, X, ListChecks, Eye, Lock, ClipboardCheck, Download, FileText, GraduationCap } from 'lucide-react';
 import { grades } from '../data/curriculum';
 import type { Grade, Unit, Indicator } from '../data/curriculum';
 import { useAuth } from '../context/AuthContext';
@@ -109,8 +109,8 @@ const Curriculum: React.FC = () => {
 
       {/* Teacher & Lesson Plan Resource Bar */}
       <div style={{
-        background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
-        border: '1px solid #bfdbfe',
+        background: 'var(--primary-soft)',
+        border: '1px solid rgba(245, 158, 11, 0.3)',
         borderRadius: '12px',
         padding: '1rem 1.25rem',
         marginBottom: '1.5rem',
@@ -121,11 +121,11 @@ const Curriculum: React.FC = () => {
         gap: '0.85rem'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <div style={{ background: '#2563eb', color: '#fff', borderRadius: '8px', padding: '0.5rem', display: 'flex' }}>
+          <div style={{ background: 'linear-gradient(135deg, #FFD43B, #FAB005)', color: '#1D1D1F', borderRadius: '8px', padding: '0.5rem', display: 'flex' }}>
             <FileText size={20} />
           </div>
           <div>
-            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e3a8a' }}>
+            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
               แผนการจัดการเรียนรู้และบันทึกหลังสอน (ว.PA ตัวชี้วัด ๑.๒ - ๑.๓)
             </h4>
             <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569' }}>
@@ -143,34 +143,16 @@ const Curriculum: React.FC = () => {
               gap: '0.4rem',
               padding: '0.45rem 0.85rem',
               borderRadius: '8px',
-              background: '#2563eb',
+              background: '#B45309',
               color: '#ffffff',
               fontSize: '0.85rem',
               fontWeight: 600,
               textDecoration: 'none',
-              boxShadow: '0 1px 3px rgba(37,99,235,0.2)'
+              boxShadow: '0 1px 3px rgba(180,83,9,0.2)'
             }}
           >
             <Download size={14} /> ดาวน์โหลดแผน ป.๑ (๔๐ แผนพร้อมหลังสอน)
           </a>
-          <Link
-            to="/is-blog"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.45rem 0.85rem',
-              borderRadius: '8px',
-              background: '#059669',
-              color: '#ffffff',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              textDecoration: 'none',
-              boxShadow: '0 1px 3px rgba(5,150,105,0.2)'
-            }}
-          >
-            <BookOpen size={14} /> 🌱 บล็อกคลังความรู้วิชา IS (I20201 & ทักษะอาชีพ 1–2) ➔
-          </Link>
           <Link
             to="/admin?tab=p1-plan"
             style={{
@@ -196,6 +178,14 @@ const Curriculum: React.FC = () => {
           <p>ไม่มีคอร์สสำหรับชั้นนี้</p>
         </div>
       )}
+      <Link to="/is-blog" className="is-course-banner">
+        <span className="is-course-icon" aria-hidden><GraduationCap size={26} /></span>
+        <span className="is-course-text">
+          <strong>บล็อกวิชา IS</strong>
+          <span>คลังความรู้ I20201 และทักษะอาชีพ 1–2 สำหรับการค้นคว้าอิสระ</span>
+        </span>
+        <ChevronRight className="is-course-arrow" size={22} aria-hidden />
+      </Link>
       <div className="course-cards-grid">
         {visibleGrades.map((g, i) => (
           <motion.div

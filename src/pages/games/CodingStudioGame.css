@@ -57,7 +57,7 @@
   border-radius: 6px;
   background: #f8fafc;
   color: #334155;
-  font-size: 0.84rem;
+  font-size: 0.875rem;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -110,7 +110,7 @@
   }
 
   .coding-studio-title p {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
   }
 
   .coding-studio-workspace {

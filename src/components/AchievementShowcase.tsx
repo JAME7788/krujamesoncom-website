@@ -43,16 +43,16 @@ const AchievementShowcase: React.FC<Props> = ({ studentId }) => {
   return (
     <div style={{
       padding: '1rem 1.25rem', borderRadius: 16, marginBottom: 16,
-      background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(99, 102, 241, 0.06))',
-      border: '1px solid rgba(168, 85, 247, 0.18)',
+      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(245, 158, 11, 0.06))',
+      border: '1px solid rgba(245, 158, 11, 0.18)',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Trophy size={18} color="#a855f7" />
+          <Trophy size={18} color="#A16207" />
           <strong style={{ fontSize: '1rem' }}>เหรียญตรา (Achievements)</strong>
         </div>
         <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-          ปลดล็อกแล้ว <strong style={{ color: '#a855f7' }}>{stats.unlockedCount}/{stats.total}</strong>
+          ปลดล็อกแล้ว <strong style={{ color: '#A16207' }}>{stats.unlockedCount}/{stats.total}</strong>
           ({stats.percentage}%)
         </div>
       </div>
@@ -61,7 +61,7 @@ const AchievementShowcase: React.FC<Props> = ({ studentId }) => {
       <div style={{ height: 8, background: '#f3f4f6', borderRadius: 999, overflow: 'hidden', marginBottom: 14 }}>
         <div style={{
           width: `${stats.percentage}%`, height: '100%',
-          background: 'linear-gradient(90deg, #a855f7, #6366f1)',
+          background: 'linear-gradient(90deg, #A16207, #B45309)',
           transition: 'width 0.4s',
         }} />
       </div>

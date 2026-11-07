@@ -472,7 +472,7 @@ const CyberRacerGame: React.FC = () => {
     car.currentLane = lane;
     car.targetLane = lane;
     setActiveLane(lane);
-    const laneOffsets = [0.22, 0.5, 0.78];
+    const laneOffsets = [1 / 6, 0.5, 5 / 6];
     car.targetX = laneOffsets[lane];
     playSfxTone(260 + lane * 40, 0.08, 'triangle', 0.08);
   }, [gameState, playSfxTone]);
@@ -631,10 +631,25 @@ const CyberRacerGame: React.FC = () => {
         return;
       }
 
-      const width = canvas.width;
-      const height = canvas.height;
-      const horizonY = height * 0.25;
-      const playerY = height * 0.82;
+      // ----------------------------------------------------
+      // CANVAS SIZE: ตามขนาดจริงบนจอ × devicePixelRatio (คมชัดทุกขนาดจอ)
+      // ----------------------------------------------------
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = canvas.clientWidth || 720;
+      const height = canvas.clientHeight || 440;
+      const pxW = Math.round(width * dpr);
+      const pxH = Math.round(height * dpr);
+      if (canvas.width !== pxW || canvas.height !== pxH) {
+        canvas.width = pxW;
+        canvas.height = pxH;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+
+      const S = Math.max(0.6, Math.min(width / 720, height / 440)); // หน่วยสเกลของสไปรต์
+      const horizonY = height * 0.34;
+      const playerY = height * 0.8;
+      const groundH = height - horizonY;
 
       const car = carStateRef.current;
       const sim = simStatsRef.current;
@@ -663,7 +678,7 @@ const CyberRacerGame: React.FC = () => {
       // Smooth horizontal interpolation for car
       const dx = car.targetX - car.carX;
       car.carX += dx * Math.min(1, dt * 14);
-      car.tilt = -dx * 1.5; // car leans into turn
+      car.tilt = -dx * 40; // car leans into turn (degrees)
 
       // Update Distance & Score in ref (throttled HUD sync every 180ms to prevent 60fps React re-renders)
       const speedScale = car.speedKmH / 180;
@@ -675,167 +690,236 @@ const CyberRacerGame: React.FC = () => {
         setScore(Math.floor(sim.score));
       }
 
-      // ----------------------------------------------------
-      // DRAW BACKGROUND (Cyber Sunset Sky & Grid Horizon)
-      // ----------------------------------------------------
-      // Sky gradient
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
-      skyGrad.addColorStop(0, '#0f0c29');
-      skyGrad.addColorStop(0.6, '#302b63');
-      skyGrad.addColorStop(1, '#ff007f');
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, width, horizonY);
+      const nitro = sim.isNitroActive;
+      const accent = nitro ? '#22d3ee' : '#ff2d95';
+      const scroll = (now * speedScale * 0.0016) % 1; // 0..1 การเลื่อนของพื้นถนน
 
-      // Distant Neon Sun / Horizon Glow
+      // ----------------------------------------------------
+      // SKY: ไล่สีพระอาทิตย์ตก + ดาว + ดวงอาทิตย์เรโทรมีแถบ
+      // ----------------------------------------------------
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+      skyGrad.addColorStop(0, '#0a0620');
+      skyGrad.addColorStop(0.55, '#2b0f52');
+      skyGrad.addColorStop(0.85, '#7a1f6e');
+      skyGrad.addColorStop(1, '#ff4d8d');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, width, horizonY + 1);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      for (let i = 0; i < 46; i++) {
+        const sx = ((i * 9301 + 49297) % 233280) / 233280 * width;
+        const sy = ((i * 4271 + 1237) % 9973) / 9973 * horizonY * 0.62;
+        const twinkle = 0.5 + 0.5 * Math.sin(now * 0.002 + i);
+        ctx.globalAlpha = 0.25 + twinkle * 0.6;
+        const r = i % 7 === 0 ? 1.6 : 1;
+        ctx.fillRect(sx, sy, r, r);
+      }
+      ctx.globalAlpha = 1;
+
+      const sunR = Math.min(width * 0.17, horizonY * 0.82);
+      const sunX = width / 2;
+      const sunCY = horizonY - sunR * 0.18;
       ctx.save();
-      const sunGrad = ctx.createRadialGradient(
-        width / 2, horizonY, 5,
-        width / 2, horizonY, width * 0.35,
-      );
-      sunGrad.addColorStop(0, 'rgba(255, 230, 0, 0.9)');
-      sunGrad.addColorStop(0.4, 'rgba(255, 0, 128, 0.6)');
-      sunGrad.addColorStop(1, 'rgba(255, 0, 128, 0)');
+      ctx.beginPath();
+      ctx.rect(0, 0, width, horizonY);
+      ctx.clip();
+      const halo = ctx.createRadialGradient(sunX, sunCY, sunR * 0.6, sunX, sunCY, sunR * 2.1);
+      halo.addColorStop(0, 'rgba(255, 120, 160, 0.45)');
+      halo.addColorStop(1, 'rgba(255, 60, 140, 0)');
+      ctx.fillStyle = halo;
+      ctx.fillRect(0, 0, width, horizonY);
+      const sunGrad = ctx.createLinearGradient(0, sunCY - sunR, 0, sunCY + sunR);
+      sunGrad.addColorStop(0, '#ffe66d');
+      sunGrad.addColorStop(0.5, '#ff9f43');
+      sunGrad.addColorStop(1, '#ff2d95');
       ctx.fillStyle = sunGrad;
       ctx.beginPath();
-      ctx.arc(width / 2, horizonY, width * 0.35, Math.PI, 0, false);
+      ctx.arc(sunX, sunCY, sunR, 0, Math.PI * 2);
       ctx.fill();
-
-      // Cyber City Silhouettes
-      ctx.fillStyle = 'rgba(20, 15, 45, 0.85)';
-      const buildingWidths = [45, 30, 60, 40, 50, 35, 70, 40, 55, 60];
-      let bX = 10;
-      for (let i = 0; i < buildingWidths.length; i++) {
-        const bW = buildingWidths[i];
-        const bH = 25 + ((i * 37) % 55);
-        ctx.fillRect(bX, horizonY - bH, bW, bH);
-        // glowing window dots
-        ctx.fillStyle = (i % 2 === 0) ? '#00f7ff' : '#ff007f';
-        for (let wy = horizonY - bH + 6; wy < horizonY - 4; wy += 12) {
-          ctx.fillRect(bX + 8, wy, 4, 4);
-          ctx.fillRect(bX + bW - 12, wy, 4, 4);
-        }
-        ctx.fillStyle = 'rgba(20, 15, 45, 0.85)';
-        bX += bW + 12;
-        if (bX > width) break;
+      // แถบตัดแนวนอนแบบซินธ์เวฟ
+      ctx.fillStyle = '#7a1f6e';
+      for (let k = 0; k < 6; k++) {
+        const by = sunCY + sunR * (0.08 + k * 0.17);
+        const bh = Math.max(1.5, sunR * (0.025 + k * 0.012));
+        ctx.fillRect(sunX - sunR, by, sunR * 2, bh);
       }
       ctx.restore();
 
-      // ----------------------------------------------------
-      // DRAW 3D PERSPECTIVE HIGHWAY (Road & Lanes)
-      // ----------------------------------------------------
-      const roadTopWidth = width * 0.28;
-      const roadBottomWidth = width * 0.94;
-      const roadTopLeft = (width - roadTopWidth) / 2;
-      const roadTopRight = roadTopLeft + roadTopWidth;
-      const roadBottomLeft = (width - roadBottomWidth) / 2;
-      const roadBottomRight = roadBottomLeft + roadBottomWidth;
-
-      // Road asphalt surface
-      const roadGrad = ctx.createLinearGradient(0, horizonY, 0, height);
-      roadGrad.addColorStop(0, '#151329');
-      roadGrad.addColorStop(0.5, '#1e1b38');
-      roadGrad.addColorStop(1, '#0e0b1f');
-      ctx.fillStyle = roadGrad;
-
+      // ภูเขาไกล (สีม่วงเข้ม) + เมืองไซเบอร์เต็มความกว้างจอ
+      ctx.fillStyle = '#1d0b3a';
       ctx.beginPath();
-      ctx.moveTo(roadTopLeft, horizonY);
-      ctx.lineTo(roadTopRight, horizonY);
-      ctx.lineTo(roadBottomRight, height);
-      ctx.lineTo(roadBottomLeft, height);
+      ctx.moveTo(0, horizonY);
+      for (let i = 0; i <= 12; i++) {
+        const mx = (i / 12) * width;
+        const peak = horizonY - (14 + ((i * 53) % 37)) * S * (i % 2 === 0 ? 1.2 : 0.7);
+        ctx.lineTo(mx, peak);
+      }
+      ctx.lineTo(width, horizonY);
       ctx.closePath();
       ctx.fill();
 
-      // Active Lane Neon Carpet (ช่วยให้เด็กมองเห็นเลนปัจจุบันของรถชัดเจนทันที)
-      const activeLaneIdx = car.currentLane;
-      const laneTopL = roadTopLeft + roadTopWidth * (activeLaneIdx / 3);
-      const laneTopR = roadTopLeft + roadTopWidth * ((activeLaneIdx + 1) / 3);
-      const laneBotL = roadBottomLeft + roadBottomWidth * (activeLaneIdx / 3);
-      const laneBotR = roadBottomLeft + roadBottomWidth * ((activeLaneIdx + 1) / 3);
-      const laneCarpetGrad = ctx.createLinearGradient(0, horizonY, 0, height);
-      laneCarpetGrad.addColorStop(0, 'rgba(56, 189, 248, 0.04)');
-      laneCarpetGrad.addColorStop(1, sim.isNitroActive ? 'rgba(56, 189, 248, 0.24)' : 'rgba(244, 63, 94, 0.16)');
-      ctx.fillStyle = laneCarpetGrad;
-      ctx.beginPath();
-      ctx.moveTo(laneTopL, horizonY);
-      ctx.lineTo(laneTopR, horizonY);
-      ctx.lineTo(laneBotR, height);
-      ctx.lineTo(laneBotL, height);
-      ctx.closePath();
-      ctx.fill();
-
-      // Glowing Road Borders (Left & Right curbs — วาดเส้นคู่แทน shadowBlur เพื่อความลื่นไหล 60fps)
-      ctx.strokeStyle = sim.isNitroActive ? 'rgba(0, 247, 255, 0.32)' : 'rgba(255, 0, 127, 0.32)';
-      ctx.lineWidth = 9;
-      ctx.beginPath();
-      ctx.moveTo(roadTopLeft, horizonY);
-      ctx.lineTo(roadBottomLeft, height);
-      ctx.moveTo(roadTopRight, horizonY);
-      ctx.lineTo(roadBottomRight, height);
-      ctx.stroke();
-
-      ctx.strokeStyle = sim.isNitroActive ? '#00f7ff' : '#ff007f';
-      ctx.lineWidth = sim.isNitroActive ? 4 : 3;
-      ctx.beginPath();
-      ctx.moveTo(roadTopLeft, horizonY);
-      ctx.lineTo(roadBottomLeft, height);
-      ctx.moveTo(roadTopRight, horizonY);
-      ctx.lineTo(roadBottomRight, height);
-      ctx.stroke();
-
-      // Animated Road Divider Stripes (3 Lanes -> 2 Dividers)
-      const divider1TopX = roadTopLeft + roadTopWidth * (1 / 3);
-      const divider1BottomX = roadBottomLeft + roadBottomWidth * (1 / 3);
-      const divider2TopX = roadTopLeft + roadTopWidth * (2 / 3);
-      const divider2BottomX = roadBottomLeft + roadBottomWidth * (2 / 3);
-
-      const speedFactor = (now * (car.speedKmH / 180) * 0.002) % 1;
-      const numStripes = 10;
-
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-      for (let i = 0; i < numStripes; i++) {
-        // Perspective exponent for realistic depth
-        const p1 = Math.pow((i + speedFactor) / numStripes, 2.2);
-        const p2 = Math.pow((i + speedFactor + 0.45) / numStripes, 2.2);
-        if (p1 > 1 || p2 > 1) continue;
-
-        const y1 = horizonY + (height - horizonY) * p1;
-        const y2 = horizonY + (height - horizonY) * p2;
-
-        const d1x1 = divider1TopX + (divider1BottomX - divider1TopX) * p1;
-        const d1x2 = divider1TopX + (divider1BottomX - divider1TopX) * p2;
-        const d2x1 = divider2TopX + (divider2BottomX - divider2TopX) * p1;
-        const d2x2 = divider2TopX + (divider2BottomX - divider2TopX) * p2;
-
-        const stripeWidth = 2 + 6 * p1;
-        // Lane 1 divider
-        ctx.beginPath();
-        ctx.moveTo(d1x1 - stripeWidth / 2, y1);
-        ctx.lineTo(d1x2 - stripeWidth / 2, y2);
-        ctx.lineTo(d1x2 + stripeWidth / 2, y2);
-        ctx.lineTo(d1x1 + stripeWidth / 2, y1);
-        ctx.fill();
-
-        // Lane 2 divider
-        ctx.beginPath();
-        ctx.moveTo(d2x1 - stripeWidth / 2, y1);
-        ctx.lineTo(d2x2 - stripeWidth / 2, y2);
-        ctx.lineTo(d2x2 + stripeWidth / 2, y2);
-        ctx.lineTo(d2x1 + stripeWidth / 2, y1);
-        ctx.fill();
+      const cityShift = (sim.distance * 0.02) % 60;
+      let bX = -cityShift * S;
+      let bi = 0;
+      while (bX < width) {
+        const bW = (26 + ((bi * 37) % 34)) * S;
+        const bH = (22 + ((bi * 61) % 58)) * S;
+        // เว้นช่องตรงกลางให้เห็นดวงอาทิตย์
+        const center = bX + bW / 2;
+        if (Math.abs(center - width / 2) > sunR * 0.75) {
+          ctx.fillStyle = '#140728';
+          ctx.fillRect(bX, horizonY - bH, bW, bH);
+          ctx.fillStyle = bi % 3 === 0 ? 'rgba(34, 211, 238, 0.85)' : 'rgba(255, 45, 149, 0.8)';
+          for (let wy = horizonY - bH + 5 * S; wy < horizonY - 4 * S; wy += 9 * S) {
+            for (let wx = bX + 4 * S; wx < bX + bW - 5 * S; wx += 8 * S) {
+              if (((wx * 7 + wy * 3 + bi) | 0) % 5 !== 0) ctx.fillRect(wx, wy, 2.5 * S, 3 * S);
+            }
+          }
+        }
+        bX += bW + 6 * S;
+        bi++;
       }
 
-      // Helper function: get X coordinate at a given lane and vertical progress (0 to 1)
-      const getLaneXAtProgress = (lane: 0 | 1 | 2, p: number) => {
-        const laneRatios = [1 / 6, 3 / 6, 5 / 6];
-        const ratio = laneRatios[lane];
+      // ----------------------------------------------------
+      // GROUND: ตารางนีออนเคลื่อนที่เต็มจอ (ไม่มีพื้นที่ดำค้างภาพเก่าอีก)
+      // ----------------------------------------------------
+      const groundGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+      groundGrad.addColorStop(0, '#1a0b33');
+      groundGrad.addColorStop(1, '#07030f');
+      ctx.fillStyle = groundGrad;
+      ctx.fillRect(0, horizonY, width, groundH);
+
+      ctx.strokeStyle = nitro ? 'rgba(34, 211, 238, 0.32)' : 'rgba(255, 45, 149, 0.28)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 14; i++) {
+        const t = Math.pow((i + scroll) / 14, 2.2);
+        const gy = horizonY + groundH * t;
+        ctx.beginPath();
+        ctx.moveTo(0, gy);
+        ctx.lineTo(width, gy);
+        ctx.stroke();
+      }
+      for (let i = -12; i <= 12; i++) {
+        ctx.beginPath();
+        ctx.moveTo(width / 2 + i * width * 0.03, horizonY);
+        ctx.lineTo(width / 2 + i * width * 0.22, height);
+        ctx.stroke();
+      }
+      // หมอกเส้นขอบฟ้า
+      const fog = ctx.createLinearGradient(0, horizonY - 6, 0, horizonY + groundH * 0.18);
+      fog.addColorStop(0, 'rgba(255, 77, 141, 0.55)');
+      fog.addColorStop(1, 'rgba(255, 77, 141, 0)');
+      ctx.fillStyle = fog;
+      ctx.fillRect(0, horizonY - 6, width, groundH * 0.18 + 6);
+
+      // ----------------------------------------------------
+      // ROAD: ทางด่วน 3 เลนแบบเปอร์สเปกทีฟ
+      // ----------------------------------------------------
+      const roadTopWidth = width * 0.16;
+      const roadBottomWidth = Math.min(width * 0.98, height * 1.9);
+      const roadTopLeft = (width - roadTopWidth) / 2;
+      const roadBottomLeft = (width - roadBottomWidth) / 2;
+
+      // t = 0 ที่ขอบฟ้า, 1 ที่ขอบล่าง — ทุกอย่างบนถนนใช้ t เดียวกัน จึงอยู่ตรงเลนเสมอ
+      const roadXAt = (ratio: number, t: number) => {
         const topX = roadTopLeft + roadTopWidth * ratio;
         const botX = roadBottomLeft + roadBottomWidth * ratio;
-        return topX + (botX - topX) * p;
+        return topX + (botX - topX) * t;
       };
+      const yAt = (t: number) => horizonY + groundH * t;
+      const tAtProgress = (p: number) => Math.pow(Math.max(0, p), 1.8);
+      const laneRatios = [1 / 6, 3 / 6, 5 / 6];
 
-      const getYAtProgress = (p: number) => {
-        return horizonY + (height - horizonY) * Math.pow(p, 1.8);
-      };
+      const roadGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+      roadGrad.addColorStop(0, '#1c1733');
+      roadGrad.addColorStop(1, '#0d0a1c');
+      ctx.fillStyle = roadGrad;
+      ctx.beginPath();
+      ctx.moveTo(roadXAt(0, 0), horizonY);
+      ctx.lineTo(roadXAt(1, 0), horizonY);
+      ctx.lineTo(roadXAt(1, 1), height);
+      ctx.lineTo(roadXAt(0, 1), height);
+      ctx.closePath();
+      ctx.fill();
+
+      // เลนที่รถอยู่ — พรมแสงบอกตำแหน่ง
+      const lane = car.currentLane;
+      const laneCarpet = ctx.createLinearGradient(0, horizonY, 0, height);
+      laneCarpet.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      laneCarpet.addColorStop(1, nitro ? 'rgba(34, 211, 238, 0.22)' : 'rgba(250, 204, 21, 0.14)');
+      ctx.fillStyle = laneCarpet;
+      ctx.beginPath();
+      ctx.moveTo(roadXAt(lane / 3, 0), horizonY);
+      ctx.lineTo(roadXAt((lane + 1) / 3, 0), horizonY);
+      ctx.lineTo(roadXAt((lane + 1) / 3, 1), height);
+      ctx.lineTo(roadXAt(lane / 3, 1), height);
+      ctx.closePath();
+      ctx.fill();
+
+      // ขอบถนนลายแดง-ขาว (rumble strip) เคลื่อนที่ตามความเร็ว
+      const stripCount = 16;
+      for (let i = 0; i < stripCount; i++) {
+        const t1 = Math.pow((i + scroll) / stripCount, 2.2);
+        const t2 = Math.pow((i + scroll + 1) / stripCount, 2.2);
+        if (t1 > 1) continue;
+        const t2c = Math.min(1, t2);
+        ctx.fillStyle = i % 2 === 0 ? '#f8fafc' : accent;
+        const edgeW = 0.022;
+        for (const [a, b] of [[-edgeW, 0], [1, 1 + edgeW]] as const) {
+          ctx.beginPath();
+          ctx.moveTo(roadXAt(a, t1), yAt(t1));
+          ctx.lineTo(roadXAt(b, t1), yAt(t1));
+          ctx.lineTo(roadXAt(b, t2c), yAt(t2c));
+          ctx.lineTo(roadXAt(a, t2c), yAt(t2c));
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+      // เส้นนีออนขอบถนน
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(roadXAt(0, 0), horizonY);
+      ctx.lineTo(roadXAt(0, 1), height);
+      ctx.moveTo(roadXAt(1, 0), horizonY);
+      ctx.lineTo(roadXAt(1, 1), height);
+      ctx.stroke();
+
+      // เส้นแบ่งเลนแบบประ
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.78)';
+      const dashCount = 10;
+      for (let i = 0; i < dashCount; i++) {
+        const t1 = Math.pow((i + scroll) / dashCount, 2.2);
+        const t2 = Math.pow((i + scroll + 0.45) / dashCount, 2.2);
+        if (t2 > 1) continue;
+        for (const ratio of [1 / 3, 2 / 3]) {
+          const w1 = (1 + 5 * t1) * S * 0.5;
+          const w2 = (1 + 5 * t2) * S * 0.5;
+          ctx.beginPath();
+          ctx.moveTo(roadXAt(ratio, t1) - w1, yAt(t1));
+          ctx.lineTo(roadXAt(ratio, t2) - w2, yAt(t2));
+          ctx.lineTo(roadXAt(ratio, t2) + w2, yAt(t2));
+          ctx.lineTo(roadXAt(ratio, t1) + w1, yAt(t1));
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // เส้นความเร็วตอนใช้ไนโตร
+      if (nitro) {
+        ctx.strokeStyle = 'rgba(165, 243, 252, 0.55)';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 14; i++) {
+          const side = i % 2 === 0 ? -1 : 1;
+          const off = ((now * 0.9 + i * 137) % 1000) / 1000;
+          const x0 = width / 2 + side * width * (0.12 + (i % 5) * 0.05) * (0.3 + off);
+          const y0 = horizonY + groundH * off * 0.9;
+          ctx.beginPath();
+          ctx.moveTo(x0, y0);
+          ctx.lineTo(x0 + side * width * 0.08 * off, y0 + groundH * 0.12 * off);
+          ctx.stroke();
+        }
+      }
 
       // ----------------------------------------------------
       // SPAWN & UPDATE QUESTION GATES
@@ -858,6 +942,37 @@ const CyberRacerGame: React.FC = () => {
         nextQuestionTimeRef.current = 12000; // interval between questions
       }
 
+      // ห่อข้อความ (รองรับภาษาไทยที่ไม่มีช่องว่าง) ให้ไม่เกิน maxW และไม่เกิน maxLines บรรทัด
+      const wrapText = (text: string, maxW: number, maxLines: number) => {
+        const lines: string[] = [];
+        let cur = '';
+        for (const ch of Array.from(text)) {
+          const next = cur + ch;
+          if (ctx.measureText(next).width > maxW && cur) {
+            lines.push(cur);
+            cur = ch.trimStart();
+            if (lines.length === maxLines) break;
+          } else {
+            cur = next;
+          }
+        }
+        if (lines.length < maxLines && cur) lines.push(cur);
+        if (lines.length === maxLines && lines.join('').length < text.length) {
+          const last = lines[maxLines - 1];
+          lines[maxLines - 1] = last.slice(0, Math.max(1, last.length - 1)) + '…';
+        }
+        return lines;
+      };
+      const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      };
+
       // Update & Draw Question Gate
       if (questionGateRef.current) {
         const gate = questionGateRef.current;
@@ -865,73 +980,62 @@ const CyberRacerGame: React.FC = () => {
         gate.progress += dt * (car.speedKmH / 180) * 0.12;
 
         const p = gate.progress;
-        const y = getYAtProgress(p);
-        const scale = 0.2 + 0.8 * p;
-        const gateW = (roadTopWidth + (roadBottomWidth - roadTopWidth) * p);
-        const gateLeft = (width - gateW) / 2;
-        const gateH = 58 * scale;
+        const t = tAtProgress(p);
+        const y = yAt(Math.min(t, 1.2));
+        const k = 0.28 + 0.72 * Math.min(t, 1); // ขนาดตามระยะ
+        const gateLeft = roadXAt(-0.02, t);
+        const gateRight = roadXAt(1.02, t);
+        const gateW = gateRight - gateLeft;
+        const panelH = Math.max(30, 110 * S * k);
+        const postTop = y - panelH - 18 * S * k;
 
-        // Draw Overhead Truss Arch
-        ctx.save();
-        ctx.strokeStyle = '#00f7ff';
-        ctx.lineWidth = 3 * scale;
-        ctx.shadowColor = '#00f7ff';
-        ctx.shadowBlur = 10 * scale;
+        // เสาและคานของซุ้ม
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(gateLeft - 4 * S * k, postTop, 6 * S * k, y - postTop);
+        ctx.fillRect(gateRight - 2 * S * k, postTop, 6 * S * k, y - postTop);
+        ctx.fillStyle = accent;
+        ctx.fillRect(gateLeft, postTop, gateW, Math.max(2, 5 * S * k));
 
-        // Arch pillar left & right
-        ctx.beginPath();
-        ctx.moveTo(gateLeft, y);
-        ctx.lineTo(gateLeft, y - gateH);
-        ctx.lineTo(gateLeft + gateW, y - gateH);
-        ctx.lineTo(gateLeft + gateW, y);
-        ctx.stroke();
-
-        // 3 Lane Answer Gate Panels
-        const panelW = (gateW / 3) * 0.94;
-        const choiceHeaders = ['[A] เลนซ้าย', '[B] เลนกลาง', '[C] เลนขวา'];
         const laneColors = ['#38bdf8', '#facc15', '#c084fc'];
-
+        const letters = ['A', 'B', 'C'];
+        const panelW = (gateW / 3) * 0.9;
         for (let l = 0; l < 3; l++) {
-          const laneCenterX = getLaneXAtProgress(l as 0 | 1 | 2, p);
-          const px = laneCenterX - panelW / 2;
-          const py = y - gateH * 0.9;
-          const panelH = gateH * 0.82;
-
+          const cx = roadXAt(laneRatios[l], t);
+          const px = cx - panelW / 2;
+          const py = postTop + 8 * S * k;
           const isPlayerLane = car.currentLane === l;
 
-          // Panel background
-          ctx.fillStyle = isPlayerLane
-            ? 'rgba(14, 165, 233, 0.58)'
-            : 'rgba(15, 23, 42, 0.9)';
-          ctx.strokeStyle = isPlayerLane ? '#38bdf8' : laneColors[l];
-          ctx.lineWidth = (isPlayerLane ? 3 : 2) * scale;
-          ctx.fillRect(px, py, panelW, panelH);
-          ctx.strokeRect(px, py, panelW, panelH);
+          roundRect(px, py, panelW, panelH, Math.max(4, 10 * S * k));
+          ctx.fillStyle = isPlayerLane ? 'rgba(12, 74, 110, 0.95)' : 'rgba(15, 23, 42, 0.92)';
+          ctx.fill();
+          ctx.lineWidth = Math.max(1.5, (isPlayerLane ? 4 : 2.5) * S * k);
+          ctx.strokeStyle = laneColors[l];
+          ctx.stroke();
 
-          // Panel Lane Header
+          // ป้ายตัวอักษรเลนขนาดใหญ่
+          const badgeR = Math.max(8, 15 * S * k);
           ctx.fillStyle = laneColors[l];
-          ctx.font = `bold ${Math.max(9, Math.round(12 * scale))}px "Prompt", sans-serif`;
+          ctx.beginPath();
+          ctx.arc(cx, py + badgeR + 5 * S * k, badgeR, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#0f172a';
+          ctx.font = `800 ${Math.round(badgeR * 1.25)}px "Prompt", sans-serif`;
           ctx.textAlign = 'center';
-          ctx.textBaseline = 'top';
-          ctx.fillText(choiceHeaders[l], laneCenterX, py + 3 * scale);
-
-          // Panel Choice Text
-          const choiceStr = gate.question.choices[l];
-          ctx.fillStyle = '#ffffff';
-          ctx.font = `600 ${Math.max(8, Math.round(11 * scale))}px "Prompt", sans-serif`;
           ctx.textBaseline = 'middle';
+          ctx.fillText(letters[l], cx, py + badgeR + 5 * S * k + 1);
 
-          if (choiceStr.length > 13 && scale > 0.45) {
-            const splitIdx = choiceStr.lastIndexOf(' ', 13) > 0 ? choiceStr.lastIndexOf(' ', 13) : 11;
-            const line1 = choiceStr.slice(0, splitIdx).trim();
-            const line2 = choiceStr.slice(splitIdx).trim();
-            ctx.fillText(line1, laneCenterX, py + panelH * 0.5);
-            ctx.fillText(line2, laneCenterX, py + panelH * 0.74);
-          } else {
-            ctx.fillText(choiceStr, laneCenterX, py + panelH * 0.62);
+          // ข้อความคำตอบ (แสดงเมื่อป้ายใหญ่พอให้อ่านออก)
+          const fontPx = Math.round(Math.max(13, 18 * S * k));
+          if (panelW > 64 && panelH > 44) {
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = `600 ${fontPx}px "Prompt", sans-serif`;
+            const lines = wrapText(gate.question.choices[l], panelW - 12 * S * k, 2);
+            const textTop = py + badgeR * 2 + 10 * S * k;
+            lines.forEach((ln, idx) => {
+              ctx.fillText(ln, cx, textTop + fontPx * 0.6 + idx * fontPx * 1.2);
+            });
           }
         }
-        ctx.restore();
 
         // Check if gate reaches player
         if (p >= 0.85 && !gate.passed) {
@@ -1023,9 +1127,10 @@ const CyberRacerGame: React.FC = () => {
         const p = entity.progress;
         if (p > 1.1) continue; // offscreen
 
-        const itemY = getYAtProgress(p);
-        const itemX = getLaneXAtProgress(entity.lane, p);
-        const scale = 0.2 + 0.8 * p;
+        const t = tAtProgress(p);
+        const itemY = yAt(t);
+        const itemX = roadXAt(laneRatios[entity.lane], t);
+        const scale = (0.25 + 0.95 * t) * S;
 
         // Collision Check with Player
         if (p >= 0.78 && p <= 0.92 && entity.lane === car.currentLane) {
@@ -1070,67 +1175,84 @@ const CyberRacerGame: React.FC = () => {
           continue; // Remove collected entity
         }
 
-        // Draw Entity Sprite on Road
+        // เงาใต้ไอเท็ม
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(itemX, itemY + 2 * scale, 15 * scale, 4.5 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.save();
-        ctx.translate(itemX, itemY);
+        ctx.translate(itemX, itemY - 16 * scale);
         ctx.scale(scale, scale);
+        const bob = Math.sin(now * 0.006 + entity.id) * 2;
+        ctx.translate(0, bob);
 
         if (entity.type === 'coin') {
-          // Spinning Golden Coin
-          ctx.fillStyle = '#f59e0b';
-          ctx.shadowColor = '#fbbf24';
-          ctx.shadowBlur = 10;
+          // เหรียญทองหมุน
+          const spin = Math.abs(Math.cos(now * 0.005 + entity.id));
+          ctx.fillStyle = '#b45309';
           ctx.beginPath();
-          ctx.ellipse(0, 0, 14, 14, 0, 0, Math.PI * 2);
+          ctx.ellipse(0, 0, 14 * Math.max(0.25, spin), 14, 0, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = '#fef3c7';
-          ctx.font = 'bold 12px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('$', 0, 1);
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 11.5 * Math.max(0.2, spin), 11.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#fff7d6';
+          ctx.fillRect(-1.5 * spin, -7, 3 * spin, 14);
         } else if (entity.type === 'nitro') {
-          // Neon Cyan Nitro Canister
-          ctx.fillStyle = '#06b6d4';
-          ctx.shadowColor = '#22d3ee';
-          ctx.shadowBlur = 12;
-          ctx.fillRect(-10, -14, 20, 28);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 14px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('⚡', 0, 0);
+          // ถังไนโตร + สายฟ้า
+          roundRect(-10, -16, 20, 32, 5);
+          ctx.fillStyle = '#0e7490';
+          ctx.fill();
+          roundRect(-8, -14, 16, 28, 4);
+          ctx.fillStyle = '#22d3ee';
+          ctx.fill();
+          ctx.fillStyle = '#ecfeff';
+          ctx.beginPath();
+          ctx.moveTo(2, -10);
+          ctx.lineTo(-5, 1);
+          ctx.lineTo(0, 1);
+          ctx.lineTo(-2, 10);
+          ctx.lineTo(5, -2);
+          ctx.lineTo(0, -2);
+          ctx.closePath();
+          ctx.fill();
         } else if (entity.type === 'shield') {
-          // Cyan Energy Bubble
-          ctx.strokeStyle = '#38bdf8';
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
-          ctx.lineWidth = 3;
-          ctx.shadowColor = '#38bdf8';
-          ctx.shadowBlur = 12;
+          // ฟองพลังงาน + โล่
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+          ctx.strokeStyle = '#7dd3fc';
+          ctx.lineWidth = 2.5;
           ctx.beginPath();
           ctx.arc(0, 0, 16, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 14px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('🛡️', 0, 0);
-        } else if (entity.type === 'cone') {
-          // Orange Traffic Cone
-          ctx.fillStyle = '#ea580c';
+          ctx.fillStyle = '#e0f2fe';
           ctx.beginPath();
-          ctx.moveTo(0, -18);
-          ctx.lineTo(12, 14);
-          ctx.lineTo(-12, 14);
+          ctx.moveTo(0, -9);
+          ctx.lineTo(8, -5);
+          ctx.quadraticCurveTo(7, 6, 0, 10);
+          ctx.quadraticCurveTo(-7, 6, -8, -5);
           ctx.closePath();
           ctx.fill();
-          // White reflective strip
-          ctx.fillStyle = '#ffffff';
+        } else if (entity.type === 'cone') {
+          // กรวยจราจร
+          ctx.fillStyle = '#1f2937';
+          ctx.fillRect(-14, 12, 28, 5);
+          ctx.fillStyle = '#f97316';
           ctx.beginPath();
-          ctx.moveTo(-6, 2);
-          ctx.lineTo(6, 2);
-          ctx.lineTo(8, 8);
-          ctx.lineTo(-8, 8);
+          ctx.moveTo(-3, -18);
+          ctx.lineTo(3, -18);
+          ctx.lineTo(12, 13);
+          ctx.lineTo(-12, 13);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#f8fafc';
+          ctx.beginPath();
+          ctx.moveTo(-6.5, -2);
+          ctx.lineTo(6.5, -2);
+          ctx.lineTo(8.3, 4);
+          ctx.lineTo(-8.3, 4);
           ctx.closePath();
           ctx.fill();
         }
@@ -1141,13 +1263,23 @@ const CyberRacerGame: React.FC = () => {
       roadEntitiesRef.current = activeEntities;
 
       // ----------------------------------------------------
-      // DRAW PLAYER RACER CAR
+      // DRAW PLAYER RACER CAR (อยู่กึ่งกลางเลนตามเปอร์สเปกทีฟจริง)
       // ----------------------------------------------------
-      const playerLaneX = roadBottomLeft + roadBottomWidth * (car.carX);
-      const carScale = 1.0;
+      const tPlayer = (playerY - horizonY) / groundH;
+      const playerLaneX = roadXAt(car.carX, tPlayer);
+      const laneWidthAtPlayer = (roadBottomWidth - roadTopWidth) * tPlayer / 3 + roadTopWidth / 3;
+      const carScale = Math.min(laneWidthAtPlayer / 112, 1.45 * S);
+
+      // แสงนีออนใต้ท้องรถ
+      const glow = ctx.createRadialGradient(playerLaneX, playerY + 18 * carScale, 4, playerLaneX, playerY + 18 * carScale, 52 * carScale);
+      glow.addColorStop(0, nitro ? 'rgba(34, 211, 238, 0.55)' : 'rgba(255, 45, 149, 0.45)');
+      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(playerLaneX - 60 * carScale, playerY - 20 * carScale, 120 * carScale, 80 * carScale);
 
       ctx.save();
       ctx.translate(playerLaneX, playerY);
+      ctx.scale(carScale, carScale);
       ctx.rotate((car.tilt * Math.PI) / 180);
 
       // Invulnerability flicker
@@ -1156,114 +1288,105 @@ const CyberRacerGame: React.FC = () => {
       }
 
       // Exhaust Boost Flames
-      const flameLength = sim.isNitroActive ? 35 + Math.random() * 20 : 12 + Math.random() * 8;
-      const flameColor = sim.isNitroActive ? '#00f7ff' : '#ff5500';
-      ctx.fillStyle = flameColor;
-      ctx.shadowColor = flameColor;
-      ctx.shadowBlur = 15;
-
-      // Left exhaust flame
-      ctx.beginPath();
-      ctx.moveTo(-16 * carScale, 30 * carScale);
-      ctx.lineTo(-20 * carScale, (30 + flameLength) * carScale);
-      ctx.lineTo(-12 * carScale, 30 * carScale);
-      ctx.fill();
-
-      // Right exhaust flame
-      ctx.beginPath();
-      ctx.moveTo(12 * carScale, 30 * carScale);
-      ctx.lineTo(20 * carScale, (30 + flameLength) * carScale);
-      ctx.lineTo(16 * carScale, 30 * carScale);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // Car Shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-      ctx.beginPath();
-      ctx.ellipse(0, 26 * carScale, 32 * carScale, 14 * carScale, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Car Wheels (4 black rubber tires with cyber rim)
-      const wheels = [
-        { x: -28, y: -18 },
-        { x: 28, y: -18 },
-        { x: -28, y: 16 },
-        { x: 28, y: 16 },
-      ];
-      ctx.fillStyle = '#111827';
-      for (const w of wheels) {
-        ctx.fillRect((w.x - 4) * carScale, (w.y - 8) * carScale, 8 * carScale, 16 * carScale);
+      const flameLength = nitro ? 34 + Math.random() * 18 : 10 + Math.random() * 7;
+      for (const fx of [-11, 11]) {
+        const fg = ctx.createLinearGradient(0, 30, 0, 30 + flameLength);
+        fg.addColorStop(0, nitro ? '#ecfeff' : '#fff7ed');
+        fg.addColorStop(0.35, nitro ? '#22d3ee' : '#fb923c');
+        fg.addColorStop(1, 'rgba(255, 0, 80, 0)');
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.moveTo(fx - 5, 30);
+        ctx.quadraticCurveTo(fx, 30 + flameLength * 1.1, fx + 5, 30);
+        ctx.closePath();
+        ctx.fill();
       }
 
-      // Main Aerodynamic Chassis (Cyber Sports Car)
-      const carGrad = ctx.createLinearGradient(0, -35 * carScale, 0, 30 * carScale);
-      carGrad.addColorStop(0, '#ef4444');
-      carGrad.addColorStop(0.5, '#dc2626');
-      carGrad.addColorStop(1, '#991b1b');
-      ctx.fillStyle = carGrad;
-
+      // เงารถ
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.beginPath();
-      // Hood nose
-      ctx.moveTo(0, -36 * carScale);
-      ctx.lineTo(22 * carScale, -22 * carScale);
-      ctx.lineTo(24 * carScale, 10 * carScale);
-      ctx.lineTo(26 * carScale, 28 * carScale);
-      // Rear spoiler
-      ctx.lineTo(-26 * carScale, 28 * carScale);
-      ctx.lineTo(-24 * carScale, 10 * carScale);
-      ctx.lineTo(-22 * carScale, -22 * carScale);
+      ctx.ellipse(0, 6, 34, 30, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // ล้อ
+      ctx.fillStyle = '#0b0f19';
+      for (const [wx, wy] of [[-27, -20], [27, -20], [-28, 17], [28, 17]]) {
+        roundRect(wx - 5, wy - 9, 10, 18, 3);
+        ctx.fill();
+      }
+
+      // ตัวถัง
+      const carGrad = ctx.createLinearGradient(-26, 0, 26, 0);
+      carGrad.addColorStop(0, '#7f1d1d');
+      carGrad.addColorStop(0.25, '#dc2626');
+      carGrad.addColorStop(0.5, '#f87171');
+      carGrad.addColorStop(0.75, '#dc2626');
+      carGrad.addColorStop(1, '#7f1d1d');
+      ctx.fillStyle = carGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, -40);
+      ctx.bezierCurveTo(16, -40, 22, -30, 23, -18);
+      ctx.lineTo(25, 18);
+      ctx.quadraticCurveTo(25, 30, 14, 31);
+      ctx.lineTo(-14, 31);
+      ctx.quadraticCurveTo(-25, 30, -25, 18);
+      ctx.lineTo(-23, -18);
+      ctx.bezierCurveTo(-22, -30, -16, -40, 0, -40);
       ctx.closePath();
       ctx.fill();
 
-      // Cyber Neon Decal Lines
-      ctx.strokeStyle = sim.isNitroActive ? '#00f7ff' : '#facc15';
-      ctx.lineWidth = 2 * carScale;
-      ctx.beginPath();
-      ctx.moveTo(-12 * carScale, -30 * carScale);
-      ctx.lineTo(-14 * carScale, 20 * carScale);
-      ctx.moveTo(12 * carScale, -30 * carScale);
-      ctx.lineTo(14 * carScale, 20 * carScale);
-      ctx.stroke();
+      // แถบลายกลางรถ
+      ctx.fillStyle = nitro ? '#22d3ee' : '#facc15';
+      ctx.fillRect(-3.5, -39, 7, 70);
 
-      // Cockpit Windshield (Tinted glass with reflection)
-      const glassGrad = ctx.createLinearGradient(0, -18 * carScale, 0, 4 * carScale);
-      glassGrad.addColorStop(0, '#0284c7');
-      glassGrad.addColorStop(1, '#0f172a');
+      // กระจกห้องโดยสาร
+      const glassGrad = ctx.createLinearGradient(0, -18, 0, 10);
+      glassGrad.addColorStop(0, '#7dd3fc');
+      glassGrad.addColorStop(0.45, '#0369a1');
+      glassGrad.addColorStop(1, '#0b1220');
       ctx.fillStyle = glassGrad;
       ctx.beginPath();
-      ctx.moveTo(0, -18 * carScale);
-      ctx.lineTo(14 * carScale, -8 * carScale);
-      ctx.lineTo(12 * carScale, 6 * carScale);
-      ctx.lineTo(-12 * carScale, 6 * carScale);
-      ctx.lineTo(-14 * carScale, -8 * carScale);
+      ctx.moveTo(-15, -12);
+      ctx.quadraticCurveTo(0, -22, 15, -12);
+      ctx.lineTo(13, 9);
+      ctx.quadraticCurveTo(0, 12, -13, 9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.beginPath();
+      ctx.moveTo(-10, -12);
+      ctx.lineTo(-3, -15);
+      ctx.lineTo(-7, 2);
       ctx.closePath();
       ctx.fill();
 
-      // Rear Spoiler Wing
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(-28 * carScale, 24 * carScale, 56 * carScale, 6 * carScale);
-
-      // Glowing Taillights
-      ctx.fillStyle = '#ff0055';
-      ctx.shadowColor = '#ff0055';
-      ctx.shadowBlur = 10;
-      ctx.fillRect(-24 * carScale, 28 * carScale, 10 * carScale, 3 * carScale);
-      ctx.fillRect(14 * carScale, 28 * carScale, 10 * carScale, 3 * carScale);
-      ctx.shadowBlur = 0;
+      // สปอยเลอร์ + ไฟท้าย
+      ctx.fillStyle = '#111827';
+      roundRect(-29, 25, 58, 7, 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff1f5a';
+      ctx.fillRect(-23, 31, 11, 3);
+      ctx.fillRect(12, 31, 11, 3);
 
       // Shield Bubble Aura if active
       if (sim.hasShield) {
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 3;
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 15;
+        ctx.strokeStyle = 'rgba(125, 211, 252, 0.9)';
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(0, 0, 42 * carScale, 0, Math.PI * 2);
+        ctx.ellipse(0, -2, 44, 48, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.stroke();
-        ctx.shadowBlur = 0;
       }
 
       ctx.restore();
+
+      // ขอบมืดรอบจอ (vignette) ให้สายตาไปที่ถนน
+      const vig = ctx.createRadialGradient(width / 2, height * 0.6, height * 0.35, width / 2, height * 0.6, Math.max(width, height) * 0.85);
+      vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      vig.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, width, height);
 
       animId = requestAnimationFrame(render);
     };
@@ -1323,13 +1446,6 @@ const CyberRacerGame: React.FC = () => {
       </div>
 
       {/* Quick Switch to Claw Empire Platformer */}
-      <div className="cr-game-switcher-banner">
-        <Link to="/games/claw-platformer" className="cr-switcher-link">
-          <span className="cr-switcher-tag">🦞 เกมใหม่:</span>
-          <span>ลองเล่นเกม 2D Platformer ตัวละคร Claw Empire (แนว Mario / ตะลุยด่านปราบไวรัส)</span>
-          <span className="cr-switcher-arrow">เล่นเลย →</span>
-        </Link>
-      </div>
 
       {/* Grade Level Selector */}
       <div className="cr-grade-selector">

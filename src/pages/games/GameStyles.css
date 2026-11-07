@@ -29,7 +29,7 @@
   text-decoration: none;
   color: #334155;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   box-shadow: 0 2px 0 #cbd5e1;
   transition: all 0.15s;
 }
@@ -203,7 +203,7 @@
   background: rgba(0,0,0,0.5);
   text-align: center;
   padding: 8px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   border-top: 2px solid #ef4444;
 }
 
@@ -311,7 +311,7 @@
   justify-content: center;
   margin-top: 1rem;
 }
-.btn-secondary {
+.game-page .btn-secondary {
   padding: 0.6rem 1.25rem;
   background: white;
   border: 1px solid #e5e7eb;
@@ -323,7 +323,7 @@
   align-items: center;
   gap: 6px;
 }
-.btn-secondary:hover { border-color: #6366f1; color: #6366f1; }
+.game-page .btn-secondary:hover { border-color: #B45309; color: #92400E; }
 
 /* ================= Binary Game ================= */
 .binary-card {
@@ -370,7 +370,7 @@
 }
 .bit-value { font-size: 2rem; font-weight: 900; }
 .bit-pos {
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   color: #9ca3af;
   font-weight: 600;
   margin-top: 4px;
@@ -660,7 +660,7 @@
   box-shadow: 0 2px 0 #8f5511;
 }
 
-.btn-secondary,
+.game-page .btn-secondary,
 .mode-btn {
   min-height: 42px;
   border: 3px solid #234d3b;
@@ -887,3 +887,127 @@
     scroll-behavior: auto !important;
   }
 }
+
+
+/* ================= Fit-to-screen + readability (all pixel-world games) ================= */
+/* ภายในกรอบเกม (GameFitFrame) แถบเมนูถูกเว้นไว้แล้ว — ไม่ต้องเว้น 6rem และไม่บังคับสูงเต็มจอ */
+.game-fit-inner .game-page {
+  padding-top: 0.75rem;
+  padding-bottom: 1rem;
+  min-height: 0;
+}
+
+.game-page {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.game-topbar {
+  min-height: 0;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.game-topbar h2 {
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+  letter-spacing: 0;
+}
+
+.game-stats {
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.gstat {
+  font-size: 1rem;
+  padding: 6px 14px;
+}
+
+.game-back {
+  font-size: 1rem;
+}
+
+.btn-game-start,
+.compact-game-page .btn-primary {
+  font-size: 1.1rem;
+  padding-inline: 1.4rem;
+}
+
+.puzzle-card,
+.binary-card {
+  font-size: 1.1rem;
+}
+
+.puzzle-header h3 {
+  font-size: 1.35rem;
+}
+
+.sortable-item,
+.pattern-opt,
+.mode-btn {
+  font-size: 1.05rem;
+}
+
+.game-tips {
+  font-size: 1rem;
+}
+
+/* พื้นที่เล่นยืดหยุ่นตามความสูงจอ แทนการล็อก 500px */
+.mouse-arena,
+.kb-arena {
+  height: clamp(320px, calc(100dvh - 330px), 620px);
+}
+
+.bug-arena {
+  min-height: clamp(320px, calc(100dvh - 330px), 620px);
+}
+
+/* ================= Arena polish: แยกสนามเล่นออกจากพื้นหลังให้ชัด ================= */
+.mouse-arena,
+.kb-arena,
+.bug-arena {
+  background-image:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 236, 160, 0.12) 0%, transparent 55%),
+    linear-gradient(rgba(4, 20, 15, 0.55), rgba(4, 20, 15, 0.72)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 48px),
+    url('/media/games/pixel-world/pixel-learning-world.webp');
+  background-size: auto, auto, auto, auto, cover;
+  background-position: center;
+  box-shadow:
+    0 0 0 4px #39250f,
+    0 9px 0 #061914,
+    inset 0 0 60px rgba(0, 0, 0, 0.55);
+}
+
+/* ตัวอักษรที่ตกลงมา: ใหญ่ขึ้น อ่านง่ายสำหรับเด็ก */
+.falling-letter {
+  width: 76px;
+  height: 76px;
+  font-size: 2.6rem;
+  font-weight: 900;
+}
+
+/* แมลง: ใหญ่ขึ้น มีวงแสงให้เห็นชัดบนพื้นหลังเข้ม */
+.bug {
+  filter: drop-shadow(3px 4px 0 rgba(0, 0, 0, 0.5)) drop-shadow(0 0 10px rgba(255, 230, 120, 0.35));
+}
+
+/* การ์ดเนื้อหาอยู่กลางจอ ไม่ชิดซ้าย */
+.game-page .binary-card,
+.game-page .puzzle-card {
+  margin-inline: auto;
+}
+
+/* รายการเรียงลำดับ: จอกว้างแบ่ง 2 คอลัมน์ ให้ทั้งรายการอยู่ในจอเดียว */
+@media (min-width: 1000px) {
+  .game-page .sortable-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: column;
+    grid-template-rows: repeat(var(--sort-rows, 5), auto);
+    gap: 8px 14px;
+  }
+}
+.game-page .sortable-item { padding: 9px 12px; }

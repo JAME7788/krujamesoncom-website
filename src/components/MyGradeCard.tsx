@@ -71,10 +71,10 @@ const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name }) => {
     return (
       <div className="my-grade-card glass" style={{
         padding: 20, borderRadius: 16, marginBottom: 20,
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.06))',
-        border: '1px dashed rgba(99,102,241,0.3)', textAlign: 'center',
+        background: 'linear-gradient(135deg, rgba(245, 158, 11,0.06), rgba(245, 158, 11,0.06))',
+        border: '1px dashed rgba(245, 158, 11,0.3)', textAlign: 'center',
       }}>
-        <Award size={28} color="#6366f1" />
+        <Award size={28} color="#B45309" />
         <h3 style={{ margin: '8px 0 4px', fontSize: '1rem' }}>คะแนนของฉัน — ปีการศึกษา 2569</h3>
         <p style={{ margin: 0, color: '#6b7280', fontSize: '0.85rem' }}>
           ยังไม่มีคะแนน — เริ่มเรียนได้เลย คะแนนจะปรากฏที่นี่อัตโนมัติ
@@ -86,11 +86,11 @@ const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name }) => {
   return (
     <div className="my-grade-card glass" style={{
       padding: 20, borderRadius: 16, marginBottom: 20,
-      background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08))',
-      border: '1px solid rgba(99,102,241,0.18)',
+      background: 'linear-gradient(135deg, rgba(245, 158, 11,0.08), rgba(245, 158, 11,0.08))',
+      border: '1px solid rgba(245, 158, 11,0.18)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <Award size={20} color="#6366f1" />
+        <Award size={20} color="#B45309" />
         <h3 style={{ margin: 0, fontSize: '1.05rem' }}>คะแนนของฉัน — ปีการศึกษา 2569</h3>
       </div>
 
@@ -118,7 +118,7 @@ const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name }) => {
             </div>
 
             <Bar label="K ความรู้" value={c.k} max={42} color="#3b82f6" />
-            <Bar label="P ทักษะ" value={c.p} max={17.5} color="#a855f7" />
+            <Bar label="P ทักษะ" value={c.p} max={17.5} color="#A16207" />
             <Bar label="A คุณลักษณะ" value={c.a} max={10.5} color="#22c55e" />
 
             <div style={{

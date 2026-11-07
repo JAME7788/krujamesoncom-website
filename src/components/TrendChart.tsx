@@ -16,7 +16,7 @@ interface Props {
 }
 
 const TrendChart: React.FC<Props> = ({
-  data, height = 200, color = '#6366f1', yMax = 100, ySuffix = '%', title,
+  data, height = 200, color = '#B45309', yMax = 100, ySuffix = '%', title,
 }) => {
   if (data.length === 0) {
     return (

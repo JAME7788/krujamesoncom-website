@@ -25,9 +25,9 @@ export const ScaffoldingHintLadder: React.FC<ScaffoldingHintLadderProps> = ({
       style={{
         margin: '10px 0 14px',
         background: '#ffffff',
-        border: '1.5px solid #e0e7ff',
+        border: '1.5px solid #FEF3C7',
         borderRadius: 12,
-        boxShadow: '0 2px 8px rgba(99, 102, 241, 0.05)',
+        boxShadow: '0 2px 8px rgba(245, 158, 11, 0.05)',
         overflow: 'hidden',
       }}
     >
@@ -41,17 +41,17 @@ export const ScaffoldingHintLadder: React.FC<ScaffoldingHintLadderProps> = ({
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '10px 14px',
-          background: open ? '#f8fafc' : 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+          background: open ? '#f8fafc' : 'linear-gradient(135deg, #FFF9E6 0%, #FEF3C7 100%)',
           border: 'none',
           cursor: 'pointer',
-          color: '#4338ca',
+          color: '#92400E',
           fontWeight: 700,
           fontSize: '0.85rem',
           textAlign: 'left',
         }}
       >
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Lightbulb size={16} color="#6366f1" />
+          <Lightbulb size={16} color="#B45309" />
           🪜 บันไดนั่งร้านตัวช่วย (Scaffolding Hint Ladder){levelName ? ` • ${levelName}` : ''}
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem' }}>
@@ -62,7 +62,7 @@ export const ScaffoldingHintLadder: React.FC<ScaffoldingHintLadderProps> = ({
 
       {/* Expanded Tiers View */}
       {open && (
-        <div style={{ padding: '12px 14px', borderTop: '1px solid #e0e7ff' }}>
+        <div style={{ padding: '12px 14px', borderTop: '1px solid #FEF3C7' }}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
             <button
               type="button"
@@ -71,9 +71,9 @@ export const ScaffoldingHintLadder: React.FC<ScaffoldingHintLadderProps> = ({
                 flex: 1,
                 padding: '6px 8px',
                 borderRadius: 8,
-                border: activeTier === 1 ? '1.5px solid #6366f1' : '1px solid #cbd5e1',
-                background: activeTier === 1 ? '#e0e7ff' : '#ffffff',
-                color: activeTier === 1 ? '#3730a3' : '#64748b',
+                border: activeTier === 1 ? '1.5px solid #B45309' : '1px solid #cbd5e1',
+                background: activeTier === 1 ? '#FEF3C7' : '#ffffff',
+                color: activeTier === 1 ? '#78350F' : '#64748b',
                 fontWeight: 700,
                 fontSize: '0.75rem',
                 cursor: 'pointer',
@@ -88,9 +88,9 @@ export const ScaffoldingHintLadder: React.FC<ScaffoldingHintLadderProps> = ({
                 flex: 1,
                 padding: '6px 8px',
                 borderRadius: 8,
-                border: activeTier === 2 ? '1.5px solid #6366f1' : '1px solid #cbd5e1',
-                background: activeTier === 2 ? '#e0e7ff' : '#ffffff',
-                color: activeTier === 2 ? '#3730a3' : '#64748b',
+                border: activeTier === 2 ? '1.5px solid #B45309' : '1px solid #cbd5e1',
+                background: activeTier === 2 ? '#FEF3C7' : '#ffffff',
+                color: activeTier === 2 ? '#78350F' : '#64748b',
                 fontWeight: 700,
                 fontSize: '0.75rem',
                 cursor: 'pointer',
@@ -105,9 +105,9 @@ export const ScaffoldingHintLadder: React.FC<ScaffoldingHintLadderProps> = ({
                 flex: 1,
                 padding: '6px 8px',
                 borderRadius: 8,
-                border: activeTier === 3 ? '1.5px solid #6366f1' : '1px solid #cbd5e1',
-                background: activeTier === 3 ? '#e0e7ff' : '#ffffff',
-                color: activeTier === 3 ? '#3730a3' : '#64748b',
+                border: activeTier === 3 ? '1.5px solid #B45309' : '1px solid #cbd5e1',
+                background: activeTier === 3 ? '#FEF3C7' : '#ffffff',
+                color: activeTier === 3 ? '#78350F' : '#64748b',
                 fontWeight: 700,
                 fontSize: '0.75rem',
                 cursor: 'pointer',
@@ -151,7 +151,7 @@ export const ScaffoldingHintLadder: React.FC<ScaffoldingHintLadderProps> = ({
 
             {activeTier === 3 && (
               <div>
-                <strong style={{ fontSize: '0.8rem', color: '#6d28d9', display: 'block', marginBottom: 3 }}>
+                <strong style={{ fontSize: '0.8rem', color: '#92400E', display: 'block', marginBottom: 3 }}>
                   🧱 ขั้นที่ 3: โครงร่างลำดับคำสั่ง
                 </strong>
                 <p style={{ margin: 0, fontSize: '0.83rem', color: '#334155', lineHeight: 1.5 }}>
@@ -172,7 +172,7 @@ export const ScaffoldingHintLadder: React.FC<ScaffoldingHintLadderProps> = ({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#4f46e5',
+                  color: '#92400E',
                   fontSize: '0.74rem',
                   fontWeight: 700,
                   cursor: 'pointer',

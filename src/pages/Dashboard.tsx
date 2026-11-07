@@ -14,6 +14,7 @@ import {
   Activity,
   Flame,
   Target,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getSummary, fetchStudentProgress } from '../services/progressService';
@@ -155,8 +156,12 @@ const Dashboard: React.FC = () => {
   if (!user || !summary) {
     return (
       <div className="dashboard container section-padding">
-        <h1>กรุณาเข้าสู่ระบบก่อน</h1>
-        <Link to="/login" className="btn-primary">เข้าสู่ระบบ</Link>
+        <div className="dashboard-gate">
+          <div className="dashboard-gate-icon"><Lock size={36} aria-hidden /></div>
+          <h1>กรุณาเข้าสู่ระบบก่อน</h1>
+          <p>เข้าสู่ระบบเพื่อดูคะแนน ความก้าวหน้า และงานที่ต้องส่งของคุณ</p>
+          <Link to="/login" className="btn-primary">เข้าสู่ระบบ</Link>
+        </div>
       </div>
     );
   }
@@ -188,7 +193,7 @@ const Dashboard: React.FC = () => {
       value: `${summary.totalSlidesViewed}`,
       sub: 'หน้า รวมทุกหน่วย',
       icon: <FileText />,
-      color: '#a855f7',
+      color: '#A16207',
     },
     {
       label: 'กิจกรรม/สื่อที่เล่น',
@@ -404,7 +409,7 @@ const Dashboard: React.FC = () => {
             background: todayExitTicket
               ? 'linear-gradient(135deg, rgba(236,253,245,0.95) 0%, rgba(240,253,250,0.85) 100%)'
               : 'linear-gradient(135deg, rgba(238,242,255,0.95) 0%, rgba(245,243,255,0.85) 100%)',
-            border: todayExitTicket ? '1.5px solid #10b981' : '1.5px solid #6366f1',
+            border: todayExitTicket ? '1.5px solid #10b981' : '1.5px solid #B45309',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -420,7 +425,7 @@ const Dashboard: React.FC = () => {
                 width: 46,
                 height: 46,
                 borderRadius: 14,
-                background: todayExitTicket ? '#d1fae5' : '#e0e7ff',
+                background: todayExitTicket ? '#d1fae5' : '#FEF3C7',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -440,7 +445,7 @@ const Dashboard: React.FC = () => {
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: 9999,
-                    background: todayExitTicket ? '#10b981' : '#6366f1',
+                    background: todayExitTicket ? '#10b981' : '#B45309',
                     color: '#ffffff',
                   }}
                 >
@@ -460,12 +465,12 @@ const Dashboard: React.FC = () => {
             style={{
               padding: '9px 18px',
               borderRadius: 12,
-              background: todayExitTicket ? '#ffffff' : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+              background: todayExitTicket ? '#ffffff' : 'linear-gradient(135deg, #92400E 0%, #B45309 100%)',
               color: todayExitTicket ? '#047857' : '#ffffff',
               fontWeight: 700,
               fontSize: '0.88rem',
               cursor: 'pointer',
-              boxShadow: todayExitTicket ? '0 2px 4px rgba(0,0,0,0.05)' : '0 4px 12px rgba(79,70,229,0.3)',
+              boxShadow: todayExitTicket ? '0 2px 4px rgba(0,0,0,0.05)' : '0 4px 12px rgba(245, 158, 11,0.3)',
               border: todayExitTicket ? '1.5px solid #10b981' : 'none',
               transition: 'transform 0.15s ease',
             }}
@@ -676,7 +681,7 @@ const Dashboard: React.FC = () => {
           {trendData.length > 0 && (
             <section className="section-card glass">
               <h3>📈 พัฒนาการคะแนน (ตามวัน)</h3>
-              <TrendChart data={trendData} title="" color="#6366f1" />
+              <TrendChart data={trendData} title="" color="#B45309" />
             </section>
           )}
 

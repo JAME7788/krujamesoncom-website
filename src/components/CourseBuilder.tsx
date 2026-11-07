@@ -159,7 +159,7 @@ const CourseBuilder: React.FC = () => {
         <div className="empty-state-card"><p>กำลังดึงรายวิชาจากฐานข้อมูล...</p></div>
       ) : courses.length === 0 ? (
         <div className="empty-state-card">
-          <BookOpen size={48} style={{ color: '#6366f1' }} />
+          <BookOpen size={48} style={{ color: '#B45309' }} />
           <h3>ยังไม่มีรายวิชา</h3>
           <p>เริ่มสร้างรายวิชาแรกของคุณ — เพิ่มหน่วย เพิ่มสไลด์ ลิงก์วิดีโอ เกม และแบบทดสอบได้</p>
           <button className="btn-primary" onClick={handleAddCourse}>
@@ -554,7 +554,7 @@ const LinkEditor: React.FC<{
                 <span className="cb-link-type">{icon}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <strong>{l.title}</strong>
-                  <a href={l.url} target="_blank" rel="noreferrer" style={{ display: 'block', fontSize: '0.75rem', color: '#6366f1', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{l.url}</a>
+                  <a href={l.url} target="_blank" rel="noreferrer" style={{ display: 'block', fontSize: '0.75rem', color: '#B45309', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{l.url}</a>
                   {l.desc && <small style={{ color: '#6b7280' }}>{l.desc}</small>}
                 </div>
                 <button className="cb-icon-btn danger" onClick={() => { removeLink(courseId, unit.id, l.id); onChange(); }}>

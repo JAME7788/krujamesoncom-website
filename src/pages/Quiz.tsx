@@ -570,7 +570,7 @@ const Quiz: React.FC = () => {
                       >
                         <span className="opt-label">{thaiLabel}</span>
                         <span className="opt-text">{option}</span>
-                        {isSelected && <CheckCircle size={20} style={{ color: 'var(--primary)' }} />}
+                        {isSelected && <CheckCircle size={20} style={{ color: '#B45309' }} />}
                       </button>
                     );
                   })}

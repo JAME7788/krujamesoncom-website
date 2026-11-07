@@ -2235,7 +2235,7 @@ const UnitDetail: React.FC = () => {
                         <div className="article-info">
                           <h4 style={{ margin: '0 0 0.5rem' }}>{f.title}</h4>
                           {f.desc && <p style={{ margin: '0 0 0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{f.desc}</p>}
-                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary-dark)' }}>{action} • ที่มา: {f.source} ↗</span>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary-ink)' }}>{action} • ที่มา: {f.source} ↗</span>
                         </div>
                       </a>
                     );
@@ -2444,7 +2444,7 @@ const UnitDetail: React.FC = () => {
                       <div className="article-info">
                         <h4 style={{ margin: '0 0 0.5rem' }}>{a.title}</h4>
                         {a.desc && <p style={{ margin: '0 0 0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{a.desc}</p>}
-                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary-dark)' }}>อ้างอิง: {a.source} ↗</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary-ink)' }}>อ้างอิง: {a.source} ↗</span>
                       </div>
                     </a>
                   ))}

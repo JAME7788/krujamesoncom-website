@@ -61,7 +61,7 @@
 }
 
 .cc-subtitle {
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   color: #94a3b8;
   margin: 2px 0 0 0;
 }
@@ -87,7 +87,7 @@
 }
 
 .cc-hud-label {
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   color: #94a3b8;
   text-transform: uppercase;
   margin-bottom: 2px;
@@ -137,7 +137,7 @@
   border: 1px solid rgba(16, 185, 129, 0.35);
   border-radius: 8px;
   color: #6ee7b7;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 700;
   margin-bottom: 12px;
   text-transform: uppercase;
@@ -169,7 +169,7 @@
 .cc-briefing-box::before {
   content: '🚨 รายงานเหตุการณ์:';
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #fbbf24;
   margin-bottom: 6px;
@@ -283,7 +283,7 @@
   border: 1px solid rgba(234, 179, 8, 0.3);
   border-radius: 10px;
   color: #fbbf24;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;

@@ -102,7 +102,7 @@
   align-items: center;
   gap: 7px;
   color: #ffe999;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -139,7 +139,7 @@
   border-radius: 4px;
   background: rgb(3 32 27 / 72%);
   color: #fff;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 700;
   backdrop-filter: blur(8px);
 }
@@ -222,7 +222,7 @@
   border-radius: 4px;
   background: rgb(4 35 29 / 78%);
   color: #ffe68c;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -303,7 +303,7 @@
   border-radius: 4px;
   background: #153f35;
   color: #d9eee6;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -407,7 +407,7 @@
   border-radius: 4px;
   background: #fff5c9;
   color: #79521c;
-  font-size: 0.69rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -431,7 +431,7 @@
   overflow: hidden;
   margin: 0;
   color: #53645c;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   line-height: 1.55;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -467,7 +467,7 @@
   gap: 5px;
   overflow: hidden;
   color: #466359;
-  font-size: 0.73rem;
+  font-size: 0.875rem;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -542,7 +542,7 @@
 .external-heading p {
   margin: 0.35rem 0 0;
   color: #a8d3d2;
-  font-size: 0.84rem;
+  font-size: 0.875rem;
 }
 
 .external-heading > svg {
@@ -719,7 +719,7 @@
 
 .rec-text p {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #e2e8f0;
 }
 
@@ -730,7 +730,7 @@
   background: #10b981;
   color: white;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -754,7 +754,7 @@
   border: 1.5px solid rgba(255, 255, 255, 0.2);
   background: rgba(6, 39, 32, 0.7);
   color: #e2e8f0;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -782,7 +782,7 @@
   gap: 0.25rem;
   padding: 0.2rem 0.55rem;
   border-radius: 6px;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 700;
   border: 1px solid transparent;
   margin-top: 0.35rem;
@@ -894,7 +894,7 @@
 
 .ng-badge {
   display: inline-block;
-  font-size: 0.68rem;
+  font-size: 0.875rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -921,7 +921,7 @@
 }
 
 .ng-info p {
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   margin: 0.2rem 0 0;
   opacity: 0.85;
   line-height: 1.35;
@@ -932,7 +932,7 @@
 }
 
 .ng-arrow {
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
@@ -972,7 +972,7 @@
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.16);
   color: #e2e8f0;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
 }
 
 .uhs-stat-pill strong {
@@ -992,7 +992,7 @@
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(255, 255, 255, 0.06);
   color: #cbd5e1;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1018,7 +1018,7 @@
   background: #ecfdf5;
   border: 1px solid #6ee7b7;
   color: #047857;
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -1031,7 +1031,7 @@
   background: #fffbeb;
   border: 1px solid #fcd34d;
   color: #b45309;
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -1044,7 +1044,7 @@
   background: #eff6ff;
   border: 1px solid #bfdbfe;
   color: #1d4ed8;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   font-weight: 700;
   margin-top: 0.35rem;
 }

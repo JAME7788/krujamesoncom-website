@@ -633,7 +633,7 @@ const HomeworkStudent: React.FC = () => {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ClipboardList size={20} color="#4f46e5" />
+            <ClipboardList size={20} color="#92400E" />
             <strong style={{ fontSize: '1.02rem', color: '#0f172a' }}>
               สรุปสถานะการส่งงานของฉัน (ส่งแล้ว {overview.completedCount} / {overview.tasks.length} ชิ้น)
             </strong>
@@ -662,7 +662,7 @@ const HomeworkStudent: React.FC = () => {
               height: '100%',
               background: overview.completionPercent === 100
                 ? 'linear-gradient(90deg, #10b981, #22c55e)'
-                : 'linear-gradient(90deg, #6366f1, #38bdf8)',
+                : 'linear-gradient(90deg, #B45309, #38bdf8)',
               transition: 'width 0.35s ease',
             }}
           />
@@ -857,7 +857,7 @@ const HomeworkStudent: React.FC = () => {
                       style={{
                         padding: '6px 12px',
                         fontSize: '0.78rem',
-                        background: 'linear-gradient(135deg, #0ea5e9, #4f46e5)',
+                        background: 'linear-gradient(135deg, #0ea5e9, #92400E)',
                       }}
                     >
                       <Camera size={13} /> ส่งใบงานนี้ผ่านเว็บ (ไม่ต้องใช้ Gmail)
@@ -893,9 +893,9 @@ const HomeworkStudent: React.FC = () => {
               borderRadius: '999px',
               fontSize: '0.82rem',
               fontWeight: filter === tab.id ? 700 : 500,
-              border: filter === tab.id ? '2px solid var(--primary, #6366f1)' : '1px solid #d1d5db',
-              background: filter === tab.id ? '#e0e7ff' : '#f9fafb',
-              color: filter === tab.id ? '#3730a3' : '#374151',
+              border: filter === tab.id ? '2px solid var(--primary, #B45309)' : '1px solid #d1d5db',
+              background: filter === tab.id ? '#FEF3C7' : '#f9fafb',
+              color: filter === tab.id ? '#78350F' : '#374151',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
@@ -937,7 +937,7 @@ const HomeworkStudent: React.FC = () => {
                           🟢 พื้นฐาน (มีคำใบ้)
                         </span>
                       ) : a.difficulty === 'advanced' ? (
-                        <span style={{ background: '#ede9fe', color: '#5b21b6', padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
+                        <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
                           🔵 ท้าทาย {a.bonusPoints ? `+${a.bonusPoints} XP` : ''}
                         </span>
                       ) : (
@@ -955,7 +955,7 @@ const HomeworkStudent: React.FC = () => {
                       </span>
                     </div>
                     {a.recommendedReason && (
-                      <div style={{ fontSize: '0.8rem', color: '#4b5563', margin: '4px 0 6px', background: '#f8fafc', borderLeft: '3px solid #6366f1', padding: '3px 8px', borderRadius: 4 }}>
+                      <div style={{ fontSize: '0.8rem', color: '#4b5563', margin: '4px 0 6px', background: '#f8fafc', borderLeft: '3px solid #B45309', padding: '3px 8px', borderRadius: 4 }}>
                         💡 {recommendation.reason}
                       </div>
                     )}
@@ -999,7 +999,7 @@ const HomeworkStudent: React.FC = () => {
                           </div>
                         )}
                         {sub.workstationNo && (
-                          <div style={{ fontSize: '0.74rem', color: '#4f46e5', marginTop: 2 }}>
+                          <div style={{ fontSize: '0.74rem', color: '#92400E', marginTop: 2 }}>
                             🖥️ {sub.workstationNo}
                           </div>
                         )}
@@ -1077,7 +1077,7 @@ const HomeworkStudent: React.FC = () => {
                   🟢 พื้นฐาน
                 </span>
               ) : selected.difficulty === 'advanced' ? (
-                <span style={{ background: '#ede9fe', color: '#5b21b6', padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
+                <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
                   🔵 ท้าทาย
                 </span>
               ) : null}
@@ -1479,12 +1479,12 @@ const HomeworkStudent: React.FC = () => {
                     style={{
                       padding: '12px',
                       borderRadius: 12,
-                      background: '#f5f3ff',
-                      border: '1.5px solid #c4b5fd',
+                      background: '#FFF9E6',
+                      border: '1.5px solid #FCD34D',
                       marginBottom: 12,
                     }}
                   >
-                    <label style={{ fontWeight: 800, fontSize: '0.85rem', color: '#4c1d95', display: 'block', marginBottom: 6 }}>
+                    <label style={{ fontWeight: 800, fontSize: '0.85rem', color: '#78350F', display: 'block', marginBottom: 6 }}>
                       🖥️ เลือกหมายเลขเครื่องคอมพิวเตอร์ที่เธอนั่งทำ (หรือส่งสมุดที่โต๊ะครู):
                     </label>
                     <select
@@ -1498,7 +1498,7 @@ const HomeworkStudent: React.FC = () => {
                         width: '100%',
                         padding: '9px 10px',
                         borderRadius: 8,
-                        border: '1px solid #a78bfa',
+                        border: '1px solid #F59E0B',
                         background: '#ffffff',
                         fontSize: '0.88rem',
                         fontWeight: 700,
@@ -1512,7 +1512,7 @@ const HomeworkStudent: React.FC = () => {
                         </option>
                       ))}
                     </select>
-                    <div style={{ fontSize: '0.76rem', color: '#5b21b6', marginTop: 6 }}>
+                    <div style={{ fontSize: '0.76rem', color: '#92400E', marginTop: 6 }}>
                       💡 เหมาะสำหรับน้องๆ ที่บันทึกไฟล์งานไว้ในเครื่องคอมพิวเตอร์โรงเรียน (เช่น บนหน้าจอ Desktop หรือโฟลเดอร์ชื่อตัวเอง) แล้วพิมพ์บอกชื่อไฟล์ในช่องคำอธิบายด้านล่างครับ
                     </div>
                   </div>

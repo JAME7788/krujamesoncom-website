@@ -58,7 +58,7 @@ const DailyQuestionWidget: React.FC<Props> = ({ studentId }) => {
   return (
     <div style={{
       padding: '1.25rem 1.5rem', borderRadius: 18, marginBottom: 16,
-      background: 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 60%, #a78bfa 100%)',
+      background: 'linear-gradient(135deg, #FDE68A 0%, #FCD34D 60%, #F59E0B 100%)',
       boxShadow: '0 4px 14px rgba(167, 139, 250, 0.25)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -66,15 +66,15 @@ const DailyQuestionWidget: React.FC<Props> = ({ studentId }) => {
           width: 42, height: 42, borderRadius: 10,
           background: 'rgba(255, 255, 255, 0.7)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#6d28d9',
+          color: '#92400E',
         }}>
           <HelpCircle size={22} />
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '0.78rem', color: '#5b21b6', fontWeight: 700 }}>
+          <div style={{ fontSize: '0.78rem', color: '#92400E', fontWeight: 700 }}>
             <Sparkles size={12} style={{ verticalAlign: 'middle' }} /> คำถามประจำวัน — ตอบครั้งเดียว ได้ XP
           </div>
-          <strong style={{ fontSize: '1rem', color: '#4c1d95' }}>{q.question}</strong>
+          <strong style={{ fontSize: '1rem', color: '#78350F' }}>{q.question}</strong>
         </div>
       </div>
 
@@ -112,7 +112,7 @@ const DailyQuestionWidget: React.FC<Props> = ({ studentId }) => {
       </div>
 
       {answered && (
-        <div style={{ marginTop: 10, textAlign: 'center', fontSize: '0.82rem', color: '#5b21b6', fontWeight: 600 }}>
+        <div style={{ marginTop: 10, textAlign: 'center', fontSize: '0.82rem', color: '#92400E', fontWeight: 600 }}>
           ✓ ตอบแล้ว — กลับมาใหม่พรุ่งนี้สำหรับคำถามต่อไป
         </div>
       )}

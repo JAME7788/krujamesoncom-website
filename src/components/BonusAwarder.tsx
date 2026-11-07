@@ -246,7 +246,7 @@ const BonusAwarder: React.FC = () => {
               onClick={handleAward}
               disabled={busy || xp === 0}
               className="btn-primary"
-              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 0 }}
+              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#1D1D1F', border: 0 }}
             >
               <Send size={14} /> {busy ? 'กำลังส่ง...' : `ส่งรางวัล +${xp} XP`}
             </button>

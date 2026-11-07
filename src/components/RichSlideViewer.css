@@ -521,7 +521,7 @@
   font-size: 0.88rem;
   overflow-x: auto;
   line-height: 1.5;
-  border-left: 4px solid #6366f1;
+  border-left: 4px solid #B45309;
 }
 .rs-code code { font-family: inherit; }
 
@@ -685,7 +685,7 @@
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
   background: #f59e0b;
-  color: #fff;
+  color: #1D1D1F;
   font-size: 0.72rem;
   font-weight: 900;
 }

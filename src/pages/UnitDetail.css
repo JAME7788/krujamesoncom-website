@@ -54,7 +54,7 @@
 
 .lms-back-btn:hover {
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--primary-ink);
   border-color: var(--primary);
 }
 
@@ -91,7 +91,7 @@
 
 .lms-unit-title.active {
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--primary-ink);
   border-left-color: var(--primary);
 }
 
@@ -110,7 +110,7 @@
 
 .lms-unit-title.active .unit-number-badge {
   background: var(--primary);
-  color: white;
+  color: #1D1D1F;
 }
 
 .lms-unit-tabs {
@@ -141,7 +141,7 @@
 
 .lms-unit-tabs li.active {
   background: white;
-  color: var(--primary-dark);
+  color: var(--primary-ink);
   font-weight: 800;
   position: relative;
 }
@@ -231,7 +231,7 @@
 }
 
 .lms-section-header h2 svg {
-  color: var(--primary);
+  color: var(--primary-ink);
 }
 
 /* Footer Navigation */
@@ -845,7 +845,7 @@
 
 .question-number {
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--primary-ink);
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-weight: 800;
@@ -908,7 +908,7 @@
 
 .quiz-option-pill.selected .option-indicator {
   background: var(--primary);
-  color: white;
+  color: #1D1D1F;
   border-color: var(--primary);
 }
 
@@ -952,7 +952,7 @@
 .fun-go {
   margin-top: auto;
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--primary-ink);
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-weight: 800;
@@ -971,7 +971,7 @@
   flex-direction: column;
 }
 .topic-num {
-  width: 32px; height: 32px; background: var(--primary-soft); color: var(--primary-dark);
+  width: 32px; height: 32px; background: var(--primary-soft); color: var(--primary-ink);
   border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; margin-bottom: 1rem;
 }
 
@@ -1128,7 +1128,7 @@
   height: 34px;
   border-radius: 8px;
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--primary-ink);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1167,7 +1167,7 @@
 }
 
 .lesson-note-kicker {
-  color: var(--primary-dark);
+  color: var(--primary-ink);
   font-size: 0.8rem;
   font-weight: 900;
   letter-spacing: 0.02em;
@@ -1214,7 +1214,7 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  color: var(--primary-dark);
+  color: var(--primary-ink);
 }
 .classroom-card .card-content {
   display: flex; align-items: center; gap: 1.5rem;

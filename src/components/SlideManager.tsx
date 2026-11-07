@@ -167,7 +167,7 @@ layout: cover
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>เนื้อหาสไลด์ (Markdown)</label>
               {isCustomized ? (
-                <span style={{ padding: '2px 8px', borderRadius: '12px', background: '#e0e7ff', color: '#3730a3', fontSize: '0.72rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ padding: '2px 8px', borderRadius: '12px', background: '#FEF3C7', color: '#78350F', fontSize: '0.72rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                   ✏️ ปรับแต่งเองบน Cloud
                 </span>
               ) : (
@@ -182,7 +182,7 @@ layout: cover
                 target="_blank"
                 rel="noopener noreferrer"
                 title="เปิดดูหน้านักเรียนในแท็บใหม่"
-                style={{ padding: '3px 8px', fontSize: '0.78rem', background: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+                style={{ padding: '3px 8px', fontSize: '0.78rem', background: '#FFF9E6', color: '#92400E', border: '1px solid #FCD34D', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
               >
                 <ExternalLink size={12} /> ดูหน้านักเรียน
               </a>
@@ -237,7 +237,7 @@ layout: cover
           style={{
             width: '100%',
             padding: '0.75rem',
-            background: 'var(--primary, #6366f1)',
+            background: 'var(--primary, #B45309)',
             color: 'white',
             fontWeight: 'bold',
             border: 'none',
@@ -270,7 +270,7 @@ layout: cover
               <div
                 key={idx}
                 style={{
-                  background: slide.theme === 'purple' ? 'linear-gradient(135deg, #f3e8ff, #e9d5ff)' :
+                  background: slide.theme === 'purple' ? 'linear-gradient(135deg, #FEF3C7, #FDE68A)' :
                               slide.theme === 'green' ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)' :
                               slide.theme === 'orange' ? 'linear-gradient(135deg, #ffedd5, #fed7aa)' :
                               slide.theme === 'yellow' ? 'linear-gradient(135deg, #fef9c3, #fef08a)' :

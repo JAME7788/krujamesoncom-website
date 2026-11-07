@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, LogIn, Shield, Sparkles, Eye } from 'lucide-react';
+import { Lock, LogIn, Shield, KeyRound, Eye, GraduationCap, Presentation, Users } from 'lucide-react';
 import Curriculum from './Curriculum';
 import { useAuth } from '../context/AuthContext';
 import { isAdminAuthed } from '../services/authAdmin';
@@ -25,7 +25,7 @@ const Courses: React.FC = () => {
           <div className="gate-icon">
             <Lock size={48} />
           </div>
-          <h1>🔒 คลังบทเรียนนี้สำหรับนักเรียนเท่านั้น</h1>
+          <h1>คลังบทเรียนนี้สำหรับนักเรียนเท่านั้น</h1>
           <p>กรุณาเข้าสู่ระบบเพื่อดูบทเรียนของชั้นคุณ</p>
 
           <div className="gate-actions">
@@ -38,11 +38,11 @@ const Courses: React.FC = () => {
           </div>
 
           <div className="gate-info">
-            <h3><Sparkles size={18} /> สิทธิ์การเข้าถึง</h3>
+            <h3><KeyRound size={18} /> สิทธิ์การเข้าถึง</h3>
             <ul>
-              <li>👨‍🎓 <strong>นักเรียน</strong> — เห็นเฉพาะคอร์สของชั้นตัวเอง (เช่น ป.5 → เห็น ป.5 + AI ป.4-6)</li>
-              <li>👨‍🏫 <strong>Admin (ครู)</strong> — เห็นทุกคอร์สทั้งหมด พร้อมจัดการเนื้อหาและคะแนน</li>
-              <li>👯 <strong>โหมดนั่งคู่</strong> — รองรับ 2 คนต่อ 1 เครื่อง บันทึกคะแนนให้ทั้งคู่</li>
+              <li><GraduationCap size={18} aria-hidden /><span><strong>นักเรียน</strong> — เห็นเฉพาะคอร์สของชั้นตัวเอง (เช่น ป.5 เห็น ป.5 และ AI ป.4-6)</span></li>
+              <li><Presentation size={18} aria-hidden /><span><strong>Admin (ครู)</strong> — เห็นทุกคอร์สทั้งหมด พร้อมจัดการเนื้อหาและคะแนน</span></li>
+              <li><Users size={18} aria-hidden /><span><strong>โหมดนั่งคู่</strong> — รองรับ 2 คนต่อ 1 เครื่อง บันทึกคะแนนให้ทั้งคู่</span></li>
             </ul>
           </div>
         </motion.div>

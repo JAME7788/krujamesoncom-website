@@ -39,7 +39,7 @@ import { loadRoster } from '../services/rosterService';
 import './HomeworkManager.css';
 
 const getSubmissionLinkBadge = (url: string) => {
-  if (/canva\.com/i.test(url)) return { label: '🎨 เปิดดูงาน Canva', bg: '#ede9fe', color: '#6d28d9', border: '#ddd6fe' };
+  if (/canva\.com/i.test(url)) return { label: '🎨 เปิดดูงาน Canva', bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' };
   if (/scratch\.mit\.edu/i.test(url)) return { label: '🐱 เปิดโปรเจกต์ Scratch', bg: '#fef3c7', color: '#b45309', border: '#fde68a' };
   if (/drive\.google\.com|docs\.google\.com/i.test(url)) return { label: '📁 เปิด Google Drive / Docs', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' };
   if (/youtube\.com|youtu\.be/i.test(url)) return { label: '▶️ เปิดคลิป YouTube', bg: '#fee2e2', color: '#b91c1c', border: '#fecaca' };
@@ -352,7 +352,7 @@ const HomeworkManager: React.FC = () => {
         </button>
         <button
           className="btn-secondary"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ede9fe', color: '#5b21b6', border: '1px solid #c4b5fd' }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D' }}
           onClick={() => setShowAuto3Tier(!showAuto3Tier)}
         >
           <Wand2 size={16} /> ⚡ สร้างชุดงาน 3 ระดับอัตโนมัติ (Differentiated 3-Tier)
@@ -501,14 +501,14 @@ const HomeworkManager: React.FC = () => {
 
       {/* Auto 3-Tier Generator Modal */}
       {showAuto3Tier && (
-        <div className="card" style={{ marginTop: 12, background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)', border: '1px solid #c4b5fd', padding: '1.25rem' }}>
+        <div className="card" style={{ marginTop: 12, background: 'linear-gradient(135deg, #FFF9E6 0%, #FEF3C7 100%)', border: '1px solid #FCD34D', padding: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, color: '#4c1d95', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h3 style={{ margin: 0, color: '#78350F', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Wand2 size={18} /> ตัวช่วยสร้างชุดงาน 3 ระดับอัตโนมัติ (Personalized Learning)
             </h3>
             <button className="btn-ghost" onClick={() => setShowAuto3Tier(false)}><X size={16} /></button>
           </div>
-          <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: '#5b21b6' }}>
+          <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: '#92400E' }}>
             ระบบจะสร้างการบ้านพร้อมกัน 3 ฉบับแบ่งตามศักยภาพ: <strong>🟢 ระดับพื้นฐาน (มีคำใบ้ช่วยคิด)</strong>, <strong>🟡 ระดับมาตรฐาน (ตัวชี้วัด สพฐ.)</strong>, และ <strong>🔵 ระดับท้าทาย (ต่อยอดสร้างสรรค์ + Bonus XP)</strong>
           </p>
 
@@ -518,7 +518,7 @@ const HomeworkManager: React.FC = () => {
               <select
                 value={autoDraft.classroom}
                 onChange={(e) => setAutoDraft({ ...autoDraft, classroom: e.target.value, subject: '', indicatorId: '' })}
-                style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #c4b5fd', background: 'white' }}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #FCD34D', background: 'white' }}
               >
                 {allClassrooms2569.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -528,7 +528,7 @@ const HomeworkManager: React.FC = () => {
               <select
                 value={autoDraft.subject}
                 onChange={(e) => setAutoDraft({ ...autoDraft, subject: e.target.value as Subject, indicatorId: '' })}
-                style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #c4b5fd', background: 'white' }}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #FCD34D', background: 'white' }}
               >
                 <option value="">-- เลือกวิชา --</option>
                 {autoSubjects.map((s) => (
@@ -541,7 +541,7 @@ const HomeworkManager: React.FC = () => {
               <select
                 value={autoDraft.indicatorId}
                 onChange={(e) => setAutoDraft({ ...autoDraft, indicatorId: e.target.value })}
-                style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #c4b5fd', background: 'white' }}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #FCD34D', background: 'white' }}
               >
                 <option value="">-- เลือกตัวชี้วัด --</option>
                 {autoIndicators.map((ind) => (
@@ -555,7 +555,7 @@ const HomeworkManager: React.FC = () => {
                 type="date"
                 value={autoDraft.dueDate}
                 onChange={(e) => setAutoDraft({ ...autoDraft, dueDate: e.target.value })}
-                style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #c4b5fd', background: 'white' }}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #FCD34D', background: 'white' }}
               />
             </div>
           </div>
@@ -567,14 +567,14 @@ const HomeworkManager: React.FC = () => {
               placeholder="เช่น การเขียนโปรแกรมวนซ้ำ Scratch, การค้นหาข้อมูลอย่างปลอดภัย"
               value={autoDraft.topic}
               onChange={(e) => setAutoDraft({ ...autoDraft, topic: e.target.value })}
-              style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #c4b5fd', background: 'white' }}
+              style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #FCD34D', background: 'white' }}
             />
           </div>
 
           <p>นักเรียนเลือกทำหนึ่งทางเลือกต่อชุด ระบบแนะนำจากผลตรวจงานในตัวชี้วัดเดียวกัน ทุกทางเลือกใช้คะแนนเต็มและรายการประเมิน K/P ร่วมกัน คำใบ้ไม่ลดคะแนน</p>
           <button
             className="btn-primary"
-            style={{ marginTop: 12, background: '#6d28d9', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            style={{ marginTop: 12, background: '#92400E', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             onClick={() => void handleExecuteAuto3Tier()}
             disabled={syncing}
           >
@@ -716,7 +716,7 @@ const HomeworkManager: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleAddHint}
-                  style={{ fontSize: '0.75rem', padding: '2px 6px', background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', borderRadius: 4, cursor: 'pointer' }}
+                  style={{ fontSize: '0.75rem', padding: '2px 6px', background: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D', borderRadius: 4, cursor: 'pointer' }}
                 >
                   + เพิ่มคำใบ้
                 </button>
@@ -915,7 +915,7 @@ const HomeworkManager: React.FC = () => {
                             🟢 พื้นฐาน
                           </span>
                         ) : a.difficulty === 'advanced' ? (
-                          <span style={{ background: '#ede9fe', color: '#5b21b6', padding: '2px 6px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
+                          <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 6px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
                             🔵 ท้าทาย {a.bonusPoints ? `+${a.bonusPoints} XP` : ''}
                           </span>
                         ) : (
@@ -1111,7 +1111,7 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                   🟢 พื้นฐาน
                 </span>
               ) : assignment.difficulty === 'advanced' ? (
-                <span style={{ background: '#ede9fe', color: '#5b21b6', padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
+                <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
                   🔵 ท้าทาย
                 </span>
               ) : null}
@@ -1169,7 +1169,7 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                           : <span className="submitted"><CheckCircle2 size={13} /> ส่งแล้ว</span>}
                         <small>{new Date(s.submittedAt).toLocaleString('th-TH')}</small>
                         {s.workstationNo && (
-                          <span style={{ background: '#ede9fe', color: '#5b21b6', padding: '1px 8px', borderRadius: 999, fontSize: '0.73rem', fontWeight: 700 }}>
+                          <span style={{ background: '#FEF3C7', color: '#92400E', padding: '1px 8px', borderRadius: 999, fontSize: '0.73rem', fontWeight: 700 }}>
                             🖥️ {s.workstationNo}
                           </span>
                         )}

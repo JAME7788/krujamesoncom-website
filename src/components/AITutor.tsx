@@ -116,7 +116,7 @@ const AITutor: React.FC = () => {
             <div className="ai-messages" ref={scrollRef}>
               {messages.length === 0 && (
                 <div className="ai-welcome">
-                  <Sparkles size={32} color="#6366f1" />
+                  <Sparkles size={32} color="#B45309" />
                   <h3>สวัสดี! ฉันคือครู AI 🤖</h3>
                   <p>ถามอะไรเกี่ยวกับวิทยาการคำนวณ เทคโนโลยี หรือ AI ได้เลย</p>
                   <div className="ai-examples">

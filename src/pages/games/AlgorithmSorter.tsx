@@ -303,7 +303,7 @@ const AlgorithmSorter: React.FC = () => {
           <h3>เรียงลำดับขั้นตอน: <strong>{puzzle.title}</strong></h3>
         </div>
 
-        <div className="sortable-list">
+        <div className="sortable-list" style={{ '--sort-rows': Math.ceil(items.length / 2) } as React.CSSProperties}>
           {items.map((item, i) => {
             const isWrong = checked && item !== puzzle.steps[i];
             const isOk = checked && item === puzzle.steps[i];

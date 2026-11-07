@@ -905,7 +905,7 @@
 /* ปุ่มเติมร่างบันทึกหลังสอน — ช่วยครูที่ต้องเขียนย้อนหลังหลายคาบหลายห้อง */
 .sah-draft-tools {
   align-items: center;
-  border: 1px dashed #c7d2fe;
+  border: 1px dashed #FCD34D;
   background: #f5f7ff;
   border-radius: 10px;
   display: flex;
@@ -918,9 +918,9 @@
 .sah-draft-tools button {
   align-items: center;
   background: #fff;
-  border: 1px solid #c7d2fe;
+  border: 1px solid #FCD34D;
   border-radius: 8px;
-  color: #3730a3;
+  color: #78350F;
   cursor: pointer;
   display: inline-flex;
   font-size: 0.84rem;
@@ -930,8 +930,8 @@
 }
 
 .sah-draft-tools button.bulk {
-  background: #4f46e5;
-  border-color: #4f46e5;
+  background: #92400E;
+  border-color: #92400E;
   color: #fff;
 }
 

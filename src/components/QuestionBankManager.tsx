@@ -231,7 +231,7 @@ const QuestionBankManager: React.FC = () => {
           {activeOfficialSet && (
             <div style={{ background: '#fff', border: '1px solid #dce3ee', borderRadius: '8px', padding: '20px' }}>
               <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '18px' }}>
-                <span style={{ background: '#e0e7ff', color: '#3730a3', padding: '3px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700 }}>
+                <span style={{ background: '#FEF3C7', color: '#78350F', padding: '3px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700 }}>
                   ระดับชั้น {activeOfficialSet.grade} • ชุดที่ {activeOfficialSet.setNumber}
                 </span>
                 <h3 style={{ margin: '8px 0 4px', fontSize: '1.25rem', color: '#1e293b' }}>

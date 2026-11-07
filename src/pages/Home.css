@@ -56,7 +56,7 @@
   gap: 1.5rem;
 }
 
-.btn-primary {
+.home-page .btn-primary {
   background: var(--primary);
   color: var(--text-on-primary);
   padding: 18px 40px;
@@ -69,13 +69,13 @@
   font-size: 1.1rem;
 }
 
-.btn-primary:hover {
+.home-page .btn-primary:hover {
   background: var(--primary-dark);
   transform: translateY(-4px);
   box-shadow: 0 16px 40px rgba(255, 204, 0, 0.4);
 }
 
-.btn-secondary {
+.home-page .btn-secondary {
   background: white;
   color: var(--text-main);
   border: 2px solid var(--border);
@@ -85,7 +85,7 @@
   font-size: 1.1rem;
 }
 
-.btn-secondary:hover {
+.home-page .btn-secondary:hover {
   background: var(--surface);
   border-color: var(--text-main);
 }
@@ -125,7 +125,7 @@
 }
 
 /* Sections */
-.section-header {
+.home-page .section-header {
   text-align: center;
   margin-bottom: 5rem;
   max-width: 700px;
@@ -133,14 +133,14 @@
   margin-right: auto;
 }
 
-.section-header h2 {
+.home-page .section-header h2 {
   font-size: 3.2rem;
   font-weight: 800;
   margin-bottom: 1.25rem;
   letter-spacing: 0;
 }
 
-.section-header p {
+.home-page .section-header p {
   color: var(--text-muted);
   font-size: 1.2rem;
 }

@@ -89,10 +89,10 @@ const CharacterShop: React.FC<Props> = ({ onSelect, selectedId }) => {
         .cshop-wallet { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; background: linear-gradient(135deg, #fde68a, #f59e0b); color: #78350f; font-weight: 900; box-shadow: 0 4px 12px rgba(245,158,11,0.35); }
 
         .cshop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; }
-        .cshop-card { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 14px 12px; border-radius: 16px; background: #fff; border: 2px solid #e2e8f0; border-bottom: 4px solid var(--c, #6366f1); text-align: center; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+        .cshop-card { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 14px 12px; border-radius: 16px; background: #fff; border: 2px solid #e2e8f0; border-bottom: 4px solid var(--c, #B45309); text-align: center; transition: transform 0.12s ease, box-shadow 0.12s ease; }
         .cshop-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(15,23,42,0.14); }
         .cshop-card.locked { background: #f8fafc; }
-        .cshop-card.active { border-color: var(--c, #6366f1); box-shadow: 0 0 0 3px var(--c, #6366f1); }
+        .cshop-card.active { border-color: var(--c, #B45309); box-shadow: 0 0 0 3px var(--c, #B45309); }
 
         .cshop-avatar { position: relative; width: 68px; height: 68px; border-radius: 18px; display: grid; place-items: center; background: #f1f5f9; overflow: hidden; }
         .cshop-avatar img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
@@ -103,13 +103,13 @@ const CharacterShop: React.FC<Props> = ({ onSelect, selectedId }) => {
         .cshop-name { font-size: 0.9rem; color: #0f172a; }
         .cshop-role { font-size: 0.7rem; color: #94a3b8; font-weight: 600; }
         .cshop-ability { margin: 6px 0 8px; padding: 8px 10px; border-radius: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; }
-        .cshop-ability strong { display: block; font-size: 0.78rem; color: var(--c, #6366f1); }
+        .cshop-ability strong { display: block; font-size: 0.78rem; color: var(--c, #B45309); }
         .cshop-ability span { font-size: 0.72rem; color: #475569; line-height: 1.45; }
 
         .cshop-btn { width: 100%; margin-top: auto; padding: 9px; border-radius: 10px; border: 0; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 0.82rem; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
         .cshop-btn.buy { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #78350f; }
-        .cshop-btn.use { background: #eef2ff; color: #4338ca; }
-        .cshop-btn.use.on { background: var(--c, #6366f1); color: #fff; }
+        .cshop-btn.use { background: #FFF9E6; color: #92400E; }
+        .cshop-btn.use.on { background: var(--c, #B45309); color: #fff; }
         .cshop-btn:disabled { opacity: 0.6; cursor: default; }
       `}</style>
     </div>

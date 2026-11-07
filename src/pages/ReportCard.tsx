@@ -142,7 +142,7 @@ const ReportCard: React.FC = () => {
               <div key={subj.id} className="rc-subject-block">
                 <h2>{subj.emoji} {subj.title} ({subj.code})</h2>
                 {loadingGrades ? (
-                  <p style={{ color: '#6366f1', fontStyle: 'italic' }}>กำลังดึงข้อมูลคะแนนจากระบบ...</p>
+                  <p style={{ color: '#B45309', fontStyle: 'italic' }}>กำลังดึงข้อมูลคะแนนจากระบบ...</p>
                 ) : (
                   <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>ยังไม่มีข้อมูลคะแนน — เริ่มเรียนเพื่อสะสมคะแนน</p>
                 )}

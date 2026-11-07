@@ -56,7 +56,7 @@
 }
 
 .od-subtitle {
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   color: #94a3b8;
   margin: 2px 0 0 0;
 }
@@ -82,7 +82,7 @@
 }
 
 .od-hud-label {
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -110,10 +110,11 @@
 /* Runner Canvas Arena */
 .od-canvas-wrap {
   position: relative;
-  width: 100%;
-  max-width: 640px;
-  aspect-ratio: 9 / 14;
-  max-height: 560px;
+  height: clamp(420px, calc(100dvh - 280px), 820px);
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 2 / 3;
+  margin-inline: auto;
   background: #050814;
   border: 2px solid rgba(6, 182, 212, 0.4);
   border-radius: 20px;
@@ -147,7 +148,7 @@
   gap: 4px;
   padding: 4px 10px;
   border-radius: 20px;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 700;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -224,7 +225,7 @@
 }
 
 .od-result-key {
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   color: #94a3b8;
 }
 
@@ -329,7 +330,7 @@
 /* Instructions */
 .od-instructions {
   margin-top: 12px;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: #94a3b8;
   text-align: center;
   display: flex;
@@ -346,7 +347,7 @@
   border-radius: 4px;
   color: #f1f5f9;
   font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
 }
 
 @media (max-width: 640px) {

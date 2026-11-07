@@ -52,7 +52,7 @@
   color: #e2e8f0;
   padding: 0.4rem 0.8rem;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   cursor: pointer;
 }
 
@@ -127,7 +127,7 @@
   color: inherit;
   padding: 0.3rem 0.8rem;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
@@ -178,7 +178,7 @@
 .dash-controls-guide {
   text-align: center;
   color: #94a3b8;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   display: flex;
   justify-content: center;
   gap: 1.5rem;

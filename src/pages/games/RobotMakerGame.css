@@ -28,7 +28,7 @@
   align-items: center;
   gap: 0.35rem;
   color: #0f766e;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -81,7 +81,7 @@
   padding: 0.45rem 0.9rem;
   border-right: 1px solid #e2e8f0;
   color: #5b6878;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
 }
 
 .robot-maker-stats strong {
@@ -113,13 +113,13 @@
 }
 
 .robot-level-strip button b {
-  font-size: 0.84rem;
+  font-size: 0.875rem;
 }
 
 .robot-level-strip button span {
   width: 100%;
   overflow: hidden;
-  font-size: 0.62rem;
+  font-size: 0.875rem;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -194,7 +194,7 @@
 .robot-panel-heading p {
   margin-top: 0.1rem;
   color: #64748b;
-  font-size: 0.67rem;
+  font-size: 0.875rem;
 }
 
 .robot-tool-grid {
@@ -278,7 +278,7 @@
   border-radius: 9px;
   background: #172033;
   color: #fff;
-  font-size: 0.58rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -295,7 +295,7 @@
   display: block;
   width: 100%;
   overflow: hidden;
-  font-size: 0.68rem;
+  font-size: 0.875rem;
   font-weight: 800;
   line-height: 1.2;
   text-align: center;
@@ -320,7 +320,7 @@
   border-bottom: 1px solid #cbd5e1;
   background: #fff;
   color: #64748b;
-  font-size: 0.74rem;
+  font-size: 0.875rem;
   white-space: nowrap;
 }
 
@@ -381,7 +381,7 @@
   gap: 0.25rem;
   padding-inline: 0.25rem;
   color: #64748b;
-  font-size: 0.67rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -515,12 +515,12 @@
 }
 
 .robot-board-plate b {
-  font-size: 0.57rem;
+  font-size: 0.875rem;
   line-height: 1;
 }
 
 .robot-board-plate small {
-  font-size: 0.46rem;
+  font-size: 0.875rem;
   font-weight: 800;
   line-height: 1.2;
   opacity: 0.72;
@@ -681,7 +681,7 @@
   align-items: center;
   gap: 0.45rem;
   color: #94a3b8;
-  font-size: 0.58rem;
+  font-size: 0.875rem;
   letter-spacing: 0;
   pointer-events: none;
 }
@@ -734,7 +734,7 @@
 
 .robot-empty-state span {
   max-width: 320px;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -802,7 +802,7 @@
   color: #334155;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -829,7 +829,7 @@
   border-radius: 4px;
   background: #0f766e;
   color: #fff;
-  font-size: 0.65rem;
+  font-size: 0.875rem;
   font-weight: 900;
 }
 
@@ -841,7 +841,7 @@
 .robot-mission-title p {
   margin: 0;
   color: #64748b;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   line-height: 1.45;
 }
 
@@ -856,12 +856,12 @@
   justify-content: space-between;
   margin-bottom: 0.4rem;
   color: #334155;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
 }
 
 .robot-subheading span {
   color: #64748b;
-  font-size: 0.63rem;
+  font-size: 0.875rem;
 }
 
 .robot-blueprint-canvas {
@@ -896,7 +896,7 @@
   background: rgba(239, 251, 255, 0.88);
   color: #0e7490;
   content: 'KJ / ROBOT BLUEPRINT';
-  font-size: 0.43rem;
+  font-size: 0.875rem;
   font-weight: 900;
   pointer-events: none;
 }
@@ -948,14 +948,14 @@
 
 .robot-requirements li > span:nth-child(2) {
   overflow: hidden;
-  font-size: 0.63rem;
+  font-size: 0.875rem;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .robot-requirements li strong {
-  font-size: 0.64rem;
+  font-size: 0.875rem;
 }
 
 .requirement-preview {
@@ -973,7 +973,7 @@
   border-left: 3px solid #3b82f6;
   background: #eff6ff;
   color: #334155;
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   line-height: 1.45;
 }
 
@@ -1057,7 +1057,7 @@
 
 .robot-win-actions span {
   color: #785207;
-  font-size: 0.63rem;
+  font-size: 0.875rem;
 }
 
 .robot-win-actions button {
@@ -1071,7 +1071,7 @@
   color: #fff;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -1083,13 +1083,13 @@
 
 .robot-learning-focus strong {
   color: #0f766e;
-  font-size: 0.67rem;
+  font-size: 0.875rem;
 }
 
 .robot-learning-focus p {
   margin: 0.25rem 0 0;
   color: #64748b;
-  font-size: 0.68rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -1111,7 +1111,7 @@
 .robot-free-panel p {
   margin-top: 0.35rem;
   color: #64748b;
-  font-size: 0.76rem;
+  font-size: 0.875rem;
   line-height: 1.55;
 }
 
@@ -1129,7 +1129,7 @@
 
 .robot-free-panel dt {
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
 }
 
 .robot-free-panel dd {
@@ -1332,7 +1332,7 @@
   position: absolute;
   z-index: 3;
   bottom: 2px;
-  font-size: 7px;
+  font-size: 14px;
 }
 
 .robot-meter b:first-of-type {
@@ -1591,7 +1591,7 @@
   .robot-maker-stats span {
     min-width: 0;
     border-bottom: 1px solid #e2e8f0;
-    font-size: 0.68rem;
+    font-size: 0.875rem;
   }
 
   .robot-maker-shell {
@@ -1657,7 +1657,7 @@
   }
 
   .robot-maker-topbar p {
-    font-size: 0.72rem;
+    font-size: 0.875rem;
   }
 
   .robot-selection-toolbar strong {

@@ -226,7 +226,7 @@ const LiveQuizPlay: React.FC = () => {
     <div className="container section-padding" style={{ paddingTop: '6rem', textAlign: 'center', maxWidth: 600 }}>
       <Trophy size={64} color="#f59e0b" />
       <h1>🏆 จบแล้ว!</h1>
-      <p>อันดับของคุณ: <strong style={{ fontSize: '2rem', color: '#6366f1' }}>#{myRank}</strong></p>
+      <p>อันดับของคุณ: <strong style={{ fontSize: '2rem', color: '#B45309' }}>#{myRank}</strong></p>
       <p>คะแนน: <strong>{me?.score}</strong></p>
       <div style={{ marginTop: 20 }}>
         {ranked.slice(0, 5).map((p, i) => (

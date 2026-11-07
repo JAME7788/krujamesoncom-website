@@ -55,7 +55,7 @@
 }
 
 .fcb-subtitle {
-  font-size: 0.84rem;
+  font-size: 0.875rem;
   color: #94a3b8;
   margin: 4px 0 0 0;
 }
@@ -85,7 +85,7 @@
   background: rgba(59, 130, 246, 0.18);
   border: 1px solid rgba(59, 130, 246, 0.35);
   color: #60a5fa;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 700;
   margin-bottom: 10px;
 }
@@ -99,7 +99,7 @@
 }
 
 .fcb-caller-hint {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #94a3b8;
   margin: 0 0 16px 0;
 }
@@ -194,14 +194,14 @@
 }
 
 .fcb-tile-name {
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #f1f5f9;
   line-height: 1.25;
 }
 
 .fcb-tile-en {
-  font-size: 0.68rem;
+  font-size: 0.875rem;
   color: #94a3b8;
   margin-top: 2px;
 }
@@ -265,7 +265,7 @@
     font-size: 1.4rem;
   }
   .fcb-tile-name {
-    font-size: 0.72rem;
+    font-size: 0.875rem;
   }
   .fcb-tile-en {
     display: none;

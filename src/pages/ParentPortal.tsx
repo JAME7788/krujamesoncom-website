@@ -91,11 +91,11 @@ const ParentPortal: React.FC = () => {
     <div className="container section-padding" style={{ paddingTop: '6rem', maxWidth: 900 }}>
       {/* Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)',
+        background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
         padding: '1.5rem', borderRadius: 16, marginBottom: '1.5rem',
         textAlign: 'center',
       }}>
-        <div style={{ fontSize: '0.85rem', color: '#5b21b6', fontWeight: 700 }}>👨‍👩‍👧 Portal สำหรับผู้ปกครอง</div>
+        <div style={{ fontSize: '0.85rem', color: '#92400E', fontWeight: 700 }}>👨‍👩‍👧 Portal สำหรับผู้ปกครอง</div>
         <h1 style={{ margin: '8px 0 4px' }}>
           {studentInfo.emoji} {studentInfo.name}
         </h1>
@@ -107,8 +107,8 @@ const ParentPortal: React.FC = () => {
       {/* Key Stats */}
       {summary && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: '1.5rem' }}>
-          <StatCard icon={<BookOpen />} label="สไลด์ที่อ่าน" value={summary.totalSlidesViewed} color="#a855f7" />
-          <StatCard icon={<Award />} label="คะแนนรวม" value={summary.totalPoints} color="#6366f1" />
+          <StatCard icon={<BookOpen />} label="สไลด์ที่อ่าน" value={summary.totalSlidesViewed} color="#A16207" />
+          <StatCard icon={<Award />} label="คะแนนรวม" value={summary.totalPoints} color="#B45309" />
           <StatCard icon={<Activity />} label="กิจกรรม" value={summary.totalActivities} color="#ec4899" />
           <StatCard icon={<TrendingUp />} label="หน่วยที่จบ" value={summary.unitsCompleted} color="#22c55e" />
         </div>
@@ -143,7 +143,7 @@ const ParentPortal: React.FC = () => {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#6366f1' }}>{breakdown.total.toFixed(1)}/100</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#B45309' }}>{breakdown.total.toFixed(1)}/100</div>
                 <div style={{
                   display: 'inline-block', padding: '2px 12px',
                   borderRadius: 999, fontSize: '0.78rem', fontWeight: 700,
@@ -162,7 +162,7 @@ const ParentPortal: React.FC = () => {
       {trendData.length > 0 && (
         <section className="card" style={{ marginBottom: '1.5rem' }}>
           <h2 style={{ marginTop: 0 }}>📈 พัฒนาการคะแนนควิซ</h2>
-          <TrendChart data={trendData} title="" color="#6366f1" />
+          <TrendChart data={trendData} title="" color="#B45309" />
         </section>
       )}
 

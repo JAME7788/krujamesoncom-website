@@ -952,7 +952,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
               onClick={handleApplyExitTicketToRecord}
               disabled={exitTickets.length === 0}
               style={{
-                background: exitTickets.length > 0 ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' : '#e2e8f0',
+                background: exitTickets.length > 0 ? 'linear-gradient(135deg, #92400E 0%, #B45309 100%)' : '#e2e8f0',
                 color: exitTickets.length > 0 ? '#ffffff' : '#94a3b8',
                 border: 'none',
                 borderRadius: 10,
@@ -963,7 +963,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                boxShadow: exitTickets.length > 0 ? '0 2px 8px rgba(79, 70, 229, 0.25)' : 'none',
+                boxShadow: exitTickets.length > 0 ? '0 2px 8px rgba(245, 158, 11, 0.25)' : 'none',
               }}
             >
               <Zap size={15} /> ผสานสู่บันทึกหลังสอน
@@ -999,8 +999,8 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
                       <span
                         key={item.keyword}
                         style={{
-                          background: '#e0e7ff',
-                          color: '#3730a3',
+                          background: '#FEF3C7',
+                          color: '#78350F',
                           fontWeight: 600,
                           padding: '3px 10px',
                           borderRadius: 9999,

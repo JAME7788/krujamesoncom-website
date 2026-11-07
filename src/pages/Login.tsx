@@ -499,7 +499,7 @@ const Login: React.FC = () => {
           <Link 
             to="/admin" 
             style={{ 
-              color: '#FAB005', 
+              color: 'var(--primary-ink)', 
               fontWeight: 700, 
               textDecoration: 'none', 
               fontSize: '0.85rem', 

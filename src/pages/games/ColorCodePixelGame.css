@@ -32,7 +32,7 @@
 
 .ccp-topbar span {
   color: #7dd3fc;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   font-weight: 900;
 }
 
@@ -113,14 +113,14 @@
   margin: 12px 0;
 }
 
-.ccp-legend div { align-items: center; display: flex; font-size: 0.82rem; gap: 5px; }
+.ccp-legend div { align-items: center; display: flex; font-size: 0.875rem; gap: 5px; }
 .ccp-legend i { border: 1px solid #94a3b8; height: 17px; width: 17px; }
 
 .ccp-code-grid {
   background: #f8fafc;
   border: 1px solid #cbd5e1;
   display: grid;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   gap: 3px;
   padding: 9px;
 }
@@ -128,12 +128,12 @@
 .ccp-code-grid > div { display: grid; grid-template-columns: 24px 1fr; }
 .ccp-code-grid b { color: #0e7490; }
 .ccp-code-grid code { color: #334155; font-weight: 700; white-space: nowrap; }
-.ccp-code-panel > p { color: #64748b; font-size: 0.82rem; line-height: 1.5; margin-bottom: 0; }
+.ccp-code-panel > p { color: #64748b; font-size: 0.875rem; line-height: 1.5; margin-bottom: 0; }
 
 .ccp-canvas-panel { overflow: hidden; }
 .ccp-columns { margin-left: 32px; }
 .ccp-canvas-row { display: flex; justify-content: center; }
-.ccp-coordinates { color: #475569; display: grid; font-size: 0.72rem; font-weight: 800; text-align: center; }
+.ccp-coordinates { color: #475569; display: grid; font-size: 0.875rem; font-weight: 800; text-align: center; }
 .ccp-columns { grid-template-columns: repeat(10, minmax(24px, 46px)); justify-content: center; }
 .ccp-rows { grid-template-rows: repeat(10, minmax(24px, 46px)); width: 28px; }
 .ccp-coordinates span { align-items: center; display: flex; justify-content: center; }

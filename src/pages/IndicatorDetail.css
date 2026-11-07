@@ -14,7 +14,7 @@
   cursor: pointer;
 }
 
-.btn-back:hover { color: var(--primary); }
+.btn-back:hover { color: var(--primary-ink); }
 
 .ind-hero {
   display: flex;
@@ -37,7 +37,7 @@
   gap: 12px;
   font-size: 2rem;
   margin: 0.75rem 0 0.5rem;
-  color: var(--primary);
+  color: var(--primary-ink);
 }
 
 .ind-statement {
@@ -64,7 +64,7 @@
   gap: 10px;
   font-size: 1.2rem;
   margin: 0 0 1.25rem;
-  color: var(--primary);
+  color: var(--primary-ink);
 }
 
 .ind-activities,
@@ -99,7 +99,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--primary);
+  color: var(--primary-ink);
   font-weight: 600;
 }
 
@@ -129,7 +129,7 @@
   background: white;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  color: var(--primary);
+  color: var(--primary-ink);
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s ease;
@@ -137,7 +137,7 @@
 
 .ind-nav-btn:hover {
   background: var(--primary);
-  color: white;
+  color: #1D1D1F;
 }
 
 .ind-nav-btn.next { margin-left: auto; }

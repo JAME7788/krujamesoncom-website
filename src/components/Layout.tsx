@@ -95,7 +95,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navLinks: { name: string; path: string; icon: React.ReactNode; badge?: number; badgeOverdue?: boolean }[] = [
     { name: 'หน้าแรก', path: '/', icon: <Home size={18} /> },
     { name: 'คอร์สเรียน', path: '/courses', icon: <Award size={18} /> },
-    { name: 'บล็อกวิชา IS', path: '/is-blog', icon: <GraduationCap size={18} /> },
     { name: 'แหล่งเรียนรู้', path: '/resources', icon: <Library size={18} /> },
     { name: 'เกมฝึก', path: '/games', icon: <Gamepad2 size={18} /> },
     { name: 'ห้องเรียน 3D', path: '/world', icon: <Box size={18} /> },

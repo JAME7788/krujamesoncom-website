@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BookOpen,
@@ -68,10 +68,12 @@ const IsKnowledgeBlog: React.FC<IsKnowledgeBlogProps> = ({ embedded = false }) =
   // State สำหรับคลังสไลด์ภาพ 16:9 จาก ChatGPT DALL-E 3 (Google Cloud CDN)
   const [isSlideIdx, setIsSlideIdx] = useState<number>(0);
 
-  // รีเซ็ตหน้าสไลด์เมื่อเปลี่ยนบทเรียน
-  useEffect(() => {
+  // รีเซ็ตหน้าสไลด์เมื่อเปลี่ยนบทเรียน (ปรับ state ระหว่าง render แทน effect)
+  const [slideSlug, setSlideSlug] = useState(selectedSlug);
+  if (slideSlug !== selectedSlug) {
+    setSlideSlug(selectedSlug);
     setIsSlideIdx(0);
-  }, [selectedSlug]);
+  }
 
   // State สำหรับกรองตัวอย่างรายงาน IS 18 เล่ม
   const [selectedRoom, setSelectedRoom] = useState<'all' | 'ม.2/1' | 'ม.2/5' | 'ม.2/10'>('all');

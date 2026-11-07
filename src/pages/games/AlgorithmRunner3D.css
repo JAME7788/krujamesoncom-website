@@ -81,7 +81,7 @@
 .runner-stage-copy span,
 .runner-section-heading span {
   color: #b45309;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -95,7 +95,7 @@
 .runner-stage-copy p {
   margin: 0;
   color: #475569;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   line-height: 1.45;
 }
 
@@ -110,7 +110,7 @@
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 6px 18px rgba(23, 32, 51, 0.12);
   color: #334155;
-  font-size: 0.73rem;
+  font-size: 0.875rem;
   font-weight: 700;
   pointer-events: none;
 }
@@ -180,7 +180,7 @@
 
 .runner-section-heading small {
   color: #64748b;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   text-align: right;
 }
 
@@ -203,7 +203,7 @@
   color: #fff;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   font-weight: 800;
   transition: transform 120ms ease, filter 120ms ease;
 }
@@ -254,7 +254,7 @@
   color: #7c4a03;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   line-height: 1.4;
   text-align: left;
 }
@@ -280,7 +280,7 @@
   width: 100%;
   margin: 0;
   color: #64748b;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   text-align: center;
 }
 
@@ -312,12 +312,12 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.9);
   color: #172033;
-  font-size: 0.65rem;
+  font-size: 0.875rem;
   font-weight: 900;
 }
 
 .runner-program-block b {
-  font-size: 0.72rem;
+  font-size: 0.875rem;
 }
 
 .runner-program-block.active {
@@ -336,7 +336,7 @@
   border-left: 4px solid #3b82f6;
   background: #eff6ff;
   color: #1e3a8a;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   line-height: 1.4;
 }
 
@@ -423,7 +423,7 @@
 
 .runner-levels > div:first-child span {
   color: #64748b;
-  font-size: 0.76rem;
+  font-size: 0.875rem;
 }
 
 .runner-level-list {
@@ -456,14 +456,14 @@
   border-radius: 50%;
   background: #e2e8f0;
   color: #334155;
-  font-size: 0.74rem;
+  font-size: 0.875rem;
   font-weight: 900;
 }
 
 .runner-level-list button b {
   min-width: 0;
   overflow: hidden;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   line-height: 1.25;
   text-overflow: ellipsis;
 }
@@ -471,7 +471,7 @@
 .runner-level-list button small {
   grid-column: 2;
   color: #15803d;
-  font-size: 0.68rem;
+  font-size: 0.875rem;
 }
 
 .runner-level-list button.active {
@@ -506,7 +506,7 @@
 
 .runner-complete p {
   margin-top: 0.2rem;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
 }
 
 .runner-complete button {
@@ -542,7 +542,7 @@
 
   .runner-command {
     flex-direction: column;
-    font-size: 0.72rem;
+    font-size: 0.875rem;
   }
 
   .runner-levels {
@@ -579,7 +579,7 @@
     flex: 1 1 50%;
     padding: 0.45rem 0.65rem;
     border-bottom: 1px solid #e5e7eb;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
   }
 
   .runner-stage {
@@ -595,7 +595,7 @@
   }
 
   .runner-stage-copy p {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
   }
 
   .runner-legend {
@@ -604,7 +604,7 @@
     left: 0.5rem;
     justify-content: center;
     gap: 0.45rem 0.7rem;
-    font-size: 0.65rem;
+    font-size: 0.875rem;
   }
 
   .runner-palette,
@@ -630,7 +630,7 @@
   .runner-command {
     min-height: 46px;
     flex-direction: row;
-    font-size: 0.78rem;
+    font-size: 0.875rem;
   }
 
   .runner-sequence {

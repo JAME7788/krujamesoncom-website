@@ -44,6 +44,6 @@ export function filterPortal(entries: PortalEntry[], query: string, section: Por
 }
 
 export function isPortalNavActive(pathname: string, target: string): boolean {
-  if (target === '/courses') return ['/courses', '/curriculum', '/lesson', '/quiz'].some(root => pathname === root || pathname.startsWith(`${root}/`));
+  if (target === '/courses') return ['/courses', '/curriculum', '/lesson', '/quiz', '/is-blog'].some(root => pathname === root || pathname.startsWith(`${root}/`));
   return pathname === target || (target !== '/' && pathname.startsWith(`${target}/`));
 }

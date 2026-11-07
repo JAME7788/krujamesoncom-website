@@ -70,7 +70,7 @@
 
 .cyber-mission-info p {
   margin: 0.15rem 0 0;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: #14b8a6;
 }
 
@@ -101,7 +101,7 @@
 }
 
 .cyber-stat-label {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: #94a3b8;
 }
 
@@ -250,14 +250,14 @@
 }
 
 .cyber-card-title {
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #f1f5f9;
   text-align: center;
 }
 
 .cyber-card-cost {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #fbbf24;
 }
@@ -305,7 +305,7 @@
   color: #cbd5e1;
   padding: 0.45rem;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -325,7 +325,7 @@
   border: 1px solid rgba(56, 189, 248, 0.3);
   border-radius: 10px;
   padding: 0.65rem 1rem;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 
 .cyber-inspector-left {
@@ -345,7 +345,7 @@
   border: none;
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -366,7 +366,7 @@
   color: #fca5a5;
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -420,7 +420,7 @@
   color: #2dd4bf;
   padding: 0.25rem 0.65rem;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 600;
   margin-bottom: 0.6rem;
 }
@@ -475,7 +475,7 @@
   border-left: 4px solid #14b8a6;
   padding: 0.75rem 1rem;
   border-radius: 0 8px 8px 0;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #cbd5e1;
   margin-bottom: 1.25rem;
 }
@@ -527,7 +527,7 @@
 
 .cyber-stat-box small {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: #94a3b8;
   margin-bottom: 0.25rem;
 }
@@ -552,6 +552,6 @@
   }
   .cyber-stat-pill {
     padding: 0.3rem 0.5rem;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
   }
 }

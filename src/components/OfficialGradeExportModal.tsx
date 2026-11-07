@@ -534,16 +534,16 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
 
         .chip-btn:hover { background: #e2e8f0; }
         .chip-btn.active {
-          background: #4f46e5;
+          background: #92400E;
           color: white;
-          border-color: #4f46e5;
-          box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+          border-color: #92400E;
+          box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
         }
 
         .official-complete-banner {
           margin: 14px 24px 0;
           padding: 16px 20px;
-          background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%);
+          background: linear-gradient(135deg, #1D1D1F 0%, #78350F 60%, #92400E 100%);
           border-radius: 14px;
           color: white;
           display: flex;
@@ -579,7 +579,7 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
 
         .banner-left p {
           font-size: 0.82rem;
-          color: #c7d2fe;
+          color: #FCD34D;
           margin: 0;
           line-height: 1.4;
         }
@@ -666,9 +666,9 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
         }
 
         .excel-icon { background: #dcfce7; color: #16a34a; }
-        .print-icon { background: #e0e7ff; color: #4f46e5; }
+        .print-icon { background: #FEF3C7; color: #92400E; }
         .slip-icon { background: #fef3c7; color: #d97706; }
-        .master-icon { background: #f3e8ff; color: #9333ea; }
+        .master-icon { background: #FEF3C7; color: #A16207; }
 
         .card-badge {
           font-size: 0.72rem;
@@ -717,14 +717,14 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
         .btn-excel { background: #16a34a; color: white; }
         .btn-excel:hover { background: #15803d; }
 
-        .btn-print { background: #4f46e5; color: white; }
-        .btn-print:hover { background: #4338ca; }
+        .btn-print { background: #92400E; color: white; }
+        .btn-print:hover { background: #92400E; }
 
         .btn-slip { background: #d97706; color: white; }
         .btn-slip:hover { background: #b45309; }
 
-        .btn-master { background: #9333ea; color: white; }
-        .btn-master:hover { background: #7e22ce; }
+        .btn-master { background: #A16207; color: white; }
+        .btn-master:hover { background: #92400E; }
 
         .btn-outline {
           background: #f1f5f9;
@@ -777,7 +777,7 @@ export const OfficialGradeExportModal: React.FC<OfficialGradeExportModalProps> =
         }
 
         .pill-success { background: #dcfce7; color: #16a34a; }
-        .pill-pass { background: #e0e7ff; color: #4338ca; }
+        .pill-pass { background: #FEF3C7; color: #92400E; }
 
         .grade-bar-wrapper {
           width: 100%;

@@ -113,9 +113,9 @@ const DailyQuestionEditor: React.FC = () => {
   return (
     <div>
       <div style={{
-        padding: 12, background: '#f5f3ff',
-        border: '1px dashed #c4b5fd', borderRadius: 10, marginBottom: 16,
-        fontSize: '0.88rem', color: '#5b21b6',
+        padding: 12, background: '#FFF9E6',
+        border: '1px dashed #FCD34D', borderRadius: 10, marginBottom: 16,
+        fontSize: '0.88rem', color: '#92400E',
       }}>
         💡 ตั้งคำถาม 1 ข้อต่อวัน — เด็กตอบครั้งเดียว ตอบถูก +10 XP, ตอบผิด +3 XP (เพื่อรักษาแรงจูงใจ).
         เปลี่ยนวันที่ได้เพื่อตั้งล่วงหน้าหรือดูคำถามวันก่อนๆ.

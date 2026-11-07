@@ -30,7 +30,7 @@ const ResearchPage: React.FC = () => {
           </Link>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#64748b' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#e0e7ff', color: '#4338ca', padding: '0.25rem 0.75rem', borderRadius: 9999, fontWeight: 600 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#FEF3C7', color: '#92400E', padding: '0.25rem 0.75rem', borderRadius: 9999, fontWeight: 600 }}>
               <ShieldCheck size={14} /> เอกสารทางการ ก.ค.ศ.
             </span>
             <span>โรงเรียนบ้านคลองมดแดง</span>

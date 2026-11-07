@@ -40,7 +40,7 @@
   width: 80px;
   height: 80px;
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--primary-ink);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -160,7 +160,7 @@
   font-weight: 600;
   font-size: 0.9rem;
 }
-.login-stepper .step.active { color: #6366f1; }
+.login-stepper .step.active { color: #B45309; }
 .login-stepper .step.done { color: #22c55e; }
 .login-stepper .step-num {
   width: 32px; height: 32px;
@@ -170,7 +170,7 @@
   font-weight: 800;
 }
 .login-stepper .step.active .step-num {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #B45309, #A16207);
   color: white;
 }
 .login-stepper .step.done .step-num {
@@ -202,14 +202,14 @@
   transition: all 0.15s;
 }
 .class-card:hover {
-  border-color: #c7d2fe;
-  background: #f5f3ff;
+  border-color: #FCD34D;
+  background: #FFF9E6;
   transform: translateY(-2px);
 }
 .class-card.selected {
-  border-color: #6366f1;
-  background: linear-gradient(135deg, #ede9fe, #fce7f3);
-  box-shadow: 0 6px 16px rgba(99,102,241,0.2);
+  border-color: #B45309;
+  background: linear-gradient(135deg, #FEF3C7, #fce7f3);
+  box-shadow: 0 6px 16px rgba(245, 158, 11,0.2);
 }
 .class-name {
   font-size: 1.4rem;
@@ -225,7 +225,7 @@
   position: absolute;
   top: 6px;
   right: 6px;
-  color: #6366f1;
+  color: #B45309;
 }
 
 /* Paired section */
@@ -265,7 +265,7 @@
 .paired-btn:hover { background: #fef3c7; }
 .paired-btn.active {
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+  color: #1D1D1F;
   border-color: #d97706;
 }
 
@@ -286,7 +286,7 @@
   border-radius: 6px;
 }
 .back-btn:hover {
-  color: #6366f1;
+  color: #B45309;
   background: #f3f4f6;
 }
 
@@ -335,10 +335,10 @@
   position: relative;
 }
 .student-card:hover {
-  border-color: #6366f1;
-  background: #faf5ff;
+  border-color: #B45309;
+  background: #FFF9E6;
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(99,102,241,0.15);
+  box-shadow: 0 4px 10px rgba(245, 158, 11,0.15);
 }
 .student-card:disabled { opacity: 0.5; cursor: wait; }
 .sc-emoji {
@@ -397,8 +397,8 @@
   width: fit-content;
 }
 .manual-toggle:hover {
-  border-color: #6366f1;
-  color: #6366f1;
+  border-color: #B45309;
+  color: #B45309;
 }
 
 /* Manual form */
@@ -417,15 +417,15 @@
 /* ===== Capacity info banner ===== */
 .capacity-info {
   padding: 0.7rem 1rem;
-  background: linear-gradient(135deg, #dbeafe, #ede9fe);
-  border-left: 4px solid #6366f1;
+  background: linear-gradient(135deg, #dbeafe, #FEF3C7);
+  border-left: 4px solid #B45309;
   border-radius: 10px;
   font-size: 0.85rem;
   color: #1e293b;
   margin-bottom: 1rem;
   line-height: 1.5;
 }
-.capacity-info strong { color: #4338ca; }
+.capacity-info strong { color: #92400E; }
 
 /* Class card capacity badge */
 .class-card .class-cap {
@@ -521,7 +521,7 @@
 }
 .paired-tag {
   background: #f59e0b;
-  color: white;
+  color: #1D1D1F;
   font-size: 0.65rem;
   padding: 1px 6px;
   border-radius: 999px;
@@ -579,7 +579,7 @@
   font-size: 0.85rem;
   background: white;
 }
-.partner-picker select:focus { outline: none; border-color: #6366f1; }
+.partner-picker select:focus { outline: none; border-color: #B45309; }
 
 /* student card highlighted as partner */
 .student-card.is-partner {
@@ -594,7 +594,7 @@
   right: 4px;
   font-size: 0.65rem;
   background: #f59e0b;
-  color: white;
+  color: #1D1D1F;
   padding: 1px 6px;
   border-radius: 999px;
   font-weight: 700;
@@ -651,7 +651,7 @@
   color: #374151;
   font-weight: 600;
 }
-.switch-text strong { color: #6366f1; }
+.switch-text strong { color: #B45309; }
 .pair-switch.on .switch-text strong { color: #d97706; }
 
 .pair-partner-row {
@@ -709,7 +709,7 @@
   width: 28px;
   height: 28px;
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+  color: #1D1D1F;
   border-radius: 50%;
   display: flex;
   align-items: center;

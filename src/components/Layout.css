@@ -193,7 +193,7 @@ main { flex: 1; }
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #B45309, #A16207);
   color: white;
   display: flex;
   align-items: center;
@@ -221,7 +221,7 @@ main { flex: 1; }
 .user-chip-class { font-size: 0.7rem; color: #9ca3af; }
 .partner-tag {
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+  color: #1D1D1F;
   padding: 1px 6px;
   border-radius: 999px;
   font-size: 0.65rem;
@@ -244,8 +244,8 @@ main { flex: 1; }
 
 .user-chip-switch {
   border: 0;
-  background: #eef2ff;
-  color: #4f46e5;
+  background: #FFF9E6;
+  color: #92400E;
   padding: 4px 8px;
   border-radius: 999px;
   font-size: 0.72rem;
@@ -253,7 +253,7 @@ main { flex: 1; }
   text-decoration: none;
   white-space: nowrap;
 }
-.user-chip-switch:hover { background: #ddd6fe; color: #4338ca; }
+.user-chip-switch:hover { background: #FDE68A; color: #92400E; }
 
 /* Login button */
 .btn-login-nav {
@@ -397,7 +397,7 @@ main { flex: 1; }
 /* ========================== FOOTER ========================== */
 .footer-top-gradient {
   height: 4px;
-  background: linear-gradient(90deg, #FAB005, #f59e0b, #eab308, #6366f1, #8b5cf6);
+  background: linear-gradient(90deg, #FAB005, #f59e0b, #eab308, #B45309, #A16207);
   width: 100%;
   margin-top: 2.5rem;
 }
@@ -812,8 +812,8 @@ main { flex: 1; }
 }
 
 .contact-notice {
-  background: rgba(99, 102, 241, 0.05);
-  border-left: 3px solid #6366f1;
+  background: rgba(245, 158, 11, 0.05);
+  border-left: 3px solid #B45309;
   padding: 0.85rem 1rem;
   border-radius: 0 8px 8px 0;
   font-size: 0.8rem;

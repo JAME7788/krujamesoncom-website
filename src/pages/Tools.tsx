@@ -125,13 +125,13 @@ const Tools: React.FC = () => {
           border-radius: 8px; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
         }
-        .wb-tool.active, .wb-tool:hover, .wb-actions button:hover { border-color: #6366f1; color: #6366f1; }
-        .wb-tool.active { background: #eef2ff; }
+        .wb-tool.active, .wb-tool:hover, .wb-actions button:hover { border-color: #B45309; color: #B45309; }
+        .wb-tool.active { background: #FFF9E6; }
         .wb-color {
           width: 22px; height: 22px; border-radius: 50%;
           border: 2px solid white; outline: 1px solid #e5e7eb; cursor: pointer;
         }
-        .wb-color.active { outline: 3px solid #6366f1; }
+        .wb-color.active { outline: 3px solid #B45309; }
         .wb-size { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; }
         .wb-size input { width: 80px; }
       `}</style>

@@ -118,7 +118,7 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
             <span style={{ background: '#f0fdf4', padding: '3px 9px', borderRadius: 999, border: '1px solid #bbf7d0', fontSize: '0.78rem', color: '#166534', fontWeight: 600 }}>
               📝 บันทึกแล้ว {stats.totalCount} ครั้ง
             </span>
-            <span style={{ background: '#ede9fe', padding: '3px 9px', borderRadius: 999, border: '1px solid #ddd6fe', fontSize: '0.78rem', color: '#6b21a8', fontWeight: 600 }}>
+            <span style={{ background: '#FEF3C7', padding: '3px 9px', borderRadius: 999, border: '1px solid #FDE68A', fontSize: '0.78rem', color: '#78350F', fontWeight: 600 }}>
               🚀 โหมดท้าทาย {stats.challengeCount} ครั้ง
             </span>
             <span style={{ background: '#eff6ff', padding: '3px 9px', borderRadius: 999, border: '1px solid #bfdbfe', fontSize: '0.78rem', color: '#1d4ed8', fontWeight: 600 }}>
@@ -165,8 +165,8 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
                         padding: '1px 6px',
                         borderRadius: 999,
                         fontWeight: 600,
-                        background: record.challengeMode ? '#ede9fe' : '#dcfce7',
-                        color: record.challengeMode ? '#6b21a8' : '#15803d',
+                        background: record.challengeMode ? '#FEF3C7' : '#dcfce7',
+                        color: record.challengeMode ? '#78350F' : '#15803d',
                       }}
                     >
                       {record.challengeMode ? '🚀 ท้าทาย' : '🌱 พื้นฐาน'}
@@ -340,8 +340,8 @@ export const StudentReflectionJournal: React.FC<StudentReflectionJournalProps> =
                     padding: '2px 8px',
                     borderRadius: 999,
                     fontWeight: 600,
-                    background: record.challengeMode ? '#ede9fe' : '#dcfce7',
-                    color: record.challengeMode ? '#6b21a8' : '#15803d',
+                    background: record.challengeMode ? '#FEF3C7' : '#dcfce7',
+                    color: record.challengeMode ? '#78350F' : '#15803d',
                   }}>
                     {record.challengeMode ? '🚀 ท้าทาย' : '🌱 พื้นฐาน'}
                   </span>

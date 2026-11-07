@@ -473,7 +473,7 @@ const SkillGradeTable: React.FC = () => {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <RefreshCw size={32} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
+          <RefreshCw size={32} style={{ color: '#B45309', animation: 'spin 1s linear infinite' }} />
           <p>กำลังโหลดคะแนน...</p>
         </div>
       ) : sortedStudents.length === 0 ? (

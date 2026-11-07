@@ -68,7 +68,7 @@ const ToastStyles: React.FC = () => {
         background: white; color: #1f2937; font-weight: 600;
         box-shadow: 0 10px 30px rgba(0,0,0,0.12);
         min-width: 240px; max-width: 360px;
-        border-left: 4px solid #6366f1;
+        border-left: 4px solid #B45309;
         animation: toastIn 0.25s ease-out;
       }
       .toast-success { border-left-color: #22c55e; }

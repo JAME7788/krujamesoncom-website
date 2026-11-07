@@ -12,6 +12,8 @@ html[data-theme="dark"] {
   --border-light: rgba(255, 255, 255, 0.04);
   --glass-bg: rgba(30, 41, 59, 0.7);
   --glass-border: rgba(255, 255, 255, 0.08);
+  --primary-ink: #FCD34D;
+  --primary-ring: #FCD34D;
 }
 
 html[data-theme="dark"] body {
@@ -86,6 +88,8 @@ html[data-theme="dark"] .search-kbd {
   --primary-dark: #EBB800;
   --primary-light: #FFE066;
   --primary-soft: #FFF9E6;
+  --primary-ink: #9A6700; /* yellow-family text/icons on light surfaces (>=4.5:1) */
+  --primary-ring: #B7791F;
   
   --secondary: #1D1D1F; /* Sophisticated Dark */
   
@@ -178,7 +182,7 @@ button {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #E5E5E5;
+  background: #E7DFC6;
   border-radius: 10px;
   border: 3px solid var(--background);
 }
@@ -233,6 +237,18 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* Neutral pill label (Courses, IndicatorDetail) */
+.badge {
+  background: var(--primary-soft);
+  color: var(--primary-ink);
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  display: inline-block;
 }
 
 /* Animations */
@@ -304,9 +320,9 @@ button {
   transition: all 0.15s ease;
 }
 .btn-secondary:hover {
-  border-color: #6366f1;
-  color: #6366f1;
-  background: #fafafa;
+  border-color: #F59E0B;
+  color: var(--primary-ink);
+  background: var(--primary-soft);
 }
 
 .btn-ghost {
@@ -369,7 +385,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid var(--primary-ring);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -382,6 +398,8 @@ textarea:focus-visible {
 /* ============================================
    Selection
    ============================================ */
+html { scrollbar-color: #E7DFC6 transparent; accent-color: #F59E0B; caret-color: var(--primary-ink); }
+
 ::selection {
   background: rgba(255, 212, 59, 0.4);
   color: #1f2937;
@@ -426,3 +444,14 @@ textarea:focus-visible {
 }
 
 
+
+/* <dialog> fallback for browsers without showModal (Safari < 15.4): see utils/browserPolyfills.ts */
+dialog[data-modal-fallback] {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  z-index: 10000;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  box-shadow: 0 0 0 100vmax rgba(15, 23, 42, 0.55);
+}

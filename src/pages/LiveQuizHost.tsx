@@ -200,7 +200,7 @@ const LiveQuizHost: React.FC = () => {
     return (
       <div className="container section-padding" style={{ paddingTop: '6rem', textAlign: 'center', maxWidth: 700 }}>
         <h2>{room.title}</h2>
-        <div style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', padding: '2rem', borderRadius: 20, margin: '1rem 0' }}>
+        <div style={{ background: 'linear-gradient(135deg, #B45309, #A16207)', color: 'white', padding: '2rem', borderRadius: 20, margin: '1rem 0' }}>
           <p style={{ margin: 0, fontSize: '0.9rem' }}>📱 ให้นักเรียนเข้าที่</p>
           <p style={{ margin: '4px 0', fontSize: '1.3rem' }}><strong>{window.location.origin}/live</strong></p>
           <p style={{ margin: 0, fontSize: '0.9rem' }}>แล้วใส่รหัส</p>

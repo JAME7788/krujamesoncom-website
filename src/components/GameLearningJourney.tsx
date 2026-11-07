@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from 'react';
+import GameFitFrame from './GameFitFrame';
 import { Link } from 'react-router-dom';
 import type { GameInfo } from '../data/gamesCatalog';
 import { gameMissions } from '../data/gameMissions';
@@ -22,6 +23,8 @@ import {
 } from '../utils/gameLearningPersonalization';
 import './GameLearningJourney.css';
 
+const FULLSCREEN_GAMES = new Set(['tycoon']);
+
 export default function GameLearningJourney({ game, children }: { game: GameInfo; children: ReactNode }) {
   const { user } = useAuth();
   const [configVersion, setConfigVersion] = useState(0);
@@ -32,6 +35,7 @@ export default function GameLearningJourney({ game, children }: { game: GameInfo
 
   const mission = unifiedRecord?.effectiveMission || gameMissions[game.id];
   const [started, setStarted] = useState(false);
+  const [coverFailed, setCoverFailed] = useState(false);
   const [complete, setComplete] = useState(false);
   const [hint, setHint] = useState(false);
   const [answer, setAnswer] = useState<number | null>(null);
@@ -159,7 +163,11 @@ export default function GameLearningJourney({ game, children }: { game: GameInfo
       <section className={`gbl-mission ${started ? 'gbl-compact' : 'gbl-hero'}`} aria-label="ภารกิจการเรียนรู้">
         {!started ? <>
           <div className="gbl-art">
-            <img src={`/media/reports/games/${game.id}.webp`} alt={`ภาพการเล่น ${game.title}`} />
+            {coverFailed ? (
+              <div className="gbl-art-fallback" aria-hidden="true"><span>{game.emoji}</span></div>
+            ) : (
+              <img src={`/media/reports/games/${game.id}.webp`} alt={`ภาพการเล่น ${game.title}`} onError={() => setCoverFailed(true)} />
+            )}
             <Link to="/games" className="gbl-back">← เลือกเกมอื่น</Link>
             <span className="gbl-art-label">{game.emoji} {game.skill}</span>
           </div>
@@ -304,7 +312,8 @@ export default function GameLearningJourney({ game, children }: { game: GameInfo
         </>}
       </section>
       {started && <>
-        {children}
+        {/* เกมเต็มจอ (immersive) จัดการขนาดเอง ส่วนเกมอื่นย่อให้พอดีจออัตโนมัติ */}
+        {FULLSCREEN_GAMES.has(game.id) ? children : <GameFitFrame>{children}</GameFitFrame>}
         <section className="gbl-review" ref={reviewRef} tabIndex={-1} aria-label="ทบทวนหลังเล่น"
           onKeyDown={(event) => event.stopPropagation()} onKeyUp={(event) => event.stopPropagation()}>
           <span className="gbl-label">หลังเล่น · อธิบายและนำไปใช้</span>

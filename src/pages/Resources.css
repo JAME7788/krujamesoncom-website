@@ -37,7 +37,7 @@
 .p-badge {
   display: inline-block;
   padding: 1px 8px;
-  background: #6366f1;
+  background: #B45309;
   color: white;
   border-radius: 999px;
   font-size: 0.75rem;
@@ -97,11 +97,11 @@
   white-space: nowrap;
 }
 .cat-pill:hover {
-  border-color: #6366f1;
-  color: #6366f1;
+  border-color: #B45309;
+  color: #B45309;
 }
 .cat-pill.active {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #B45309, #A16207);
   color: white;
   border-color: transparent;
 }
@@ -145,8 +145,8 @@
   position: relative;
 }
 .lr-card:hover {
-  border-color: #6366f1;
-  box-shadow: 0 8px 24px rgba(99,102,241,0.15);
+  border-color: #B45309;
+  box-shadow: 0 8px 24px rgba(245, 158, 11,0.15);
 }
 .lr-emoji {
   font-size: 2.2rem;
@@ -175,7 +175,7 @@
 }
 .lr-badge {
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+  color: #1D1D1F;
   padding: 1px 8px;
   border-radius: 999px;
   font-size: 0.65rem;
@@ -220,7 +220,7 @@
   right: 12px;
   color: #9ca3af;
 }
-.lr-card:hover .lr-ext { color: #6366f1; }
+.lr-card:hover .lr-ext { color: #B45309; }
 
 @media (max-width: 600px) {
   .resources-cards-grid { grid-template-columns: 1fr; }

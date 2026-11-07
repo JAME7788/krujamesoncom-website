@@ -188,21 +188,59 @@ const ObstacleDodgeGame: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState, shiftLane, performJump]);
 
-  // Canvas drawing
+  // Canvas drawing (พิกัดตรรกะ 500×750 เดิม วาดคมชัดตามขนาดจอจริง × devicePixelRatio)
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Background
-    ctx.fillStyle = '#050814';
-    ctx.fillRect(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const cssW = canvas.clientWidth || ARENA_WIDTH;
+    const pxW = Math.round(cssW * dpr);
+    const pxH = Math.round(pxW * (ARENA_HEIGHT / ARENA_WIDTH));
+    if (canvas.width !== pxW || canvas.height !== pxH) {
+      canvas.width = pxW;
+      canvas.height = pxH;
+    }
+    const k = pxW / ARENA_WIDTH;
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    const now = performance.now();
+    const scroll = (now * 0.32 * speedScaleRef.current) % 60;
 
-    // Draw Lane Dividers
-    ctx.strokeStyle = 'rgba(6, 182, 212, 0.2)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([12, 12]);
+    const drawEmoji = (icon: string, x: number, y: number, size: number) => {
+      ctx.font = `${size}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(icon, x, y);
+    };
+
+    // พื้นอุโมงค์ไซเบอร์: ไล่สีจากบนลงล่าง + แถบเลนสลับสี
+    const bg = ctx.createLinearGradient(0, 0, 0, ARENA_HEIGHT);
+    bg.addColorStop(0, '#060a1f');
+    bg.addColorStop(1, '#101a3d');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
+    for (let i = 0; i < LANES_COUNT; i++) {
+      if (i % 2 === 0) {
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.045)';
+        ctx.fillRect(i * LANE_WIDTH, 0, LANE_WIDTH, ARENA_HEIGHT);
+      }
+    }
+    // เส้นพื้นวิ่งลงมา บอกความเร็ว
+    ctx.strokeStyle = 'rgba(125, 211, 252, 0.12)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let y = -60 + scroll; y < ARENA_HEIGHT; y += 60) {
+      ctx.moveTo(0, y);
+      ctx.lineTo(ARENA_WIDTH, y);
+    }
+    ctx.stroke();
+    // เส้นแบ่งเลนแบบประเคลื่อนที่
+    ctx.strokeStyle = 'rgba(103, 232, 249, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([18, 14]);
+    ctx.lineDashOffset = -scroll;
     for (let i = 1; i < LANES_COUNT; i++) {
       const lx = i * LANE_WIDTH;
       ctx.beginPath();
@@ -211,6 +249,10 @@ const ObstacleDodgeGame: React.FC = () => {
       ctx.stroke();
     }
     ctx.setLineDash([]);
+    // ขอบนีออนซ้าย-ขวา
+    ctx.fillStyle = '#22d3ee';
+    ctx.fillRect(0, 0, 3, ARENA_HEIGHT);
+    ctx.fillRect(ARENA_WIDTH - 3, 0, 3, ARENA_HEIGHT);
 
     // 1. Draw Laser Warnings & Laser Beams
     for (const h of hazardsRef.current) {
@@ -218,80 +260,124 @@ const ObstacleDodgeGame: React.FC = () => {
         for (const lane of h.lanes) {
           const lx = lane * LANE_WIDTH;
           if (h.state === 'warning') {
-            // Pulsing warning strip
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
+            const blink = 0.5 + 0.5 * Math.sin(now * 0.02);
+            ctx.fillStyle = `rgba(239, 68, 68, ${0.1 + blink * 0.14})`;
             ctx.fillRect(lx, 0, LANE_WIDTH, ARENA_HEIGHT);
-
-            ctx.strokeStyle = '#ef4444';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(lx + 4, 4, LANE_WIDTH - 8, ARENA_HEIGHT - 8);
-
-            ctx.font = 'bold 18px Kanit, sans-serif';
-            ctx.fillStyle = '#ef4444';
+            ctx.strokeStyle = '#f87171';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 8]);
+            ctx.strokeRect(lx + 5, 5, LANE_WIDTH - 10, ARENA_HEIGHT - 10);
+            ctx.setLineDash([]);
+            // ป้ายเตือน
+            ctx.fillStyle = '#b91c1c';
+            ctx.beginPath();
+            ctx.roundRect(lx + 10, 58, LANE_WIDTH - 20, 40, 10);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = '800 20px Kanit, "Prompt", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('⚠️ DANGER', lx + LANE_WIDTH / 2, 80);
+            ctx.textBaseline = 'middle';
+            ctx.fillText('⚠ ระวัง', lx + LANE_WIDTH / 2, 79);
           } else if (h.state === 'firing') {
-            // Intense energy beam
             const grad = ctx.createLinearGradient(lx, 0, lx + LANE_WIDTH, 0);
-            grad.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
+            grad.addColorStop(0, 'rgba(239, 68, 68, 0.25)');
             grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.95)');
-            grad.addColorStop(1, 'rgba(239, 68, 68, 0.3)');
+            grad.addColorStop(1, 'rgba(239, 68, 68, 0.25)');
             ctx.fillStyle = grad;
             ctx.fillRect(lx, 0, LANE_WIDTH, ARENA_HEIGHT);
-
-            // Core beam
             ctx.fillStyle = '#ef4444';
-            ctx.fillRect(lx + LANE_WIDTH / 2 - 8, 0, 16, ARENA_HEIGHT);
+            ctx.fillRect(lx + LANE_WIDTH / 2 - 10, 0, 20, ARENA_HEIGHT);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(lx + LANE_WIDTH / 2 - 3, 0, 6, ARENA_HEIGHT);
           }
         }
       }
     }
 
-    // 2. Draw Collectible Orbs
+    // 2. Draw Collectible Orbs (ลอยและเรืองแสง)
     for (const orb of collectiblesRef.current) {
       const ox = orb.lane * LANE_WIDTH + LANE_WIDTH / 2;
-      ctx.fillStyle = orb.isBoost ? 'rgba(6, 182, 212, 0.3)' : 'rgba(251, 191, 36, 0.3)';
+      const glow = ctx.createRadialGradient(ox, orb.y, 4, ox, orb.y, 30);
+      glow.addColorStop(0, orb.isBoost ? 'rgba(34, 211, 238, 0.55)' : 'rgba(251, 191, 36, 0.55)');
+      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(ox, orb.y, 18, 0, Math.PI * 2);
+      ctx.arc(ox, orb.y, 30, 0, Math.PI * 2);
       ctx.fill();
-
-      ctx.font = '22px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(orb.isBoost ? '⚡' : '💎', ox, orb.y);
+      drawEmoji(orb.isBoost ? '⚡' : '💎', ox, orb.y + Math.sin(now * 0.006 + orb.y) * 2, 32);
     }
 
     // 3. Draw Hazards: Boulders & Walls
     for (const h of hazardsRef.current) {
       if (h.type === 'boulder') {
         const bx = h.lane * LANE_WIDTH + LANE_WIDTH / 2;
-        ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
+        const r = h.radius + 4;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
         ctx.beginPath();
-        ctx.arc(bx, h.y, h.radius + 6, 0, Math.PI * 2);
+        ctx.ellipse(bx, h.y + r * 0.85, r * 0.9, r * 0.3, 0, 0, Math.PI * 2);
         ctx.fill();
-
-        ctx.font = '30px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🪨', bx, h.y);
+        // หินเหลี่ยม (วาดเอง) หมุนตามระยะทาง
+        ctx.save();
+        ctx.translate(bx, h.y);
+        ctx.rotate(h.y * 0.01);
+        const rock = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 2, 0, 0, r);
+        rock.addColorStop(0, '#a8a29e');
+        rock.addColorStop(0.6, '#57534e');
+        rock.addColorStop(1, '#292524');
+        ctx.fillStyle = rock;
+        ctx.beginPath();
+        const pts = 9;
+        for (let i = 0; i < pts; i++) {
+          const a = (i / pts) * Math.PI * 2;
+          const rr = r * (0.82 + ((i * 37) % 7) / 30);
+          if (i === 0) ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+          else ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.restore();
       } else if (h.type === 'wall') {
-        const wallHeight = 24;
+        const wallHeight = 30;
+        const top = h.y - wallHeight / 2;
         for (let l = 0; l < LANES_COUNT; l++) {
+          const wx = l * LANE_WIDTH;
           if (!h.safeLanes.includes(l)) {
-            const wx = l * LANE_WIDTH;
+            // กำแพงพลังงานลายเตือนเหลือง-ดำ
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(wx + 3, top, LANE_WIDTH - 6, wallHeight);
+            ctx.clip();
             ctx.fillStyle = '#dc2626';
-            ctx.fillRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
-
-            ctx.strokeStyle = '#f87171';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
+            ctx.fillRect(wx + 3, top, LANE_WIDTH - 6, wallHeight);
+            ctx.fillStyle = '#fbbf24';
+            for (let sx = -wallHeight; sx < LANE_WIDTH; sx += 20) {
+              ctx.beginPath();
+              ctx.moveTo(wx + sx, top + wallHeight);
+              ctx.lineTo(wx + sx + 10, top + wallHeight);
+              ctx.lineTo(wx + sx + 10 + wallHeight, top);
+              ctx.lineTo(wx + sx + wallHeight, top);
+              ctx.closePath();
+              ctx.fill();
+            }
+            ctx.restore();
+            ctx.strokeStyle = '#7f1d1d';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(wx + 3, top, LANE_WIDTH - 6, wallHeight);
           } else {
-            // Green Gate Indicator
-            const wx = l * LANE_WIDTH;
-            ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
-            ctx.fillRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
-            ctx.strokeStyle = '#10b981';
-            ctx.strokeRect(wx + 2, h.y - wallHeight / 2, LANE_WIDTH - 4, wallHeight);
+            // ช่องปลอดภัย: ประตูสีเขียว + ลูกศร
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.28)';
+            ctx.fillRect(wx + 3, top, LANE_WIDTH - 6, wallHeight);
+            ctx.strokeStyle = '#34d399';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(wx + 3, top, LANE_WIDTH - 6, wallHeight);
+            ctx.fillStyle = '#ecfdf5';
+            ctx.font = '800 20px Kanit, "Prompt", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('▼ ผ่านได้', wx + LANE_WIDTH / 2, h.y + 1);
           }
         }
       }
@@ -306,30 +392,33 @@ const ObstacleDodgeGame: React.FC = () => {
       const drawY = p.y - jumpOffset;
       const playerScale = p.isJumping ? 1.25 : 1;
 
-      // Shadow when jumping
-      if (p.isJumping) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.beginPath();
-        ctx.ellipse(p.x, p.y + 12, 16, 6, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      // เงา (เล็กลงเมื่อกระโดด)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y + 20, 20 - jumpOffset * 0.2, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
 
-      // Overdrive Glow
+      // วงแสงบอกตำแหน่งผู้เล่น
+      const ring = ctx.createRadialGradient(p.x, drawY, 8, p.x, drawY, 42);
+      ring.addColorStop(0, overdrive ? 'rgba(34, 211, 238, 0.45)' : 'rgba(250, 204, 21, 0.35)');
+      ring.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = ring;
+      ctx.beginPath();
+      ctx.arc(p.x, drawY, 42, 0, Math.PI * 2);
+      ctx.fill();
+
       if (overdrive) {
-        ctx.strokeStyle = '#06b6d4';
+        ctx.strokeStyle = '#22d3ee';
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.arc(p.x, drawY, 28, 0, Math.PI * 2);
+        ctx.arc(p.x, drawY, 32, 0, Math.PI * 2);
         ctx.stroke();
       }
 
       ctx.save();
       ctx.translate(p.x, drawY);
       ctx.scale(playerScale, playerScale);
-      ctx.font = '32px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(overdrive ? '🚀' : '🏃‍♂️', 0, 0);
+      drawEmoji(overdrive ? '🚀' : '🏃', 0, 0, 44);
       ctx.restore();
     }
   }, [overdrive]);
