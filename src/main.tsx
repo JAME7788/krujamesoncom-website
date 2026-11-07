@@ -1,3 +1,4 @@
+import './polyfills' // ต้องอยู่บรรทัดแรก: เติม API ให้เบราว์เซอร์เก่า
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'

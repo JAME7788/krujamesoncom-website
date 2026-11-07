@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { BookOpen, X, Rocket, Lightbulb } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { gameLessons, ageTierFromClassroom, ageTierLabel } from '../data/gameLessons';
+import { closeDialog, openDialog } from '../utils/browserPolyfills';
 
 interface Props {
   /** คีย์บทเรียนใน gameLessons (เช่น 'pixel-art') */
@@ -39,9 +40,9 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const dialog = dialogRef.current;
-    dialog?.showModal();
+    openDialog(dialog);
     return () => {
-      dialog?.close();
+      closeDialog(dialog);
       document.body.style.overflow = previousOverflow;
     };
   }, [open, lesson]);
@@ -123,11 +124,11 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
         .glc-open {
           display: inline-flex; align-items: center; gap: 6px;
           padding: 7px 14px; border-radius: 999px; cursor: pointer;
-          border: 2px solid var(--glc, #6366f1); background: #fff; color: var(--glc, #6366f1);
+          border: 2px solid var(--glc, #B45309); background: #fff; color: var(--glc, #B45309);
           font-family: inherit; font-weight: 800; font-size: 0.82rem;
           transition: background 0.15s, color 0.15s;
         }
-        .glc-open:hover { background: var(--glc, #6366f1); color: #fff; }
+        .glc-open:hover { background: var(--glc, #B45309); color: #fff; }
 
         .glc-overlay {
           position: fixed; inset: 0; z-index: 2147483000;
@@ -153,7 +154,7 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
 
         .glc-head {
           position: relative; padding: 22px 24px 20px; text-align: center; color: #fff;
-          background: linear-gradient(140deg, var(--glc, #6366f1), var(--glc-deep, #312e81));
+          background: linear-gradient(140deg, var(--glc, #B45309), var(--glc-deep, #78350F));
         }
         .glc-x {
           position: absolute; top: 12px; right: 12px;
@@ -185,18 +186,18 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
         .glc-concept {
           display: flex; gap: 10px; align-items: flex-start;
           padding: 14px 16px; border-radius: 14px; margin-bottom: 18px;
-          background: var(--glc-soft, #eef2ff);
-          border: 1px solid var(--glc-line, #c7d2fe);
+          background: var(--glc-soft, #FFF9E6);
+          border: 1px solid var(--glc-line, #FCD34D);
           color: #1e293b;
         }
-        .glc-concept svg { flex-shrink: 0; color: var(--glc, #6366f1); margin-top: 2px; }
+        .glc-concept svg { flex-shrink: 0; color: var(--glc, #B45309); margin-top: 2px; }
         .glc-concept p { margin: 0; font-size: 1rem; line-height: 1.68; font-weight: 600; }
 
         .glc-h3 {
           margin: 0 0 10px; font-size: 0.9rem; font-weight: 800; color: #475569;
           display: flex; align-items: center; gap: 7px;
         }
-        .glc-h3::before { content: ''; width: 4px; height: 15px; border-radius: 3px; background: var(--glc, #6366f1); }
+        .glc-h3::before { content: ''; width: 4px; height: 15px; border-radius: 3px; background: var(--glc, #B45309); }
 
         .glc-points { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 9px; }
         .glc-points li {
@@ -220,16 +221,16 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
         .glc-howto li { display: flex; align-items: center; gap: 11px; font-size: 0.92rem; color: #334155; line-height: 1.55; }
         .glc-num {
           flex-shrink: 0; width: 26px; height: 26px; display: grid; place-items: center;
-          border-radius: 50%; background: var(--glc, #6366f1); color: #fff;
+          border-radius: 50%; background: var(--glc, #B45309); color: #fff;
           font-size: 0.78rem; font-weight: 800;
         }
 
         .glc-cta {
           margin: 8px 20px 20px; padding: 14px; border: 0; border-radius: 14px; cursor: pointer;
           display: flex; align-items: center; justify-content: center; gap: 9px;
-          background: linear-gradient(135deg, var(--glc, #6366f1), var(--glc-deep, #312e81));
+          background: linear-gradient(135deg, var(--glc, #B45309), var(--glc-deep, #78350F));
           color: #fff; font-family: inherit; font-weight: 900; font-size: 1.02rem;
-          box-shadow: 0 10px 20px -8px var(--glc-shadow, rgba(99,102,241,0.45));
+          box-shadow: 0 10px 20px -8px var(--glc-shadow, rgba(245, 158, 11,0.45));
         }
         .glc-cta:hover { filter: brightness(1.07); }
 

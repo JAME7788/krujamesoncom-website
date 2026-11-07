@@ -6,7 +6,9 @@ const source = (path: string) => readFileSync(new URL(`../src/${path}`, import.m
 describe('shared UI regression contracts', () => {
   it('opens search in the native modal layer without delayed focus callbacks', () => {
     const code = source('components/SearchBar.tsx');
-    expect(code).toContain('dialog.showModal()');
+    // openDialog() uses the native dialog.showModal() and only falls back on browsers without it (Safari < 15.4)
+    expect(code).toContain('openDialog(dialog)');
+    expect(source('utils/browserPolyfills.ts')).toContain('dialog.showModal()');
     expect(code).toContain('onCancel=');
     expect(code).toContain('onClose=');
     expect(code).not.toContain('setTimeout');

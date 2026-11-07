@@ -4,6 +4,7 @@ import { Search, X, ArrowUpRight, BookOpen, Gamepad2, Library } from 'lucide-rea
 import { search } from '../services/searchService';
 import type { SearchResult } from '../services/searchService';
 import './SearchBar.css';
+import { closeDialog, isDialogOpen, openDialog } from '../utils/browserPolyfills';
 
 const SearchBar: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -23,10 +24,10 @@ const SearchBar: React.FC = () => {
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
+    if (open && !isDialogOpen(dialog)) {
+      openDialog(dialog);
       inputRef.current?.focus();
-    } else if (!open && dialog.open) dialog.close();
+    } else if (!open && isDialogOpen(dialog)) closeDialog(dialog);
   }, [open]);
 
   useEffect(() => {
