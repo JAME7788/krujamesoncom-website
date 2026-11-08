@@ -1259,6 +1259,842 @@
         "url": "https://lh3.googleusercontent.com/d/1ljOGn_LQCulcIkeo6DRbWpIBj1x8FDxh",
         "driveViewUrl": "https://drive.google.com/file/d/1ljOGn_LQCulcIkeo6DRbWpIBj1x8FDxh/view?usp=sharing"
       }
+    ],
+    "ป.2 หน่วยที่ 1 การแก้ปัญหาอย่างเป็นขั้นตอน": [
+      {
+        "id": "1SZ667uS3eK2F8SbWSYiXYhTilMlGnfS2",
+        "filename": "01_สไลด์บทที่1_การแก้ปัญหาอย่างเป็นขั้นต.png",
+        "url": "https://lh3.googleusercontent.com/d/1SZ667uS3eK2F8SbWSYiXYhTilMlGnfS2",
+        "driveViewUrl": "https://drive.google.com/file/d/1SZ667uS3eK2F8SbWSYiXYhTilMlGnfS2/view?usp=sharing"
+      },
+      {
+        "id": "1_cDhnRkYLdsXdrwoeFwX6x_iTvhXaf0k",
+        "filename": "02_สไลด์บทที่1_การใช้ข้อความบอกลำดับขั้น.png",
+        "url": "https://lh3.googleusercontent.com/d/1_cDhnRkYLdsXdrwoeFwX6x_iTvhXaf0k",
+        "driveViewUrl": "https://drive.google.com/file/d/1_cDhnRkYLdsXdrwoeFwX6x_iTvhXaf0k/view?usp=sharing"
+      },
+      {
+        "id": "1VMqNyBqw0SoghVML77FuaiLPnNa-9Shy",
+        "filename": "03_สไลด์บทที่1_การใช้รูปภาพและสัญลักษณ์ผ.png",
+        "url": "https://lh3.googleusercontent.com/d/1VMqNyBqw0SoghVML77FuaiLPnNa-9Shy",
+        "driveViewUrl": "https://drive.google.com/file/d/1VMqNyBqw0SoghVML77FuaiLPnNa-9Shy/view?usp=sharing"
+      },
+      {
+        "id": "1iBtsPLMJXzT8YYOMwRxpTxw5lGsQuouk",
+        "filename": "04_สไลด์บทที่1_การวางแผนเดินทางไปโรงเรีย.png",
+        "url": "https://lh3.googleusercontent.com/d/1iBtsPLMJXzT8YYOMwRxpTxw5lGsQuouk",
+        "driveViewUrl": "https://drive.google.com/file/d/1iBtsPLMJXzT8YYOMwRxpTxw5lGsQuouk/view?usp=sharing"
+      },
+      {
+        "id": "1eost-RR4S4r5KIaVk_9pWFyhhDqPAz1A",
+        "filename": "05_สไลด์บทที่1_การจัดกระเป๋านักเรียนตามต.png",
+        "url": "https://lh3.googleusercontent.com/d/1eost-RR4S4r5KIaVk_9pWFyhhDqPAz1A",
+        "driveViewUrl": "https://drive.google.com/file/d/1eost-RR4S4r5KIaVk_9pWFyhhDqPAz1A/view?usp=sharing"
+      },
+      {
+        "id": "1zgBpnSpyI-ETUDk4rIuRf9itdexGs4uU",
+        "filename": "06_สไลด์บทที่1_ควิซการวางแผนแก้ปัญหาอย่า.png",
+        "url": "https://lh3.googleusercontent.com/d/1zgBpnSpyI-ETUDk4rIuRf9itdexGs4uU",
+        "driveViewUrl": "https://drive.google.com/file/d/1zgBpnSpyI-ETUDk4rIuRf9itdexGs4uU/view?usp=sharing"
+      }
+    ],
+    "ป.2 หน่วยที่ 2 การตรวจหาข้อผิดพลาดของโปรแกรม": [
+      {
+        "id": "1NHEu7de4sJHCQzZ-_ZbB5StA582XEvWv",
+        "filename": "01_สไลด์บทที่2_การตรวจหาข้อผิดพลาด_Debug.png",
+        "url": "https://lh3.googleusercontent.com/d/1NHEu7de4sJHCQzZ-_ZbB5StA582XEvWv",
+        "driveViewUrl": "https://drive.google.com/file/d/1NHEu7de4sJHCQzZ-_ZbB5StA582XEvWv/view?usp=sharing"
+      },
+      {
+        "id": "1ERzcIuZQaYAshXO6VKMZ9ty3vPlvT0uu",
+        "filename": "02_สไลด์บทที่2_บั๊ก_(Bug)_คืออะไรในโลกคอ.png",
+        "url": "https://lh3.googleusercontent.com/d/1ERzcIuZQaYAshXO6VKMZ9ty3vPlvT0uu",
+        "driveViewUrl": "https://drive.google.com/file/d/1ERzcIuZQaYAshXO6VKMZ9ty3vPlvT0uu/view?usp=sharing"
+      },
+      {
+        "id": "1DVuhDcamitIsoqXtAFL-7dGGHSdynWSA",
+        "filename": "03_สไลด์บทที่2_วิธีตรวจสอบคำสั่งทีละบรรท.png",
+        "url": "https://lh3.googleusercontent.com/d/1DVuhDcamitIsoqXtAFL-7dGGHSdynWSA",
+        "driveViewUrl": "https://drive.google.com/file/d/1DVuhDcamitIsoqXtAFL-7dGGHSdynWSA/view?usp=sharing"
+      },
+      {
+        "id": "1VdX7JwKnt_DgubgggbjtsFsiTnnFUfwI",
+        "filename": "04_สไลด์บทที่2_แก้โค้ดที่ผิดให้หุ่นยนต์เ.png",
+        "url": "https://lh3.googleusercontent.com/d/1VdX7JwKnt_DgubgggbjtsFsiTnnFUfwI",
+        "driveViewUrl": "https://drive.google.com/file/d/1VdX7JwKnt_DgubgggbjtsFsiTnnFUfwI/view?usp=sharing"
+      },
+      {
+        "id": "1KBxLqgpjnbaMTTF39WUhuploJA64m-6y",
+        "filename": "05_สไลด์บทที่2_กิจกรรมเป็นนักสืบจับบั๊กใ.png",
+        "url": "https://lh3.googleusercontent.com/d/1KBxLqgpjnbaMTTF39WUhuploJA64m-6y",
+        "driveViewUrl": "https://drive.google.com/file/d/1KBxLqgpjnbaMTTF39WUhuploJA64m-6y/view?usp=sharing"
+      },
+      {
+        "id": "1JRQ3JsknVSiVgQpRhL1NF9tSYCmeaZZR",
+        "filename": "06_สไลด์บทที่2_ควิซการตรวจหาข้อผิดพลาดขอ.png",
+        "url": "https://lh3.googleusercontent.com/d/1JRQ3JsknVSiVgQpRhL1NF9tSYCmeaZZR",
+        "driveViewUrl": "https://drive.google.com/file/d/1JRQ3JsknVSiVgQpRhL1NF9tSYCmeaZZR/view?usp=sharing"
+      }
+    ],
+    "ป.2 หน่วยที่ 3 การจัดการไฟล์อย่างมีระบบ": [
+      {
+        "id": "1ZNhhNCEmUzaHj4L4LFKzEXXHRuS2kGdQ",
+        "filename": "01_สไลด์บทที่3_การจัดการไฟล์และโฟลเดอร์อ.png",
+        "url": "https://lh3.googleusercontent.com/d/1ZNhhNCEmUzaHj4L4LFKzEXXHRuS2kGdQ",
+        "driveViewUrl": "https://drive.google.com/file/d/1ZNhhNCEmUzaHj4L4LFKzEXXHRuS2kGdQ/view?usp=sharing"
+      },
+      {
+        "id": "1hupLOBrDxeqj2SWGAP5o3b8jMu2cMHK_",
+        "filename": "02_สไลด์บทที่3_ไฟล์_(File)_และ_โฟลเดอร์_.png",
+        "url": "https://lh3.googleusercontent.com/d/1hupLOBrDxeqj2SWGAP5o3b8jMu2cMHK_",
+        "driveViewUrl": "https://drive.google.com/file/d/1hupLOBrDxeqj2SWGAP5o3b8jMu2cMHK_/view?usp=sharing"
+      },
+      {
+        "id": "1WYbrFpxHVF2fuyzAQyh2DnjobbkWhlxN",
+        "filename": "03_สไลด์บทที่3_การตั้งชื่อไฟล์ที่สื่อควา.png",
+        "url": "https://lh3.googleusercontent.com/d/1WYbrFpxHVF2fuyzAQyh2DnjobbkWhlxN",
+        "driveViewUrl": "https://drive.google.com/file/d/1WYbrFpxHVF2fuyzAQyh2DnjobbkWhlxN/view?usp=sharing"
+      },
+      {
+        "id": "1KD2PiVBiL58TKyE-5BKCEaAP0ONc1dYu",
+        "filename": "04_สไลด์บทที่3_การย้าย_คัดลอก_และลบไฟล์อ.png",
+        "url": "https://lh3.googleusercontent.com/d/1KD2PiVBiL58TKyE-5BKCEaAP0ONc1dYu",
+        "driveViewUrl": "https://drive.google.com/file/d/1KD2PiVBiL58TKyE-5BKCEaAP0ONc1dYu/view?usp=sharing"
+      },
+      {
+        "id": "155uR8aZzh8DnVMzkiAEk-IwGCOJN564S",
+        "filename": "05_สไลด์บทที่3_จัดหมวดหมู่งานการบ้านและร.png",
+        "url": "https://lh3.googleusercontent.com/d/155uR8aZzh8DnVMzkiAEk-IwGCOJN564S",
+        "driveViewUrl": "https://drive.google.com/file/d/155uR8aZzh8DnVMzkiAEk-IwGCOJN564S/view?usp=sharing"
+      },
+      {
+        "id": "1LPeCZydKaF-KLh5F6HmtSvG6QkrkUE9c",
+        "filename": "06_สไลด์บทที่3_ควิซการจัดการไฟล์อย่างมีร.png",
+        "url": "https://lh3.googleusercontent.com/d/1LPeCZydKaF-KLh5F6HmtSvG6QkrkUE9c",
+        "driveViewUrl": "https://drive.google.com/file/d/1LPeCZydKaF-KLh5F6HmtSvG6QkrkUE9c/view?usp=sharing"
+      }
+    ],
+    "ป.2 หน่วยที่ 4 การใช้เทคโนโลยีสารสนเทศอย่างปลอดภัย": [
+      {
+        "id": "1F2Bmw2WbbFqczH1zsRVWX4oDWLY-PxNa",
+        "filename": "01_สไลด์บทที่4_ความปลอดภัยในโลกดิจิทัลสำ.png",
+        "url": "https://lh3.googleusercontent.com/d/1F2Bmw2WbbFqczH1zsRVWX4oDWLY-PxNa",
+        "driveViewUrl": "https://drive.google.com/file/d/1F2Bmw2WbbFqczH1zsRVWX4oDWLY-PxNa/view?usp=sharing"
+      },
+      {
+        "id": "1Jshtfvt-MrNPOHbeko2hB-7Yx2U5d_ql",
+        "filename": "02_สไลด์บทที่4_ภัยเงียบจากคนแปลกหน้าออนไ.png",
+        "url": "https://lh3.googleusercontent.com/d/1Jshtfvt-MrNPOHbeko2hB-7Yx2U5d_ql",
+        "driveViewUrl": "https://drive.google.com/file/d/1Jshtfvt-MrNPOHbeko2hB-7Yx2U5d_ql/view?usp=sharing"
+      },
+      {
+        "id": "1TBgq-UH24k2X3T8eX51dOT1MFsw9Avuk",
+        "filename": "03_สไลด์บทที่4_การตั้งรหัสผ่านเบื้องต้นไ.png",
+        "url": "https://lh3.googleusercontent.com/d/1TBgq-UH24k2X3T8eX51dOT1MFsw9Avuk",
+        "driveViewUrl": "https://drive.google.com/file/d/1TBgq-UH24k2X3T8eX51dOT1MFsw9Avuk/view?usp=sharing"
+      },
+      {
+        "id": "1N9TN1G2aAec_z6-v7uJlNc9VLNC-XDb3",
+        "filename": "04_สไลด์บทที่4_การดูแลอุปกรณ์ไอทีให้ใช้ง.png",
+        "url": "https://lh3.googleusercontent.com/d/1N9TN1G2aAec_z6-v7uJlNc9VLNC-XDb3",
+        "driveViewUrl": "https://drive.google.com/file/d/1N9TN1G2aAec_z6-v7uJlNc9VLNC-XDb3/view?usp=sharing"
+      },
+      {
+        "id": "1yWBBKJDs_xjIei36kK4ijGeU9CFwRLdm",
+        "filename": "05_สไลด์บทที่4_เมื่อเจอสิ่งไม่เหมาะสมต้อ.png",
+        "url": "https://lh3.googleusercontent.com/d/1yWBBKJDs_xjIei36kK4ijGeU9CFwRLdm",
+        "driveViewUrl": "https://drive.google.com/file/d/1yWBBKJDs_xjIei36kK4ijGeU9CFwRLdm/view?usp=sharing"
+      },
+      {
+        "id": "1pz7LV-1wkupLba21gr0D-TR_2iNG8fE5",
+        "filename": "06_สไลด์บทที่4_ควิซพลเมืองดิจิทัลรุ่นเยา.png",
+        "url": "https://lh3.googleusercontent.com/d/1pz7LV-1wkupLba21gr0D-TR_2iNG8fE5",
+        "driveViewUrl": "https://drive.google.com/file/d/1pz7LV-1wkupLba21gr0D-TR_2iNG8fE5/view?usp=sharing"
+      }
+    ],
+    "ป.3 หน่วยที่ 1 อัลกอริทึมกับการแก้ปัญหา": [
+      {
+        "id": "1t4aTUP3cCeMfPjDq1ORVowVg3Bs4vurV",
+        "filename": "01_สไลด์บทที่1_อัลกอริทึม_(Algorithm)_ลำ.png",
+        "url": "https://lh3.googleusercontent.com/d/1t4aTUP3cCeMfPjDq1ORVowVg3Bs4vurV",
+        "driveViewUrl": "https://drive.google.com/file/d/1t4aTUP3cCeMfPjDq1ORVowVg3Bs4vurV/view?usp=sharing"
+      },
+      {
+        "id": "16xZk8GtbzyeIADpemRQigWc3a2VMfoyV",
+        "filename": "02_สไลด์บทที่1_อัลกอริทึมในชีวิตประจำวัน.png",
+        "url": "https://lh3.googleusercontent.com/d/16xZk8GtbzyeIADpemRQigWc3a2VMfoyV",
+        "driveViewUrl": "https://drive.google.com/file/d/16xZk8GtbzyeIADpemRQigWc3a2VMfoyV/view?usp=sharing"
+      },
+      {
+        "id": "1i3woJou0-EWh6VwtfqwotZzoEshQwzFl",
+        "filename": "03_สไลด์บทที่1_การเขียนผังงาน_(Flowchart.png",
+        "url": "https://lh3.googleusercontent.com/d/1i3woJou0-EWh6VwtfqwotZzoEshQwzFl",
+        "driveViewUrl": "https://drive.google.com/file/d/1i3woJou0-EWh6VwtfqwotZzoEshQwzFl/view?usp=sharing"
+      },
+      {
+        "id": "1CCeozTCUoVY1DjCREVIdmv6HWXCjuyb9",
+        "filename": "04_สไลด์บทที่1_ผังงานแบบมีเงื่อนไข_ตัดสิ.png",
+        "url": "https://lh3.googleusercontent.com/d/1CCeozTCUoVY1DjCREVIdmv6HWXCjuyb9",
+        "driveViewUrl": "https://drive.google.com/file/d/1CCeozTCUoVY1DjCREVIdmv6HWXCjuyb9/view?usp=sharing"
+      },
+      {
+        "id": "1JCkQbvqX0eSJl0umPxEvd_ncOaQJgfFd",
+        "filename": "05_สไลด์บทที่1_กิจกรรมเขียนอัลกอริทึมพาห.png",
+        "url": "https://lh3.googleusercontent.com/d/1JCkQbvqX0eSJl0umPxEvd_ncOaQJgfFd",
+        "driveViewUrl": "https://drive.google.com/file/d/1JCkQbvqX0eSJl0umPxEvd_ncOaQJgfFd/view?usp=sharing"
+      },
+      {
+        "id": "1dfQA4XFqpbwl-K3ynFxEhQu8hlVIiFdP",
+        "filename": "06_สไลด์บทที่1_ควิซอัลกอริทึมและผังงาน.png",
+        "url": "https://lh3.googleusercontent.com/d/1dfQA4XFqpbwl-K3ynFxEhQu8hlVIiFdP",
+        "driveViewUrl": "https://drive.google.com/file/d/1dfQA4XFqpbwl-K3ynFxEhQu8hlVIiFdP/view?usp=sharing"
+      }
+    ],
+    "ป.3 หน่วยที่ 2 การเขียนโปรแกรมอย่างง่าย": [
+      {
+        "id": "10UPC_3_k1T8pqo2jl636g7hYCQr7U04t",
+        "filename": "01_สไลด์บทที่2_สนุกกับการเขียนโปรแกรม_Bl.png",
+        "url": "https://lh3.googleusercontent.com/d/10UPC_3_k1T8pqo2jl636g7hYCQr7U04t",
+        "driveViewUrl": "https://drive.google.com/file/d/10UPC_3_k1T8pqo2jl636g7hYCQr7U04t/view?usp=sharing"
+      },
+      {
+        "id": "1R-9d1qdm23-AXhRlVRe4f8wPYu-zEqAn",
+        "filename": "02_สไลด์บทที่2_การเคลื่อนที่และการเปลี่ย.png",
+        "url": "https://lh3.googleusercontent.com/d/1R-9d1qdm23-AXhRlVRe4f8wPYu-zEqAn",
+        "driveViewUrl": "https://drive.google.com/file/d/1R-9d1qdm23-AXhRlVRe4f8wPYu-zEqAn/view?usp=sharing"
+      },
+      {
+        "id": "1RlycJo2X8n8-QzQ_BNl6pxKd-AUxRNdq",
+        "filename": "03_สไลด์บทที่2_การใช้บล็อกคำสั่งวนซ้ำ_(R.png",
+        "url": "https://lh3.googleusercontent.com/d/1RlycJo2X8n8-QzQ_BNl6pxKd-AUxRNdq",
+        "driveViewUrl": "https://drive.google.com/file/d/1RlycJo2X8n8-QzQ_BNl6pxKd-AUxRNdq/view?usp=sharing"
+      },
+      {
+        "id": "1KzGwqp8yzHcnqiw8BYpzCm66G1LZKDmm",
+        "filename": "04_สไลด์บทที่2_การตรวจจับ_(Sensing)_เมื่.png",
+        "url": "https://lh3.googleusercontent.com/d/1KzGwqp8yzHcnqiw8BYpzCm66G1LZKDmm",
+        "driveViewUrl": "https://drive.google.com/file/d/1KzGwqp8yzHcnqiw8BYpzCm66G1LZKDmm/view?usp=sharing"
+      },
+      {
+        "id": "1Gr2AnCPyV4sIz9GryyE4lhG3nXlwitJc",
+        "filename": "05_สไลด์บทที่2_สร้างแอนิเมชันหรือเกมน้อย.png",
+        "url": "https://lh3.googleusercontent.com/d/1Gr2AnCPyV4sIz9GryyE4lhG3nXlwitJc",
+        "driveViewUrl": "https://drive.google.com/file/d/1Gr2AnCPyV4sIz9GryyE4lhG3nXlwitJc/view?usp=sharing"
+      },
+      {
+        "id": "16KTmM4TrEmwf-1F5lQiFyn-WSxfJBeq5",
+        "filename": "06_สไลด์บทที่2_ควิซการเขียนโปรแกรมอย่างง.png",
+        "url": "https://lh3.googleusercontent.com/d/16KTmM4TrEmwf-1F5lQiFyn-WSxfJBeq5",
+        "driveViewUrl": "https://drive.google.com/file/d/16KTmM4TrEmwf-1F5lQiFyn-WSxfJBeq5/view?usp=sharing"
+      }
+    ],
+    "ป.3 หน่วยที่ 3 อินเทอร์เน็ตและเทคโนโลยีสารสนเทศ": [
+      {
+        "id": "1XMZ5uQwVUHIayn1D6Dyo7ICMDhQLe2WG",
+        "filename": "01_สไลด์บทที่3_ท่องโลกอินเทอร์เน็ตอย่างฉ.png",
+        "url": "https://lh3.googleusercontent.com/d/1XMZ5uQwVUHIayn1D6Dyo7ICMDhQLe2WG",
+        "driveViewUrl": "https://drive.google.com/file/d/1XMZ5uQwVUHIayn1D6Dyo7ICMDhQLe2WG/view?usp=sharing"
+      },
+      {
+        "id": "1sMtATsyf10SyfhyDl5RLt5XQIFhuWcea",
+        "filename": "02_สไลด์บทที่3_เว็บเบราว์เซอร์และเว็บไซต.png",
+        "url": "https://lh3.googleusercontent.com/d/1sMtATsyf10SyfhyDl5RLt5XQIFhuWcea",
+        "driveViewUrl": "https://drive.google.com/file/d/1sMtATsyf10SyfhyDl5RLt5XQIFhuWcea/view?usp=sharing"
+      },
+      {
+        "id": "18mHCERJknr-uAzzocYLwlBYdvKg3N_fn",
+        "filename": "03_สไลด์บทที่3_เทคนิคการพิมพ์คำค้นหา_(Ke.png",
+        "url": "https://lh3.googleusercontent.com/d/18mHCERJknr-uAzzocYLwlBYdvKg3N_fn",
+        "driveViewUrl": "https://drive.google.com/file/d/18mHCERJknr-uAzzocYLwlBYdvKg3N_fn/view?usp=sharing"
+      },
+      {
+        "id": "1GlKRyDkzaHpNToeKaLoMcHRyuJoq-CXl",
+        "filename": "04_สไลด์บทที่3_ประโยชน์และโทษของเครือข่า.png",
+        "url": "https://lh3.googleusercontent.com/d/1GlKRyDkzaHpNToeKaLoMcHRyuJoq-CXl",
+        "driveViewUrl": "https://drive.google.com/file/d/1GlKRyDkzaHpNToeKaLoMcHRyuJoq-CXl/view?usp=sharing"
+      },
+      {
+        "id": "18LUB8-vf5wZDNz0W_hPLnnL8i7PsZmZO",
+        "filename": "05_สไลด์บทที่3_มารยาทในการสื่อสารออนไลน์.png",
+        "url": "https://lh3.googleusercontent.com/d/18LUB8-vf5wZDNz0W_hPLnnL8i7PsZmZO",
+        "driveViewUrl": "https://drive.google.com/file/d/18LUB8-vf5wZDNz0W_hPLnnL8i7PsZmZO/view?usp=sharing"
+      },
+      {
+        "id": "148XZf7cG7DjuBYmDOxFOK5akghG4K7pS",
+        "filename": "06_สไลด์บทที่3_ควิซการใช้อินเทอร์เน็ตอย่.png",
+        "url": "https://lh3.googleusercontent.com/d/148XZf7cG7DjuBYmDOxFOK5akghG4K7pS",
+        "driveViewUrl": "https://drive.google.com/file/d/148XZf7cG7DjuBYmDOxFOK5akghG4K7pS/view?usp=sharing"
+      }
+    ],
+    "ป.3 หน่วยที่ 4 การรวบรวม ประมวลผล และนำเสนอข้อมูล": [
+      {
+        "id": "1h8rrD74mD7uu9ZVxE0qNSQ-NNj2Tlys6",
+        "filename": "01_สไลด์บทที่4_ข้อมูลรอบตัวเรา_Data_&_In.png",
+        "url": "https://lh3.googleusercontent.com/d/1h8rrD74mD7uu9ZVxE0qNSQ-NNj2Tlys6",
+        "driveViewUrl": "https://drive.google.com/file/d/1h8rrD74mD7uu9ZVxE0qNSQ-NNj2Tlys6/view?usp=sharing"
+      },
+      {
+        "id": "1VeKH_wvdVz2SbHGli_u3nx6OrR6v2q1X",
+        "filename": "02_สไลด์บทที่4_การรวบรวมข้อมูลด้วยการสัง.png",
+        "url": "https://lh3.googleusercontent.com/d/1VeKH_wvdVz2SbHGli_u3nx6OrR6v2q1X",
+        "driveViewUrl": "https://drive.google.com/file/d/1VeKH_wvdVz2SbHGli_u3nx6OrR6v2q1X/view?usp=sharing"
+      },
+      {
+        "id": "1kGjjSPnFrMbGY9j42fZHap-juScZU6PE",
+        "filename": "03_สไลด์บทที่4_การจำแนกและนับจำนวนข้อมูล.png",
+        "url": "https://lh3.googleusercontent.com/d/1kGjjSPnFrMbGY9j42fZHap-juScZU6PE",
+        "driveViewUrl": "https://drive.google.com/file/d/1kGjjSPnFrMbGY9j42fZHap-juScZU6PE/view?usp=sharing"
+      },
+      {
+        "id": "1KGKv-uxV0vnFMmWsrTQ0j9OVqecxK0W6",
+        "filename": "04_สไลด์บทที่4_การทำแผนภูมิรูปภาพและตารา.png",
+        "url": "https://lh3.googleusercontent.com/d/1KGKv-uxV0vnFMmWsrTQ0j9OVqecxK0W6",
+        "driveViewUrl": "https://drive.google.com/file/d/1KGKv-uxV0vnFMmWsrTQ0j9OVqecxK0W6/view?usp=sharing"
+      },
+      {
+        "id": "1GqtucJ0FlvWoPRFLLsl-L18o7VW0BMM5",
+        "filename": "05_สไลด์บทที่4_การนำเสนอข้อมูลให้เพื่อนๆ.png",
+        "url": "https://lh3.googleusercontent.com/d/1GqtucJ0FlvWoPRFLLsl-L18o7VW0BMM5",
+        "driveViewUrl": "https://drive.google.com/file/d/1GqtucJ0FlvWoPRFLLsl-L18o7VW0BMM5/view?usp=sharing"
+      },
+      {
+        "id": "1BtMzU9_pRKoln3CpSLQqaOSQSNOLu-ps",
+        "filename": "06_สไลด์บทที่4_ควิซนักสำรวจข้อมูลน้อย.png",
+        "url": "https://lh3.googleusercontent.com/d/1BtMzU9_pRKoln3CpSLQqaOSQSNOLu-ps",
+        "driveViewUrl": "https://drive.google.com/file/d/1BtMzU9_pRKoln3CpSLQqaOSQSNOLu-ps/view?usp=sharing"
+      }
+    ],
+    "ป.3 หน่วยที่ 5 การใช้งานซอฟต์แวร์": [
+      {
+        "id": "1r-AkTL4zf8hGXEm18j8VvMXi0qHij2GA",
+        "filename": "01_สไลด์บทที่5_โปรแกรมสร้างสรรค์ผลงาน_ซอ.png",
+        "url": "https://lh3.googleusercontent.com/d/1r-AkTL4zf8hGXEm18j8VvMXi0qHij2GA",
+        "driveViewUrl": "https://drive.google.com/file/d/1r-AkTL4zf8hGXEm18j8VvMXi0qHij2GA/view?usp=sharing"
+      },
+      {
+        "id": "1GveSUkrgc6cQX9q0ohGgUVj1gdghMusC",
+        "filename": "02_สไลด์บทที่5_โปรแกรมประมวลคำ_(Word_Pro.png",
+        "url": "https://lh3.googleusercontent.com/d/1GveSUkrgc6cQX9q0ohGgUVj1gdghMusC",
+        "driveViewUrl": "https://drive.google.com/file/d/1GveSUkrgc6cQX9q0ohGgUVj1gdghMusC/view?usp=sharing"
+      },
+      {
+        "id": "1xjyVmzXqP7nGyxWxwvMcV5hS5-SJRZAX",
+        "filename": "03_สไลด์บทที่5_โปรแกรมนำเสนอ_(Presentati.png",
+        "url": "https://lh3.googleusercontent.com/d/1xjyVmzXqP7nGyxWxwvMcV5hS5-SJRZAX",
+        "driveViewUrl": "https://drive.google.com/file/d/1xjyVmzXqP7nGyxWxwvMcV5hS5-SJRZAX/view?usp=sharing"
+      },
+      {
+        "id": "1RJHeYWYEsD7oypvH7aaCk1821fU2Q91p",
+        "filename": "04_สไลด์บทที่5_การตกแต่งรูปภาพและข้อความ.png",
+        "url": "https://lh3.googleusercontent.com/d/1RJHeYWYEsD7oypvH7aaCk1821fU2Q91p",
+        "driveViewUrl": "https://drive.google.com/file/d/1RJHeYWYEsD7oypvH7aaCk1821fU2Q91p/view?usp=sharing"
+      },
+      {
+        "id": "16DeZkJlku_MHt-N391HRQ1L2yH1UnTRp",
+        "filename": "05_สไลด์บทที่5_การบันทึกและส่งออกงานผลงา.png",
+        "url": "https://lh3.googleusercontent.com/d/16DeZkJlku_MHt-N391HRQ1L2yH1UnTRp",
+        "driveViewUrl": "https://drive.google.com/file/d/16DeZkJlku_MHt-N391HRQ1L2yH1UnTRp/view?usp=sharing"
+      },
+      {
+        "id": "1YzGmcbIffr55GImDWle7ybP4kbmbXlvs",
+        "filename": "06_สไลด์บทที่5_ควิซการใช้ซอฟต์แวร์อย่างค.png",
+        "url": "https://lh3.googleusercontent.com/d/1YzGmcbIffr55GImDWle7ybP4kbmbXlvs",
+        "driveViewUrl": "https://drive.google.com/file/d/1YzGmcbIffr55GImDWle7ybP4kbmbXlvs/view?usp=sharing"
+      }
+    ],
+    "ป.4 หน่วยที่ 1 ขั้นตอนวิธีการแก้ปัญหา (Algorithm)": [
+      {
+        "id": "1X3-z-ECheFxHRKsDK-VW8awtbndQgp2o",
+        "filename": "01_สไลด์บทที่1_การออกแบบขั้นตอนวิธีแก้ปั.png",
+        "url": "https://lh3.googleusercontent.com/d/1X3-z-ECheFxHRKsDK-VW8awtbndQgp2o",
+        "driveViewUrl": "https://drive.google.com/file/d/1X3-z-ECheFxHRKsDK-VW8awtbndQgp2o/view?usp=sharing"
+      },
+      {
+        "id": "1cQZ31E4QwiLEVZuXxnDpLz5C0UQV0E7L",
+        "filename": "02_สไลด์บทที่1_การแยกย่อยปัญหา_(Decompos.png",
+        "url": "https://lh3.googleusercontent.com/d/1cQZ31E4QwiLEVZuXxnDpLz5C0UQV0E7L",
+        "driveViewUrl": "https://drive.google.com/file/d/1cQZ31E4QwiLEVZuXxnDpLz5C0UQV0E7L/view?usp=sharing"
+      },
+      {
+        "id": "19kgqIOJdX1g730QzyezNhp9AW-NmpVoM",
+        "filename": "03_สไลด์บทที่1_การหารูปแบบซ้ำ_(Pattern_R.png",
+        "url": "https://lh3.googleusercontent.com/d/19kgqIOJdX1g730QzyezNhp9AW-NmpVoM",
+        "driveViewUrl": "https://drive.google.com/file/d/19kgqIOJdX1g730QzyezNhp9AW-NmpVoM/view?usp=sharing"
+      },
+      {
+        "id": "1Zrf4FB_Ka4Z5I8GPD2_UrHXM42A3Y2lA",
+        "filename": "04_สไลด์บทที่1_การเขียนรหัสลำลอง_(Pseudo.png",
+        "url": "https://lh3.googleusercontent.com/d/1Zrf4FB_Ka4Z5I8GPD2_UrHXM42A3Y2lA",
+        "driveViewUrl": "https://drive.google.com/file/d/1Zrf4FB_Ka4Z5I8GPD2_UrHXM42A3Y2lA/view?usp=sharing"
+      },
+      {
+        "id": "19DNaohwvcbbu6dcRwQEmdL1s-a-Aa0L6",
+        "filename": "05_สไลด์บทที่1_ตัวอย่างอัลกอริทึมจัดเรีย.png",
+        "url": "https://lh3.googleusercontent.com/d/19DNaohwvcbbu6dcRwQEmdL1s-a-Aa0L6",
+        "driveViewUrl": "https://drive.google.com/file/d/19DNaohwvcbbu6dcRwQEmdL1s-a-Aa0L6/view?usp=sharing"
+      },
+      {
+        "id": "1uRGmnoDlvNz-YLv4TJBARqvKnrdt0q91",
+        "filename": "06_สไลด์บทที่1_ควิซขั้นตอนวิธีการคิดเชิง.png",
+        "url": "https://lh3.googleusercontent.com/d/1uRGmnoDlvNz-YLv4TJBARqvKnrdt0q91",
+        "driveViewUrl": "https://drive.google.com/file/d/1uRGmnoDlvNz-YLv4TJBARqvKnrdt0q91/view?usp=sharing"
+      }
+    ],
+    "ป.4 หน่วยที่ 2 การเขียนโปรแกรมอย่างง่ายด้วย Scratch": [
+      {
+        "id": "1aVZdGanZoY7LWTjzeW1f0sDzJU56uEBG",
+        "filename": "01_สไลด์บทที่2_เข้าสู่โลก_Scratch_3.0_สร.png",
+        "url": "https://lh3.googleusercontent.com/d/1aVZdGanZoY7LWTjzeW1f0sDzJU56uEBG",
+        "driveViewUrl": "https://drive.google.com/file/d/1aVZdGanZoY7LWTjzeW1f0sDzJU56uEBG/view?usp=sharing"
+      },
+      {
+        "id": "1vjSrdARyXlGDsClvtjrV5gS23mTfyx0m",
+        "filename": "02_สไลด์บทที่2_รู้จักพื้นที่ทำงาน_สเตจ_ส.png",
+        "url": "https://lh3.googleusercontent.com/d/1vjSrdARyXlGDsClvtjrV5gS23mTfyx0m",
+        "driveViewUrl": "https://drive.google.com/file/d/1vjSrdARyXlGDsClvtjrV5gS23mTfyx0m/view?usp=sharing"
+      },
+      {
+        "id": "1XorEB19b-q9pe8nrvyqN2NZdIYZSfQtq",
+        "filename": "03_สไลด์บทที่2_บล็อกการเคลื่อนที่และเหตุ.png",
+        "url": "https://lh3.googleusercontent.com/d/1XorEB19b-q9pe8nrvyqN2NZdIYZSfQtq",
+        "driveViewUrl": "https://drive.google.com/file/d/1XorEB19b-q9pe8nrvyqN2NZdIYZSfQtq/view?usp=sharing"
+      },
+      {
+        "id": "1YzZlU7gQyA0ScpIFiFG41jtuiDKN_ze_",
+        "filename": "04_สไลด์บทที่2_การสร้างตัวแปรเก็บคะแนน_(.png",
+        "url": "https://lh3.googleusercontent.com/d/1YzZlU7gQyA0ScpIFiFG41jtuiDKN_ze_",
+        "driveViewUrl": "https://drive.google.com/file/d/1YzZlU7gQyA0ScpIFiFG41jtuiDKN_ze_/view?usp=sharing"
+      },
+      {
+        "id": "1FZpHPUrDJ1u6w7Gh9qUaQiI1TA78FtVe",
+        "filename": "05_สไลด์บทที่2_สร้างมินิเกมเก็บไอเทมหลบส.png",
+        "url": "https://lh3.googleusercontent.com/d/1FZpHPUrDJ1u6w7Gh9qUaQiI1TA78FtVe",
+        "driveViewUrl": "https://drive.google.com/file/d/1FZpHPUrDJ1u6w7Gh9qUaQiI1TA78FtVe/view?usp=sharing"
+      },
+      {
+        "id": "1AcJXdR05KC2RKdF4_khWUrzRjf6G-BP9",
+        "filename": "06_สไลด์บทที่2_ควิซโค้ดดิง_Scratch_3.0.png",
+        "url": "https://lh3.googleusercontent.com/d/1AcJXdR05KC2RKdF4_khWUrzRjf6G-BP9",
+        "driveViewUrl": "https://drive.google.com/file/d/1AcJXdR05KC2RKdF4_khWUrzRjf6G-BP9/view?usp=sharing"
+      }
+    ],
+    "ป.4 หน่วยที่ 3 การใช้งานอินเทอร์เน็ต": [
+      {
+        "id": "1l4EOTMtrlnDxpqkLuoQPdHvu8OKbV_KM",
+        "filename": "01_สไลด์บทที่3_การใช้อินเทอร์เน็ตค้นคว้า.png",
+        "url": "https://lh3.googleusercontent.com/d/1l4EOTMtrlnDxpqkLuoQPdHvu8OKbV_KM",
+        "driveViewUrl": "https://drive.google.com/file/d/1l4EOTMtrlnDxpqkLuoQPdHvu8OKbV_KM/view?usp=sharing"
+      },
+      {
+        "id": "1MecC5J_hmKHeFrrHqlJYgk0pNjHJFvtk",
+        "filename": "02_สไลด์บทที่3_เทคนิคใช้เครื่องหมายช่วยค.png",
+        "url": "https://lh3.googleusercontent.com/d/1MecC5J_hmKHeFrrHqlJYgk0pNjHJFvtk",
+        "driveViewUrl": "https://drive.google.com/file/d/1MecC5J_hmKHeFrrHqlJYgk0pNjHJFvtk/view?usp=sharing"
+      },
+      {
+        "id": "1GdkooBgRVNbLS61g8E2uDKhHOFpSpw9w",
+        "filename": "03_สไลด์บทที่3_การประเมินความน่าเชื่อถือ.png",
+        "url": "https://lh3.googleusercontent.com/d/1GdkooBgRVNbLS61g8E2uDKhHOFpSpw9w",
+        "driveViewUrl": "https://drive.google.com/file/d/1GdkooBgRVNbLS61g8E2uDKhHOFpSpw9w/view?usp=sharing"
+      },
+      {
+        "id": "1bbqiiGfJD5h4tSUUAb_VuXyDBWA_nUvt",
+        "filename": "04_สไลด์บทที่3_การให้เครดิตและอ้างอิงแหล.png",
+        "url": "https://lh3.googleusercontent.com/d/1bbqiiGfJD5h4tSUUAb_VuXyDBWA_nUvt",
+        "driveViewUrl": "https://drive.google.com/file/d/1bbqiiGfJD5h4tSUUAb_VuXyDBWA_nUvt/view?usp=sharing"
+      },
+      {
+        "id": "1uCedSFGWN-DxWWQ1mJxtHAtz1RW5UScE",
+        "filename": "05_สไลด์บทที่3_จริยธรรมในการนำข้อความและ.png",
+        "url": "https://lh3.googleusercontent.com/d/1uCedSFGWN-DxWWQ1mJxtHAtz1RW5UScE",
+        "driveViewUrl": "https://drive.google.com/file/d/1uCedSFGWN-DxWWQ1mJxtHAtz1RW5UScE/view?usp=sharing"
+      },
+      {
+        "id": "1wEr2dtH6XojCpq6fh0KQCbQRqb9IA3Uw",
+        "filename": "06_สไลด์บทที่3_ควิซนักสืบค้นข้อมูลมือโปร.png",
+        "url": "https://lh3.googleusercontent.com/d/1wEr2dtH6XojCpq6fh0KQCbQRqb9IA3Uw",
+        "driveViewUrl": "https://drive.google.com/file/d/1wEr2dtH6XojCpq6fh0KQCbQRqb9IA3Uw/view?usp=sharing"
+      }
+    ],
+    "ป.4 หน่วยที่ 4 การนำเสนอข้อมูลด้วยซอฟต์แวร์": [
+      {
+        "id": "1uU5n7H40qYmdM05XJogvrzjJLO-PVOQt",
+        "filename": "01_สไลด์บทที่4_สร้างสรรค์สื่อนำเสนอและกร.png",
+        "url": "https://lh3.googleusercontent.com/d/1uU5n7H40qYmdM05XJogvrzjJLO-PVOQt",
+        "driveViewUrl": "https://drive.google.com/file/d/1uU5n7H40qYmdM05XJogvrzjJLO-PVOQt/view?usp=sharing"
+      },
+      {
+        "id": "1TesDN7BOl8n-2iBuAWgJAxM6ZpksRRe_",
+        "filename": "02_สไลด์บทที่4_การเลือกฟอนต์และโทนสีให้ส.png",
+        "url": "https://lh3.googleusercontent.com/d/1TesDN7BOl8n-2iBuAWgJAxM6ZpksRRe_",
+        "driveViewUrl": "https://drive.google.com/file/d/1TesDN7BOl8n-2iBuAWgJAxM6ZpksRRe_/view?usp=sharing"
+      },
+      {
+        "id": "1Sehn-1AxUkPv7vsn-D4xSKhbHHFTgrZA",
+        "filename": "03_สไลด์บทที่4_การใช้ตาราง_กราฟแท่ง_แผนภ.png",
+        "url": "https://lh3.googleusercontent.com/d/1Sehn-1AxUkPv7vsn-D4xSKhbHHFTgrZA",
+        "driveViewUrl": "https://drive.google.com/file/d/1Sehn-1AxUkPv7vsn-D4xSKhbHHFTgrZA/view?usp=sharing"
+      },
+      {
+        "id": "126V8z9b2T0_lqmGAVl-rvK8sr5Csd7U1",
+        "filename": "04_สไลด์บทที่4_การจัดวางเลย์เอาต์_(Visua.png",
+        "url": "https://lh3.googleusercontent.com/d/126V8z9b2T0_lqmGAVl-rvK8sr5Csd7U1",
+        "driveViewUrl": "https://drive.google.com/file/d/126V8z9b2T0_lqmGAVl-rvK8sr5Csd7U1/view?usp=sharing"
+      },
+      {
+        "id": "1Gs7Hkozr5Dt2ATsdsgmr-8NY-wtK9Mrn",
+        "filename": "05_สไลด์บทที่4_ทักษะการพูดนำเสนอหน้าชั้น.png",
+        "url": "https://lh3.googleusercontent.com/d/1Gs7Hkozr5Dt2ATsdsgmr-8NY-wtK9Mrn",
+        "driveViewUrl": "https://drive.google.com/file/d/1Gs7Hkozr5Dt2ATsdsgmr-8NY-wtK9Mrn/view?usp=sharing"
+      },
+      {
+        "id": "1boNyV7LjsOuembPtSAt1dXHn-v7Q_CNf",
+        "filename": "06_สไลด์บทที่4_ควิซการนำเสนอข้อมูลด้วยซอ.png",
+        "url": "https://lh3.googleusercontent.com/d/1boNyV7LjsOuembPtSAt1dXHn-v7Q_CNf",
+        "driveViewUrl": "https://drive.google.com/file/d/1boNyV7LjsOuembPtSAt1dXHn-v7Q_CNf/view?usp=sharing"
+      }
+    ],
+    "ป.4 หน่วยที่ 5 การใช้เทคโนโลยีอย่างปลอดภัย": [
+      {
+        "id": "1guN_W5oApMLBEf7uLecswJre1JiyMiVs",
+        "filename": "01_สไลด์บทที่5_ความปลอดภัยบนโลกออนไลน์แล.png",
+        "url": "https://lh3.googleusercontent.com/d/1guN_W5oApMLBEf7uLecswJre1JiyMiVs",
+        "driveViewUrl": "https://drive.google.com/file/d/1guN_W5oApMLBEf7uLecswJre1JiyMiVs/view?usp=sharing"
+      },
+      {
+        "id": "1a7bhRcwSGzOMmkvJqAL3KS7JwOJNWoz4",
+        "filename": "02_สไลด์บทที่5_รอยเท้าดิจิทัล_(Digital_F.png",
+        "url": "https://lh3.googleusercontent.com/d/1a7bhRcwSGzOMmkvJqAL3KS7JwOJNWoz4",
+        "driveViewUrl": "https://drive.google.com/file/d/1a7bhRcwSGzOMmkvJqAL3KS7JwOJNWoz4/view?usp=sharing"
+      },
+      {
+        "id": "15S3v5GpGDQg4pXXqhMJrhcj6t_eoLdNp",
+        "filename": "03_สไลด์บทที่5_การกลั่นแกล้งบนโลกไซเบอร์.png",
+        "url": "https://lh3.googleusercontent.com/d/15S3v5GpGDQg4pXXqhMJrhcj6t_eoLdNp",
+        "driveViewUrl": "https://drive.google.com/file/d/15S3v5GpGDQg4pXXqhMJrhcj6t_eoLdNp/view?usp=sharing"
+      },
+      {
+        "id": "1PXdot8B6_IY92n0C4Hh59etmH4Zb6Bem",
+        "filename": "04_สไลด์บทที่5_การตั้งรหัสผ่าน_2_ชั้นและ.png",
+        "url": "https://lh3.googleusercontent.com/d/1PXdot8B6_IY92n0C4Hh59etmH4Zb6Bem",
+        "driveViewUrl": "https://drive.google.com/file/d/1PXdot8B6_IY92n0C4Hh59etmH4Zb6Bem/view?usp=sharing"
+      },
+      {
+        "id": "1kEPXjepM9cuByJqWxn8lOe0lYfbt8Ewo",
+        "filename": "05_สไลด์บทที่5_กฎหมายเบื้องต้น_พ.ร.บ.คอม.png",
+        "url": "https://lh3.googleusercontent.com/d/1kEPXjepM9cuByJqWxn8lOe0lYfbt8Ewo",
+        "driveViewUrl": "https://drive.google.com/file/d/1kEPXjepM9cuByJqWxn8lOe0lYfbt8Ewo/view?usp=sharing"
+      },
+      {
+        "id": "1I9Oz0jcMZ6mFRRPQGTzYe_qL1VqRkN7K",
+        "filename": "06_สไลด์บทที่5_ควิซพลเมืองดิจิทัลยุคใหม่.png",
+        "url": "https://lh3.googleusercontent.com/d/1I9Oz0jcMZ6mFRRPQGTzYe_qL1VqRkN7K",
+        "driveViewUrl": "https://drive.google.com/file/d/1I9Oz0jcMZ6mFRRPQGTzYe_qL1VqRkN7K/view?usp=sharing"
+      }
+    ],
+    "ป.5 หน่วยที่ 1 เหตุผลเชิงตรรกะกับการแก้ปัญหา": [
+      {
+        "id": "1PycSsknGSKDV5SwU6Nn5J1hdFEeprwC1",
+        "filename": "01_สไลด์บทที่1_การใช้เหตุผลเชิงตรรกะ_(Lo.png",
+        "url": "https://lh3.googleusercontent.com/d/1PycSsknGSKDV5SwU6Nn5J1hdFEeprwC1",
+        "driveViewUrl": "https://drive.google.com/file/d/1PycSsknGSKDV5SwU6Nn5J1hdFEeprwC1/view?usp=sharing"
+      },
+      {
+        "id": "11amu0M-ihmtUwLIusVvhAJrjWe-DcL9f",
+        "filename": "02_สไลด์บทที่1_การคาดการณ์ผลลัพธ์จากเงื่.png",
+        "url": "https://lh3.googleusercontent.com/d/11amu0M-ihmtUwLIusVvhAJrjWe-DcL9f",
+        "driveViewUrl": "https://drive.google.com/file/d/11amu0M-ihmtUwLIusVvhAJrjWe-DcL9f/view?usp=sharing"
+      },
+      {
+        "id": "1Qrhx2fdoyR9T8-nm0bnpdJmTIhncR6WT",
+        "filename": "03_สไลด์บทที่1_การแก้ปริศนาตรรกะและเกมแน.png",
+        "url": "https://lh3.googleusercontent.com/d/1Qrhx2fdoyR9T8-nm0bnpdJmTIhncR6WT",
+        "driveViewUrl": "https://drive.google.com/file/d/1Qrhx2fdoyR9T8-nm0bnpdJmTIhncR6WT/view?usp=sharing"
+      },
+      {
+        "id": "1yE4QQse87c3cA_U-uu60MnIHLjXvJ5Wc",
+        "filename": "04_สไลด์บทที่1_การตัดสินใจอย่างมีหลักการ.png",
+        "url": "https://lh3.googleusercontent.com/d/1yE4QQse87c3cA_U-uu60MnIHLjXvJ5Wc",
+        "driveViewUrl": "https://drive.google.com/file/d/1yE4QQse87c3cA_U-uu60MnIHLjXvJ5Wc/view?usp=sharing"
+      },
+      {
+        "id": "1i9JIeObh9nvVX0KZGX3FY6sByhJtC0JU",
+        "filename": "05_สไลด์บทที่1_การออกแบบอัลกอริทึมแก้ปัญ.png",
+        "url": "https://lh3.googleusercontent.com/d/1i9JIeObh9nvVX0KZGX3FY6sByhJtC0JU",
+        "driveViewUrl": "https://drive.google.com/file/d/1i9JIeObh9nvVX0KZGX3FY6sByhJtC0JU/view?usp=sharing"
+      },
+      {
+        "id": "19b9aWYMKMWR66Im7djQLw4e43_0mUMKZ",
+        "filename": "06_สไลด์บทที่1_ควิซเซียนตรรกะและการแก้ปั.png",
+        "url": "https://lh3.googleusercontent.com/d/19b9aWYMKMWR66Im7djQLw4e43_0mUMKZ",
+        "driveViewUrl": "https://drive.google.com/file/d/19b9aWYMKMWR66Im7djQLw4e43_0mUMKZ/view?usp=sharing"
+      }
+    ],
+    "ป.5 หน่วยที่ 2 การเขียนโปรแกรมโดยใช้เหตุผลเชิงตรรกะ": [
+      {
+        "id": "1XfuM0q_-qzRWTCQLdHv6k0Ff9Blmq2Kz",
+        "filename": "01_สไลด์บทที่2_โปรแกรมขั้นสูงด้วยเงื่อนไ.png",
+        "url": "https://lh3.googleusercontent.com/d/1XfuM0q_-qzRWTCQLdHv6k0Ff9Blmq2Kz",
+        "driveViewUrl": "https://drive.google.com/file/d/1XfuM0q_-qzRWTCQLdHv6k0Ff9Blmq2Kz/view?usp=sharing"
+      },
+      {
+        "id": "1RqBNXAl7LicRcnJX81arqE2bw0Ls88xs",
+        "filename": "02_สไลด์บทที่2_การใช้ตัวดำเนินการเปรียบเ.png",
+        "url": "https://lh3.googleusercontent.com/d/1RqBNXAl7LicRcnJX81arqE2bw0Ls88xs",
+        "driveViewUrl": "https://drive.google.com/file/d/1RqBNXAl7LicRcnJX81arqE2bw0Ls88xs/view?usp=sharing"
+      },
+      {
+        "id": "1tDYaP2j3RLUSKew6TeoZRvZVTTESYn6S",
+        "filename": "03_สไลด์บทที่2_ตัวดำเนินการทางตรรกะ_AND_.png",
+        "url": "https://lh3.googleusercontent.com/d/1tDYaP2j3RLUSKew6TeoZRvZVTTESYn6S",
+        "driveViewUrl": "https://drive.google.com/file/d/1tDYaP2j3RLUSKew6TeoZRvZVTTESYn6S/view?usp=sharing"
+      },
+      {
+        "id": "1VGoYzYzaO8ZUHSKj2fyVUbnYE669g3Lh",
+        "filename": "04_สไลด์บทที่2_การเขียนโปรแกรมระบบตอบคำถ.png",
+        "url": "https://lh3.googleusercontent.com/d/1VGoYzYzaO8ZUHSKj2fyVUbnYE669g3Lh",
+        "driveViewUrl": "https://drive.google.com/file/d/1VGoYzYzaO8ZUHSKj2fyVUbnYE669g3Lh/view?usp=sharing"
+      },
+      {
+        "id": "1DDltBdH7w9DZqi627wWgRxwwHdgi3ZVt",
+        "filename": "05_สไลด์บทที่2_การตรวจหาและแก้ไขจุดบกพร่.png",
+        "url": "https://lh3.googleusercontent.com/d/1DDltBdH7w9DZqi627wWgRxwwHdgi3ZVt",
+        "driveViewUrl": "https://drive.google.com/file/d/1DDltBdH7w9DZqi627wWgRxwwHdgi3ZVt/view?usp=sharing"
+      },
+      {
+        "id": "1YYtcHkLRfAZABSgxMY1chnmRCH2EDNWY",
+        "filename": "06_สไลด์บทที่2_ควิซเขียนโปรแกรมด้วยตรรกะ.png",
+        "url": "https://lh3.googleusercontent.com/d/1YYtcHkLRfAZABSgxMY1chnmRCH2EDNWY",
+        "driveViewUrl": "https://drive.google.com/file/d/1YYtcHkLRfAZABSgxMY1chnmRCH2EDNWY/view?usp=sharing"
+      }
+    ],
+    "ป.5 หน่วยที่ 3 ข้อมูลสารสนเทศ": [
+      {
+        "id": "1heuXh0GpkEN5FMIRH4aexvxVi0hJYt_i",
+        "filename": "01_สไลด์บทที่3_การจัดการข้อมูลสารสนเทศแล.png",
+        "url": "https://lh3.googleusercontent.com/d/1heuXh0GpkEN5FMIRH4aexvxVi0hJYt_i",
+        "driveViewUrl": "https://drive.google.com/file/d/1heuXh0GpkEN5FMIRH4aexvxVi0hJYt_i/view?usp=sharing"
+      },
+      {
+        "id": "1tkdXcX5QnOqBkWYtE-y4buy2-1J6v1GE",
+        "filename": "02_สไลด์บทที่3_การเก็บรวบรวมข้อมูลด้วยแบ.png",
+        "url": "https://lh3.googleusercontent.com/d/1tkdXcX5QnOqBkWYtE-y4buy2-1J6v1GE",
+        "driveViewUrl": "https://drive.google.com/file/d/1tkdXcX5QnOqBkWYtE-y4buy2-1J6v1GE/view?usp=sharing"
+      },
+      {
+        "id": "1CTDTU9xrrxSVewss63T3dfPuMVReM9sD",
+        "filename": "03_สไลด์บทที่3_การใช้สเปรดชีต_(Spreadshe.png",
+        "url": "https://lh3.googleusercontent.com/d/1CTDTU9xrrxSVewss63T3dfPuMVReM9sD",
+        "driveViewUrl": "https://drive.google.com/file/d/1CTDTU9xrrxSVewss63T3dfPuMVReM9sD/view?usp=sharing"
+      },
+      {
+        "id": "1V9_GWEZzQndJ28DT8aUtKeEPmf5fOrJu",
+        "filename": "04_สไลด์บทที่3_การสร้างแดชบอร์ดสรุปผลด้ว.png",
+        "url": "https://lh3.googleusercontent.com/d/1V9_GWEZzQndJ28DT8aUtKeEPmf5fOrJu",
+        "driveViewUrl": "https://drive.google.com/file/d/1V9_GWEZzQndJ28DT8aUtKeEPmf5fOrJu/view?usp=sharing"
+      },
+      {
+        "id": "1vqK9ZqBuUnTIIIljQrNKqWGO8twieowz",
+        "filename": "05_สไลด์บทที่3_การตีความข้อมูลเพื่อการตั.png",
+        "url": "https://lh3.googleusercontent.com/d/1vqK9ZqBuUnTIIIljQrNKqWGO8twieowz",
+        "driveViewUrl": "https://drive.google.com/file/d/1vqK9ZqBuUnTIIIljQrNKqWGO8twieowz/view?usp=sharing"
+      },
+      {
+        "id": "1If4sQDJuuMlf8XFOoT1FPieVc3fHZkSx",
+        "filename": "06_สไลด์บทที่3_ควิซนักวิเคราะห์ข้อมูลรุ่.png",
+        "url": "https://lh3.googleusercontent.com/d/1If4sQDJuuMlf8XFOoT1FPieVc3fHZkSx",
+        "driveViewUrl": "https://drive.google.com/file/d/1If4sQDJuuMlf8XFOoT1FPieVc3fHZkSx/view?usp=sharing"
+      }
+    ],
+    "ป.5 หน่วยที่ 4 การใช้อินเทอร์เน็ตอย่างปลอดภัย": [
+      {
+        "id": "17Fd0AsuOGalAinjjvuO23d2v4ze3Aiyc",
+        "filename": "01_สไลด์บทที่4_ความปลอดภัยทางไซเบอร์ในยุ.png",
+        "url": "https://lh3.googleusercontent.com/d/17Fd0AsuOGalAinjjvuO23d2v4ze3Aiyc",
+        "driveViewUrl": "https://drive.google.com/file/d/17Fd0AsuOGalAinjjvuO23d2v4ze3Aiyc/view?usp=sharing"
+      },
+      {
+        "id": "14nadVhSNn64lOB3FHs7DjSbmD_5sMSOD",
+        "filename": "02_สไลด์บทที่4_ภัยจากมัลแวร์_ไวรัส_ฟิชชิ.png",
+        "url": "https://lh3.googleusercontent.com/d/14nadVhSNn64lOB3FHs7DjSbmD_5sMSOD",
+        "driveViewUrl": "https://drive.google.com/file/d/14nadVhSNn64lOB3FHs7DjSbmD_5sMSOD/view?usp=sharing"
+      },
+      {
+        "id": "1Xq4qV6l5fL8XJs1DIR79PFJ0Lg3yD8lD",
+        "filename": "03_สไลด์บทที่4_การตรวจสอบลิงก์และอีเมลต้.png",
+        "url": "https://lh3.googleusercontent.com/d/1Xq4qV6l5fL8XJs1DIR79PFJ0Lg3yD8lD",
+        "driveViewUrl": "https://drive.google.com/file/d/1Xq4qV6l5fL8XJs1DIR79PFJ0Lg3yD8lD/view?usp=sharing"
+      },
+      {
+        "id": "1TyXMYb4-0YtDVpZxa9UUr5FP4jUWz8s7",
+        "filename": "04_สไลด์บทที่4_สิทธิส่วนบุคคลและการปกป้อ.png",
+        "url": "https://lh3.googleusercontent.com/d/1TyXMYb4-0YtDVpZxa9UUr5FP4jUWz8s7",
+        "driveViewUrl": "https://drive.google.com/file/d/1TyXMYb4-0YtDVpZxa9UUr5FP4jUWz8s7/view?usp=sharing"
+      },
+      {
+        "id": "1h5CUAy3Vv5Jx8ZwjoFO_usCt2Yh0Vd9t",
+        "filename": "05_สไลด์บทที่4_การสื่อสารเชิงบวกและการป้.png",
+        "url": "https://lh3.googleusercontent.com/d/1h5CUAy3Vv5Jx8ZwjoFO_usCt2Yh0Vd9t",
+        "driveViewUrl": "https://drive.google.com/file/d/1h5CUAy3Vv5Jx8ZwjoFO_usCt2Yh0Vd9t/view?usp=sharing"
+      },
+      {
+        "id": "1erJAxb8LleVW-3GpB4LMiDfOx--OXpbV",
+        "filename": "06_สไลด์บทที่4_ควิซเกราะป้องกันภัยไซเบอร.png",
+        "url": "https://lh3.googleusercontent.com/d/1erJAxb8LleVW-3GpB4LMiDfOx--OXpbV",
+        "driveViewUrl": "https://drive.google.com/file/d/1erJAxb8LleVW-3GpB4LMiDfOx--OXpbV/view?usp=sharing"
+      }
+    ],
+    "ป.6 หน่วยที่ 1 การแก้ปัญหาโดยใช้เหตุผลเชิงตรรกะ": [
+      {
+        "id": "1L4k2QcV12o7_Wsu60_ep7m6GaXU4sD9r",
+        "filename": "01_สไลด์บทที่1_การคิดวิเคราะห์เชิงตรรกะร.png",
+        "url": "https://lh3.googleusercontent.com/d/1L4k2QcV12o7_Wsu60_ep7m6GaXU4sD9r",
+        "driveViewUrl": "https://drive.google.com/file/d/1L4k2QcV12o7_Wsu60_ep7m6GaXU4sD9r/view?usp=sharing"
+      },
+      {
+        "id": "1ZOkv_1W_iigyCRnRlOKFb79UIJtxVOVM",
+        "filename": "02_สไลด์บทที่1_การคิดเชิงคำนวณ_4_เสาหลัก.png",
+        "url": "https://lh3.googleusercontent.com/d/1ZOkv_1W_iigyCRnRlOKFb79UIJtxVOVM",
+        "driveViewUrl": "https://drive.google.com/file/d/1ZOkv_1W_iigyCRnRlOKFb79UIJtxVOVM/view?usp=sharing"
+      },
+      {
+        "id": "19WINdPCDpRQuak-SK-nRYJZopekwa_2I",
+        "filename": "03_สไลด์บทที่1_การออกแบบขั้นตอนวิธีแก้ปั.png",
+        "url": "https://lh3.googleusercontent.com/d/19WINdPCDpRQuak-SK-nRYJZopekwa_2I",
+        "driveViewUrl": "https://drive.google.com/file/d/19WINdPCDpRQuak-SK-nRYJZopekwa_2I/view?usp=sharing"
+      },
+      {
+        "id": "139Tk6W4h1XZAGymyhSfWUIiagWYhd2gE",
+        "filename": "04_สไลด์บทที่1_การเขียนผังงานระบบที่ครอบ.png",
+        "url": "https://lh3.googleusercontent.com/d/139Tk6W4h1XZAGymyhSfWUIiagWYhd2gE",
+        "driveViewUrl": "https://drive.google.com/file/d/139Tk6W4h1XZAGymyhSfWUIiagWYhd2gE/view?usp=sharing"
+      },
+      {
+        "id": "1eA6qRmkJe-76Iwd4bgk-CdPhasgbt9Vj",
+        "filename": "05_สไลด์บทที่1_การจำลองสถานการณ์เพื่อทดส.png",
+        "url": "https://lh3.googleusercontent.com/d/1eA6qRmkJe-76Iwd4bgk-CdPhasgbt9Vj",
+        "driveViewUrl": "https://drive.google.com/file/d/1eA6qRmkJe-76Iwd4bgk-CdPhasgbt9Vj/view?usp=sharing"
+      },
+      {
+        "id": "1uCUUyYRGykNmKxWnNoU5FARWrBl9lzj0",
+        "filename": "06_สไลด์บทที่1_ควิซการคิดเชิงคำนวณขั้นสู.png",
+        "url": "https://lh3.googleusercontent.com/d/1uCUUyYRGykNmKxWnNoU5FARWrBl9lzj0",
+        "driveViewUrl": "https://drive.google.com/file/d/1uCUUyYRGykNmKxWnNoU5FARWrBl9lzj0/view?usp=sharing"
+      }
+    ],
+    "ป.6 หน่วยที่ 2 การออกแบบและเขียนโปรแกรมอย่างง่าย": [
+      {
+        "id": "1mUNQaadvq3jPinmk5Q7nsb-IT4EnQUz-",
+        "filename": "01_สไลด์บทที่2_การพัฒนาโครงงานโปรแกรม_(P.png",
+        "url": "https://lh3.googleusercontent.com/d/1mUNQaadvq3jPinmk5Q7nsb-IT4EnQUz-",
+        "driveViewUrl": "https://drive.google.com/file/d/1mUNQaadvq3jPinmk5Q7nsb-IT4EnQUz-/view?usp=sharing"
+      },
+      {
+        "id": "1AM5UHZA6S-6Zka5B_AWg4divhGz8UsZg",
+        "filename": "02_สไลด์บทที่2_การออกแบบสตอรี่บอร์ดและโค.png",
+        "url": "https://lh3.googleusercontent.com/d/1AM5UHZA6S-6Zka5B_AWg4divhGz8UsZg",
+        "driveViewUrl": "https://drive.google.com/file/d/1AM5UHZA6S-6Zka5B_AWg4divhGz8UsZg/view?usp=sharing"
+      },
+      {
+        "id": "1Uuu_WsvqDRZoEUq4TCuR7lzV9rz-fXCJ",
+        "filename": "03_สไลด์บทที่2_การสร้างฟังก์ชัน_(My_Bloc.png",
+        "url": "https://lh3.googleusercontent.com/d/1Uuu_WsvqDRZoEUq4TCuR7lzV9rz-fXCJ",
+        "driveViewUrl": "https://drive.google.com/file/d/1Uuu_WsvqDRZoEUq4TCuR7lzV9rz-fXCJ/view?usp=sharing"
+      },
+      {
+        "id": "1PGVPjkQBXypZ4eLkVkE_t6iU6bNCQcZR",
+        "filename": "04_สไลด์บทที่2_การเชื่อมต่อระบบจำลอง_IoT.png",
+        "url": "https://lh3.googleusercontent.com/d/1PGVPjkQBXypZ4eLkVkE_t6iU6bNCQcZR",
+        "driveViewUrl": "https://drive.google.com/file/d/1PGVPjkQBXypZ4eLkVkE_t6iU6bNCQcZR/view?usp=sharing"
+      },
+      {
+        "id": "1jHbZPsWZk9bqu_GdDoCo24kT-ba8RkAI",
+        "filename": "05_สไลด์บทที่2_การทดสอบประสิทธิภาพและการ.png",
+        "url": "https://lh3.googleusercontent.com/d/1jHbZPsWZk9bqu_GdDoCo24kT-ba8RkAI",
+        "driveViewUrl": "https://drive.google.com/file/d/1jHbZPsWZk9bqu_GdDoCo24kT-ba8RkAI/view?usp=sharing"
+      },
+      {
+        "id": "1-k1Ddtfq7CZW3Ek3z3mUsUraIlOmrJmG",
+        "filename": "06_สไลด์บทที่2_ควิซนักพัฒนาซอฟต์แวร์รุ่น.png",
+        "url": "https://lh3.googleusercontent.com/d/1-k1Ddtfq7CZW3Ek3z3mUsUraIlOmrJmG",
+        "driveViewUrl": "https://drive.google.com/file/d/1-k1Ddtfq7CZW3Ek3z3mUsUraIlOmrJmG/view?usp=sharing"
+      }
+    ],
+    "ป.6 หน่วยที่ 3 การใช้งานอินเทอร์เน็ตอย่างมีประสิทธิภาพ": [
+      {
+        "id": "15DsjQmQX2C9v5LVdNPWIIikM1QcMuE9t",
+        "filename": "01_สไลด์บทที่3_การใช้บริการบนอินเทอร์เน็.png",
+        "url": "https://lh3.googleusercontent.com/d/15DsjQmQX2C9v5LVdNPWIIikM1QcMuE9t",
+        "driveViewUrl": "https://drive.google.com/file/d/15DsjQmQX2C9v5LVdNPWIIikM1QcMuE9t/view?usp=sharing"
+      },
+      {
+        "id": "1oF0kXRx8lBARBAhG5h-BGdbSvR_rymqX",
+        "filename": "02_สไลด์บทที่3_คลาวด์คอมพิวติ้ง_(Cloud_C.png",
+        "url": "https://lh3.googleusercontent.com/d/1oF0kXRx8lBARBAhG5h-BGdbSvR_rymqX",
+        "driveViewUrl": "https://drive.google.com/file/d/1oF0kXRx8lBARBAhG5h-BGdbSvR_rymqX/view?usp=sharing"
+      },
+      {
+        "id": "13xwMC5iwS5ecBKV3CFVE9vhMG4khvD-a",
+        "filename": "03_สไลด์บทที่3_การทำงานบนเอกสารเดียวกันแ.png",
+        "url": "https://lh3.googleusercontent.com/d/13xwMC5iwS5ecBKV3CFVE9vhMG4khvD-a",
+        "driveViewUrl": "https://drive.google.com/file/d/13xwMC5iwS5ecBKV3CFVE9vhMG4khvD-a/view?usp=sharing"
+      },
+      {
+        "id": "1E9cNWWrZwu0sxSJkQHKwOIYJ04jJ1Pa6",
+        "filename": "04_สไลด์บทที่3_การแชร์และกำหนดสิทธิ์เข้า.png",
+        "url": "https://lh3.googleusercontent.com/d/1E9cNWWrZwu0sxSJkQHKwOIYJ04jJ1Pa6",
+        "driveViewUrl": "https://drive.google.com/file/d/1E9cNWWrZwu0sxSJkQHKwOIYJ04jJ1Pa6/view?usp=sharing"
+      },
+      {
+        "id": "1QYPeGaYEA7KvQ9stodAwLq8Hb1wN3NXf",
+        "filename": "05_สไลด์บทที่3_การประเมินความน่าเชื่อถือ.png",
+        "url": "https://lh3.googleusercontent.com/d/1QYPeGaYEA7KvQ9stodAwLq8Hb1wN3NXf",
+        "driveViewUrl": "https://drive.google.com/file/d/1QYPeGaYEA7KvQ9stodAwLq8Hb1wN3NXf/view?usp=sharing"
+      },
+      {
+        "id": "18nq5dlzWlPZPQmE4-BQwWz9Rqn9sivYR",
+        "filename": "06_สไลด์บทที่3_ควิซผู้เชี่ยวชาญการทำงานบ.png",
+        "url": "https://lh3.googleusercontent.com/d/18nq5dlzWlPZPQmE4-BQwWz9Rqn9sivYR",
+        "driveViewUrl": "https://drive.google.com/file/d/18nq5dlzWlPZPQmE4-BQwWz9Rqn9sivYR/view?usp=sharing"
+      }
+    ],
+    "ป.6 หน่วยที่ 4 ความปลอดภัยในการใช้งานเทคโนโลยีสารสนเทศ": [
+      {
+        "id": "1983AZvjl9xhd5XfmJz-RByblHJ8AisQU",
+        "filename": "01_สไลด์บทที่4_ความปลอดภัยไซเบอร์และจริย.png",
+        "url": "https://lh3.googleusercontent.com/d/1983AZvjl9xhd5XfmJz-RByblHJ8AisQU",
+        "driveViewUrl": "https://drive.google.com/file/d/1983AZvjl9xhd5XfmJz-RByblHJ8AisQU/view?usp=sharing"
+      },
+      {
+        "id": "14sd2H0gWoyY1CnVme41rGSfM1WtxDNnl",
+        "filename": "02_สไลด์บทที่4_กฎหมายลิขสิทธิ์_สัญญาอนุญ.png",
+        "url": "https://lh3.googleusercontent.com/d/14sd2H0gWoyY1CnVme41rGSfM1WtxDNnl",
+        "driveViewUrl": "https://drive.google.com/file/d/14sd2H0gWoyY1CnVme41rGSfM1WtxDNnl/view?usp=sharing"
+      },
+      {
+        "id": "1BwPbItUuMHRh13a-LMEOLiejceSke4EY",
+        "filename": "03_สไลด์บทที่4_พระราชบัญญัติคุ้มครองข้อม.png",
+        "url": "https://lh3.googleusercontent.com/d/1BwPbItUuMHRh13a-LMEOLiejceSke4EY",
+        "driveViewUrl": "https://drive.google.com/file/d/1BwPbItUuMHRh13a-LMEOLiejceSke4EY/view?usp=sharing"
+      },
+      {
+        "id": "1_HvvOVJ4M6LDW0DcDzTzcq1NLWk98nG1",
+        "filename": "04_สไลด์บทที่4_ภัยคุกคามทางไซเบอร์ขั้นสู.png",
+        "url": "https://lh3.googleusercontent.com/d/1_HvvOVJ4M6LDW0DcDzTzcq1NLWk98nG1",
+        "driveViewUrl": "https://drive.google.com/file/d/1_HvvOVJ4M6LDW0DcDzTzcq1NLWk98nG1/view?usp=sharing"
+      },
+      {
+        "id": "1ctuQmJgrReOG1QKk-eVXptyReNxxui-b",
+        "filename": "05_สไลด์บทที่4_การเป็นพลเมืองดิจิทัลที่ม.png",
+        "url": "https://lh3.googleusercontent.com/d/1ctuQmJgrReOG1QKk-eVXptyReNxxui-b",
+        "driveViewUrl": "https://drive.google.com/file/d/1ctuQmJgrReOG1QKk-eVXptyReNxxui-b/view?usp=sharing"
+      },
+      {
+        "id": "1emTVU1TUFwqwoVfxRYJNODq2WF0KbMa8",
+        "filename": "06_สไลด์บทที่4_ควิซสุดยอดพลเมืองดิจิทัล.png",
+        "url": "https://lh3.googleusercontent.com/d/1emTVU1TUFwqwoVfxRYJNODq2WF0KbMa8",
+        "driveViewUrl": "https://drive.google.com/file/d/1emTVU1TUFwqwoVfxRYJNODq2WF0KbMa8/view?usp=sharing"
+      }
     ]
   }
 }
