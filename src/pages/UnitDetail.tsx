@@ -1428,6 +1428,7 @@ const UnitDetail: React.FC = () => {
     let alive = true;
     const timer = setTimeout(() => {
       setSlideIdx(0);
+      setShowSlideNotes(false);
       setQuizAnswers({});
       setQuizSubmitted(false);
       setSavingQuiz(false);
@@ -1901,6 +1902,78 @@ const UnitDetail: React.FC = () => {
                   </div>
                 </div>
 
+                {hasSlideImages && (
+                  <div className="lms-section">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: '0.75rem' }}>
+                      <h2 style={{ margin: 0 }}><FileText size={24} /> สไลด์ประกอบการสอน 16:9 ประจำหน่วย ({unitSlideImgs.length} แผ่น)</h2>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSlideNotes(false);
+                          setSlideIdx(0);
+                          setActiveTab('slides');
+                        }}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '10px',
+                          border: '1px solid #2563eb',
+                          background: '#eff6ff',
+                          color: '#1d4ed8',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        เปิดดูแบบเต็มจอทั้งหมด →
+                      </button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                      {unitSlideImgs.map((imgUrl, idx) => (
+                        <button
+                          key={imgUrl}
+                          type="button"
+                          onClick={() => {
+                            setShowSlideNotes(false);
+                            setSlideIdx(idx);
+                            setActiveTab('slides');
+                          }}
+                          style={{
+                            padding: 0,
+                            border: '1.5px solid #cbd5e1',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            background: '#0f172a',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
+                            transition: 'transform 0.15s ease',
+                          }}
+                          title={`คลิกเพื่อเปิดสไลด์แผ่นที่ ${idx + 1}`}
+                        >
+                          <div style={{ aspectRatio: '16/9', width: '100%', background: '#020617' }}>
+                            <img
+                              src={imgUrl}
+                              alt={`สไลด์แผ่นที่ ${idx + 1} - ${unit.title}`}
+                              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                              loading="lazy"
+                              onError={(e) => {
+                                const m = imgUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                if (m && !e.currentTarget.src.includes('drive.usercontent.google.com')) {
+                                  e.currentTarget.src = `https://drive.usercontent.google.com/download?id=${m[1]}&export=view`;
+                                }
+                              }}
+                            />
+                          </div>
+                          <div style={{ padding: '6px 10px', background: '#ffffff', color: '#1e293b', fontSize: '0.8rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                            <span>แผ่นที่ {idx + 1} / {unitSlideImgs.length}</span>
+                            <span style={{ color: '#2563eb' }}>คลิกเพื่อขยาย</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {unit.topics && (
                   <div className="lms-section">
                     <h2><Sparkles size={24} /> สิ่งที่นักเรียนจะได้เรียน</h2>
@@ -2083,11 +2156,39 @@ const UnitDetail: React.FC = () => {
                         >
                           <div className="slide-image-viewport">
                             <img
-                              src={unitSlideImgs[slideIdx]}
+                              src={unitSlideImgs[Math.min(slideIdx, unitSlideImgs.length - 1)]}
                               alt={`สไลด์ที่ ${slideIdx + 1} จาก ${totalSlides}`}
                               className="slide-presentation-img"
                               loading="eager"
+                              onError={(e) => {
+                                const currentUrl = unitSlideImgs[Math.min(slideIdx, unitSlideImgs.length - 1)] || '';
+                                const m = currentUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                if (m && !e.currentTarget.src.includes('drive.usercontent.google.com')) {
+                                  e.currentTarget.src = `https://drive.usercontent.google.com/download?id=${m[1]}&export=view`;
+                                }
+                              }}
                             />
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', padding: '10px 12px', background: '#0f172a', flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                            {unitSlideImgs.map((_, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => setSlideIdx(idx)}
+                                style={{
+                                  padding: '5px 12px',
+                                  borderRadius: '8px',
+                                  border: idx === slideIdx ? '2px solid #38bdf8' : '1px solid #334155',
+                                  background: idx === slideIdx ? '#0284c7' : 'rgba(30, 41, 59, 0.8)',
+                                  color: '#ffffff',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                แผ่นที่ {idx + 1}
+                              </button>
+                            ))}
                           </div>
                           <div className="slide-footer-info">
                             <div className="slide-badge-tag">
@@ -2098,7 +2199,10 @@ const UnitDetail: React.FC = () => {
                               <button
                                 type="button"
                                 className="slide-mode-toggle-btn"
-                                onClick={() => setShowSlideNotes(true)}
+                                onClick={() => {
+                                  setSlideIdx(0);
+                                  setShowSlideNotes(true);
+                                }}
                                 title="สลับไปดูบันทึกและคำอธิบายการสอน"
                               >
                                 <BookOpen size={14} />
@@ -2124,7 +2228,10 @@ const UnitDetail: React.FC = () => {
                               <button
                                 type="button"
                                 className="slide-mode-toggle-btn"
-                                onClick={() => setShowSlideNotes(false)}
+                                onClick={() => {
+                                  setSlideIdx(0);
+                                  setShowSlideNotes(false);
+                                }}
                                 style={{ background: '#2563eb', color: '#fff' }}
                                 title="กลับไปดูสไลด์ภาพ DALL-E 3"
                               >

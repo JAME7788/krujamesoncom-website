@@ -771,6 +771,13 @@ const IsKnowledgeBlog: React.FC<IsKnowledgeBlogProps> = ({ embedded = false }) =
                       display: 'block',
                     }}
                     loading="eager"
+                    onError={(e) => {
+                      const currentUrl = activeSlides[isSlideIdx] || '';
+                      const m = currentUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                      if (m && !e.currentTarget.src.includes('drive.usercontent.google.com')) {
+                        e.currentTarget.src = `https://drive.usercontent.google.com/download?id=${m[1]}&export=view`;
+                      }
+                    }}
                   />
 
                   {/* Left / Right Nav Overlays */}

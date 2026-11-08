@@ -3,6 +3,7 @@ import { FileText, Save, Eye, RefreshCw, AlertTriangle, ExternalLink, RotateCcw,
 import { grades } from '../data/curriculum';
 import { fetchCustomSlides, saveCustomSlides, deleteCustomSlides, parseMarkdownToSlides, slidesToMarkdown } from '../services/slideService';
 import { getRichSlides, type RichSlide } from '../data/richSlides';
+import { getUnitSlideImages } from '../data/slideImages';
 import { useToast } from './Toast';
 
 const SlideManager: React.FC = () => {
@@ -178,7 +179,7 @@ layout: cover
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <a
-                href={`/unit/${selectedGradeId}/${selectedUnitNo}`}
+                href={`/curriculum/${selectedGradeId}/unit/${selectedUnitNo}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="เปิดดูหน้านักเรียนในแท็บใหม่"
@@ -256,8 +257,47 @@ layout: cover
 
       {/* Live Preview Panel */}
       <div className="preview-side glass" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border, #e5e7eb)', background: 'rgba(255,255,255,0.7)', maxHeight: '640px', overflowY: 'auto' }}>
+        {getUnitSlideImages(selectedGradeId, selectedUnitNo).length > 0 && (
+          <div style={{ marginBottom: '1.25rem', padding: '1rem', borderRadius: '12px', background: '#0f172a', color: '#f8fafc', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '6px' }}>
+              <strong style={{ fontSize: '0.92rem', color: '#38bdf8' }}>
+                🖼️ สไลด์ภาพ 16:9 ประจำหน่วย (ChatGPT DALL-E 3 • {getUnitSlideImages(selectedGradeId, selectedUnitNo).length} แผ่น)
+              </strong>
+              <a
+                href="https://drive.google.com/drive/folders/1kGE6QpzlRkDUnoydErt5XYZK1GsX05L_?usp=sharing"
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontSize: '0.76rem', color: '#93c5fd', textDecoration: 'underline' }}
+              >
+                เปิดโฟลเดอร์ Google Drive
+              </a>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
+              {getUnitSlideImages(selectedGradeId, selectedUnitNo).map((imgUrl, idx) => (
+                <a
+                  key={imgUrl}
+                  href={imgUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ display: 'block', borderRadius: '8px', overflow: 'hidden', border: '1px solid #334155', background: '#020617', textDecoration: 'none' }}
+                  title={`คลิกดูสไลด์แผ่นที่ ${idx + 1} ขนาดเต็ม`}
+                >
+                  <img
+                    src={imgUrl}
+                    alt={`สไลด์แผ่นที่ ${idx + 1}`}
+                    style={{ width: '100%', aspectRatio: '16/9', objectFit: 'contain', display: 'block' }}
+                    loading="lazy"
+                  />
+                  <div style={{ padding: '4px 8px', fontSize: '0.72rem', color: '#cbd5e1', textAlign: 'center', background: '#1e293b' }}>
+                    แผ่นที่ {idx + 1}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
         <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Eye className="text-primary" /> พรีวิวสไลด์ที่จะแสดงผล ({previewSlides.length} หน้า)
+          <Eye className="text-primary" /> พรีวิวสไลด์และบันทึกการสอน ({previewSlides.length} หน้า)
         </h3>
 
         {previewSlides.length === 0 ? (

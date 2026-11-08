@@ -1,6 +1,7 @@
 import { primaryRichSlides } from './richSlidesPrimary';
 import { secondaryRichSlides } from './richSlidesSecondary';
 import { electiveRichSlides } from './richSlidesElective';
+import { getUnitSlideImages } from './slideImages';
 import { detectLessonTheme } from '../utils/lessonTheme';
 
 // ===== Rich Slides — สไลด์เนื้อหาเต็มพร้อมรูปประกอบ =====
@@ -2798,20 +2799,28 @@ export const enrichRichSlideDeck = (gradeId: string, unitNo: number, deck: RichS
   const key = `${gradeId}_${unitNo}`;
   if (!deck || deck.length === 0) return [];
 
+  const driveImages = getUnitSlideImages(gradeId, unitNo);
   const existingCoverImage = deck.find((slide) => slide.layout === 'cover' && slide.image)?.image;
-  const visual = existingCoverImage
-    ? { image: existingCoverImage, caption: '' }
-    : inferLessonVisual(key, deck);
+  const visual = driveImages.length > 0
+    ? { image: driveImages[0], caption: 'สไลด์ประกอบการสอน 16:9 (ChatGPT DALL-E 3 • Google Drive)' }
+    : existingCoverImage
+      ? { image: existingCoverImage, caption: '' }
+      : inferLessonVisual(key, deck);
 
   return deck.map((slide, index) => {
     const generatedNote = buildTeachingNote(key, slide, index);
     const learnerLevel = getLearnerLevel(gradeId);
     const isCover = slide.layout === 'cover' || index === 0;
+    const driveSlideUrl = driveImages.length > 0
+      ? driveImages[Math.min(index, driveImages.length - 1)]
+      : undefined;
 
     return {
       ...slide,
-      ...(isCover && !slide.image ? { image: visual.image, imageCaption: slide.imageCaption || visual.caption } : {}),
-      lessonArt: slide.lessonArt || visual.image,
+      ...(driveSlideUrl
+        ? { image: driveSlideUrl, imageCaption: slide.imageCaption || `สไลด์บทเรียนแผ่นที่ ${Math.min(index + 1, driveImages.length)}/${driveImages.length}` }
+        : (isCover && !slide.image ? { image: visual.image, imageCaption: slide.imageCaption || visual.caption } : {})),
+      lessonArt: driveSlideUrl || slide.lessonArt || visual.image,
       learnerLevel: slide.learnerLevel || learnerLevel,
       learnerSummary: slide.learnerSummary || buildLearnerSummary(slide, learnerLevel),
       visualSummary: slide.visualSummary || buildVisualSummary(slide),

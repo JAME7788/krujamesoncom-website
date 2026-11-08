@@ -10,7 +10,8 @@ import { richSlides } from '../src/data/richSlides';
 import { primaryRichSlides } from '../src/data/richSlidesPrimary';
 import { secondaryRichSlides } from '../src/data/richSlidesSecondary';
 import { electiveRichSlides } from '../src/data/richSlidesElective';
-import { unitSlideImages } from '../src/data/slideImages';
+import { unitSlideImages, isLessonSlideImages, getUnitSlideImages, getIsLessonSlideImages } from '../src/data/slideImages';
+import { getRichSlides } from '../src/data/richSlides';
 import { buildOfficialLessonNotes } from '../src/data/officialSources';
 
 const PRIMARY = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] as const;
@@ -134,13 +135,34 @@ describe('คุณภาพของสไลด์แต่ละหน่ว�
 });
 
 describe('ระบบสไลด์ภาพและเนื้อหาที่เด็กเข้าใจง่าย', () => {
-  it('สไลด์ทุกหน่วยใช้ชุดสไลด์ภาพ AI ที่สร้างขึ้นเองและโฮสต์บน Google Drive อย่างถูกต้อง', () => {
+  it('สไลด์ทุกหน่วย (ประถม 26 หน่วย + มัธยม 21 หน่วย + IS 8 คาบ = 330 แผ่น) ใช้ชุดสไลด์ภาพ AI ที่สร้างขึ้นเองและโฮสต์บน Google Drive อย่างถูกต้องและไม่ซ้ำกัน', () => {
     // ป้องกันการละเมิดลิขสิทธิ์: ไม่มีการนำไฟล์สไลด์สำนักพิมพ์ภายนอกมาโฮสต์ในโปรเจกต์
     // สไลด์ทั้งหมดสร้างใหม่ด้วย ChatGPT DALL-E 3 และโฮสต์ผ่าน Google Drive Cloud CDN
-    const allUrls = Object.values(unitSlideImages)
+    for (const gid of [...PRIMARY, ...SECONDARY]) {
+      const g = grades.find((x) => x.id === gid);
+      for (const u of g?.units || []) {
+        const imgs = getUnitSlideImages(gid, u.no);
+        expect(imgs.length, `${gid} หน่วยที่ ${u.no} ต้องมี 6 สไลด์ภาพ`).toBe(6);
+        const rich = getRichSlides(gid, u.no);
+        expect(rich[0]?.image, `${gid} หน่วยที่ ${u.no} richSlides แผ่นแรกต้องเชื่อมรูปสไลด์ใหม่`).toBe(imgs[0]);
+      }
+    }
+
+    for (let lessonNo = 1; lessonNo <= 8; lessonNo += 1) {
+      const isImgs = getIsLessonSlideImages(lessonNo);
+      expect(isImgs.length, `IS คาบที่ ${lessonNo} ต้องมี 6 สไลด์ภาพ`).toBe(6);
+    }
+
+    const allUnitUrls = Object.values(unitSlideImages)
       .flatMap((units) => Object.values(units))
       .flat();
-    expect(allUrls.length).toBeGreaterThan(0);
+    const allIsUrls = Object.values(isLessonSlideImages).flat();
+    const allUrls = [...allUnitUrls, ...allIsUrls];
+
+    expect(allUnitUrls.length).toBe(282);
+    expect(allIsUrls.length).toBe(48);
+    expect(allUrls.length).toBe(330);
+    expect(new Set(allUrls).size, 'URL สไลด์ทั้ง 330 แผ่นต้องไม่ซ้ำกันเลย').toBe(330);
     allUrls.forEach((url) => {
       expect(url).toMatch(/^https:\/\/lh3\.googleusercontent\.com\/d\//);
     });
