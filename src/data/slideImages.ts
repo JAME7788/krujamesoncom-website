@@ -1,5 +1,5 @@
-// ระบบคลังสไลด์ภาพประกอบการสอน (ChatGPT DALL-E 3 ในสัดส่วน 16:9 จาก Google Drive)
-// ความละเอียดสูง โหลดผ่าน Google Cloud CDN โดยตรง ไม่เปลืองพื้นที่จัดเก็บในโปรเจกต์เว็บ (Zero Disk Bloat)
+// ระบบคลังสไลด์ภาพประกอบการสอน (ChatGPT DALL-E 3 & High-Res 16:9 จาก Google Drive & Cloud CDN)
+// ความละเอียดสูง โหลดผ่าน Google Cloud CDN และ Web Assets ไม่เปลืองพื้นที่จัดเก็บ (Zero Disk Bloat)
 
 export interface DriveSlideItem {
   url: string;
@@ -406,6 +406,268 @@ export const unitSlideImages: Record<string, Record<number, string[]>> = {
       "https://lh3.googleusercontent.com/d/1_HvvOVJ4M6LDW0DcDzTzcq1NLWk98nG1",
       "https://lh3.googleusercontent.com/d/1ctuQmJgrReOG1QKk-eVXptyReNxxui-b",
       "https://lh3.googleusercontent.com/d/1emTVU1TUFwqwoVfxRYJNODq2WF0KbMa8"
+    ]
+  },
+  "ai-p1-3": {
+    "1": [
+      "https://lh3.googleusercontent.com/d/1bbUeax96RunLcFtCPGw4I5sR7B3HA2QT",
+      "https://lh3.googleusercontent.com/d/1y1iwxU4b1SygbFRUTe7zGDaVYX4N_pfb",
+      "https://lh3.googleusercontent.com/d/1OP8fWBpWYy0z5_NVqAdxryagNPnwRi0z",
+      "https://lh3.googleusercontent.com/d/1TIuOfV5AgyNLSDzUW7L_jeFXkLxncdWJ",
+      "https://lh3.googleusercontent.com/d/1DjgCKghw9PbNawZmBAcXFjxwciKtrJWt"
+    ],
+    "3": [
+      "https://lh3.googleusercontent.com/d/1TCuYTTIwm2cpohEXe_eHfDExK7uckhhx",
+      "https://lh3.googleusercontent.com/d/13nJsaX4bkNR_vZy37GAzbBxPZbkiafyg",
+      "https://lh3.googleusercontent.com/d/19SQglttvZACnE2iYpwcUC3VeOTEuwgu_",
+      "https://lh3.googleusercontent.com/d/1CxvQFI-fZnNotaY2IX59c4o4io0qBVI5",
+      "https://lh3.googleusercontent.com/d/1l9-A5Xy6ZjPR2lGx9Q43ecLNzW8x36Gi"
+    ],
+    "2": [
+      "https://lh3.googleusercontent.com/d/1fYT8Qx5rKsUc_LBj9IzpF6NR1ZR3_atB",
+      "https://lh3.googleusercontent.com/d/1l0OpVBpRbnEJios-tqSSAYMVV9UIRrKY",
+      "https://lh3.googleusercontent.com/d/1LzSj5c-byGt0-Xv772sCNwrdIicvJHQt",
+      "https://lh3.googleusercontent.com/d/1bTlGgf3Xfl-NXxZ6A0AX1_74qhTwhYO-",
+      "https://lh3.googleusercontent.com/d/1MY2WQMAl-jWyA1JbVfbTY6GDZd3Sv_wz"
+    ]
+  },
+  "ai-p4-6": {
+    "4": [
+      "https://lh3.googleusercontent.com/d/1a0sfzF_Xn_KNfGqqoGgaNLmAne2LIVAQ",
+      "https://lh3.googleusercontent.com/d/1GmZza-GnxY4QJaz5Ry8_KrCVmat3uyVX",
+      "https://lh3.googleusercontent.com/d/1jLrhJUTckVhmcOdh046kSQoOI7fG4Ntk",
+      "https://lh3.googleusercontent.com/d/1BqnnLmiZQ2BdwQpufO0hYvwTibvC6W1k",
+      "https://lh3.googleusercontent.com/d/1D8YaDN4gK3HDv-8eqtrF9UJ1bAeSF9pa"
+    ],
+    "3": [
+      "/slides/ai-p4-6/3/01_สไลด์_Generative_AI__รทนเครองมอสรางสรรค.png",
+      "/slides/ai-p4-6/3/02_สไลด์_Generative_AI_คออะไร.png",
+      "/slides/ai-p4-6/3/03_สไลด์_ใช_ChatGPTGemini_อยางฉลาด.png",
+      "/slides/ai-p4-6/3/04_สไลด์_AI_ผดได_Hallucination.png",
+      "/slides/ai-p4-6/3/05_สไลด์_ลองเลน_Generative_AI_ฟร.png"
+    ],
+    "1": [
+      "/slides/ai-p4-6/1/01_สไลด์_AI_กบ_Machine_Learning_เบองตน.png",
+      "/slides/ai-p4-6/1/02_สไลด์_AI__ML.png",
+      "/slides/ai-p4-6/1/03_สไลด์_ประเภทของ_Machine_Learning.png",
+      "/slides/ai-p4-6/1/04_สไลด์_ML_ในชวตจรง.png",
+      "/slides/ai-p4-6/1/05_สไลด์_ขอมลคอสงสำคญทสด.png"
+    ],
+    "2": [
+      "/slides/ai-p4-6/2/01_สไลด์_สรางโมเดล_AI_ของตวเอง.png",
+      "/slides/ai-p4-6/2/02_สไลด์_Teachable_Machine__เครองมอสราง_AI.png",
+      "/slides/ai-p4-6/2/03_สไลด์_ขนตอนสรางโมเดล_AI.png",
+      "/slides/ai-p4-6/2/04_สไลด์_Project_AI_จำแนกอารมณ.png",
+      "/slides/ai-p4-6/2/05_สไลด์_ทำไมโมเดลของเราตองด.png"
+    ]
+  },
+  "ai-m1-3": {
+    "1": [
+      "/slides/ai-m1-3/1/01_สไลด์_AI_Foundations__รากฐานปญญาประดษฐ.png",
+      "/slides/ai-m1-3/1/02_สไลด์_ประวต_AI_โดยยอ.png",
+      "/slides/ai-m1-3/1/03_สไลด์_AI_vs_ML_vs_Deep_Learning.png",
+      "/slides/ai-m1-3/1/04_สไลด์_Neural_Network_เลยนแบบสมอง.png",
+      "/slides/ai-m1-3/1/05_สไลด์_Dataset__TrainTest_Split.png"
+    ],
+    "2": [
+      "/slides/ai-m1-3/2/01_สไลด์_Computer_Vision__NLP.png",
+      "/slides/ai-m1-3/2/02_สไลด์_Computer_Vision_CV.png",
+      "/slides/ai-m1-3/2/03_สไลด์_NLP__Natural_Language_Processing.png",
+      "/slides/ai-m1-3/2/04_สไลด์_Speech_Recognition__TTS.png",
+      "/slides/ai-m1-3/2/05_สไลด์_Project_ใช_Hugging_Face_Spaces.png"
+    ],
+    "3": [
+      "/slides/ai-m1-3/3/01_สไลด์_Prompt_Engineering__ศาสตรการสงงาน_A.png",
+      "/slides/ai-m1-3/3/02_สไลด์_Prompt__คำสงทสงให_AI.png",
+      "/slides/ai-m1-3/3/03_สไลด์_4_องคประกอบของ_Prompt_ทด.png",
+      "/slides/ai-m1-3/3/04_สไลด์_เทคนค_Prompt_ขนสง.png",
+      "/slides/ai-m1-3/3/05_สไลด์_ใช_AI_ในการเรยนอยางมจรยธรรม.png"
+    ],
+    "4": [
+      "/slides/ai-m1-3/4/01_สไลด์_AI_Ethics__Bias.png",
+      "/slides/ai-m1-3/4/02_สไลด์_Bias_เกดจากอะไร.png",
+      "/slides/ai-m1-3/4/03_สไลด์_กรณศกษาจรง__AI_ทผดพลาด.png",
+      "/slides/ai-m1-3/4/04_สไลด์_กฎหมาย_AI_ในประเทศไทย.png",
+      "/slides/ai-m1-3/4/05_สไลด์_หลกการ_Responsible_AI.png"
+    ],
+    "5": [
+      "/slides/ai-m1-3/5/01_สไลด์_โครงงาน_AI__แกปญหาในชวตจรง.png",
+      "/slides/ai-m1-3/5/02_สไลด์_ขนตอนทำโครงงาน_AI.png",
+      "/slides/ai-m1-3/5/03_สไลด์_ไอเดยโครงงานสำหรบ_มตน.png",
+      "/slides/ai-m1-3/5/04_สไลด์_การนำเสนอผลงาน_AI.png",
+      "/slides/ai-m1-3/5/05_สไลด์_AI_สรางโดยคณ__เรมไดวนน.png"
+    ]
+  },
+  "arduino-basic": {
+    "1": [
+      "/slides/arduino-basic/1/01_สไลด์_Arduino_คอสมองของงานอเลกทรอนกส.png",
+      "/slides/arduino-basic/1/02_สไลด์_ไมโครคอนโทรลเลอรทำงานอยางไร.png",
+      "/slides/arduino-basic/1/03_สไลด์_Arduino_ตางจากคอมพวเตอรอยางไร.png",
+      "/slides/arduino-basic/1/04_สไลด์_เอาไปทำอะไรไดบาง.png",
+      "/slides/arduino-basic/1/05_สไลด์_ของทตองเตรยม.png",
+      "/slides/arduino-basic/1/06_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "2": [
+      "/slides/arduino-basic/2/01_สไลด์_ตดตง_Arduino_IDE_และโปรแกรมแรก.png",
+      "/slides/arduino-basic/2/02_สไลด์_3_อยางทตองตงคาทกครง.png",
+      "/slides/arduino-basic/2/03_สไลด์_โครงสรางโปรแกรม_Arduino.png",
+      "/slides/arduino-basic/2/04_สไลด์_ทดลอง_Blink_ดวยตวเอง.png",
+      "/slides/arduino-basic/2/05_สไลด์_แกปญหาอปโหลดไมได.png",
+      "/slides/arduino-basic/2/06_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "3": [
+      "/slides/arduino-basic/3/01_สไลด์_รจกขาบน_Arduino_UNO.png",
+      "/slides/arduino-basic/3/02_สไลด์_ขาสำคญบนบอรด_UNO.png",
+      "/slides/arduino-basic/3/03_สไลด์_ตอ_LED_ใหถกวธ.png",
+      "/slides/arduino-basic/3/04_สไลด์_ดจทล_กบ_แอนะลอก.png",
+      "/slides/arduino-basic/3/05_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "4": [
+      "/slides/arduino-basic/4/01_สไลด์_คำสงหลกทใชบอยทสด.png",
+      "/slides/arduino-basic/4/02_สไลด์_สงงานขา_output.png",
+      "/slides/arduino-basic/4/03_สไลด์_อานคาจาก_input.png",
+      "/slides/arduino-basic/4/04_สไลด์_Serial_Monitor_คอเครองมอหาบก.png",
+      "/slides/arduino-basic/4/05_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "5": [
+      "/slides/arduino-basic/5/01_สไลด์_เซนเซอร_มอเตอร_และจอแสดงผล.png",
+      "/slides/arduino-basic/5/02_สไลด์_เซนเซอรทใชบอยในใบงาน.png",
+      "/slides/arduino-basic/5/03_สไลด์_ตวอยางจรง_ไฟตดเองเมอมด.png",
+      "/slides/arduino-basic/5/04_สไลด์_มอเตอรตองระวงเรองไฟ.png",
+      "/slides/arduino-basic/5/05_สไลด์_บนทกผลแบบนกทดลอง.png",
+      "/slides/arduino-basic/5/06_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "6": [
+      "/slides/arduino-basic/6/01_สไลด์_จำลองวงจรและแกปญหาบอรด.png",
+      "/slides/arduino-basic/6/02_สไลด์_จำลองวงจรกอนตอจรง.png",
+      "/slides/arduino-basic/6/03_สไลด์_บตโหลดเดอรคออะไร.png",
+      "/slides/arduino-basic/6/04_สไลด์_ไลแกปญหาอยางเปนระบบ.png",
+      "/slides/arduino-basic/6/05_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "7": [
+      "/slides/arduino-basic/7/01_สไลด์_แสดงผลบนจอ_LCD.png",
+      "/slides/arduino-basic/7/02_สไลด์_ทำไมตองใช_I2C.png",
+      "/slides/arduino-basic/7/03_สไลด์_โคดแสดงขอความบนจอ.png",
+      "/slides/arduino-basic/7/04_สไลด์_แสดงผลใหอานงาย.png",
+      "/slides/arduino-basic/7/05_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "8": [
+      "/slides/arduino-basic/8/01_สไลด์_โครงงาน_Arduino_ปลายคอรส.png",
+      "/slides/arduino-basic/8/02_สไลด์_เรมจากปญหา_ไมใชจากอปกรณ.png",
+      "/slides/arduino-basic/8/03_สไลด์_ออกแบบดวย_Input-Process-Output.png",
+      "/slides/arduino-basic/8/04_สไลด์_ทดสอบแลวปรบจากหลกฐาน.png",
+      "/slides/arduino-basic/8/05_สไลด์_นำเสนอใหนาเชอถอ.png",
+      "/slides/arduino-basic/8/06_สไลด์_ตรวจความพรอมกอนสง.png"
+    ]
+  },
+  "electronics-basic": {
+    "1": [
+      "/slides/electronics-basic/1/01_สไลด์_อเลกทรอนกสอยรอบตวเรา.png",
+      "/slides/electronics-basic/1/02_สไลด์_อเลกทรอนกสคออะไร.png",
+      "/slides/electronics-basic/1/03_สไลด์_แอนะลอก_กบ_ดจทล.png",
+      "/slides/electronics-basic/1/04_สไลด์_มองทกอปกรณเปน_3_สวน.png",
+      "/slides/electronics-basic/1/05_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "2": [
+      "/slides/electronics-basic/2/01_สไลด์_กฎของโอหม_หวใจของทกวงจร.png",
+      "/slides/electronics-basic/2/02_สไลด์_V__I__R.png",
+      "/slides/electronics-basic/2/03_สไลด์_คำนวณตวตานทานให_LED.png",
+      "/slides/electronics-basic/2/04_สไลด์_กำลงไฟฟา_P__V__I.png",
+      "/slides/electronics-basic/2/05_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "3": [
+      "/slides/electronics-basic/3/01_สไลด์_อปกรณพนฐานทตองรจก.png",
+      "/slides/electronics-basic/3/02_สไลด์_ตวเกบประจและไดโอด.png",
+      "/slides/electronics-basic/3/03_สไลด์_ทรานซสเตอรทำอะไรได.png",
+      "/slides/electronics-basic/3/04_สไลด์_สะพานเชอมกบโลกจรง.png",
+      "/slides/electronics-basic/3/05_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "4": [
+      "/slides/electronics-basic/4/01_สไลด์_วงจรแอนะลอกและแหลงจายไฟ.png",
+      "/slides/electronics-basic/4/02_สไลด์_จากไฟบานสไฟทวงจรใชได.png",
+      "/slides/electronics-basic/4/03_สไลด์_วงจร_RC_กรองสญญาณ.png",
+      "/slides/electronics-basic/4/04_สไลด์_ระวงเรองความปลอดภย.png",
+      "/slides/electronics-basic/4/05_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "5": [
+      "/slides/electronics-basic/5/01_สไลด์_วงจรดจทลและลอจกเกต.png",
+      "/slides/electronics-basic/5/02_สไลด์_เลขฐานสอง.png",
+      "/slides/electronics-basic/5/03_สไลด์_ลอจกเกตพนฐาน.png",
+      "/slides/electronics-basic/5/04_สไลด์_คอมบเนชน_กบ_ซเควนเชยล.png",
+      "/slides/electronics-basic/5/05_สไลด์_ตรวจความเขาใจ.png"
+    ],
+    "6": [
+      "/slides/electronics-basic/6/01_สไลด์_มลตมเตอรและการตรวจวงจร.png",
+      "/slides/electronics-basic/6/02_สไลด์_มลตมเตอรวดอะไรไดบาง.png",
+      "/slides/electronics-basic/6/03_สไลด์_กฎของเคอรชอฟฟ.png",
+      "/slides/electronics-basic/6/04_สไลด์_ไลตรวจวงจรอยางเปนระบบ.png",
+      "/slides/electronics-basic/6/05_สไลด์_ตรวจความเขาใจ.png"
+    ]
+  },
+  "python-basic": {
+    "1": [
+      "/slides/python-basic/1/01_สไลด์_เรมตนกบ_Python.png",
+      "/slides/python-basic/1/02_สไลด์_เขยน_Python_ไดทไหนบาง.png",
+      "/slides/python-basic/1/03_สไลด์_สองโหมดของการรนโปรแกรม.png",
+      "/slides/python-basic/1/04_สไลด์_print__สงใหคอมพวเตอรพด.png",
+      "/slides/python-basic/1/05_สไลด์_input__สงใหคอมพวเตอรฟง.png",
+      "/slides/python-basic/1/06_สไลด์_ตรวจความเขาใจ_แสดงผลและรบขอมล.png"
+    ],
+    "2": [
+      "/slides/python-basic/2/01_สไลด์_ตวแปรและชนดขอมล.png",
+      "/slides/python-basic/2/02_สไลด์_สรางตวแปรดวยเครองหมาย.png",
+      "/slides/python-basic/2/03_สไลด์_กตกาตงชอตวแปร.png",
+      "/slides/python-basic/2/04_สไลด์_ชนดขอมลพนฐาน_3_แบบ.png",
+      "/slides/python-basic/2/05_สไลด์_แปลงชนดขอมลกอนคำนวณ.png",
+      "/slides/python-basic/2/06_สไลด์_ตรวจความเขาใจ_ตวแปรและชนดขอมล.png"
+    ],
+    "3": [
+      "/slides/python-basic/3/01_สไลด์_ตวดำเนนการและโจทยคำนวณ.png",
+      "/slides/python-basic/3/02_สไลด์_เครองหมายคำนวณ_7_ตว.png",
+      "/slides/python-basic/3/03_สไลด์_บวกและคณกบขอความ.png",
+      "/slides/python-basic/3/04_สไลด์_โจทย_ทอนเงนอยางไร.png",
+      "/slides/python-basic/3/05_สไลด์_สตรทใชบอยในชวตจรง.png",
+      "/slides/python-basic/3/06_สไลด์_ตรวจความเขาใจ_ตวดำเนนการ.png"
+    ],
+    "4": [
+      "/slides/python-basic/4/01_สไลด์_วนซำดวย_for_และทางเลอกดวย_if.png",
+      "/slides/python-basic/4/02_สไลด์_for__ทำซำตามจำนวนรอบ.png",
+      "/slides/python-basic/4/03_สไลด์_เครองหมายเปรยบเทยบ.png",
+      "/slides/python-basic/4/04_สไลด์_if_และ_else__ใหโปรแกรมตดสนใจ.png",
+      "/slides/python-basic/4/05_สไลด์_ลองทำ_มากไปหรอนอยไป.png",
+      "/slides/python-basic/4/06_สไลด์_ตรวจความเขาใจ_for_และ_if.png"
+    ],
+    "5": [
+      "/slides/python-basic/5/01_สไลด์_เตาไพทอน_วาดรปดวยโคด.png",
+      "/slides/python-basic/5/02_สไลด์_คำสงพนฐานของเตา.png",
+      "/slides/python-basic/5/03_สไลด์_วาดสเหลยมดวยการวนซำ.png",
+      "/slides/python-basic/5/04_สไลด์_สตรมมของรปหลายเหลยม.png",
+      "/slides/python-basic/5/05_สไลด์_ฟงกชนวาดบาน.png",
+      "/slides/python-basic/5/06_สไลด์_ตรวจความเขาใจ_เตาไพทอน.png"
+    ],
+    "6": [
+      "/slides/python-basic/6/01_สไลด์_เงอนไขซบซอนและการวนซำดวย_while.png",
+      "/slides/python-basic/6/02_สไลด์_and_or_not_รวมเงอนไข.png",
+      "/slides/python-basic/6/03_สไลด์_if-elif-else_เมอมหลายทางเลอก.png",
+      "/slides/python-basic/6/04_สไลด์_while__วนจนกวาเงอนไขจะเปนเทจ.png",
+      "/slides/python-basic/6/05_สไลด์_โจทย_เลอกสตรพนทตามรป.png",
+      "/slides/python-basic/6/06_สไลด์_ตรวจความเขาใจ_เงอนไขและ_while.png"
+    ],
+    "7": [
+      "/slides/python-basic/7/01_สไลด์_ฟงกชน_ลสต_และโมดล.png",
+      "/slides/python-basic/7/02_สไลด์_สรางฟงกชนดวย_def.png",
+      "/slides/python-basic/7/03_สไลด์_return__สงผลลพธกลบมา.png",
+      "/slides/python-basic/7/04_สไลด์_ลสต__เกบหลายคาในตวแปรเดยว.png",
+      "/slides/python-basic/7/05_สไลด์_เรยกใชโมดลดวย_import.png",
+      "/slides/python-basic/7/06_สไลด์_ตรวจความเขาใจ_ฟงกชน_ลสต_โมดล.png"
+    ],
+    "8": [
+      "/slides/python-basic/8/01_สไลด์_วเคราะหขอมลและสราง_GUI_ม3.png",
+      "/slides/python-basic/8/02_สไลด์_pandas_Series_และ_DataFrame.png",
+      "/slides/python-basic/8/03_สไลด์_อานไฟล_CSV_แลวสรปขอมล.png",
+      "/slides/python-basic/8/04_สไลด์_เชอมขอมลและวาดกราฟ.png",
+      "/slides/python-basic/8/05_สไลด์_tkinter_หนาตางโปรแกรมแรกของเรา.png",
+      "/slides/python-basic/8/06_สไลด์_ตรวจความเขาใจ_ขอมลและ_GUI.png"
     ]
   }
 };

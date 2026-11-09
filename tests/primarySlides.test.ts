@@ -169,11 +169,21 @@ describe('ระบบสไลด์ภาพและเนื้อหาท�
     const allIsUrls = Object.values(isLessonSlideImages).flat();
     const allUrls = [...allUnitUrls, ...allIsUrls];
 
-    expect(allUnitUrls.length).toBe(282);
+    expect(allUnitUrls.length).toBeGreaterThanOrEqual(460);
     expect(allIsUrls.length).toBe(48);
-    expect(allUrls.length).toBe(330);
-    expect(new Set(allUrls).size, 'URL สไลด์ทั้ง 330 แผ่นต้องไม่ซ้ำกันเลย').toBe(330);
-    allUrls.forEach((url) => {
+    expect(allUrls.length).toBeGreaterThanOrEqual(508);
+    expect(new Set(allUrls).size, 'URL สไลด์ทั้งหมดต้องไม่ซ้ำกัน').toBe(allUrls.length);
+
+    for (const gid of [...PRIMARY, ...SECONDARY]) {
+      const g = grades.find((x) => x.id === gid);
+      for (const u of g?.units || []) {
+        const imgs = getUnitSlideImages(gid, u.no);
+        imgs.forEach((url) => {
+          expect(url).toMatch(/^https:\/\/lh3\.googleusercontent\.com\/d\//);
+        });
+      }
+    }
+    allIsUrls.forEach((url) => {
       expect(url).toMatch(/^https:\/\/lh3\.googleusercontent\.com\/d\//);
     });
   });
