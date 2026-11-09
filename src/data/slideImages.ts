@@ -607,14 +607,19 @@ export const unitSlideImages: Record<string, Record<number, string[]>> = {
   "python-basic": {
     "1": [
       "/slides/python-basic/1/01_สไลด์_เรมตนกบ_Python.png",
+      "/slides/python-basic/1/01_สไลด์_เริ่มต้นกับ_Python_ฉบับครูเจมส์.png",
+      "/slides/python-basic/1/02_สไลด์_ทำไมต้อง_Python_และประวัติความเป็นมา.png",
       "/slides/python-basic/1/02_สไลด์_เขยน_Python_ไดทไหนบาง.png",
+      "/slides/python-basic/1/03_สไลด์_การติดตั้ง_Python_และ_VS_Code.png",
       "/slides/python-basic/1/03_สไลด์_สองโหมดของการรนโปรแกรม.png",
       "/slides/python-basic/1/04_สไลด์_print__สงใหคอมพวเตอรพด.png",
+      "/slides/python-basic/1/04_สไลด์_คำสั่ง_print_และ_input.png",
       "/slides/python-basic/1/05_สไลด์_input__สงใหคอมพวเตอรฟง.png",
       "/slides/python-basic/1/06_สไลด์_ตรวจความเขาใจ_แสดงผลและรบขอมล.png"
     ],
     "2": [
       "/slides/python-basic/2/01_สไลด์_ตวแปรและชนดขอมล.png",
+      "/slides/python-basic/2/01_สไลด์_ปก_ตัวแปรและชนิดข้อมูล.png",
       "/slides/python-basic/2/02_สไลด์_สรางตวแปรดวยเครองหมาย.png",
       "/slides/python-basic/2/03_สไลด์_กตกาตงชอตวแปร.png",
       "/slides/python-basic/2/04_สไลด์_ชนดขอมลพนฐาน_3_แบบ.png",
