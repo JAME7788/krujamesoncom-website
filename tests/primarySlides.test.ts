@@ -169,9 +169,9 @@ describe('ระบบสไลด์ภาพและเนื้อหาท�
     const allIsUrls = Object.values(isLessonSlideImages).flat();
     const allUrls = [...allUnitUrls, ...allIsUrls];
 
-    expect(allUnitUrls.length).toBeGreaterThanOrEqual(460);
+    expect(allUnitUrls.length).toBeGreaterThanOrEqual(440);
     expect(allIsUrls.length).toBe(48);
-    expect(allUrls.length).toBeGreaterThanOrEqual(508);
+    expect(allUrls.length).toBeGreaterThanOrEqual(488);
     expect(new Set(allUrls).size, 'URL สไลด์ทั้งหมดต้องไม่ซ้ำกัน').toBe(allUrls.length);
 
     for (const gid of [...PRIMARY, ...SECONDARY]) {

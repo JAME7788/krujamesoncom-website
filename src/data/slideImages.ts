@@ -606,73 +606,52 @@ export const unitSlideImages: Record<string, Record<number, string[]>> = {
   },
   "python-basic": {
     "1": [
-      "/slides/python-basic/1/01_สไลด์_เรมตนกบ_Python.png",
       "/slides/python-basic/1/01_สไลด์_เริ่มต้นกับ_Python_ฉบับครูเจมส์.png",
       "/slides/python-basic/1/02_สไลด์_ทำไมต้อง_Python_และประวัติความเป็นมา.png",
-      "/slides/python-basic/1/02_สไลด์_เขยน_Python_ไดทไหนบาง.png",
       "/slides/python-basic/1/03_สไลด์_การติดตั้ง_Python_และ_VS_Code.png",
-      "/slides/python-basic/1/03_สไลด์_สองโหมดของการรนโปรแกรม.png",
-      "/slides/python-basic/1/04_สไลด์_print__สงใหคอมพวเตอรพด.png",
-      "/slides/python-basic/1/04_สไลด์_คำสั่ง_print_และ_input.png",
-      "/slides/python-basic/1/05_สไลด์_input__สงใหคอมพวเตอรฟง.png",
-      "/slides/python-basic/1/06_สไลด์_ตรวจความเขาใจ_แสดงผลและรบขอมล.png"
+      "/slides/python-basic/1/04_สไลด์_คำสั่ง_print_และ_input.png"
     ],
     "2": [
-      "/slides/python-basic/2/01_สไลด์_ตวแปรและชนดขอมล.png",
       "/slides/python-basic/2/01_สไลด์_ปก_ตัวแปรและชนิดข้อมูล.png",
-      "/slides/python-basic/2/02_สไลด์_สรางตวแปรดวยเครองหมาย.png",
-      "/slides/python-basic/2/03_สไลด์_กตกาตงชอตวแปร.png",
-      "/slides/python-basic/2/04_สไลด์_ชนดขอมลพนฐาน_3_แบบ.png",
-      "/slides/python-basic/2/05_สไลด์_แปลงชนดขอมลกอนคำนวณ.png",
-      "/slides/python-basic/2/06_สไลด์_ตรวจความเขาใจ_ตวแปรและชนดขอมล.png"
+      "/slides/python-basic/2/02_สไลด์_กฎเหล็กการตั้งชื่อตัวแปร.png",
+      "/slides/python-basic/2/03_สไลด์_ชนิดข้อมูลพื้นฐาน_4_ชนิด_และ_type.png",
+      "/slides/python-basic/2/04_สไลด์_การแปลงชนิดข้อมูล_Type_Casting.png"
     ],
     "3": [
-      "/slides/python-basic/3/01_สไลด์_ตวดำเนนการและโจทยคำนวณ.png",
-      "/slides/python-basic/3/02_สไลด์_เครองหมายคำนวณ_7_ตว.png",
-      "/slides/python-basic/3/03_สไลด์_บวกและคณกบขอความ.png",
-      "/slides/python-basic/3/04_สไลด์_โจทย_ทอนเงนอยางไร.png",
-      "/slides/python-basic/3/05_สไลด์_สตรทใชบอยในชวตจรง.png",
-      "/slides/python-basic/3/06_สไลด์_ตรวจความเขาใจ_ตวดำเนนการ.png"
+      "/slides/python-basic/3/01_สไลด์_ปก_ตัวดำเนินการและโจทย์คำนวณ.png",
+      "/slides/python-basic/3/02_สไลด์_เครื่องหมายคำนวณ_7_ตัว_และ_PEMDAS.png",
+      "/slides/python-basic/3/03_สไลด์_ตัวดำเนินการเปรียบเทียบและตรรกศาสตร์.png",
+      "/slides/python-basic/3/04_สไลด์_โจทย์คำนวณในชีวิตจริง_เงินทอนและอุณหภูมิ.png"
     ],
     "4": [
-      "/slides/python-basic/4/01_สไลด์_วนซำดวย_for_และทางเลอกดวย_if.png",
-      "/slides/python-basic/4/02_สไลด์_for__ทำซำตามจำนวนรอบ.png",
-      "/slides/python-basic/4/03_สไลด์_เครองหมายเปรยบเทยบ.png",
-      "/slides/python-basic/4/04_สไลด์_if_และ_else__ใหโปรแกรมตดสนใจ.png",
-      "/slides/python-basic/4/05_สไลด์_ลองทำ_มากไปหรอนอยไป.png",
-      "/slides/python-basic/4/06_สไลด์_ตรวจความเขาใจ_for_และ_if.png"
+      "/slides/python-basic/4/01_สไลด์_ปก_การตัดสินใจและวนซ้ำ.png",
+      "/slides/python-basic/4/02_สไลด์_คำสั่ง_if_elif_else_และ_match_case.png",
+      "/slides/python-basic/4/03_สไลด์_การวนซ้ำด้วย_for_และ_range.png",
+      "/slides/python-basic/4/04_สไลด์_คำสั่งควบคุมลูป_break_continue_enumerate.png"
     ],
     "5": [
-      "/slides/python-basic/5/01_สไลด์_เตาไพทอน_วาดรปดวยโคด.png",
-      "/slides/python-basic/5/02_สไลด์_คำสงพนฐานของเตา.png",
-      "/slides/python-basic/5/03_สไลด์_วาดสเหลยมดวยการวนซำ.png",
-      "/slides/python-basic/5/04_สไลด์_สตรมมของรปหลายเหลยม.png",
-      "/slides/python-basic/5/05_สไลด์_ฟงกชนวาดบาน.png",
-      "/slides/python-basic/5/06_สไลด์_ตรวจความเขาใจ_เตาไพทอน.png"
+      "/slides/python-basic/5/01_สไลด์_ปก_เต่าไพทอนและโครงสร้างข้อมูล.png",
+      "/slides/python-basic/5/02_สไลด์_การจัดการข้อความ_String_Slicing_และ_fstring.png",
+      "/slides/python-basic/5/03_สไลด์_โครงสร้างข้อมูล_List_และเมธอดสำคัญ.png",
+      "/slides/python-basic/5/04_สไลด์_Dictionary_Tuple_และ_Set.png"
     ],
     "6": [
-      "/slides/python-basic/6/01_สไลด์_เงอนไขซบซอนและการวนซำดวย_while.png",
-      "/slides/python-basic/6/02_สไลด์_and_or_not_รวมเงอนไข.png",
-      "/slides/python-basic/6/03_สไลด์_if-elif-else_เมอมหลายทางเลอก.png",
-      "/slides/python-basic/6/04_สไลด์_while__วนจนกวาเงอนไขจะเปนเทจ.png",
-      "/slides/python-basic/6/05_สไลด์_โจทย_เลอกสตรพนทตามรป.png",
-      "/slides/python-basic/6/06_สไลด์_ตรวจความเขาใจ_เงอนไขและ_while.png"
+      "/slides/python-basic/6/01_สไลด์_ปก_ลูป_while_และการเขียนอ่านไฟล์.png",
+      "/slides/python-basic/6/02_สไลด์_การทำงานของ_while_loop_และระวัง_Infinite_Loop.png",
+      "/slides/python-basic/6/03_สไลด์_การเขียนและอ่านไฟล์_Text_CSV_JSON.png",
+      "/slides/python-basic/6/04_สไลด์_การดักจับข้อผิดพลาด_try_except_finally.png"
     ],
     "7": [
-      "/slides/python-basic/7/01_สไลด์_ฟงกชน_ลสต_และโมดล.png",
-      "/slides/python-basic/7/02_สไลด์_สรางฟงกชนดวย_def.png",
-      "/slides/python-basic/7/03_สไลด์_return__สงผลลพธกลบมา.png",
-      "/slides/python-basic/7/04_สไลด์_ลสต__เกบหลายคาในตวแปรเดยว.png",
-      "/slides/python-basic/7/05_สไลด์_เรยกใชโมดลดวย_import.png",
-      "/slides/python-basic/7/06_สไลด์_ตรวจความเขาใจ_ฟงกชน_ลสต_โมดล.png"
+      "/slides/python-basic/7/01_สไลด์_ปก_การสร้างฟังก์ชันและโมดูล.png",
+      "/slides/python-basic/7/02_สไลด์_การนิยามฟังก์ชัน_def_พารามิเตอร์_และ_return.png",
+      "/slides/python-basic/7/03_สไลด์_โมดูลมาตรฐาน_random_math_time_webbrowser.png",
+      "/slides/python-basic/7/04_สไลด์_การสร้างโมดูลเองและการทำ_Unit_Test.png"
     ],
     "8": [
-      "/slides/python-basic/8/01_สไลด์_วเคราะหขอมลและสราง_GUI_ม3.png",
-      "/slides/python-basic/8/02_สไลด์_pandas_Series_และ_DataFrame.png",
-      "/slides/python-basic/8/03_สไลด์_อานไฟล_CSV_แลวสรปขอมล.png",
-      "/slides/python-basic/8/04_สไลด์_เชอมขอมลและวาดกราฟ.png",
-      "/slides/python-basic/8/05_สไลด์_tkinter_หนาตางโปรแกรมแรกของเรา.png",
-      "/slides/python-basic/8/06_สไลด์_ตรวจความเขาใจ_ขอมลและ_GUI.png"
+      "/slides/python-basic/8/01_สไลด์_ปก_Data_Science_และ_OOP.png",
+      "/slides/python-basic/8/02_สไลด์_เครื่องมือ_NumPy_Pandas_และ_Matplotlib.png",
+      "/slides/python-basic/8/03_สไลด์_คลาสและออบเจ็กต์_พิมพ์เขียวสู่ชิ้นงานจริง.png",
+      "/slides/python-basic/8/04_สไลด์_4_เสาหลักของ_OOP_สำหรับเด็ก.png"
     ]
   }
 };
