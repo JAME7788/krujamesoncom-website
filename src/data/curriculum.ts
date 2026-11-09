@@ -1,3 +1,4 @@
+import { pythonBasicCourse } from './pythonCourse';
 export type Lesson = { name: string; url?: string };
 
 export type Indicator = {
@@ -1514,3 +1515,6 @@ export const findIndicator = (gradeId: string, idx: number) => {
   const g = findGrade(gradeId);
   return g ? g.indicators[idx] : undefined;
 };
+
+// วิชาเลือก Python พื้นฐาน ม.1–ม.3 (เนื้อหาจากสมุด Colab ของครูเจมส์) อยู่แยกไฟล์ src/data/pythonCourse.ts
+if (!grades.some((g) => g.id === pythonBasicCourse.id)) grades.push(pythonBasicCourse);

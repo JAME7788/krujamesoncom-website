@@ -1,6 +1,7 @@
 import { primaryRichSlides } from './richSlidesPrimary';
 import { secondaryRichSlides } from './richSlidesSecondary';
 import { electiveRichSlides } from './richSlidesElective';
+import { pythonRichSlides } from './richSlidesPython';
 import { getUnitSlideImages } from './slideImages';
 import { detectLessonTheme } from '../utils/lessonTheme';
 
@@ -2767,6 +2768,7 @@ export const richSlides: Record<string, RichSlide[]> = {
   ...primaryRichSlides,
   ...secondaryRichSlides,
   ...electiveRichSlides,
+  ...pythonRichSlides,
   // AI ป.1-3
   'ai-p1-3_1': ai_p13_unit1,
   'ai-p1-3_2': ai_p13_unit2,

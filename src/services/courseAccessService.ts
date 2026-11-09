@@ -45,9 +45,9 @@ const classroomCourseIds: Record<string, string[]> = {
   [cls(P, 4)]: ['p4', 'ai-p4-6'],
   [cls(P, 5)]: ['p5', 'ai-p4-6'],
   [cls(P, 6)]: ['p6', 'ai-p4-6'],
-  [cls(M, 1)]: ['m1-cs', 'm1-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
-  [cls(M, 2)]: ['m2-cs', 'm2-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
-  [cls(M, 3)]: ['m3-cs', 'm3-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
+  [cls(M, 1)]: ['m1-cs', 'm1-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic', 'python-basic'],
+  [cls(M, 2)]: ['m2-cs', 'm2-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic', 'python-basic'],
+  [cls(M, 3)]: ['m3-cs', 'm3-design', 'ai-m1-3', 'arduino-basic', 'electronics-basic', 'python-basic'],
 };
 
 const defaultOpenCourseIdsByClassroom: Record<string, string[]> = {
@@ -57,9 +57,9 @@ const defaultOpenCourseIdsByClassroom: Record<string, string[]> = {
   [cls(P, 4)]: ['p4', 'ai-p4-6'],
   [cls(P, 5)]: ['p5', 'ai-p4-6'],
   [cls(P, 6)]: ['p6', 'ai-p4-6'],
-  [cls(M, 1)]: ['m1-cs', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
-  [cls(M, 2)]: ['m2-cs', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
-  [cls(M, 3)]: ['m3-cs', 'ai-m1-3', 'arduino-basic', 'electronics-basic'],
+  [cls(M, 1)]: ['m1-cs', 'ai-m1-3', 'arduino-basic', 'electronics-basic', 'python-basic'],
+  [cls(M, 2)]: ['m2-cs', 'ai-m1-3', 'arduino-basic', 'electronics-basic', 'python-basic'],
+  [cls(M, 3)]: ['m3-cs', 'ai-m1-3', 'arduino-basic', 'electronics-basic', 'python-basic'],
 };
 
 export const defaultCourseAccessSettings = (): CourseAccessSettings => ({

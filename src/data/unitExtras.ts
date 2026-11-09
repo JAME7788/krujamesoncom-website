@@ -1,3 +1,4 @@
+import { pythonUnitExtras } from './pythonCourse';
 // เนื้อหาเสริม: คลิปวิดีโอ, ภาพประกอบ, แบบทดสอบ ต่อหน่วยการเรียน
 
 export type QuizQuestion = {
@@ -1886,3 +1887,5 @@ unitExtras['electronics-basic'] = {
     ],
   },
 };
+
+unitExtras['python-basic'] = pythonUnitExtras;
