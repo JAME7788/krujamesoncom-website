@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createGameTimers } from '../src/utils/gameTimers';
+import { createGameTimers, frameDeltaSeconds } from '../src/utils/gameTimers';
 
 afterEach(() => vi.useRealTimers());
 
@@ -38,5 +38,22 @@ describe('game round timers', () => {
     timers.clear();
     vi.runAllTimers();
     expect(completion).not.toHaveBeenCalled();
+  });
+});
+
+describe('frameDeltaSeconds', () => {
+  it('never goes negative when the first animation frame timestamp is earlier than performance.now()', () => {
+    // requestAnimationFrame passes the frame start time, which can predate the setup timestamp
+    expect(frameDeltaSeconds(1000, 1004)).toBe(0);
+  });
+
+  it('converts milliseconds to seconds and caps long pauses', () => {
+    expect(frameDeltaSeconds(1016, 1000)).toBeCloseTo(0.016, 6);
+    expect(frameDeltaSeconds(5000, 1000)).toBe(0.05);
+    expect(frameDeltaSeconds(5000, 1000, 0.1)).toBe(0.1);
+  });
+
+  it('treats invalid timestamps as no time passing', () => {
+    expect(frameDeltaSeconds(Number.NaN, 1000)).toBe(0);
   });
 });

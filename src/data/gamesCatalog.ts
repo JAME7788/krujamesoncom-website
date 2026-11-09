@@ -391,4 +391,14 @@ export const gamesCatalog: GameInfo[] = [
     color: '#ea580c',
     path: '/games/claw-platformer',
   },
+  {
+    id: 'electronics-101',
+    title: '⚡ ห้องแล็บอิเล็กทรอนิกส์ 3D (Electronics 101)',
+    desc: 'ทดลองต่อวงจรไฟฟ้าจริงแบบ 3 มิติ 48 บทเรียน ตั้งแต่วงจรปิด ตัวต้านทาน LED ตัวเก็บประจุ สวิตช์ ทรานซิสเตอร์ ไปจนถึงเซนเซอร์ พร้อมมิเตอร์และออสซิลโลสโคป',
+    emoji: '⚡',
+    level: 'ป.4-ม.3',
+    skill: 'วงจรไฟฟ้า/อิเล็กทรอนิกส์/การทดลอง',
+    color: '#0ea5e9',
+    path: '/games/electronics-101',
+  },
 ];

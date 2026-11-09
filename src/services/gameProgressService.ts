@@ -57,7 +57,8 @@ export type GameProgressId =
   | 'cyber-cop'
   | 'flowchart-bingo'
   | 'cyber-racer'
-  | 'claw-platformer';
+  | 'claw-platformer'
+  | 'electronics-101';
 
 type StudentLike = {
   id: string;
@@ -256,6 +257,10 @@ export const getGameTargetUnits = (gameId: GameProgressId, classroom: string): T
     return [isPrimary ? primaryAlgorithmUnit(classroom) : middleAlgorithmUnit(classroom)];
   }
 
+  // ห้องปฏิบัติการอิเล็กทรอนิกส์ 3D — วงจรไฟฟ้า/อุปกรณ์อิเล็กทรอนิกส์ (การออกแบบและเทคโนโลยี)
+  if (normalizedGameId === 'electronics-101') {
+    return [isPrimary ? primaryDigitalUnit(classroom) : middleDesignUnit(classroom)];
+  }
   if (normalizedGameId === 'quick-answer') {
     if (isPrimary) {
       return [

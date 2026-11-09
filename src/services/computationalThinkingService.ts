@@ -21,7 +21,7 @@ export const CT_PILLARS: Record<CtPillar, CtPillarInfo> = {
     emoji: '🧩',
     color: '#0284c7', // Sky blue
     description: 'แตกปัญหาใหญ่ที่ซับซ้อนออกเป็นส่วนย่อยๆ เพื่อให้จัดการและแก้ไขได้ง่ายขึ้น',
-    gameIds: ['pc-builder', 'robot-maker', 'step-sort', 'tech-system', 'device-match', 'circuit-lab', 'file-organizer', 'quick-answer'],
+    gameIds: ['pc-builder', 'robot-maker', 'step-sort', 'tech-system', 'device-match', 'circuit-lab', 'file-organizer', 'quick-answer', 'electronics-101'],
   },
   pattern: {
     id: 'pattern',
