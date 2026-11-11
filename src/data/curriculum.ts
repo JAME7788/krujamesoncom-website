@@ -1,4 +1,5 @@
 import { pythonBasicCourse } from './pythonCourse';
+import { extraCourses } from './extraCourses';
 export type Lesson = { name: string; url?: string };
 
 export type Indicator = {
@@ -1518,3 +1519,6 @@ export const findIndicator = (gradeId: string, idx: number) => {
 
 // วิชาเลือก Python พื้นฐาน ม.1–ม.3 (เนื้อหาจากสมุด Colab ของครูเจมส์) อยู่แยกไฟล์ src/data/pythonCourse.ts
 if (!grades.some((g) => g.id === pythonBasicCourse.id)) grades.push(pythonBasicCourse);
+
+// วิชาเลือก IoT, ฐานข้อมูล และเล่าเรื่องด้วยสื่อดิจิทัล (จากเอกสารคลังโรงเรียน) อยู่ใน src/data/extraCourses.ts
+for (const course of extraCourses) if (!grades.some((g) => g.id === course.id)) grades.push(course);

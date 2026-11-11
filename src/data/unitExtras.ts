@@ -1,4 +1,6 @@
 import { pythonUnitExtras } from './pythonCourse';
+import { extraUnitExtras } from './extraCourses';
+import { addComputerLawLessons } from './computerLawContent';
 // เนื้อหาเสริม: คลิปวิดีโอ, ภาพประกอบ, แบบทดสอบ ต่อหน่วยการเรียน
 
 export type QuizQuestion = {
@@ -1889,3 +1891,5 @@ unitExtras['electronics-basic'] = {
 };
 
 unitExtras['python-basic'] = pythonUnitExtras;
+Object.assign(unitExtras, extraUnitExtras);
+addComputerLawLessons(unitExtras);
