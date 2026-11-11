@@ -389,18 +389,6 @@
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
-.home-page .goal-card::before,
-.home-page .feature-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #FFD43B, #F59E0B, #38BDF8);
-  opacity: 0.85;
-}
-
 .home-page .f-icon {
   background: linear-gradient(135deg, #FFF9DB 0%, #FDE68A 100%);
   color: #B45309;

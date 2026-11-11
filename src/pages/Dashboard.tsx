@@ -696,7 +696,7 @@ const Dashboard: React.FC = () => {
                   return (
                     <div key={e.id} style={{
                       display: 'flex', gap: 10, padding: 10, borderRadius: 10,
-                      background: '#fafafa', borderLeft: `3px solid ${info.color}`,
+                      background: '#fafafa', border: `1px solid ${info.color}`,
                     }}>
                       <div style={{ fontSize: '1.4rem' }}>{e.emoji || info.emoji}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>

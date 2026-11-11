@@ -147,7 +147,7 @@ const GameLearnCard: React.FC<Props> = ({ gameKey }) => {
           display: flex; flex-direction: column;
           background: #fff; border-radius: 20px; overflow: hidden;
           box-shadow: 0 28px 70px rgba(15, 23, 42, 0.4);
-          animation: glcUp 0.24s cubic-bezier(0.34, 1.4, 0.64, 1);
+          animation: glcUp 0.24s cubic-bezier(0.25, 1, 0.5, 1);
           font-family: 'Prompt', sans-serif;
         }
         @keyframes glcUp { from { transform: translateY(18px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }

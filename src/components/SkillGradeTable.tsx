@@ -407,7 +407,7 @@ const SkillGradeTable: React.FC = () => {
                           marginTop: 6,
                           padding: '6px 10px',
                           background: '#ecfdf5',
-                          borderLeft: '3px solid #10b981',
+                          border: '1px solid rgba(16, 185, 129, 0.45)',
                           borderRadius: 4,
                           color: '#065f46',
                         }}

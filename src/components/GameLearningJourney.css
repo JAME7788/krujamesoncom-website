@@ -57,7 +57,7 @@
 .gbl-mode-options button em { display: inline-block; margin-left: 4px; padding: 2px 6px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-size: 0.875rem; font-style: normal; vertical-align: 1px; }
 .gbl-mode-options small { display: block; font-size: 0.875rem; color: #475569; line-height: 1.5; }
 .gbl-journey .gbl-mode-options button[aria-pressed=true] { border-color: var(--quest-color); background: #eff6ff; box-shadow: 0 0 0 1px var(--quest-color); }
-.gbl-challenge { border-left: 4px solid var(--quest-color); padding: 8px 14px; background: #f8fafc; border-radius: 0 10px 10px 0; }
+.gbl-challenge { border: 1px solid var(--quest-color); padding: 8px 14px; background: #f8fafc; border-radius: 10px; }
 .gbl-success-rule { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0; padding: 10px 12px; border-radius: 12px; background: #fffbeb; color: #92400e; }
 .gbl-success-rule span { font-weight: 900; }
 .gbl-success-rule small { color: #92400e; text-align: right; }
@@ -71,7 +71,7 @@
 .gbl-journey .gbl-mission .gbl-launch { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 18px; background: #172554; color: white; border: none; font-size: 1.05rem; font-weight: 800; padding: 16px 20px; box-shadow: 0 8px 18px #17255426; }
 .gbl-launch:hover { transform: translateY(-2px); }
 .gbl-route { display: flex; justify-content: space-between; gap: 8px; font-size: 0.875rem; color: #475569; margin-top: 16px; }
-.gbl-mission.gbl-compact { max-width: 1140px; margin: 6px auto; padding: 8px 14px; border-left: 4px solid var(--quest-color); }
+.gbl-mission.gbl-compact { max-width: 1140px; margin: 6px auto; padding: 8px 14px; border: 1px solid var(--quest-color); }
 .gbl-strip { display: flex; align-items: center; gap: 10px; }
 .gbl-strip > div { flex: 1; min-width: 0; }
 .gbl-strip h2 { font-size: .88rem; margin: 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

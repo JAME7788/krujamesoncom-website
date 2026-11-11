@@ -67,6 +67,6 @@ html[data-theme=dark] .workspace-home { --ws-ink:#f5f5f5; --ws-accent:#ffd43b; -
 @media(prefers-reduced-motion:reduce) { .workspace-feature img { transition:none; } }
 .school-home-shell { background:#fff; }
 .workspace-philosophy>.workspace-eyebrow::after { content:''; display:block; width:44px; height:4px; background:var(--ws-yellow); margin:14px auto 0; }
-.workspace-section-heading h2 { border-left:4px solid var(--ws-yellow); padding-left:14px; }
+.workspace-section-heading h2 { border: 1px solid var(--ws-yellow); padding-left:14px; }
 .workspace-shortcuts a>svg:first-child { color:#232323; background:#ffd43b; padding:8px; box-sizing:content-box; border-radius:4px; }
 html[data-theme=dark] .school-home-shell { background:#1d1d1d; }

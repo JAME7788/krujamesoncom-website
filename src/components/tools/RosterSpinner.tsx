@@ -765,7 +765,7 @@ const RosterSpinner: React.FC<RosterSpinnerProps> = ({
           50% { transform: translateY(-6px); }
         }
         .scale-in {
-          animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: scaleIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
         @keyframes scaleIn {
           from { transform: scale(0.9); opacity: 0; }
@@ -793,7 +793,7 @@ const RosterSpinner: React.FC<RosterSpinnerProps> = ({
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
           padding: 1.25rem;
           position: relative;
-          animation: scaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: scaleIn 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
         .btn-modal-close-spinner {
           display: inline-flex;

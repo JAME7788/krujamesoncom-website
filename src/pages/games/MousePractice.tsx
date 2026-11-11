@@ -882,7 +882,7 @@ const MousePractice: React.FC = () => {
           justify-content: center;
           box-shadow: 0 6px 16px rgba(0,0,0,0.14);
           cursor: pointer;
-          animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          animation: popIn 0.25s cubic-bezier(0.25, 1, 0.5, 1);
           user-select: none;
           transition: transform 0.1s;
         }

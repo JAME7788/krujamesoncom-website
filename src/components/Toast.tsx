@@ -68,14 +68,14 @@ const ToastStyles: React.FC = () => {
         background: white; color: #1f2937; font-weight: 600;
         box-shadow: 0 10px 30px rgba(0,0,0,0.12);
         min-width: 240px; max-width: 360px;
-        border-left: 4px solid #B45309;
+        border: 1px solid rgba(180, 83, 9, 0.45);
         animation: toastIn 0.25s ease-out;
       }
-      .toast-success { border-left-color: #22c55e; }
+      .toast-success { border-color: #22c55e; }
       .toast-success .toast-icon { color: #22c55e; }
-      .toast-error { border-left-color: #ef4444; }
+      .toast-error { border-color: #ef4444; }
       .toast-error .toast-icon { color: #ef4444; }
-      .toast-info { border-left-color: #3b82f6; }
+      .toast-info { border-color: #3b82f6; }
       .toast-info .toast-icon { color: #3b82f6; }
       .toast-msg { flex: 1; font-size: 0.9rem; white-space: pre-wrap; }
       .toast-close {

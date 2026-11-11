@@ -955,7 +955,7 @@ const HomeworkStudent: React.FC = () => {
                       </span>
                     </div>
                     {a.recommendedReason && (
-                      <div style={{ fontSize: '0.8rem', color: '#4b5563', margin: '4px 0 6px', background: '#f8fafc', borderLeft: '3px solid #B45309', padding: '3px 8px', borderRadius: 4 }}>
+                      <div style={{ fontSize: '0.8rem', color: '#4b5563', margin: '4px 0 6px', background: '#f8fafc', border: '1px solid rgba(180, 83, 9, 0.45)', padding: '3px 8px', borderRadius: 4 }}>
                         💡 {recommendation.reason}
                       </div>
                     )}

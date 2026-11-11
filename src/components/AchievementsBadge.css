@@ -115,7 +115,7 @@
   padding: 8px;
   border-radius: 8px;
   text-align: center;
-  border-top: 3px solid;
+  border: 1px solid;
 }
 .ach-tier span { font-size: 1.5rem; font-weight: 800; display: block; }
 .ach-tier small { font-size: 0.75rem; color: #6b7280; }

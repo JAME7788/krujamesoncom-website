@@ -970,7 +970,7 @@
 .robot-feedback {
   margin-top: 0.75rem;
   padding: 0.62rem 0.7rem;
-  border-left: 3px solid #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.45);
   background: #eff6ff;
   color: #334155;
   font-size: 0.875rem;

@@ -1294,7 +1294,7 @@
 .dcq-tutorial-body figure { display: grid; grid-template-rows: 1fr auto; min-width: 0; min-height: 350px; margin: 0; padding: 16px; background: #082f49; }
 .dcq-tutorial-body figcaption { padding-top: 8px; color: #a5f3fc; font-size: 0.875rem; text-align: center; }
 .dcq-tutorial-body > article { display: flex; flex-direction: column; padding: 18px; color: #1e293b; background: #f8fafc; border-left: 2px solid #bae6fd; }
-.dcq-tutorial-body > article > span { align-self: flex-start; padding: 4px 8px; color: #075985; font-size: 0.875rem; font-weight: 900; background: #e0f2fe; border-left: 4px solid #0284c7; }
+.dcq-tutorial-body > article > span { align-self: flex-start; padding: 4px 8px; color: #075985; font-size: 0.875rem; font-weight: 900; background: #e0f2fe; border: 1px solid rgba(2, 132, 199, 0.45); }
 .dcq-tutorial-body ol { margin: 14px 0; padding: 0; list-style: none; counter-reset: tutorial-action; }
 .dcq-tutorial-body li { display: grid; grid-template-columns: 28px 1fr; align-items: center; gap: 8px; margin-bottom: 9px; line-height: 1.5; counter-increment: tutorial-action; }
 .dcq-tutorial-body li::before { display: grid; place-items: center; width: 27px; aspect-ratio: 1; color: #fff; font-size: 0.875rem; font-weight: 900; content: counter(tutorial-action); background: #0e7490; border-radius: 50%; }
@@ -1398,7 +1398,7 @@
 .dcq-question-body > main > div button.correct { background: #dcfce7; border-color: #16a34a; }
 .dcq-question-body > main > div button.wrong { background: #fee2e2; border-color: #dc2626; }
 .dcq-question-body > main > div button.dim { opacity: .52; }
-.dcq-feedback { padding: 10px; color: #0f3e36; font-weight: 800; background: #ccfbf1; border-left: 5px solid #0f766e; }
+.dcq-feedback { padding: 10px; color: #0f3e36; font-weight: 800; background: #ccfbf1; border: 1px solid rgba(15, 118, 110, 0.45); }
 .dcq-question-body footer { display: flex; gap: 8px; margin-top: auto; padding-top: 12px; }
 .dcq-question-body footer button,
 .dcq-event-card > .dcq-primary,

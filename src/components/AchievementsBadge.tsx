@@ -74,7 +74,7 @@ const AchievementsBadge: React.FC = () => {
 
             <div className="ach-tier-summary">
               {(['bronze', 'silver', 'gold', 'diamond'] as const).map((t) => (
-                <div key={t} className="ach-tier" style={{ borderTopColor: tierColor[t] }}>
+                <div key={t} className="ach-tier" style={{ borderColor: tierColor[t] }}>
                   <span style={{ color: tierColor[t] }}>{stats.byTier[t]}</span>
                   <small>{t === 'bronze' ? 'ทองแดง' : t === 'silver' ? 'เงิน' : t === 'gold' ? 'ทอง' : 'เพชร'}</small>
                 </div>

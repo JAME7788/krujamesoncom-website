@@ -444,7 +444,7 @@
   font-family: var(--e101-font-mono);
   font-size: 0.8rem;
   background: rgba(0, 0, 0, 0.45);
-  border-left: 3px solid var(--e101-cyan);
+  border: 1px solid var(--e101-cyan);
   padding: 8px 10px;
   border-radius: 4px;
   margin-top: 8px;

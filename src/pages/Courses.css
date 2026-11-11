@@ -215,13 +215,6 @@ a.btn-enroll-new {
   position: relative;
   overflow: hidden;
 }
-.course-gate::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto;
-  height: 4px;
-  background: linear-gradient(90deg, #FFD43B, #F59E0B, #38BDF8);
-}
 .gate-icon {
   width: 88px; height: 88px;
   margin: 0 auto 1.5rem;

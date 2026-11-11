@@ -662,7 +662,7 @@ main { flex: 1; }
   width: 100%;
   max-width: 520px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-  animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: modalScaleUp 0.3s cubic-bezier(0.25, 1, 0.5, 1);
   overflow: hidden;
 }
 
@@ -813,9 +813,9 @@ main { flex: 1; }
 
 .contact-notice {
   background: rgba(245, 158, 11, 0.05);
-  border-left: 3px solid #B45309;
+  border: 1px solid rgba(180, 83, 9, 0.45);
   padding: 0.85rem 1rem;
-  border-radius: 0 8px 8px 0;
+  border-radius: 8px;
   font-size: 0.8rem;
   color: #4b5563;
   line-height: 1.5;

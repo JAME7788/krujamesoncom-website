@@ -212,7 +212,7 @@
   margin-top: 1rem;
   align-items: flex-start;
   padding: 0.95rem 1rem;
-  border-left: 4px solid var(--sah-blue);
+  border: 1px solid var(--sah-blue);
   background: var(--sah-blue-soft);
 }
 
