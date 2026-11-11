@@ -11,6 +11,7 @@ import { primaryRichSlides } from '../src/data/richSlidesPrimary';
 import { secondaryRichSlides } from '../src/data/richSlidesSecondary';
 import { electiveRichSlides } from '../src/data/richSlidesElective';
 import { pythonRichSlides } from '../src/data/richSlidesPython';
+import { extraRichSlides } from '../src/data/extraCourses';
 import { unitSlideImages, isLessonSlideImages, getUnitSlideImages, getIsLessonSlideImages } from '../src/data/slideImages';
 import { getRichSlides } from '../src/data/richSlides';
 import { buildOfficialLessonNotes } from '../src/data/officialSources';
@@ -19,6 +20,7 @@ const PRIMARY = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] as const;
 const SECONDARY = ['m1-cs', 'm1-design', 'm2-cs', 'm2-design', 'm3-cs', 'm3-design'] as const;
 const ELECTIVE = ['arduino-basic', 'electronics-basic'] as const;
 const PYTHON = ['python-basic'] as const;
+const EXTRA = ['iot-smart', 'database-basic', 'digital-story'] as const;
 
 const keysOf = (ids: readonly string[]) => ids.flatMap((gid) => {
   const g = grades.find((x) => x.id === gid);
@@ -29,7 +31,8 @@ const primaryUnitKeys = keysOf(PRIMARY);
 const secondaryUnitKeys = keysOf(SECONDARY);
 const electiveUnitKeys = keysOf(ELECTIVE);
 const pythonUnitKeys = keysOf(PYTHON);
-const allUnitKeys = [...primaryUnitKeys, ...secondaryUnitKeys, ...electiveUnitKeys, ...pythonUnitKeys];
+const extraUnitKeys = keysOf(EXTRA);
+const allUnitKeys = [...primaryUnitKeys, ...secondaryUnitKeys, ...electiveUnitKeys, ...pythonUnitKeys, ...extraUnitKeys];
 
 /**
  * อีโมจิช่วง U+1FA70–U+1FAFF เพิ่มเข้ามาใน Unicode 12-14 ฟอนต์บน Windows รุ่นเก่า
@@ -67,6 +70,12 @@ describe('ความครอบคลุมของสไลด์ ป.1-ป
     expect(missing, `หน่วยที่ยังไม่มีสไลด์: ${missing.join(', ')}`).toEqual([]);
   });
 
+  it('วิชาเลือก IoT ฐานข้อมูล และเล่าเรื่องดิจิทัล มีสไลด์เขียนเองครบ 16 หน่วย', () => {
+    expect(extraUnitKeys.length).toBe(16);
+    const missing = extraUnitKeys.filter((key) => !richSlides[key]);
+    expect(missing, `หน่วยที่ยังไม่มีสไลด์: ${missing.join(', ')}`).toEqual([]);
+  });
+
   // ตัวนี้คือคำตอบของคำถาม "ครบทุกบทในเว็บหรือยัง" — ไม่ต้องมานับมือเอง
   // ถ้ามีคนเพิ่มหน่วยใหม่ในหลักสูตรแล้วลืมทำสไลด์ เทสต์นี้จะฟ้องทันทีพร้อมบอกว่าขาดหน่วยไหน
   it('ทุกหน่วยของทุกวิชาในเว็บต้องมีสไลด์ ไม่มีหน่วยไหนตกหล่น', () => {
@@ -76,7 +85,7 @@ describe('ความครอบคลุมของสไลด์ ป.1-ป
       missing,
       `ยังขาดสไลด์ ${missing.length} หน่วย: ${missing.join(', ')}`,
     ).toEqual([]);
-    expect(everyUnitKey.length, 'จำนวนหน่วยรวมทั้งเว็บเปลี่ยนไป').toBe(81);
+    expect(everyUnitKey.length, 'จำนวนหน่วยรวมทั้งเว็บเปลี่ยนไป').toBe(97);
   });
 
   it('สไลด์ที่เพิ่มใหม่ต้องไม่ทับ key ที่มีอยู่เดิม', () => {
@@ -135,6 +144,7 @@ describe('คุณภาพของสไลด์แต่ละหน่ว�
       ...Object.keys(secondaryRichSlides),
       ...Object.keys(electiveRichSlides),
       ...Object.keys(pythonRichSlides),
+      ...Object.keys(extraRichSlides),
       'p3_1',
     ].forEach((key) => {
       const deck = richSlides[key];

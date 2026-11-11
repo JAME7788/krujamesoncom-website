@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ใบงานที่ 2: ออกแบบตารางและคีย์ — ฐานข้อมูลเบื้องต้น</title>
+  <style>
+    :root { color: #172033; font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif; }
+    body { margin: 0; background: #f5f7fb; }
+    main { max-width: 960px; margin: 0 auto; padding: 32px 18px 56px; }
+    .sheet { background: #fff; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30,41,59,.08); }
+    .course { margin: 0 0 6px; font-size: 14px; font-weight: 700; color: #4338ca; letter-spacing: .02em; }
+    h1 { margin: 0 0 8px; font-size: 26px; line-height: 1.35; }
+    h2 { margin: 26px 0 10px; font-size: 18px; color: #4338ca; }
+    p, li { line-height: 1.7; font-size: 16px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; min-height: 42px; }
+    .key { background: #eef2ff; border-radius: 8px; padding: 6px 16px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; font-size: 15px; }
+    th { background: #eef2ff; text-align: left; }
+    td.write { min-height: 48px; height: 48px; }
+    th.sketch { width: 34%; }
+    table:has(th.sketch) td.write { height: 120px; }
+    .answer { border-bottom: 1px dotted #94a3b8; height: 34px; }
+    .draw { border: 1px dashed #94a3b8; border-radius: 8px; height: 220px; margin-top: 8px; }
+    footer { margin-top: 24px; font-size: 13px; color: #64748b; }
+    @media (max-width: 640px) { .meta { grid-template-columns: 1fr; } .sheet { padding: 18px; } }
+    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } h2 { break-after: avoid; } table { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="sheet">
+    <p class="course">วิชาเลือก ฐานข้อมูลเบื้องต้น ม.1–ม.3 • หน่วยที่ 2</p>
+    <h1>ใบงานที่ 2: ออกแบบตารางและคีย์</h1>
+    <p>เป้าหมาย: ออกแบบตารางหนังสือและตารางการยืมของห้องสมุด กำหนดชนิดข้อมูล คีย์หลัก คีย์นอก และกฎตรวจข้อมูล</p>
+    <div class="meta">
+      <div class="box">ชื่อ: ....................................</div>
+      <div class="box">ชั้น: ................ เลขที่: ........</div>
+      <div class="box">วันที่: ....../....../......</div>
+    </div>
+
+    <h2>ความรู้สำคัญ</h2>
+    <ul class="key">
+      <li>คีย์หลัก: ไม่ซ้ำ ไม่ว่าง ไม่เปลี่ยนบ่อย</li>
+      <li>คีย์นอก: เขตข้อมูลที่อ้างถึงคีย์หลักของอีกตาราง</li>
+    </ul>
+
+    <h2>ตอนที่ 1 ตารางหนังสือ (books)</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>ชื่อเขตข้อมูล</th><th>ชนิดข้อมูล</th><th>คีย์ (PK/FK/-)</th><th>กฎตรวจข้อมูล</th></tr></thead>
+      <tbody>
+        <tr><td>book_id</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>title</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>ตอนที่ 2 ตารางการยืม (loans)</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>ชื่อเขตข้อมูล</th><th>ชนิดข้อมูล</th><th>คีย์ (PK/FK/-)</th><th>กฎตรวจข้อมูล</th></tr></thead>
+      <tbody>
+        <tr><td>loan_id</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>book_id</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td>student_id</td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+        <tr><td class="write"></td><td class="write"></td><td class="write"></td><td class="write"></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>คำถามท้ายงาน</h2>
+    <ol>
+      <li>เขตข้อมูลใดในตาราง loans เป็นคีย์นอก และอ้างถึงตารางใด<div class="answer"></div><div class="answer"></div></li>
+      <li>ถ้าไม่มีคีย์หลัก จะเกิดปัญหาอะไรเมื่อหนังสือชื่อเดียวกันมี 2 เล่ม<div class="answer"></div><div class="answer"></div></li>
+      <li>กฎตรวจข้อมูลข้อใดสำคัญที่สุดในตาราง loans<div class="answer"></div><div class="answer"></div></li>
+    </ol>
+    <footer>ใบงานโดยครูเจมส์ • ข้อมูลตัวอย่างในใบงานเป็นข้อมูลสมมุติ</footer>
+  </section>
+</main>
+</body>
+</html>
