@@ -1453,7 +1453,7 @@ export function buildPrintableIsBlogPostHtml(post: IsBlogPost): string {
     p, ul { margin: 4px 0 8px; }
     .example-box, .highlight-box {
       background: #f8fafc;
-      border-left: 3px solid #0284c7;
+      border: 1px solid rgba(2, 132, 199, 0.45);
       padding: 8px 10px;
       margin: 6px 0;
       border-radius: 4px;
