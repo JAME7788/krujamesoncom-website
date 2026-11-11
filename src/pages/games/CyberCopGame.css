@@ -55,9 +55,7 @@
   font-weight: 800;
   margin: 0;
   overflow-wrap: anywhere;
-  background: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #06b6d4;
 }
 
 .cc-subtitle {

@@ -16,7 +16,7 @@
 
 .homework-review-summary > div {
   background: #f5f7fb;
-  border-left: 3px solid #315fe8;
+  border: 1px solid rgba(49, 95, 232, 0.45);
   padding: 10px;
 }
 

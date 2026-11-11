@@ -11,7 +11,7 @@
   gap: 24px;
   padding: 22px 24px;
   border: 1px solid #d9e2ef;
-  border-left: 5px solid #0f766e;
+  border: 1px solid rgba(15, 118, 110, 0.45);
   background: #f8fbfc;
   border-radius: 8px;
 }
@@ -189,7 +189,7 @@
 
 .p1plan-indicators > div {
   padding: 13px 14px;
-  border-left: 4px solid #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.45);
   background: #f8fafc;
 }
 
@@ -324,7 +324,7 @@
 .p1plan-standard {
   margin-bottom: 10px !important;
   padding: 10px 12px;
-  border-left: 4px solid #1d4ed8;
+  border: 1px solid rgba(29, 78, 216, 0.45);
   background: #eff6ff;
 }
 
@@ -363,7 +363,7 @@
   flex-wrap: wrap;
   padding: 11px 13px;
   background: #fff7ed;
-  border-left: 4px solid #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.45);
 }
 
 .p1plan-indicator-row > span {
@@ -445,7 +445,7 @@
   grid-template-columns: 58px 1fr;
   gap: 13px;
   padding: 13px;
-  border-left: 3px solid #0f766e;
+  border: 1px solid rgba(15, 118, 110, 0.45);
   background: #f8fafc;
 }
 
@@ -553,7 +553,7 @@
 
 .p1plan-reflection-live {
   border: 1px solid #0f766e;
-  border-left-width: 5px;
+  border-left-width: 1px;
   background: #f8fffd;
 }
 
@@ -592,7 +592,7 @@
 
 .p1plan-reflection-metrics span {
   padding: 8px 10px;
-  border-left: 3px solid #14b8a6;
+  border: 1px solid rgba(20, 184, 166, 0.45);
   background: #fff;
   color: #475569;
   font-size: 0.8rem;
@@ -611,7 +611,7 @@
 .p1plan-hour-table article {
   overflow: hidden;
   border: 1px solid #dbe3ee;
-  border-top: 4px solid #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.45);
   border-radius: 6px;
   background: #fff;
 }
@@ -677,7 +677,7 @@
   width: fit-content;
   margin-top: 8px;
   padding: 6px 9px;
-  border-left: 3px solid #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.45);
   background: #f1f5f9;
   color: #475569;
   font-weight: 700;
@@ -747,7 +747,7 @@
 
 .p1plan-post-kpis > div {
   padding: 10px;
-  border-left: 4px solid #0f766e;
+  border: 1px solid rgba(15, 118, 110, 0.45);
   background: #fff;
 }
 
@@ -893,7 +893,7 @@
 .p1plan-copyright {
   margin-top: 14px !important;
   padding: 12px;
-  border-left: 4px solid #ca8a04;
+  border: 1px solid rgba(202, 138, 4, 0.45);
   background: #fffbeb;
   color: #713f12;
   font-size: 0.82rem;

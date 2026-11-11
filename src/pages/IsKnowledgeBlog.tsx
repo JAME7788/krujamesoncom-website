@@ -630,7 +630,7 @@ const IsKnowledgeBlog: React.FC<IsKnowledgeBlogProps> = ({ embedded = false }) =
               <div
                 style={{
                   background: '#f8fafc',
-                  borderLeft: '4px solid #2563eb',
+                  border: '1px solid rgba(37, 99, 235, 0.45)',
                   padding: '12px 16px',
                   borderRadius: 10,
                   fontSize: '0.9rem',

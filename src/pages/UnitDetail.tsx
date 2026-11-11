@@ -2529,7 +2529,7 @@ const UnitDetail: React.FC = () => {
                               );
                             })}
                           </div>
-                          {q.explain && <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.03)', borderRadius: '12px', borderLeft: '4px solid var(--primary)' }}>💡 <strong>คำอธิบาย:</strong> {q.explain}</div>}
+                          {q.explain && <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.03)', borderRadius: '12px', border: '1px solid var(--primary)' }}>💡 <strong>คำอธิบาย:</strong> {q.explain}</div>}
                         </div>
                       ))}
                     </div>

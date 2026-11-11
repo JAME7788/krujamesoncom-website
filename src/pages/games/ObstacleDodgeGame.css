@@ -50,9 +50,7 @@
   font-size: 1.4rem;
   font-weight: 800;
   margin: 0;
-  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #06b6d4;
 }
 
 .od-subtitle {

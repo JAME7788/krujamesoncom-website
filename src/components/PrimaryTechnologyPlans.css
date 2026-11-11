@@ -11,7 +11,7 @@
   gap: 20px;
   padding: 20px 22px;
   border: 1px solid #d8e1eb;
-  border-left: 5px solid #087f5b;
+  border: 1px solid rgba(8, 127, 91, 0.45);
   border-radius: 8px;
   background: #f8fbfa;
 }
@@ -210,7 +210,7 @@
 .ptplan-title-block {
   padding: 20px 22px;
   border: 1px solid #dbe4ec;
-  border-top: 4px solid #1d4ed8;
+  border: 1px solid rgba(29, 78, 216, 0.45);
   border-radius: 7px;
   background: #fff;
 }
@@ -267,7 +267,7 @@
   align-items: center;
   gap: 14px;
   padding: 15px 17px;
-  border-left: 4px solid #087f5b;
+  border: 1px solid rgba(8, 127, 91, 0.45);
   background: #edf8f4;
 }
 
@@ -289,7 +289,7 @@
 .ptplan-assessment-map > div {
   padding: 13px 14px;
   border: 1px solid #dfe5ec;
-  border-left: 4px solid #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.45);
   background: #fff;
 }
 
@@ -529,7 +529,7 @@
   min-height: 68px;
   padding: 10px 12px;
   border: 1px solid #dbe3ec;
-  border-left: 4px solid #d97706;
+  border: 1px solid rgba(217, 119, 6, 0.45);
   background: #fff;
 }
 
@@ -614,7 +614,7 @@
   gap: 10px;
   margin-top: 20px;
   padding: 14px 16px;
-  border-left: 4px solid #087f5b;
+  border: 1px solid rgba(8, 127, 91, 0.45);
   background: #edf8f4;
 }
 
@@ -702,7 +702,7 @@
   grid-template-columns: 155px 1fr;
   margin-top: 12px;
   padding: 10px 12px;
-  border-left: 5px solid #c88a16;
+  border: 1px solid rgba(200, 138, 22, 0.45);
   background: #fff8e7;
 }
 .ptplan-child-brief strong { color: #7a4b00; }
@@ -740,7 +740,7 @@
   grid-template-columns: 68px 1fr;
   padding: 12px 14px;
   border: 1px solid #9fb3c6;
-  border-left: 5px solid #1e5b8c;
+  border: 1px solid rgba(30, 91, 140, 0.45);
   background: #edf4f8;
 }
 .ptplan-paper .ptplan-outcome > strong { color: #17476d; }

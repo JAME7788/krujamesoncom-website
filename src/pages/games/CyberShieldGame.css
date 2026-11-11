@@ -472,9 +472,9 @@
 
 .cyber-explanation-box {
   background: rgba(15, 23, 42, 0.6);
-  border-left: 4px solid #14b8a6;
+  border: 1px solid rgba(20, 184, 166, 0.45);
   padding: 0.75rem 1rem;
-  border-radius: 0 8px 8px 0;
+  border-radius: 8px;
   font-size: 0.875rem;
   color: #cbd5e1;
   margin-bottom: 1.25rem;

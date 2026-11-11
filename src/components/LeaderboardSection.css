@@ -214,6 +214,6 @@
   color: #6b7280;
   margin-top: 4px;
 }
-.leader-card.rank-1 { border-top: 4px solid #fbbf24; background: linear-gradient(135deg, #fffbeb, white); }
-.leader-card.rank-2 { border-top: 4px solid #9ca3af; }
-.leader-card.rank-3 { border-top: 4px solid #b45309; }
+.leader-card.rank-1 { border: 1px solid rgba(251, 191, 36, 0.45); background: linear-gradient(135deg, #fffbeb, white); }
+.leader-card.rank-2 { border: 1px solid rgba(156, 163, 175, 0.6); }
+.leader-card.rank-3 { border: 1px solid rgba(180, 83, 9, 0.45); }

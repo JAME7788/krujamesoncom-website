@@ -220,9 +220,7 @@ button {
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--text-main) 0%, #434343 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-main);
 }
 
 .badge-yellow {
@@ -422,18 +420,6 @@ html { scrollbar-color: #E7DFC6 transparent; accent-color: #F59E0B; caret-color:
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border-bottom: 1px solid rgba(15, 23, 42, 0.07);
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
-}
-
-.navbar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #FFD43B 0%, #F59E0B 35%, #38BDF8 70%, #6366F1 100%);
-  opacity: 0.92;
-  pointer-events: none;
 }
 
 .nav-item.active {

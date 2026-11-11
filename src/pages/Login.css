@@ -418,7 +418,7 @@
 .capacity-info {
   padding: 0.7rem 1rem;
   background: linear-gradient(135deg, #dbeafe, #FEF3C7);
-  border-left: 4px solid #B45309;
+  border: 1px solid rgba(180, 83, 9, 0.45);
   border-radius: 10px;
   font-size: 0.85rem;
   color: #1e293b;
@@ -535,14 +535,14 @@
 .capacity-warn {
   padding: 1rem 1.25rem;
   background: linear-gradient(135deg, #fef3c7, #fed7aa);
-  border-left: 4px solid #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.45);
   border-radius: 12px;
   color: #78350f;
 }
 .capacity-ok {
   padding: 1rem 1.25rem;
   background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  border-left: 4px solid #16a34a;
+  border: 1px solid rgba(22, 163, 74, 0.45);
   border-radius: 12px;
   color: #14532d;
 }

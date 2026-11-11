@@ -132,7 +132,7 @@
   border-radius: 8px;
   background: #f8fafc;
   border: 1px solid #dbeafe;
-  border-left: 6px solid #0f766e;
+  border: 1px solid rgba(15, 118, 110, 0.45);
   padding: 1rem 1.15rem;
   margin-bottom: 1rem;
 }

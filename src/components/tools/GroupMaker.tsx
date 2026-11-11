@@ -149,7 +149,7 @@ const GroupMaker: React.FC = () => {
         .gm-make:hover:not(:disabled) { background: #4f46e5; }
         .gm-make:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
         .gm-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-        .gm-group-card { background: white; border: 1px solid #f1f5f9; border-top: 4px solid #6366f1; border-radius: 12px; padding: 14px 16px; box-shadow: 0 2px 8px rgba(15,23,42,0.05); }
+        .gm-group-card { background: white; border: 1px solid #f1f5f9; border: 1px solid rgba(99, 102, 241, 0.45); border-radius: 12px; padding: 14px 16px; box-shadow: 0 2px 8px rgba(15,23,42,0.05); }
         .gm-group-head { display: flex; align-items: center; gap: 7px; font-weight: 800; font-size: 1rem; margin-bottom: 10px; }
         .gm-group-head small { color: #94a3b8; font-weight: 600; }
         .gm-group-emoji { font-size: 1.3rem; }

@@ -195,7 +195,7 @@
   padding: 0.75rem 1.25rem;
   background: #fafafa;
   border-radius: 12px;
-  border-left: 4px solid;
+  border: 1px solid;
 }
 .sum-count { font-size: 1.5rem; font-weight: 800; }
 .sum-label { font-size: 0.85rem; color: #6b7280; font-weight: 600; }
@@ -303,9 +303,7 @@
 }
 .upc-pct {
   font-size: 1.8rem; font-weight: 800;
-  background: linear-gradient(135deg, #B45309, #ec4899);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #B45309;
 }
 .upc-stats {
   display: flex; gap: 0.5rem; flex-wrap: wrap;
@@ -1024,7 +1022,7 @@
   gap: 18px;
   margin: 14px 20px 0;
   padding: 13px 15px;
-  border-left: 4px solid #B45309;
+  border: 1px solid rgba(180, 83, 9, 0.45);
   background: #faf8ff;
 }
 .gb-teacher-k-row p {
@@ -1281,15 +1279,15 @@
   gap: 8px;
   min-height: 48px;
   padding: 9px 11px;
-  border-left: 4px solid #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.45);
   background: #f8fafc;
 }
 .gb-practice-thresholds strong { font-size: 0.94rem; }
 .gb-practice-thresholds span { color: #475569; font-size: 0.78rem; font-weight: 750; }
-.gb-practice-thresholds .excellent { border-left-color: #16a34a; background: #f0fdf4; }
-.gb-practice-thresholds .moderate { border-left-color: #d97706; background: #fffbeb; }
-.gb-practice-thresholds .fair { border-left-color: #2563eb; background: #eff6ff; }
-.gb-practice-thresholds .failed { border-left-color: #dc2626; background: #fff1f2; }
+.gb-practice-thresholds .excellent { border-color: #16a34a; background: #f0fdf4; }
+.gb-practice-thresholds .moderate { border-color: #d97706; background: #fffbeb; }
+.gb-practice-thresholds .fair { border-color: #2563eb; background: #eff6ff; }
+.gb-practice-thresholds .failed { border-color: #dc2626; background: #fff1f2; }
 
 .gb-practice-heading { padding-top: 16px; }
 .gb-practice-presets {
@@ -1300,7 +1298,7 @@
   margin: 0 20px 12px;
   padding: 12px 14px;
   border: 1px solid #bfdbfe;
-  border-left: 4px solid #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.45);
   border-radius: 7px;
   background: #eff6ff;
 }
@@ -1572,7 +1570,7 @@
 .gb-help {
   padding: 1rem 1.25rem;
   background: #f0f9ff;
-  border-left: 4px solid #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.45);
   border-radius: 8px;
   font-size: 0.85rem;
 }
@@ -1588,7 +1586,7 @@
   padding: 1rem 1.25rem;
   background: #f8fafc;
   border: 1px solid #dbeafe;
-  border-left: 4px solid #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.45);
   border-radius: 12px;
 }
 .gb-manual-head {
@@ -1711,7 +1709,7 @@
 .gb-linkage {
   padding: 1rem 1.25rem;
   background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
-  border-left: 4px solid #16a34a;
+  border: 1px solid rgba(22, 163, 74, 0.45);
   border-radius: 12px;
 }
 .gb-linkage h4 { margin: 0 0 0.25rem; color: #14532d; }
@@ -1781,7 +1779,7 @@
 .gb-help-banner {
   padding: 1rem 1.25rem;
   background: linear-gradient(135deg, #fef9c3, #fef3c7);
-  border-left: 4px solid #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.45);
   border-radius: 12px;
   color: #78350f;
   font-size: 0.9rem;
@@ -1810,10 +1808,10 @@
   background: white;
   border-radius: 10px;
   min-width: 90px;
-  border-top: 3px solid #B45309;
+  border: 1px solid rgba(180, 83, 9, 0.45);
 }
-.lab-stat.ok { border-top-color: #22c55e; }
-.lab-stat.broken { border-top-color: #ef4444; }
+.lab-stat.ok { border-color: #22c55e; }
+.lab-stat.broken { border-color: #ef4444; }
 .lab-num {
   font-size: 1.8rem;
   font-weight: 800;
@@ -1924,7 +1922,7 @@
 .sm-help {
   padding: 0.75rem 1rem;
   background: #f0f9ff;
-  border-left: 3px solid #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.45);
   border-radius: 6px;
   font-size: 0.83rem;
   color: #1e40af;
@@ -2366,7 +2364,7 @@
   display: flex;
   gap: 1rem;
   background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
-  border-left: 4px solid #FAB005;
+  border: 1px solid rgba(250, 176, 5, 0.45);
   border-radius: 12px;
   padding: 1.25rem;
   color: #78350f;

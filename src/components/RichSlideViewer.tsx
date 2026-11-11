@@ -143,7 +143,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
         <div className="rs-comparison-wrap">
           <h2 className="rs-title">{slide.emoji && <span>{slide.emoji} </span>}{displayTitle}</h2>
           <div className="rs-comparison">
-            <div className="rs-compare-card" style={{ borderTopColor: slide.compareLeft.color }}>
+            <div className="rs-compare-card" style={{ borderColor: slide.compareLeft.color }}>
               <div className="rs-compare-emoji">{slide.compareLeft.emoji}</div>
               <h3 style={{ color: slide.compareLeft.color }}>{slide.compareLeft.title}</h3>
               <ul>
@@ -151,7 +151,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
               </ul>
             </div>
             <div className="rs-compare-vs">VS</div>
-            <div className="rs-compare-card" style={{ borderTopColor: slide.compareRight.color }}>
+            <div className="rs-compare-card" style={{ borderColor: slide.compareRight.color }}>
               <div className="rs-compare-emoji">{slide.compareRight.emoji}</div>
               <h3 style={{ color: slide.compareRight.color }}>{slide.compareRight.title}</h3>
               <ul>
@@ -216,7 +216,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
           className="rs-callout"
           style={{
             background: calloutStyle[slide.callout.type].bg,
-            borderLeftColor: calloutStyle[slide.callout.type].border,
+            borderColor: calloutStyle[slide.callout.type].border,
           }}
         >
           <span className="rs-callout-icon">

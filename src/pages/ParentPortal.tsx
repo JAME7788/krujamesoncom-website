@@ -199,7 +199,7 @@ const ParentPortal: React.FC = () => {
                 <div key={e.id} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '8px 12px', background: '#fafafa', borderRadius: 8,
-                  borderLeft: `3px solid ${info.color}`,
+                  border: `1px solid ${info.color}`,
                 }}>
                   <div style={{ fontSize: '1.4rem' }}>{e.emoji || info.emoji}</div>
                   <div style={{ flex: 1 }}>

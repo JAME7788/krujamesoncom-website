@@ -1439,7 +1439,7 @@ const KPI: React.FC<{ icon: React.ReactNode; color: string; label: string; value
 );
 
 const SummaryPill: React.FC<{ label: string; count: number; color: string }> = ({ label, count, color }) => (
-  <div className="sum-pill" style={{ borderLeftColor: color }}>
+  <div className="sum-pill" style={{ borderColor: color }}>
     <span className="sum-count" style={{ color }}>{count}</span>
     <span className="sum-label">{label}</span>
   </div>
