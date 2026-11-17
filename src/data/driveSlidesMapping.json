@@ -2097,199 +2097,1913 @@
       }
     ]
   },
+  "วิชาภาษาไพทอน (Python) มัธยมศึกษา ม.1-ม.3": {
+    "หน่วยที่ 1 เริ่มต้นกับ Python- แสดงผลและรับข้อมูล": [
+      {
+        "id": "18RSotY88NkkQymgYMvUEbC_1dTbM3WBj",
+        "filename": "01_สไลด์_เริ่มต้นกับ_Python_ฉบับครูเจมส์.png",
+        "url": "https://lh3.googleusercontent.com/d/18RSotY88NkkQymgYMvUEbC_1dTbM3WBj",
+        "driveViewUrl": "https://drive.google.com/file/d/18RSotY88NkkQymgYMvUEbC_1dTbM3WBj/view?usp=sharing"
+      },
+      {
+        "id": "1dVUtmAnOEQNT4UOsyCjLAGAfcGCMvGHI",
+        "filename": "02_สไลด์_ทำไมต้อง_Python_และประวัติความเป็นมา.png",
+        "url": "https://lh3.googleusercontent.com/d/1dVUtmAnOEQNT4UOsyCjLAGAfcGCMvGHI",
+        "driveViewUrl": "https://drive.google.com/file/d/1dVUtmAnOEQNT4UOsyCjLAGAfcGCMvGHI/view?usp=sharing"
+      },
+      {
+        "id": "1DDME618sO5wBShAL4RaCVe1BUTSiHfzE",
+        "filename": "03_สไลด์_การติดตั้ง_Python_และ_VS_Code.png",
+        "url": "https://lh3.googleusercontent.com/d/1DDME618sO5wBShAL4RaCVe1BUTSiHfzE",
+        "driveViewUrl": "https://drive.google.com/file/d/1DDME618sO5wBShAL4RaCVe1BUTSiHfzE/view?usp=sharing"
+      },
+      {
+        "id": "1vb0JdEr3pRNb3w91PFKXOupO9gEz5FUm",
+        "filename": "04_สไลด์_คำสั่ง_print_และ_input.png",
+        "url": "https://lh3.googleusercontent.com/d/1vb0JdEr3pRNb3w91PFKXOupO9gEz5FUm",
+        "driveViewUrl": "https://drive.google.com/file/d/1vb0JdEr3pRNb3w91PFKXOupO9gEz5FUm/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 2 ตัวแปรและชนิดข้อมูล": [
+      {
+        "id": "1A7Y3JYOIsf_HDKiP5__hkzGQ4dezHTgJ",
+        "filename": "01_สไลด์_ปก_ตัวแปรและชนิดข้อมูล.png",
+        "url": "https://lh3.googleusercontent.com/d/1A7Y3JYOIsf_HDKiP5__hkzGQ4dezHTgJ",
+        "driveViewUrl": "https://drive.google.com/file/d/1A7Y3JYOIsf_HDKiP5__hkzGQ4dezHTgJ/view?usp=sharing"
+      },
+      {
+        "id": "1RGpLsreF-I9QyM9K6D2y7T2G7F7VZUO1",
+        "filename": "02_สไลด์_กฎเหล็กการตั้งชื่อตัวแปร.png",
+        "url": "https://lh3.googleusercontent.com/d/1RGpLsreF-I9QyM9K6D2y7T2G7F7VZUO1",
+        "driveViewUrl": "https://drive.google.com/file/d/1RGpLsreF-I9QyM9K6D2y7T2G7F7VZUO1/view?usp=sharing"
+      },
+      {
+        "id": "1vd1kzqjatnDb6qKuuVBpSn6nS-JgiX-p",
+        "filename": "03_สไลด์_ชนิดข้อมูลพื้นฐาน_4_ชนิด_และ_type.png",
+        "url": "https://lh3.googleusercontent.com/d/1vd1kzqjatnDb6qKuuVBpSn6nS-JgiX-p",
+        "driveViewUrl": "https://drive.google.com/file/d/1vd1kzqjatnDb6qKuuVBpSn6nS-JgiX-p/view?usp=sharing"
+      },
+      {
+        "id": "1WZwFz_0xXF5E49zTA_NYYDLhueGFWGY-",
+        "filename": "04_สไลด์_การแปลงชนิดข้อมูล_Type_Casting.png",
+        "url": "https://lh3.googleusercontent.com/d/1WZwFz_0xXF5E49zTA_NYYDLhueGFWGY-",
+        "driveViewUrl": "https://drive.google.com/file/d/1WZwFz_0xXF5E49zTA_NYYDLhueGFWGY-/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 3 ตัวดำเนินการและโจทย์คำนวณ": [
+      {
+        "id": "1L5yGjMjO5QaxzlsOjuq6xoYGIgm3KqWM",
+        "filename": "01_สไลด์_ปก_ตัวดำเนินการและโจทย์คำนวณ.png",
+        "url": "https://lh3.googleusercontent.com/d/1L5yGjMjO5QaxzlsOjuq6xoYGIgm3KqWM",
+        "driveViewUrl": "https://drive.google.com/file/d/1L5yGjMjO5QaxzlsOjuq6xoYGIgm3KqWM/view?usp=sharing"
+      },
+      {
+        "id": "17QoFvtX3NuxWm7Qrb_dyNvmQgPT7wSC9",
+        "filename": "02_สไลด์_เครื่องหมายคำนวณ_7_ตัว_และ_PEMDAS.png",
+        "url": "https://lh3.googleusercontent.com/d/17QoFvtX3NuxWm7Qrb_dyNvmQgPT7wSC9",
+        "driveViewUrl": "https://drive.google.com/file/d/17QoFvtX3NuxWm7Qrb_dyNvmQgPT7wSC9/view?usp=sharing"
+      },
+      {
+        "id": "1hbqPCbPtxmGhP45dGzS5Ki7yi2TPmUd3",
+        "filename": "03_สไลด์_ตัวดำเนินการเปรียบเทียบและตรรกศาสตร์.png",
+        "url": "https://lh3.googleusercontent.com/d/1hbqPCbPtxmGhP45dGzS5Ki7yi2TPmUd3",
+        "driveViewUrl": "https://drive.google.com/file/d/1hbqPCbPtxmGhP45dGzS5Ki7yi2TPmUd3/view?usp=sharing"
+      },
+      {
+        "id": "1D8sF18IiMx5jyZrIzi0Ccfw8S7aFSssX",
+        "filename": "04_สไลด์_โจทย์คำนวณในชีวิตจริง_เงินทอนและอุณหภูมิ.png",
+        "url": "https://lh3.googleusercontent.com/d/1D8sF18IiMx5jyZrIzi0Ccfw8S7aFSssX",
+        "driveViewUrl": "https://drive.google.com/file/d/1D8sF18IiMx5jyZrIzi0Ccfw8S7aFSssX/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 4 วนซ้ำด้วย for และทางเลือกด้วย if": [
+      {
+        "id": "1w2cvC6TcO2UEIfpMz6KYSKwKS258APDw",
+        "filename": "01_สไลด์_ปก_การตัดสินใจและวนซ้ำ.png",
+        "url": "https://lh3.googleusercontent.com/d/1w2cvC6TcO2UEIfpMz6KYSKwKS258APDw",
+        "driveViewUrl": "https://drive.google.com/file/d/1w2cvC6TcO2UEIfpMz6KYSKwKS258APDw/view?usp=sharing"
+      },
+      {
+        "id": "1TAjV5tf3IsTFbSlSahe4BeUzdOdgNzkF",
+        "filename": "02_สไลด์_คำสั่ง_if_elif_else_และ_match_case.png",
+        "url": "https://lh3.googleusercontent.com/d/1TAjV5tf3IsTFbSlSahe4BeUzdOdgNzkF",
+        "driveViewUrl": "https://drive.google.com/file/d/1TAjV5tf3IsTFbSlSahe4BeUzdOdgNzkF/view?usp=sharing"
+      },
+      {
+        "id": "1NFa4g9mOLFOWqkecBvc-TJKVBiNMuMlD",
+        "filename": "03_สไลด์_การวนซ้ำด้วย_for_และ_range.png",
+        "url": "https://lh3.googleusercontent.com/d/1NFa4g9mOLFOWqkecBvc-TJKVBiNMuMlD",
+        "driveViewUrl": "https://drive.google.com/file/d/1NFa4g9mOLFOWqkecBvc-TJKVBiNMuMlD/view?usp=sharing"
+      },
+      {
+        "id": "1gVIx6G4Wm7icPxN4EU6Pt2UEoiKTLRbR",
+        "filename": "04_สไลด์_คำสั่งควบคุมลูป_break_continue_enumerate.png",
+        "url": "https://lh3.googleusercontent.com/d/1gVIx6G4Wm7icPxN4EU6Pt2UEoiKTLRbR",
+        "driveViewUrl": "https://drive.google.com/file/d/1gVIx6G4Wm7icPxN4EU6Pt2UEoiKTLRbR/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 5 เต่าไพทอน- วาดรูปด้วยโค้ด": [
+      {
+        "id": "15LqnJAlsMjcdAarXEezgjdetYsoJJGh4",
+        "filename": "01_สไลด์_ปก_เต่าไพทอนและโครงสร้างข้อมูล.png",
+        "url": "https://lh3.googleusercontent.com/d/15LqnJAlsMjcdAarXEezgjdetYsoJJGh4",
+        "driveViewUrl": "https://drive.google.com/file/d/15LqnJAlsMjcdAarXEezgjdetYsoJJGh4/view?usp=sharing"
+      },
+      {
+        "id": "1xG38iXNOtVgsq-W6HWl3tZ6_fWDFlpjT",
+        "filename": "02_สไลด์_การจัดการข้อความ_String_Slicing_และ_fstring.png",
+        "url": "https://lh3.googleusercontent.com/d/1xG38iXNOtVgsq-W6HWl3tZ6_fWDFlpjT",
+        "driveViewUrl": "https://drive.google.com/file/d/1xG38iXNOtVgsq-W6HWl3tZ6_fWDFlpjT/view?usp=sharing"
+      },
+      {
+        "id": "1iVKzE36jSu8PeUGqwEodlG7Y60S91IrX",
+        "filename": "03_สไลด์_โครงสร้างข้อมูล_List_และเมธอดสำคัญ.png",
+        "url": "https://lh3.googleusercontent.com/d/1iVKzE36jSu8PeUGqwEodlG7Y60S91IrX",
+        "driveViewUrl": "https://drive.google.com/file/d/1iVKzE36jSu8PeUGqwEodlG7Y60S91IrX/view?usp=sharing"
+      },
+      {
+        "id": "1bnQv_oIeoFJqQlFJieHG8Me1NANm5o1v",
+        "filename": "04_สไลด์_Dictionary_Tuple_และ_Set.png",
+        "url": "https://lh3.googleusercontent.com/d/1bnQv_oIeoFJqQlFJieHG8Me1NANm5o1v",
+        "driveViewUrl": "https://drive.google.com/file/d/1bnQv_oIeoFJqQlFJieHG8Me1NANm5o1v/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 6 เงื่อนไขซับซ้อนและการวนซ้ำด้วย while": [
+      {
+        "id": "1OXJY-jylVZQ7QFC8vIP6oSMkVe0fx58a",
+        "filename": "01_สไลด์_ปก_ลูป_while_และการเขียนอ่านไฟล์.png",
+        "url": "https://lh3.googleusercontent.com/d/1OXJY-jylVZQ7QFC8vIP6oSMkVe0fx58a",
+        "driveViewUrl": "https://drive.google.com/file/d/1OXJY-jylVZQ7QFC8vIP6oSMkVe0fx58a/view?usp=sharing"
+      },
+      {
+        "id": "1aAUQirxyiu3SgTwt7LQOHJfAYAObHfKD",
+        "filename": "02_สไลด์_การทำงานของ_while_loop_และระวัง_Infinite_Loop.png",
+        "url": "https://lh3.googleusercontent.com/d/1aAUQirxyiu3SgTwt7LQOHJfAYAObHfKD",
+        "driveViewUrl": "https://drive.google.com/file/d/1aAUQirxyiu3SgTwt7LQOHJfAYAObHfKD/view?usp=sharing"
+      },
+      {
+        "id": "1iet79XJ1AoeYRZctYCyi-6z1Kn-WS-eq",
+        "filename": "03_สไลด์_การเขียนและอ่านไฟล์_Text_CSV_JSON.png",
+        "url": "https://lh3.googleusercontent.com/d/1iet79XJ1AoeYRZctYCyi-6z1Kn-WS-eq",
+        "driveViewUrl": "https://drive.google.com/file/d/1iet79XJ1AoeYRZctYCyi-6z1Kn-WS-eq/view?usp=sharing"
+      },
+      {
+        "id": "1MUKoqJ1IEQ56750Wvc9FZJqaBMP5dlsa",
+        "filename": "04_สไลด์_การดักจับข้อผิดพลาด_try_except_finally.png",
+        "url": "https://lh3.googleusercontent.com/d/1MUKoqJ1IEQ56750Wvc9FZJqaBMP5dlsa",
+        "driveViewUrl": "https://drive.google.com/file/d/1MUKoqJ1IEQ56750Wvc9FZJqaBMP5dlsa/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 7 ฟังก์ชัน ลิสต์ และโมดูล": [
+      {
+        "id": "1LLSM0G-5iFkTUz_18wC5byGLwxFMQVvs",
+        "filename": "01_สไลด์_ปก_การสร้างฟังก์ชันและโมดูล.png",
+        "url": "https://lh3.googleusercontent.com/d/1LLSM0G-5iFkTUz_18wC5byGLwxFMQVvs",
+        "driveViewUrl": "https://drive.google.com/file/d/1LLSM0G-5iFkTUz_18wC5byGLwxFMQVvs/view?usp=sharing"
+      },
+      {
+        "id": "1lqvONO5BiLH4FPhzI6Ibj8mhLpnybRTg",
+        "filename": "02_สไลด์_การนิยามฟังก์ชัน_def_พารามิเตอร์_และ_return.png",
+        "url": "https://lh3.googleusercontent.com/d/1lqvONO5BiLH4FPhzI6Ibj8mhLpnybRTg",
+        "driveViewUrl": "https://drive.google.com/file/d/1lqvONO5BiLH4FPhzI6Ibj8mhLpnybRTg/view?usp=sharing"
+      },
+      {
+        "id": "1n417DQUtZEOZ-LAvb_b5W8jsnIQ8-chG",
+        "filename": "03_สไลด์_โมดูลมาตรฐาน_random_math_time_webbrowser.png",
+        "url": "https://lh3.googleusercontent.com/d/1n417DQUtZEOZ-LAvb_b5W8jsnIQ8-chG",
+        "driveViewUrl": "https://drive.google.com/file/d/1n417DQUtZEOZ-LAvb_b5W8jsnIQ8-chG/view?usp=sharing"
+      },
+      {
+        "id": "1mlicLJB7t8L_QyxgYwb6J2bGo0Zf0X1e",
+        "filename": "04_สไลด์_การสร้างโมดูลเองและการทำ_Unit_Test.png",
+        "url": "https://lh3.googleusercontent.com/d/1mlicLJB7t8L_QyxgYwb6J2bGo0Zf0X1e",
+        "driveViewUrl": "https://drive.google.com/file/d/1mlicLJB7t8L_QyxgYwb6J2bGo0Zf0X1e/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 8 วิเคราะห์ข้อมูลด้วย pandas และสร้าง GUI ด้วย tkinter (ม.3)": [
+      {
+        "id": "1ebRk86z-nrBugmy3tVrdFMTWyAng5bXm",
+        "filename": "01_สไลด์_ปก_Data_Science_และ_OOP.png",
+        "url": "https://lh3.googleusercontent.com/d/1ebRk86z-nrBugmy3tVrdFMTWyAng5bXm",
+        "driveViewUrl": "https://drive.google.com/file/d/1ebRk86z-nrBugmy3tVrdFMTWyAng5bXm/view?usp=sharing"
+      },
+      {
+        "id": "1N3E8oaA292V38Gl4iuTygtUawXzQssEz",
+        "filename": "02_สไลด์_เครื่องมือ_NumPy_Pandas_และ_Matplotlib.png",
+        "url": "https://lh3.googleusercontent.com/d/1N3E8oaA292V38Gl4iuTygtUawXzQssEz",
+        "driveViewUrl": "https://drive.google.com/file/d/1N3E8oaA292V38Gl4iuTygtUawXzQssEz/view?usp=sharing"
+      },
+      {
+        "id": "1mjJo3GUChub8-a6FmjPa-nvobZY2M5xp",
+        "filename": "03_สไลด์_คลาสและออบเจ็กต์_พิมพ์เขียวสู่ชิ้นงานจริง.png",
+        "url": "https://lh3.googleusercontent.com/d/1mjJo3GUChub8-a6FmjPa-nvobZY2M5xp",
+        "driveViewUrl": "https://drive.google.com/file/d/1mjJo3GUChub8-a6FmjPa-nvobZY2M5xp/view?usp=sharing"
+      },
+      {
+        "id": "1V2poXVP0TwYauqmQKOTTUB5bO4OSL23w",
+        "filename": "04_สไลด์_4_เสาหลักของ_OOP_สำหรับเด็ก.png",
+        "url": "https://lh3.googleusercontent.com/d/1V2poXVP0TwYauqmQKOTTUB5bO4OSL23w",
+        "driveViewUrl": "https://drive.google.com/file/d/1V2poXVP0TwYauqmQKOTTUB5bO4OSL23w/view?usp=sharing"
+      }
+    ]
+  },
   "วิชาปัญญาประดิษฐ์ (AI) ประถมศึกษา ป.1-ป.3": {
     "หน่วยที่ 1 รู้จัก AI คืออะไร": [
       {
-        "id": "1bbUeax96RunLcFtCPGw4I5sR7B3HA2QT",
-        "filename": "01_สไลด์_รจก_AI_เพอนใหมของเรา.png",
-        "url": "https://lh3.googleusercontent.com/d/1bbUeax96RunLcFtCPGw4I5sR7B3HA2QT",
-        "driveViewUrl": "https://drive.google.com/file/d/1bbUeax96RunLcFtCPGw4I5sR7B3HA2QT/view?usp=sharing"
+        "id": "1acZiyuM2MolJxpNsm0b_KfgZO2ltqwM1",
+        "filename": "01_สไลด์_ปก_รู้จัก_AI_เพื่อนใหม่ของเรา.png",
+        "url": "https://lh3.googleusercontent.com/d/1acZiyuM2MolJxpNsm0b_KfgZO2ltqwM1",
+        "driveViewUrl": "https://drive.google.com/file/d/1acZiyuM2MolJxpNsm0b_KfgZO2ltqwM1/view?usp=sharing"
       },
       {
-        "id": "1y1iwxU4b1SygbFRUTe7zGDaVYX4N_pfb",
-        "filename": "02_สไลด์_AI_คออะไร.png",
-        "url": "https://lh3.googleusercontent.com/d/1y1iwxU4b1SygbFRUTe7zGDaVYX4N_pfb",
-        "driveViewUrl": "https://drive.google.com/file/d/1y1iwxU4b1SygbFRUTe7zGDaVYX4N_pfb/view?usp=sharing"
+        "id": "15JyXt2Bmo-eGdJWzunNuclzg8cvZpjE8",
+        "filename": "02_สไลด์_AI_คืออะไร_สมองกลอัจฉริยะ.png",
+        "url": "https://lh3.googleusercontent.com/d/15JyXt2Bmo-eGdJWzunNuclzg8cvZpjE8",
+        "driveViewUrl": "https://drive.google.com/file/d/15JyXt2Bmo-eGdJWzunNuclzg8cvZpjE8/view?usp=sharing"
       },
       {
-        "id": "1OP8fWBpWYy0z5_NVqAdxryagNPnwRi0z",
-        "filename": "03_สไลด์_AI_อยรอบตวเรา.png",
-        "url": "https://lh3.googleusercontent.com/d/1OP8fWBpWYy0z5_NVqAdxryagNPnwRi0z",
-        "driveViewUrl": "https://drive.google.com/file/d/1OP8fWBpWYy0z5_NVqAdxryagNPnwRi0z/view?usp=sharing"
+        "id": "1ldRT0oeWck4sajKqpFokXFBytuGPKGwA",
+        "filename": "03_สไลด์_AI_อยู่รอบตัวเราในชีวิตประจำวัน.png",
+        "url": "https://lh3.googleusercontent.com/d/1ldRT0oeWck4sajKqpFokXFBytuGPKGwA",
+        "driveViewUrl": "https://drive.google.com/file/d/1ldRT0oeWck4sajKqpFokXFBytuGPKGwA/view?usp=sharing"
       },
       {
-        "id": "1TIuOfV5AgyNLSDzUW7L_jeFXkLxncdWJ",
-        "filename": "04_สไลด์_AI_vs_มนษย__ใครเกงกวากน.png",
-        "url": "https://lh3.googleusercontent.com/d/1TIuOfV5AgyNLSDzUW7L_jeFXkLxncdWJ",
-        "driveViewUrl": "https://drive.google.com/file/d/1TIuOfV5AgyNLSDzUW7L_jeFXkLxncdWJ/view?usp=sharing"
-      },
-      {
-        "id": "1DjgCKghw9PbNawZmBAcXFjxwciKtrJWt",
-        "filename": "05_สไลด์_สนกกบ_AI_ไปดวยกน.png",
-        "url": "https://lh3.googleusercontent.com/d/1DjgCKghw9PbNawZmBAcXFjxwciKtrJWt",
-        "driveViewUrl": "https://drive.google.com/file/d/1DjgCKghw9PbNawZmBAcXFjxwciKtrJWt/view?usp=sharing"
-      }
-    ],
-    "หน่วยที่ 3 AI กับเรา — ใช้ให้เป็น ใช้ให้ดี": [
-      {
-        "id": "1TCuYTTIwm2cpohEXe_eHfDExK7uckhhx",
-        "filename": "01_สไลด์_AI_กบเรา__ใชใหเปน_ใชใหด.png",
-        "url": "https://lh3.googleusercontent.com/d/1TCuYTTIwm2cpohEXe_eHfDExK7uckhhx",
-        "driveViewUrl": "https://drive.google.com/file/d/1TCuYTTIwm2cpohEXe_eHfDExK7uckhhx/view?usp=sharing"
-      },
-      {
-        "id": "13nJsaX4bkNR_vZy37GAzbBxPZbkiafyg",
-        "filename": "02_สไลด์_AI_ชวยเหลอเราในชวตประจำวน.png",
-        "url": "https://lh3.googleusercontent.com/d/13nJsaX4bkNR_vZy37GAzbBxPZbkiafyg",
-        "driveViewUrl": "https://drive.google.com/file/d/13nJsaX4bkNR_vZy37GAzbBxPZbkiafyg/view?usp=sharing"
-      },
-      {
-        "id": "19SQglttvZACnE2iYpwcUC3VeOTEuwgu_",
-        "filename": "03_สไลด์_ขอควรระวงในการใช_AI.png",
-        "url": "https://lh3.googleusercontent.com/d/19SQglttvZACnE2iYpwcUC3VeOTEuwgu_",
-        "driveViewUrl": "https://drive.google.com/file/d/19SQglttvZACnE2iYpwcUC3VeOTEuwgu_/view?usp=sharing"
-      },
-      {
-        "id": "1CxvQFI-fZnNotaY2IX59c4o4io0qBVI5",
-        "filename": "04_สไลด์_มารยาทการพดคยกบ_AI.png",
-        "url": "https://lh3.googleusercontent.com/d/1CxvQFI-fZnNotaY2IX59c4o4io0qBVI5",
-        "driveViewUrl": "https://drive.google.com/file/d/1CxvQFI-fZnNotaY2IX59c4o4io0qBVI5/view?usp=sharing"
-      },
-      {
-        "id": "1l9-A5Xy6ZjPR2lGx9Q43ecLNzW8x36Gi",
-        "filename": "05_สไลด์_อนาคตของเรากบ_AI.png",
-        "url": "https://lh3.googleusercontent.com/d/1l9-A5Xy6ZjPR2lGx9Q43ecLNzW8x36Gi",
-        "driveViewUrl": "https://drive.google.com/file/d/1l9-A5Xy6ZjPR2lGx9Q43ecLNzW8x36Gi/view?usp=sharing"
+        "id": "1VKJFm6m8xSiS1D0B4ZOAS4g-c6in0H-M",
+        "filename": "04_สไลด์_มนุษย์กับ_AI_ร่วมมือกันอย่างมีความสุข.png",
+        "url": "https://lh3.googleusercontent.com/d/1VKJFm6m8xSiS1D0B4ZOAS4g-c6in0H-M",
+        "driveViewUrl": "https://drive.google.com/file/d/1VKJFm6m8xSiS1D0B4ZOAS4g-c6in0H-M/view?usp=sharing"
       }
     ],
     "หน่วยที่ 2 AI เรียนรู้ได้อย่างไร": [
       {
-        "id": "1fYT8Qx5rKsUc_LBj9IzpF6NR1ZR3_atB",
-        "filename": "01_สไลด์_AI_เรยนรไดอยางไร.png",
-        "url": "https://lh3.googleusercontent.com/d/1fYT8Qx5rKsUc_LBj9IzpF6NR1ZR3_atB",
-        "driveViewUrl": "https://drive.google.com/file/d/1fYT8Qx5rKsUc_LBj9IzpF6NR1ZR3_atB/view?usp=sharing"
+        "id": "1nxidVvF7mbTiEAtW6uVixko_qM7brllV",
+        "filename": "01_สไลด์_ปก_AI_เรียนรู้ได้อย่างไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1nxidVvF7mbTiEAtW6uVixko_qM7brllV",
+        "driveViewUrl": "https://drive.google.com/file/d/1nxidVvF7mbTiEAtW6uVixko_qM7brllV/view?usp=sharing"
       },
       {
-        "id": "1l0OpVBpRbnEJios-tqSSAYMVV9UIRrKY",
-        "filename": "02_สไลด์_AI_เรยนรจากอะไร.png",
-        "url": "https://lh3.googleusercontent.com/d/1l0OpVBpRbnEJios-tqSSAYMVV9UIRrKY",
-        "driveViewUrl": "https://drive.google.com/file/d/1l0OpVBpRbnEJios-tqSSAYMVV9UIRrKY/view?usp=sharing"
+        "id": "1r3JzcocpnulKrfoUhCng-D8zAODm3X8s",
+        "filename": "02_สไลด์_ข้อมูลคืออาหารของ_AI.png",
+        "url": "https://lh3.googleusercontent.com/d/1r3JzcocpnulKrfoUhCng-D8zAODm3X8s",
+        "driveViewUrl": "https://drive.google.com/file/d/1r3JzcocpnulKrfoUhCng-D8zAODm3X8s/view?usp=sharing"
       },
       {
-        "id": "1LzSj5c-byGt0-Xv772sCNwrdIicvJHQt",
-        "filename": "03_สไลด์_ขนตอนการสอน_AI.png",
-        "url": "https://lh3.googleusercontent.com/d/1LzSj5c-byGt0-Xv772sCNwrdIicvJHQt",
-        "driveViewUrl": "https://drive.google.com/file/d/1LzSj5c-byGt0-Xv772sCNwrdIicvJHQt/view?usp=sharing"
+        "id": "1ju6CwPbLMCc1Y3uw--WWMa32MJllwCfN",
+        "filename": "03_สไลด์_ขั้นตอนการสอน_AI_ฝึกฝนซ้ำๆ.png",
+        "url": "https://lh3.googleusercontent.com/d/1ju6CwPbLMCc1Y3uw--WWMa32MJllwCfN",
+        "driveViewUrl": "https://drive.google.com/file/d/1ju6CwPbLMCc1Y3uw--WWMa32MJllwCfN/view?usp=sharing"
       },
       {
-        "id": "1bTlGgf3Xfl-NXxZ6A0AX1_74qhTwhYO-",
-        "filename": "04_สไลด์_ลองสอน_AI_ดวยตวเองกน.png",
-        "url": "https://lh3.googleusercontent.com/d/1bTlGgf3Xfl-NXxZ6A0AX1_74qhTwhYO-",
-        "driveViewUrl": "https://drive.google.com/file/d/1bTlGgf3Xfl-NXxZ6A0AX1_74qhTwhYO-/view?usp=sharing"
+        "id": "1G6sMsi3WnxA0WvaJQ99xSzOkNMt10yZq",
+        "filename": "04_สไลด์_เกมทดลอง_สอน_AI_ทายภาพ.png",
+        "url": "https://lh3.googleusercontent.com/d/1G6sMsi3WnxA0WvaJQ99xSzOkNMt10yZq",
+        "driveViewUrl": "https://drive.google.com/file/d/1G6sMsi3WnxA0WvaJQ99xSzOkNMt10yZq/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 3 AI กับเรา — ใช้ให้เป็น ใช้ให้ดี": [
+      {
+        "id": "1H8NNngSnQ0kEqiyVUXAypDYlPGduNgLb",
+        "filename": "01_สไลด์_ปก_AI_กับเรา_ใช้ให้เป็น_ใช้ให้ดี.png",
+        "url": "https://lh3.googleusercontent.com/d/1H8NNngSnQ0kEqiyVUXAypDYlPGduNgLb",
+        "driveViewUrl": "https://drive.google.com/file/d/1H8NNngSnQ0kEqiyVUXAypDYlPGduNgLb/view?usp=sharing"
       },
       {
-        "id": "1MY2WQMAl-jWyA1JbVfbTY6GDZd3Sv_wz",
-        "filename": "05_สไลด์_ทำไมตองใชตวอยางเยอะ.png",
-        "url": "https://lh3.googleusercontent.com/d/1MY2WQMAl-jWyA1JbVfbTY6GDZd3Sv_wz",
-        "driveViewUrl": "https://drive.google.com/file/d/1MY2WQMAl-jWyA1JbVfbTY6GDZd3Sv_wz/view?usp=sharing"
+        "id": "1kgEG4PQonZRZYNx3Suoi-E__tl3yQkAc",
+        "filename": "02_สไลด์_ประโยชน์ของ_AI_ผู้ช่วยตัวน้อย.png",
+        "url": "https://lh3.googleusercontent.com/d/1kgEG4PQonZRZYNx3Suoi-E__tl3yQkAc",
+        "driveViewUrl": "https://drive.google.com/file/d/1kgEG4PQonZRZYNx3Suoi-E__tl3yQkAc/view?usp=sharing"
+      },
+      {
+        "id": "1_rfHtcb5USfPDH4VFaWyErn329lUfYJU",
+        "filename": "03_สไลด์_ข้อควรระวัง_และความปลอดภัย.png",
+        "url": "https://lh3.googleusercontent.com/d/1_rfHtcb5USfPDH4VFaWyErn329lUfYJU",
+        "driveViewUrl": "https://drive.google.com/file/d/1_rfHtcb5USfPDH4VFaWyErn329lUfYJU/view?usp=sharing"
+      },
+      {
+        "id": "1dyMEwVmL0Geh-FjeyYv8p1TKuYjm_BLM",
+        "filename": "04_สไลด์_กติกาการใช้_AI_อย่างสร้างสรรค์.png",
+        "url": "https://lh3.googleusercontent.com/d/1dyMEwVmL0Geh-FjeyYv8p1TKuYjm_BLM",
+        "driveViewUrl": "https://drive.google.com/file/d/1dyMEwVmL0Geh-FjeyYv8p1TKuYjm_BLM/view?usp=sharing"
       }
     ]
   },
   "วิชาปัญญาประดิษฐ์ (AI) ประถมศึกษา ป.4-ป.6": {
-    "หน่วยที่ 4 จริยธรรม AI และอคติ (Bias)": [
+    "หน่วยที่ 1 AI กับ Machine Learning เบื้องต้น": [
       {
-        "id": "1a0sfzF_Xn_KNfGqqoGgaNLmAne2LIVAQ",
-        "filename": "01_สไลด์_จรยธรรม_AI_และอคต_Bias.png",
-        "url": "https://lh3.googleusercontent.com/d/1a0sfzF_Xn_KNfGqqoGgaNLmAne2LIVAQ",
-        "driveViewUrl": "https://drive.google.com/file/d/1a0sfzF_Xn_KNfGqqoGgaNLmAne2LIVAQ/view?usp=sharing"
+        "id": "1Zv3jmy9aUpVsQ6iGd6z01hvaEf2ZNdnw",
+        "filename": "01_สไลด์_ปก_Machine_Learning_เบื้องต้น.png",
+        "url": "https://lh3.googleusercontent.com/d/1Zv3jmy9aUpVsQ6iGd6z01hvaEf2ZNdnw",
+        "driveViewUrl": "https://drive.google.com/file/d/1Zv3jmy9aUpVsQ6iGd6z01hvaEf2ZNdnw/view?usp=sharing"
       },
       {
-        "id": "1GmZza-GnxY4QJaz5Ry8_KrCVmat3uyVX",
-        "filename": "02_สไลด์_AI_Bias__อคตของ_AI.png",
-        "url": "https://lh3.googleusercontent.com/d/1GmZza-GnxY4QJaz5Ry8_KrCVmat3uyVX",
-        "driveViewUrl": "https://drive.google.com/file/d/1GmZza-GnxY4QJaz5Ry8_KrCVmat3uyVX/view?usp=sharing"
+        "id": "1coHKgTkj48IS13F3Itrqj2Kphzh2tg58",
+        "filename": "02_สไลด์_ความต่างของโปรแกรมทั่วไป_กับ_Machine_Learning.png",
+        "url": "https://lh3.googleusercontent.com/d/1coHKgTkj48IS13F3Itrqj2Kphzh2tg58",
+        "driveViewUrl": "https://drive.google.com/file/d/1coHKgTkj48IS13F3Itrqj2Kphzh2tg58/view?usp=sharing"
       },
       {
-        "id": "1jLrhJUTckVhmcOdh046kSQoOI7fG4Ntk",
-        "filename": "03_สไลด์_Deepfake__ภาพวดโอปลอม.png",
-        "url": "https://lh3.googleusercontent.com/d/1jLrhJUTckVhmcOdh046kSQoOI7fG4Ntk",
-        "driveViewUrl": "https://drive.google.com/file/d/1jLrhJUTckVhmcOdh046kSQoOI7fG4Ntk/view?usp=sharing"
+        "id": "1VP5dsKnJKw7YlMlwfYuF5bi8vm2RsiXr",
+        "filename": "03_สไลด์_3_ประเภทของ_Machine_Learning.png",
+        "url": "https://lh3.googleusercontent.com/d/1VP5dsKnJKw7YlMlwfYuF5bi8vm2RsiXr",
+        "driveViewUrl": "https://drive.google.com/file/d/1VP5dsKnJKw7YlMlwfYuF5bi8vm2RsiXr/view?usp=sharing"
       },
       {
-        "id": "1BqnnLmiZQ2BdwQpufO0hYvwTibvC6W1k",
-        "filename": "04_สไลด์_จรยธรรมในการใช_AI.png",
-        "url": "https://lh3.googleusercontent.com/d/1BqnnLmiZQ2BdwQpufO0hYvwTibvC6W1k",
-        "driveViewUrl": "https://drive.google.com/file/d/1BqnnLmiZQ2BdwQpufO0hYvwTibvC6W1k/view?usp=sharing"
+        "id": "1g785w0gLz-4_0pb8WZtjKVCPpJFKg2Nt",
+        "filename": "04_สไลด์_วงจรการพัฒนาโมเดล_AI.png",
+        "url": "https://lh3.googleusercontent.com/d/1g785w0gLz-4_0pb8WZtjKVCPpJFKg2Nt",
+        "driveViewUrl": "https://drive.google.com/file/d/1g785w0gLz-4_0pb8WZtjKVCPpJFKg2Nt/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 2 สร้างโมเดล AI ของตัวเอง": [
+      {
+        "id": "1Lvr3cxNh1rHB12NJH3sE_dQZqfUA9TfE",
+        "filename": "01_สไลด์_ปก_สร้างโมเดล_AI_ด้วยตัวเอง.png",
+        "url": "https://lh3.googleusercontent.com/d/1Lvr3cxNh1rHB12NJH3sE_dQZqfUA9TfE",
+        "driveViewUrl": "https://drive.google.com/file/d/1Lvr3cxNh1rHB12NJH3sE_dQZqfUA9TfE/view?usp=sharing"
       },
       {
-        "id": "1D8YaDN4gK3HDv-8eqtrF9UJ1bAeSF9pa",
-        "filename": "05_สไลด์_เราคอคนกำหนดอนาคตของ_AI.png",
-        "url": "https://lh3.googleusercontent.com/d/1D8YaDN4gK3HDv-8eqtrF9UJ1bAeSF9pa",
-        "driveViewUrl": "https://drive.google.com/file/d/1D8YaDN4gK3HDv-8eqtrF9UJ1bAeSF9pa/view?usp=sharing"
+        "id": "1yLRB39RYIIkT6GsI6sOZwfkvsKpgko41",
+        "filename": "02_สไลด์_การเตรียมชุดข้อมูล_Dataset_ที่ดี.png",
+        "url": "https://lh3.googleusercontent.com/d/1yLRB39RYIIkT6GsI6sOZwfkvsKpgko41",
+        "driveViewUrl": "https://drive.google.com/file/d/1yLRB39RYIIkT6GsI6sOZwfkvsKpgko41/view?usp=sharing"
+      },
+      {
+        "id": "1PKgjePsKi-PICTv6Pmn1YxnCOTHq1q7i",
+        "filename": "03_สไลด์_กระบวนการ_Train_และประเมินผล_Accuracy.png",
+        "url": "https://lh3.googleusercontent.com/d/1PKgjePsKi-PICTv6Pmn1YxnCOTHq1q7i",
+        "driveViewUrl": "https://drive.google.com/file/d/1PKgjePsKi-PICTv6Pmn1YxnCOTHq1q7i/view?usp=sharing"
+      },
+      {
+        "id": "1C8-WXninrcQ-OaaBazFXP9U83DaoSLdD",
+        "filename": "04_สไลด์_นำโมเดลไปต่อยอดโครงงาน.png",
+        "url": "https://lh3.googleusercontent.com/d/1C8-WXninrcQ-OaaBazFXP9U83DaoSLdD",
+        "driveViewUrl": "https://drive.google.com/file/d/1C8-WXninrcQ-OaaBazFXP9U83DaoSLdD/view?usp=sharing"
       }
     ],
     "หน่วยที่ 3 Generative AI — รู้ทันเครื่องมือสร้างสรรค์": [
       {
-        "id": "1dRaVaBRo3uFwks5SjHpHYKpogVafZWXw",
-        "filename": "02_สไลด์_Generative_AI_คออะไร.png",
-        "url": "https://lh3.googleusercontent.com/d/1dRaVaBRo3uFwks5SjHpHYKpogVafZWXw",
-        "driveViewUrl": "https://drive.google.com/file/d/1dRaVaBRo3uFwks5SjHpHYKpogVafZWXw/view?usp=sharing"
+        "id": "1MmVPUUywQXjKOcluOGfqJcHinFsTLYDt",
+        "filename": "01_สไลด์_ปก_Generative_AI_เครื่องมือสร้างสรรค์.png",
+        "url": "https://lh3.googleusercontent.com/d/1MmVPUUywQXjKOcluOGfqJcHinFsTLYDt",
+        "driveViewUrl": "https://drive.google.com/file/d/1MmVPUUywQXjKOcluOGfqJcHinFsTLYDt/view?usp=sharing"
       },
       {
-        "id": "1S8WxuT1BBv5Bw1btYo7dJO1HwRxY9nLb",
-        "filename": "03_สไลด์_ใช_ChatGPTGemini_อยางฉลาด.png",
-        "url": "https://lh3.googleusercontent.com/d/1S8WxuT1BBv5Bw1btYo7dJO1HwRxY9nLb",
-        "driveViewUrl": "https://drive.google.com/file/d/1S8WxuT1BBv5Bw1btYo7dJO1HwRxY9nLb/view?usp=sharing"
+        "id": "1xNPnF3wlnNUE8dzopXA0Y1k6SQDQhFfh",
+        "filename": "02_สไลด์_การทำงานของ_LLM_และ_Diffusion_Model.png",
+        "url": "https://lh3.googleusercontent.com/d/1xNPnF3wlnNUE8dzopXA0Y1k6SQDQhFfh",
+        "driveViewUrl": "https://drive.google.com/file/d/1xNPnF3wlnNUE8dzopXA0Y1k6SQDQhFfh/view?usp=sharing"
       },
       {
-        "id": "1GsEWvH72sK-XMjbZwRW0DiT4E7vSqCu_",
-        "filename": "04_สไลด์_AI_ผดได_Hallucination.png",
-        "url": "https://lh3.googleusercontent.com/d/1GsEWvH72sK-XMjbZwRW0DiT4E7vSqCu_",
-        "driveViewUrl": "https://drive.google.com/file/d/1GsEWvH72sK-XMjbZwRW0DiT4E7vSqCu_/view?usp=sharing"
+        "id": "1vIDIa98isARXQLrJKS0kCqUswJYBhm33",
+        "filename": "03_สไลด์_เครื่องมือ_GenAI_ยุคใหม่_ChatGPT_DALL-E.png",
+        "url": "https://lh3.googleusercontent.com/d/1vIDIa98isARXQLrJKS0kCqUswJYBhm33",
+        "driveViewUrl": "https://drive.google.com/file/d/1vIDIa98isARXQLrJKS0kCqUswJYBhm33/view?usp=sharing"
+      },
+      {
+        "id": "1HjVhbdBvh-sQR1GSnAA-3usSE9REBe7F",
+        "filename": "04_สไลด์_คิดก่อนเชื่อ_AI_Hallucination_และการตรวจสอบ.png",
+        "url": "https://lh3.googleusercontent.com/d/1HjVhbdBvh-sQR1GSnAA-3usSE9REBe7F",
+        "driveViewUrl": "https://drive.google.com/file/d/1HjVhbdBvh-sQR1GSnAA-3usSE9REBe7F/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 4 จริยธรรม AI และอคติ (Bias)": [
+      {
+        "id": "1WpKIgxG3X5wQI9u7UzBHthe9UGTJk-PY",
+        "filename": "01_สไลด์_ปก_จริยธรรม_AI_และอคติ.png",
+        "url": "https://lh3.googleusercontent.com/d/1WpKIgxG3X5wQI9u7UzBHthe9UGTJk-PY",
+        "driveViewUrl": "https://drive.google.com/file/d/1WpKIgxG3X5wQI9u7UzBHthe9UGTJk-PY/view?usp=sharing"
+      },
+      {
+        "id": "1n3EjXDlMtIPlXJ-OF5fBB7VHMkTsiCDv",
+        "filename": "02_สไลด์_ปัญหาอคติ_Bias_ใน_AI_มาจากไหน.png",
+        "url": "https://lh3.googleusercontent.com/d/1n3EjXDlMtIPlXJ-OF5fBB7VHMkTsiCDv",
+        "driveViewUrl": "https://drive.google.com/file/d/1n3EjXDlMtIPlXJ-OF5fBB7VHMkTsiCDv/view?usp=sharing"
+      },
+      {
+        "id": "1azMkiytmKPMZZtTpxEqGjCUjAJoK7JIv",
+        "filename": "03_สไลด์_ภัยหลอกลวง_Deepfake_และ_Cyber_Scams.png",
+        "url": "https://lh3.googleusercontent.com/d/1azMkiytmKPMZZtTpxEqGjCUjAJoK7JIv",
+        "driveViewUrl": "https://drive.google.com/file/d/1azMkiytmKPMZZtTpxEqGjCUjAJoK7JIv/view?usp=sharing"
+      },
+      {
+        "id": "1KRdju46Hm_eQ9scR0ZbbghDFsK3gxAKS",
+        "filename": "04_สไลด์_หลักการใช้_AI_อย่างมีจริยธรรม_4_ประการ.png",
+        "url": "https://lh3.googleusercontent.com/d/1KRdju46Hm_eQ9scR0ZbbghDFsK3gxAKS",
+        "driveViewUrl": "https://drive.google.com/file/d/1KRdju46Hm_eQ9scR0ZbbghDFsK3gxAKS/view?usp=sharing"
       }
     ]
   },
   "วิชาปัญญาประดิษฐ์ (AI) มัธยมศึกษา ม.1-ม.3": {
     "หน่วยที่ 1 AI Foundations — รากฐานปัญญาประดิษฐ์": [
       {
-        "id": "1z5MG7lBwOdf08SQWyldYAehi5gWJ9s9t",
-        "filename": "01_สไลด์_AI_Foundations__รากฐานปญญาประดษฐ.png",
-        "url": "https://lh3.googleusercontent.com/d/1z5MG7lBwOdf08SQWyldYAehi5gWJ9s9t",
-        "driveViewUrl": "https://drive.google.com/file/d/1z5MG7lBwOdf08SQWyldYAehi5gWJ9s9t/view?usp=sharing"
+        "id": "1id80mLzXka8RiBXdAzuvBucCnlc3dxNV",
+        "filename": "01_สไลด์_ปก_รากฐานปัญญาประดิษฐ์.png",
+        "url": "https://lh3.googleusercontent.com/d/1id80mLzXka8RiBXdAzuvBucCnlc3dxNV",
+        "driveViewUrl": "https://drive.google.com/file/d/1id80mLzXka8RiBXdAzuvBucCnlc3dxNV/view?usp=sharing"
       },
       {
-        "id": "1rhRCUgfKPHdjkq_eQ9PJa8ToIYZOntEq",
-        "filename": "02_สไลด์_ประวต_AI_โดยยอ.png",
-        "url": "https://lh3.googleusercontent.com/d/1rhRCUgfKPHdjkq_eQ9PJa8ToIYZOntEq",
-        "driveViewUrl": "https://drive.google.com/file/d/1rhRCUgfKPHdjkq_eQ9PJa8ToIYZOntEq/view?usp=sharing"
+        "id": "1Sepj8M1YO7Kd4SgjJR5N-LNpgb--k1og",
+        "filename": "02_สไลด์_ประวัติศาสตร์_และ_Turing_Test.png",
+        "url": "https://lh3.googleusercontent.com/d/1Sepj8M1YO7Kd4SgjJR5N-LNpgb--k1og",
+        "driveViewUrl": "https://drive.google.com/file/d/1Sepj8M1YO7Kd4SgjJR5N-LNpgb--k1og/view?usp=sharing"
       },
       {
-        "id": "1QLBAmHwMI6y0Qgy0u37PkMd7mOUVHI-6",
-        "filename": "04_สไลด์_Neural_Network_เลยนแบบสมอง.png",
-        "url": "https://lh3.googleusercontent.com/d/1QLBAmHwMI6y0Qgy0u37PkMd7mOUVHI-6",
-        "driveViewUrl": "https://drive.google.com/file/d/1QLBAmHwMI6y0Qgy0u37PkMd7mOUVHI-6/view?usp=sharing"
+        "id": "1g5mbZlN2Y37rfRoOEqPmZ_6TpZFFNq2u",
+        "filename": "03_สไลด์_โครงข่ายประสาทเทียม_Neural_Networks.png",
+        "url": "https://lh3.googleusercontent.com/d/1g5mbZlN2Y37rfRoOEqPmZ_6TpZFFNq2u",
+        "driveViewUrl": "https://drive.google.com/file/d/1g5mbZlN2Y37rfRoOEqPmZ_6TpZFFNq2u/view?usp=sharing"
       },
       {
-        "id": "1Te0eIKMLCo7K-TNE7TfetBBAmOTwec1O",
-        "filename": "05_สไลด์_Dataset__TrainTest_Split.png",
-        "url": "https://lh3.googleusercontent.com/d/1Te0eIKMLCo7K-TNE7TfetBBAmOTwec1O",
-        "driveViewUrl": "https://drive.google.com/file/d/1Te0eIKMLCo7K-TNE7TfetBBAmOTwec1O/view?usp=sharing"
+        "id": "1mZJSZezHJx2S4G4aJX42Rrb0E7Zdbm7B",
+        "filename": "04_สไลด์_Deep_Learning_และสถาปัตยกรรม_Transformer.png",
+        "url": "https://lh3.googleusercontent.com/d/1mZJSZezHJx2S4G4aJX42Rrb0E7Zdbm7B",
+        "driveViewUrl": "https://drive.google.com/file/d/1mZJSZezHJx2S4G4aJX42Rrb0E7Zdbm7B/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 2 Computer Vision & NLP — AI เห็น อ่าน เขียน": [
+      {
+        "id": "1i_mURg_VYrzzm0bWiNjBDPeWIZZDuqYg",
+        "filename": "01_สไลด์_ปก_Computer_Vision_และ_NLP.png",
+        "url": "https://lh3.googleusercontent.com/d/1i_mURg_VYrzzm0bWiNjBDPeWIZZDuqYg",
+        "driveViewUrl": "https://drive.google.com/file/d/1i_mURg_VYrzzm0bWiNjBDPeWIZZDuqYg/view?usp=sharing"
+      },
+      {
+        "id": "17UlDjhiBBmLZiNuqvUgrl8c3bsgGLgNZ",
+        "filename": "02_สไลด์_หลักการ_Computer_Vision_CNN_และการตรวจจับวัตถุ.png",
+        "url": "https://lh3.googleusercontent.com/d/17UlDjhiBBmLZiNuqvUgrl8c3bsgGLgNZ",
+        "driveViewUrl": "https://drive.google.com/file/d/17UlDjhiBBmLZiNuqvUgrl8c3bsgGLgNZ/view?usp=sharing"
+      },
+      {
+        "id": "1haMcqmGMVyZmuhrBovTTOE512-vvkn93",
+        "filename": "03_สไลด์_NLP_Tokenization_สู่_Embeddings.png",
+        "url": "https://lh3.googleusercontent.com/d/1haMcqmGMVyZmuhrBovTTOE512-vvkn93",
+        "driveViewUrl": "https://drive.google.com/file/d/1haMcqmGMVyZmuhrBovTTOE512-vvkn93/view?usp=sharing"
+      },
+      {
+        "id": "1l23tB0YZ-5jkmqYHHfe_WEE5DvLyRliX",
+        "filename": "04_สไลด์_การประยุกต์ใช้_Vision_และ_NLP_ในอุตสาหกรรม.png",
+        "url": "https://lh3.googleusercontent.com/d/1l23tB0YZ-5jkmqYHHfe_WEE5DvLyRliX",
+        "driveViewUrl": "https://drive.google.com/file/d/1l23tB0YZ-5jkmqYHHfe_WEE5DvLyRliX/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 3 Prompt Engineering — ศาสตร์การสั่งงาน AI": [
+      {
+        "id": "13W41Zqo0M2E1jaysvw51lwBuL1W-9HIw",
+        "filename": "01_สไลด์_ปก_ศาสตร์แห่งการเขียน_Prompt.png",
+        "url": "https://lh3.googleusercontent.com/d/13W41Zqo0M2E1jaysvw51lwBuL1W-9HIw",
+        "driveViewUrl": "https://drive.google.com/file/d/13W41Zqo0M2E1jaysvw51lwBuL1W-9HIw/view?usp=sharing"
+      },
+      {
+        "id": "15FI-GEAywLui042oEl0_inUn3a0C-bug",
+        "filename": "02_สไลด์_โครงสร้าง_Prompt_ตามหลัก_PARIS.png",
+        "url": "https://lh3.googleusercontent.com/d/15FI-GEAywLui042oEl0_inUn3a0C-bug",
+        "driveViewUrl": "https://drive.google.com/file/d/15FI-GEAywLui042oEl0_inUn3a0C-bug/view?usp=sharing"
+      },
+      {
+        "id": "1edsfA0z0wbxwgqnjxdGbEuwRfJQ7o-ns",
+        "filename": "03_สไลด์_เทคนิคระดับสูง_Few-shot_และ_Chain-of-Thought.png",
+        "url": "https://lh3.googleusercontent.com/d/1edsfA0z0wbxwgqnjxdGbEuwRfJQ7o-ns",
+        "driveViewUrl": "https://drive.google.com/file/d/1edsfA0z0wbxwgqnjxdGbEuwRfJQ7o-ns/view?usp=sharing"
+      },
+      {
+        "id": "1n14WiiaQCnDl40bJMjYb6qai0PIc67vz",
+        "filename": "04_สไลด์_การเขียน_System_Prompt_และการควบคุมผลลัพธ์.png",
+        "url": "https://lh3.googleusercontent.com/d/1n14WiiaQCnDl40bJMjYb6qai0PIc67vz",
+        "driveViewUrl": "https://drive.google.com/file/d/1n14WiiaQCnDl40bJMjYb6qai0PIc67vz/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 4 AI Ethics & Bias — จริยธรรมและอคติ": [
+      {
+        "id": "1YsVlZazJs8qEsZEDRQ1LEPD7UVWKt25F",
+        "filename": "01_สไลด์_ปก_จริยธรรม_ลิขสิทธิ์_และกฎหมาย_AI.png",
+        "url": "https://lh3.googleusercontent.com/d/1YsVlZazJs8qEsZEDRQ1LEPD7UVWKt25F",
+        "driveViewUrl": "https://drive.google.com/file/d/1YsVlZazJs8qEsZEDRQ1LEPD7UVWKt25F/view?usp=sharing"
+      },
+      {
+        "id": "1-y60fn5iOaEiQG2FteJ-hwEmAPhpkuI1",
+        "filename": "02_สไลด์_ลิขสิทธิ์ผลงาน_AI_และสิทธิ์ความเป็นเจ้าของ.png",
+        "url": "https://lh3.googleusercontent.com/d/1-y60fn5iOaEiQG2FteJ-hwEmAPhpkuI1",
+        "driveViewUrl": "https://drive.google.com/file/d/1-y60fn5iOaEiQG2FteJ-hwEmAPhpkuI1/view?usp=sharing"
+      },
+      {
+        "id": "1Ks10UyohQTZ0xscx4bXRsi_uhlfnVLVA",
+        "filename": "03_สไลด์_มาตรฐานความปลอดภัย_AI_Act_และการกำกับดูแล.png",
+        "url": "https://lh3.googleusercontent.com/d/1Ks10UyohQTZ0xscx4bXRsi_uhlfnVLVA",
+        "driveViewUrl": "https://drive.google.com/file/d/1Ks10UyohQTZ0xscx4bXRsi_uhlfnVLVA/view?usp=sharing"
+      },
+      {
+        "id": "1-iD8CRhZeN62RM96VOmjwBo6O2F0T2Bf",
+        "filename": "04_สไลด์_แนวปฏิบัติ_AI_ในโรงเรียนและที่ทำงาน.png",
+        "url": "https://lh3.googleusercontent.com/d/1-iD8CRhZeN62RM96VOmjwBo6O2F0T2Bf",
+        "driveViewUrl": "https://drive.google.com/file/d/1-iD8CRhZeN62RM96VOmjwBo6O2F0T2Bf/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 5 โครงงาน AI — แก้ปัญหาในชีวิตจริง": [
+      {
+        "id": "1-9kDiJwh5IPGWA5B78EejXvUJSXDW48x",
+        "filename": "01_สไลด์_ปก_โครงงาน_AI_แก้ปัญหาชีวิตจริง.png",
+        "url": "https://lh3.googleusercontent.com/d/1-9kDiJwh5IPGWA5B78EejXvUJSXDW48x",
+        "driveViewUrl": "https://drive.google.com/file/d/1-9kDiJwh5IPGWA5B78EejXvUJSXDW48x/view?usp=sharing"
+      },
+      {
+        "id": "1GPFVz7l7tucWg5oFfqlAfVXc9FhAjZWA",
+        "filename": "02_สไลด์_กระบวนการทำโครงงาน_AI_6_ขั้นตอน.png",
+        "url": "https://lh3.googleusercontent.com/d/1GPFVz7l7tucWg5oFfqlAfVXc9FhAjZWA",
+        "driveViewUrl": "https://drive.google.com/file/d/1GPFVz7l7tucWg5oFfqlAfVXc9FhAjZWA/view?usp=sharing"
+      },
+      {
+        "id": "1GqSczWrKsiYKIQjLWGEnAbj_S_jU72i0",
+        "filename": "03_สไลด์_ตัวอย่างโครงงาน_AI_เพื่อสังคมและสิ่งแวดล้อม.png",
+        "url": "https://lh3.googleusercontent.com/d/1GqSczWrKsiYKIQjLWGEnAbj_S_jU72i0",
+        "driveViewUrl": "https://drive.google.com/file/d/1GqSczWrKsiYKIQjLWGEnAbj_S_jU72i0/view?usp=sharing"
+      },
+      {
+        "id": "1Io4KZFwCjW7lAbNea7cwLNgHnu6RFXhH",
+        "filename": "04_สไลด์_การทดสอบ_วัดผล_และการนำเสนอผลงาน.png",
+        "url": "https://lh3.googleusercontent.com/d/1Io4KZFwCjW7lAbNea7cwLNgHnu6RFXhH",
+        "driveViewUrl": "https://drive.google.com/file/d/1Io4KZFwCjW7lAbNea7cwLNgHnu6RFXhH/view?usp=sharing"
+      }
+    ]
+  },
+  "วิชาอิเล็กทรอนิกส์เบื้องต้นและการออกแบบวงจร": {
+    "หน่วยที่ 1 อิเล็กทรอนิกส์ในชีวิตประจำวัน": [
+      {
+        "id": "1eTZTCddHVUBlwHkpg962_A_cbYhcRvql",
+        "filename": "01_สไลด์_ปก_อิเล็กทรอนิกส์ในชีวิตประจำวัน.png",
+        "url": "https://lh3.googleusercontent.com/d/1eTZTCddHVUBlwHkpg962_A_cbYhcRvql",
+        "driveViewUrl": "https://drive.google.com/file/d/1eTZTCddHVUBlwHkpg962_A_cbYhcRvql/view?usp=sharing"
+      },
+      {
+        "id": "1YnFHpsx0-X6wXgXDYCNbboVbQPgIKZSD",
+        "filename": "02_สไลด์_ไฟฟ้า_vs_อิเล็กทรอนิกส์.png",
+        "url": "https://lh3.googleusercontent.com/d/1YnFHpsx0-X6wXgXDYCNbboVbQPgIKZSD",
+        "driveViewUrl": "https://drive.google.com/file/d/1YnFHpsx0-X6wXgXDYCNbboVbQPgIKZSD/view?usp=sharing"
+      },
+      {
+        "id": "1zRiKm2yM5nvvCyDnzK-0GOdtf0K1FzTv",
+        "filename": "03_สไลด์_สัญลักษณ์และผังวงจรไฟฟ้าพื้นฐาน.png",
+        "url": "https://lh3.googleusercontent.com/d/1zRiKm2yM5nvvCyDnzK-0GOdtf0K1FzTv",
+        "driveViewUrl": "https://drive.google.com/file/d/1zRiKm2yM5nvvCyDnzK-0GOdtf0K1FzTv/view?usp=sharing"
+      },
+      {
+        "id": "1-5I5kgDMg5rx38qpL_dCE23EN6P1XoNJ",
+        "filename": "04_สไลด์_แผงต่อวงจร_Breadboard_และการใช้งาน.png",
+        "url": "https://lh3.googleusercontent.com/d/1-5I5kgDMg5rx38qpL_dCE23EN6P1XoNJ",
+        "driveViewUrl": "https://drive.google.com/file/d/1-5I5kgDMg5rx38qpL_dCE23EN6P1XoNJ/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 2 แหล่งจ่ายไฟ ตัวต้านทาน LED และกฎของโอห์ม": [
+      {
+        "id": "1fUUP5Dxdp8_vdVm9p3syWxdp4kCamqbh",
+        "filename": "01_สไลด์_ปก_แหล่งจ่ายไฟ_และกฎของโอห์ม.png",
+        "url": "https://lh3.googleusercontent.com/d/1fUUP5Dxdp8_vdVm9p3syWxdp4kCamqbh",
+        "driveViewUrl": "https://drive.google.com/file/d/1fUUP5Dxdp8_vdVm9p3syWxdp4kCamqbh/view?usp=sharing"
+      },
+      {
+        "id": "1qd-Ghm9V-Yl_ycdAh-SqouZu0iGhGIql",
+        "filename": "02_สไลด์_กฎของโอห์ม_สามเหลี่ยมมหัศจรรย์_VIR.png",
+        "url": "https://lh3.googleusercontent.com/d/1qd-Ghm9V-Yl_ycdAh-SqouZu0iGhGIql",
+        "driveViewUrl": "https://drive.google.com/file/d/1qd-Ghm9V-Yl_ycdAh-SqouZu0iGhGIql/view?usp=sharing"
+      },
+      {
+        "id": "12uq8-Hdaszy4lnjQEkToJK3DTrPldyQC",
+        "filename": "03_สไลด์_การอ่านแถบสีตัวต้านทาน_Resistor.png",
+        "url": "https://lh3.googleusercontent.com/d/12uq8-Hdaszy4lnjQEkToJK3DTrPldyQC",
+        "driveViewUrl": "https://drive.google.com/file/d/12uq8-Hdaszy4lnjQEkToJK3DTrPldyQC/view?usp=sharing"
+      },
+      {
+        "id": "1XUW4SbqiuR-i_nVoM6E_9VfplEnmxeRF",
+        "filename": "04_สไลด์_หลอด_LED_ขั้วบวกขั้วลบและการคำนวณ.png",
+        "url": "https://lh3.googleusercontent.com/d/1XUW4SbqiuR-i_nVoM6E_9VfplEnmxeRF",
+        "driveViewUrl": "https://drive.google.com/file/d/1XUW4SbqiuR-i_nVoM6E_9VfplEnmxeRF/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 3 อุปกรณ์อิเล็กทรอนิกส์พื้นฐาน": [
+      {
+        "id": "19Ucnw8jC_kQ4ZwGC33X5QjYMHqaBaeMR",
+        "filename": "01_สไลด์_ปก_อุปกรณ์อิเล็กทรอนิกส์พื้นฐาน.png",
+        "url": "https://lh3.googleusercontent.com/d/19Ucnw8jC_kQ4ZwGC33X5QjYMHqaBaeMR",
+        "driveViewUrl": "https://drive.google.com/file/d/19Ucnw8jC_kQ4ZwGC33X5QjYMHqaBaeMR/view?usp=sharing"
+      },
+      {
+        "id": "1sqpa7D5HUSsQ_9ogeeaxkju27DZI6MMr",
+        "filename": "02_สไลด์_ตัวเก็บประจุ_Capacitor_แบตเตอรี่จิ๋ว.png",
+        "url": "https://lh3.googleusercontent.com/d/1sqpa7D5HUSsQ_9ogeeaxkju27DZI6MMr",
+        "driveViewUrl": "https://drive.google.com/file/d/1sqpa7D5HUSsQ_9ogeeaxkju27DZI6MMr/view?usp=sharing"
+      },
+      {
+        "id": "1WmNF9rqPlcEdp37FA5hcPscFah6afiVF",
+        "filename": "03_สไลด์_ไดโอด_Diode_ประตูทางเดียวของไฟฟ้า.png",
+        "url": "https://lh3.googleusercontent.com/d/1WmNF9rqPlcEdp37FA5hcPscFah6afiVF",
+        "driveViewUrl": "https://drive.google.com/file/d/1WmNF9rqPlcEdp37FA5hcPscFah6afiVF/view?usp=sharing"
+      },
+      {
+        "id": "1AMFGEgNg327yGUBYntB47N5CvZC_bAyW",
+        "filename": "04_สไลด์_ทรานซิสเตอร์_Transistor_สวิตช์และขยายสัญญาณ.png",
+        "url": "https://lh3.googleusercontent.com/d/1AMFGEgNg327yGUBYntB47N5CvZC_bAyW",
+        "driveViewUrl": "https://drive.google.com/file/d/1AMFGEgNg327yGUBYntB47N5CvZC_bAyW/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 4 วงจรแอนะล็อกและแหล่งจ่ายไฟ": [
+      {
+        "id": "1hkIVF2pxFzHVumKHJRHPKLm4kMmaiT_9",
+        "filename": "01_สไลด์_ปก_วงจรแอนะล็อกและแหล่งจ่ายไฟ.png",
+        "url": "https://lh3.googleusercontent.com/d/1hkIVF2pxFzHVumKHJRHPKLm4kMmaiT_9",
+        "driveViewUrl": "https://drive.google.com/file/d/1hkIVF2pxFzHVumKHJRHPKLm4kMmaiT_9/view?usp=sharing"
+      },
+      {
+        "id": "1kdR2ptaN_d-Zj2RqCWgMznLav7kbvNhY",
+        "filename": "02_สไลด์_สัญญาณแอนะล็อก_vs_สัญญาณดิจิทัล.png",
+        "url": "https://lh3.googleusercontent.com/d/1kdR2ptaN_d-Zj2RqCWgMznLav7kbvNhY",
+        "driveViewUrl": "https://drive.google.com/file/d/1kdR2ptaN_d-Zj2RqCWgMznLav7kbvNhY/view?usp=sharing"
+      },
+      {
+        "id": "19gMtXCjaV9kPPSHWGNlZTjeLds7_wXZ8",
+        "filename": "03_สไลด์_วงจรแบ่งแรงดัน_Voltage_Divider.png",
+        "url": "https://lh3.googleusercontent.com/d/19gMtXCjaV9kPPSHWGNlZTjeLds7_wXZ8",
+        "driveViewUrl": "https://drive.google.com/file/d/19gMtXCjaV9kPPSHWGNlZTjeLds7_wXZ8/view?usp=sharing"
+      },
+      {
+        "id": "1ZFvIvoU0qKS2K7qBDpirC5jZNOxYOzlU",
+        "filename": "04_สไลด์_วงจรเรกูเลเตอร์_รักษาระดับแรงดัน.png",
+        "url": "https://lh3.googleusercontent.com/d/1ZFvIvoU0qKS2K7qBDpirC5jZNOxYOzlU",
+        "driveViewUrl": "https://drive.google.com/file/d/1ZFvIvoU0qKS2K7qBDpirC5jZNOxYOzlU/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 5 วงจรดิจิทัล เลขฐานสอง และลอจิกเกต": [
+      {
+        "id": "1Ep193KrOG8on9GX6WNVDeSMc_Tjd4yqj",
+        "filename": "01_สไลด์_ปก_วงจรดิจิทัล_และลอจิกเกต.png",
+        "url": "https://lh3.googleusercontent.com/d/1Ep193KrOG8on9GX6WNVDeSMc_Tjd4yqj",
+        "driveViewUrl": "https://drive.google.com/file/d/1Ep193KrOG8on9GX6WNVDeSMc_Tjd4yqj/view?usp=sharing"
+      },
+      {
+        "id": "1PahyY5eigjEEi9sDvbM5WOcWQqv8869r",
+        "filename": "02_สไลด์_เลขฐานสอง_Binary_ภาษาของคอมพิวเตอร์.png",
+        "url": "https://lh3.googleusercontent.com/d/1PahyY5eigjEEi9sDvbM5WOcWQqv8869r",
+        "driveViewUrl": "https://drive.google.com/file/d/1PahyY5eigjEEi9sDvbM5WOcWQqv8869r/view?usp=sharing"
+      },
+      {
+        "id": "103pPMSalmbYev2I3cFVWKYkdjNJsilK5",
+        "filename": "03_สไลด์_ลอจิกเกตพื้นฐาน_AND_OR_NOT.png",
+        "url": "https://lh3.googleusercontent.com/d/103pPMSalmbYev2I3cFVWKYkdjNJsilK5",
+        "driveViewUrl": "https://drive.google.com/file/d/103pPMSalmbYev2I3cFVWKYkdjNJsilK5/view?usp=sharing"
+      },
+      {
+        "id": "1WCAv-ApFY75IBYPGLcQ0Qc3VIOkeHHgf",
+        "filename": "04_สไลด์_ไอซีลอจิกเกต_ตระกูล_7400.png",
+        "url": "https://lh3.googleusercontent.com/d/1WCAv-ApFY75IBYPGLcQ0Qc3VIOkeHHgf",
+        "driveViewUrl": "https://drive.google.com/file/d/1WCAv-ApFY75IBYPGLcQ0Qc3VIOkeHHgf/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 6 มัลติมิเตอร์ กฎของเคอร์ชอฟฟ์ และการตรวจวงจร": [
+      {
+        "id": "1zIXVC7vvKGlFdw1StC0RTKgTSmnSh1o7",
+        "filename": "01_สไลด์_ปก_มัลติมิเตอร์และการตรวจวงจร.png",
+        "url": "https://lh3.googleusercontent.com/d/1zIXVC7vvKGlFdw1StC0RTKgTSmnSh1o7",
+        "driveViewUrl": "https://drive.google.com/file/d/1zIXVC7vvKGlFdw1StC0RTKgTSmnSh1o7/view?usp=sharing"
+      },
+      {
+        "id": "1voTWO8hr5CojquJztOJebI-OTZh5gw33",
+        "filename": "02_สไลด์_การใช้มัลติมิเตอร์_วัด_V_I_R.png",
+        "url": "https://lh3.googleusercontent.com/d/1voTWO8hr5CojquJztOJebI-OTZh5gw33",
+        "driveViewUrl": "https://drive.google.com/file/d/1voTWO8hr5CojquJztOJebI-OTZh5gw33/view?usp=sharing"
+      },
+      {
+        "id": "1qPNo25xmOivdCnodRqWwg_PMeIfRNTpL",
+        "filename": "03_สไลด์_กฎของเคอร์ชอฟฟ์_KCL_และ_KVL.png",
+        "url": "https://lh3.googleusercontent.com/d/1qPNo25xmOivdCnodRqWwg_PMeIfRNTpL",
+        "driveViewUrl": "https://drive.google.com/file/d/1qPNo25xmOivdCnodRqWwg_PMeIfRNTpL/view?usp=sharing"
+      },
+      {
+        "id": "1X8cNvG88HJRTAyvpxFMuHWdTNTNZqVaW",
+        "filename": "04_สไลด์_การแก้ปัญหาและเทคนิคความปลอดภัย.png",
+        "url": "https://lh3.googleusercontent.com/d/1X8cNvG88HJRTAyvpxFMuHWdTNTNZqVaW",
+        "driveViewUrl": "https://drive.google.com/file/d/1X8cNvG88HJRTAyvpxFMuHWdTNTNZqVaW/view?usp=sharing"
       }
     ]
   },
   "วิชาไมโครคอนโทรลเลอร์ Arduino เบื้องต้น": {
     "หน่วยที่ 1 รู้จัก Arduino และไมโครคอนโทรลเลอร์": [
       {
-        "id": "1q6UyFctuxQQFMqKHP0qRpQ5rQeqpKR5m",
-        "filename": "01_สไลด์_Arduino_คอสมองของงานอเลกทรอนกส.png",
-        "url": "https://lh3.googleusercontent.com/d/1q6UyFctuxQQFMqKHP0qRpQ5rQeqpKR5m",
-        "driveViewUrl": "https://drive.google.com/file/d/1q6UyFctuxQQFMqKHP0qRpQ5rQeqpKR5m/view?usp=sharing"
+        "id": "12GGfwNvVyFOolxgwzl2fcPmsSC6mIH9f",
+        "filename": "01_สไลด์_ปก_รู้จัก_Arduino_และไมโครคอนโทรลเลอร์.png",
+        "url": "https://lh3.googleusercontent.com/d/12GGfwNvVyFOolxgwzl2fcPmsSC6mIH9f",
+        "driveViewUrl": "https://drive.google.com/file/d/12GGfwNvVyFOolxgwzl2fcPmsSC6mIH9f/view?usp=sharing"
       },
       {
-        "id": "1v3Gu4BwuAjDRPcLiIoQEYDtvZ5MHT2VV",
-        "filename": "02_สไลด์_ไมโครคอนโทรลเลอรทำงานอยางไร.png",
-        "url": "https://lh3.googleusercontent.com/d/1v3Gu4BwuAjDRPcLiIoQEYDtvZ5MHT2VV",
-        "driveViewUrl": "https://drive.google.com/file/d/1v3Gu4BwuAjDRPcLiIoQEYDtvZ5MHT2VV/view?usp=sharing"
+        "id": "1sxc0FRjHfGwJNh1HFT4XEb1m8MIZUc1T",
+        "filename": "02_สไลด์_ไมโครโปรเซสเซอร์_vs_ไมโครคอนโทรลเลอร์.png",
+        "url": "https://lh3.googleusercontent.com/d/1sxc0FRjHfGwJNh1HFT4XEb1m8MIZUc1T",
+        "driveViewUrl": "https://drive.google.com/file/d/1sxc0FRjHfGwJNh1HFT4XEb1m8MIZUc1T/view?usp=sharing"
+      },
+      {
+        "id": "1isMDQca3_jl3VJV-DaKPD9LkN46xs2tW",
+        "filename": "03_สไลด์_ส่วนประกอบของบอร์ด_Arduino_UNO_R3.png",
+        "url": "https://lh3.googleusercontent.com/d/1isMDQca3_jl3VJV-DaKPD9LkN46xs2tW",
+        "driveViewUrl": "https://drive.google.com/file/d/1isMDQca3_jl3VJV-DaKPD9LkN46xs2tW/view?usp=sharing"
+      },
+      {
+        "id": "1Wh6NHxgySUHGkp8Va2relsrfoqCSS9bV",
+        "filename": "04_สไลด์_การเตรียมอุปกรณ์และ_Maker_Kit.png",
+        "url": "https://lh3.googleusercontent.com/d/1Wh6NHxgySUHGkp8Va2relsrfoqCSS9bV",
+        "driveViewUrl": "https://drive.google.com/file/d/1Wh6NHxgySUHGkp8Va2relsrfoqCSS9bV/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 2 ติดตั้ง Arduino IDE และเริ่มโปรแกรมแรก": [
+      {
+        "id": "132oMsySUSfJdL-K0st1p1NuaqcS0mgBo",
+        "filename": "01_สไลด์_ปก_ติดตั้ง_Arduino_IDE_และโปรแกรมแรก.png",
+        "url": "https://lh3.googleusercontent.com/d/132oMsySUSfJdL-K0st1p1NuaqcS0mgBo",
+        "driveViewUrl": "https://drive.google.com/file/d/132oMsySUSfJdL-K0st1p1NuaqcS0mgBo/view?usp=sharing"
+      },
+      {
+        "id": "1uChMNLoT6k1xrHgAqF4lN506hia3Pq-v",
+        "filename": "02_สไลด์_โครงสร้างโค้ด_setup_และ_loop.png",
+        "url": "https://lh3.googleusercontent.com/d/1uChMNLoT6k1xrHgAqF4lN506hia3Pq-v",
+        "driveViewUrl": "https://drive.google.com/file/d/1uChMNLoT6k1xrHgAqF4lN506hia3Pq-v/view?usp=sharing"
+      },
+      {
+        "id": "1-26l8GghdRKcHUNw8s6AMeeWVuavR2d7",
+        "filename": "03_สไลด์_คำสั่ง_pinMode_และ_digitalWrite.png",
+        "url": "https://lh3.googleusercontent.com/d/1-26l8GghdRKcHUNw8s6AMeeWVuavR2d7",
+        "driveViewUrl": "https://drive.google.com/file/d/1-26l8GghdRKcHUNw8s6AMeeWVuavR2d7/view?usp=sharing"
+      },
+      {
+        "id": "1Sbcc1LdHrmyyxPavOgtLStbJKGAvmwzG",
+        "filename": "04_สไลด์_โปรแกรมไฟกะพริบ_Blink_แรกของฉัน.png",
+        "url": "https://lh3.googleusercontent.com/d/1Sbcc1LdHrmyyxPavOgtLStbJKGAvmwzG",
+        "driveViewUrl": "https://drive.google.com/file/d/1Sbcc1LdHrmyyxPavOgtLStbJKGAvmwzG/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 3 Arduino UNO R3 และวงจรพื้นฐาน": [
+      {
+        "id": "1WaPAllb6ua_jc3eNflcmMNFSjmLVJ7SJ",
+        "filename": "01_สไลด์_ปก_วงจรดิจิทัลอินพุต_และปุ่มกด.png",
+        "url": "https://lh3.googleusercontent.com/d/1WaPAllb6ua_jc3eNflcmMNFSjmLVJ7SJ",
+        "driveViewUrl": "https://drive.google.com/file/d/1WaPAllb6ua_jc3eNflcmMNFSjmLVJ7SJ/view?usp=sharing"
+      },
+      {
+        "id": "1AmwYaJyQwqrGuOe0a-CFk4GPvjS_RYti",
+        "filename": "02_สไลด์_การต่อวงจรปุ่มกด_Push_Button.png",
+        "url": "https://lh3.googleusercontent.com/d/1AmwYaJyQwqrGuOe0a-CFk4GPvjS_RYti",
+        "driveViewUrl": "https://drive.google.com/file/d/1AmwYaJyQwqrGuOe0a-CFk4GPvjS_RYti/view?usp=sharing"
+      },
+      {
+        "id": "137Sk22mKERKdjSo0WRP1OcG9V-rhSSPE",
+        "filename": "03_สไลด์_ทำไมต้องมี_Pull-up_Pull-down_Resistor.png",
+        "url": "https://lh3.googleusercontent.com/d/137Sk22mKERKdjSo0WRP1OcG9V-rhSSPE",
+        "driveViewUrl": "https://drive.google.com/file/d/137Sk22mKERKdjSo0WRP1OcG9V-rhSSPE/view?usp=sharing"
+      },
+      {
+        "id": "1vVWfVA_jEmfYhz2oO1TGfmcd1bPoFqYc",
+        "filename": "04_สไลด์_คำสั่ง_digitalRead_และสวิตช์ไฟสองทาง.png",
+        "url": "https://lh3.googleusercontent.com/d/1vVWfVA_jEmfYhz2oO1TGfmcd1bPoFqYc",
+        "driveViewUrl": "https://drive.google.com/file/d/1vVWfVA_jEmfYhz2oO1TGfmcd1bPoFqYc/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 4 เขียนโปรแกรมควบคุมสัญญาณ": [
+      {
+        "id": "1v8a5-Yv4nRmZyzYIHQsAFpm808_Ul8Ij",
+        "filename": "01_สไลด์_ปก_สัญญาณแอนะล็อกและ_PWM.png",
+        "url": "https://lh3.googleusercontent.com/d/1v8a5-Yv4nRmZyzYIHQsAFpm808_Ul8Ij",
+        "driveViewUrl": "https://drive.google.com/file/d/1v8a5-Yv4nRmZyzYIHQsAFpm808_Ul8Ij/view?usp=sharing"
+      },
+      {
+        "id": "14JRX-kqf4LIK66LYJmLXgf4zeqUFe7LG",
+        "filename": "02_สไลด์_การอ่านค่าแอนะล็อก_analogRead.png",
+        "url": "https://lh3.googleusercontent.com/d/14JRX-kqf4LIK66LYJmLXgf4zeqUFe7LG",
+        "driveViewUrl": "https://drive.google.com/file/d/14JRX-kqf4LIK66LYJmLXgf4zeqUFe7LG/view?usp=sharing"
+      },
+      {
+        "id": "1RBq7JAMtVOApU9YezkOnNhhq8o9gqnLW",
+        "filename": "03_สไลด์_การมอดูเลต_PWM_analogWrite.png",
+        "url": "https://lh3.googleusercontent.com/d/1RBq7JAMtVOApU9YezkOnNhhq8o9gqnLW",
+        "driveViewUrl": "https://drive.google.com/file/d/1RBq7JAMtVOApU9YezkOnNhhq8o9gqnLW/view?usp=sharing"
+      },
+      {
+        "id": "1MsX8FA74a9w_JtgWJqxkh1BDhRRK2RYk",
+        "filename": "04_สไลด์_ฟังก์ชัน_map_แปลงสเกลข้อมูล.png",
+        "url": "https://lh3.googleusercontent.com/d/1MsX8FA74a9w_JtgWJqxkh1BDhRRK2RYk",
+        "driveViewUrl": "https://drive.google.com/file/d/1MsX8FA74a9w_JtgWJqxkh1BDhRRK2RYk/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 5 ใบงานเซนเซอร์ มอเตอร์ และจอแสดงผล": [
+      {
+        "id": "1X0dsKVIf4bJNaTXuIlWvV74NAfHSgISZ",
+        "filename": "01_สไลด์_ปก_เซนเซอร์วัดสภาพแวดล้อม.png",
+        "url": "https://lh3.googleusercontent.com/d/1X0dsKVIf4bJNaTXuIlWvV74NAfHSgISZ",
+        "driveViewUrl": "https://drive.google.com/file/d/1X0dsKVIf4bJNaTXuIlWvV74NAfHSgISZ/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 4": [
+      {
+        "id": "1KV4jqWvy_z8I970du9KL1t9pY5RJn6iZ",
+        "filename": "01_สไลด์_ปก_สัญญาณแอนะล็อกและ_PWM.png",
+        "url": "https://lh3.googleusercontent.com/d/1KV4jqWvy_z8I970du9KL1t9pY5RJn6iZ",
+        "driveViewUrl": "https://drive.google.com/file/d/1KV4jqWvy_z8I970du9KL1t9pY5RJn6iZ/view?usp=sharing"
+      },
+      {
+        "id": "1SkQxW2jwkseeL8UXijtO9i_u8MfoPCVP",
+        "filename": "02_สไลด์_การอ่านค่าแอนะล็อก_analogRead.png",
+        "url": "https://lh3.googleusercontent.com/d/1SkQxW2jwkseeL8UXijtO9i_u8MfoPCVP",
+        "driveViewUrl": "https://drive.google.com/file/d/1SkQxW2jwkseeL8UXijtO9i_u8MfoPCVP/view?usp=sharing"
+      },
+      {
+        "id": "1MZF0UezD39L1Rh_O5b4D2YIz0YawrLQ1",
+        "filename": "03_สไลด์_การมอดูเลต_PWM_analogWrite.png",
+        "url": "https://lh3.googleusercontent.com/d/1MZF0UezD39L1Rh_O5b4D2YIz0YawrLQ1",
+        "driveViewUrl": "https://drive.google.com/file/d/1MZF0UezD39L1Rh_O5b4D2YIz0YawrLQ1/view?usp=sharing"
+      },
+      {
+        "id": "1y6YTo6SUF5Azs5Mp7LP3Yb4TQFfY_QLs",
+        "filename": "04_สไลด์_ฟังก์ชัน_map_แปลงสเกลข้อมูล.png",
+        "url": "https://lh3.googleusercontent.com/d/1y6YTo6SUF5Azs5Mp7LP3Yb4TQFfY_QLs",
+        "driveViewUrl": "https://drive.google.com/file/d/1y6YTo6SUF5Azs5Mp7LP3Yb4TQFfY_QLs/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 3": [
+      {
+        "id": "1-MBCxVW_rzHYQPlS20hJOJdXanx8yEwM",
+        "filename": "01_สไลด์_ปก_วงจรดิจิทัลอินพุต_และปุ่มกด.png",
+        "url": "https://lh3.googleusercontent.com/d/1-MBCxVW_rzHYQPlS20hJOJdXanx8yEwM",
+        "driveViewUrl": "https://drive.google.com/file/d/1-MBCxVW_rzHYQPlS20hJOJdXanx8yEwM/view?usp=sharing"
+      },
+      {
+        "id": "1_8LEcd-VX2EeOsVdEerQGE2gjxsDK6ow",
+        "filename": "02_สไลด์_การต่อวงจรปุ่มกด_Push_Button.png",
+        "url": "https://lh3.googleusercontent.com/d/1_8LEcd-VX2EeOsVdEerQGE2gjxsDK6ow",
+        "driveViewUrl": "https://drive.google.com/file/d/1_8LEcd-VX2EeOsVdEerQGE2gjxsDK6ow/view?usp=sharing"
+      },
+      {
+        "id": "1qk7n4sYUBsfxD6N38FIsqBta5ggvORVL",
+        "filename": "03_สไลด์_ทำไมต้องมี_Pull-up_Pull-down_Resistor.png",
+        "url": "https://lh3.googleusercontent.com/d/1qk7n4sYUBsfxD6N38FIsqBta5ggvORVL",
+        "driveViewUrl": "https://drive.google.com/file/d/1qk7n4sYUBsfxD6N38FIsqBta5ggvORVL/view?usp=sharing"
+      },
+      {
+        "id": "1UDEVlzzPkr2rTLTpSY2C_lQkr7NHEEfT",
+        "filename": "04_สไลด์_คำสั่ง_digitalRead_และสวิตช์ไฟสองทาง.png",
+        "url": "https://lh3.googleusercontent.com/d/1UDEVlzzPkr2rTLTpSY2C_lQkr7NHEEfT",
+        "driveViewUrl": "https://drive.google.com/file/d/1UDEVlzzPkr2rTLTpSY2C_lQkr7NHEEfT/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 1": [
+      {
+        "id": "1pNwhDSd1WjLRyNJTm07AF94Sx_o_kYmX",
+        "filename": "01_สไลด์_ปก_รู้จัก_Arduino_และไมโครคอนโทรลเลอร์.png",
+        "url": "https://lh3.googleusercontent.com/d/1pNwhDSd1WjLRyNJTm07AF94Sx_o_kYmX",
+        "driveViewUrl": "https://drive.google.com/file/d/1pNwhDSd1WjLRyNJTm07AF94Sx_o_kYmX/view?usp=sharing"
+      },
+      {
+        "id": "1LneWCDgW5AWr4bEYQId_PT4o5oW2mpNy",
+        "filename": "02_สไลด์_ไมโครโปรเซสเซอร์_vs_ไมโครคอนโทรลเลอร์.png",
+        "url": "https://lh3.googleusercontent.com/d/1LneWCDgW5AWr4bEYQId_PT4o5oW2mpNy",
+        "driveViewUrl": "https://drive.google.com/file/d/1LneWCDgW5AWr4bEYQId_PT4o5oW2mpNy/view?usp=sharing"
+      },
+      {
+        "id": "185rkEIJxNt9RtkuMEY_n4nRfaM0r8MM_",
+        "filename": "03_สไลด์_ส่วนประกอบของบอร์ด_Arduino_UNO_R3.png",
+        "url": "https://lh3.googleusercontent.com/d/185rkEIJxNt9RtkuMEY_n4nRfaM0r8MM_",
+        "driveViewUrl": "https://drive.google.com/file/d/185rkEIJxNt9RtkuMEY_n4nRfaM0r8MM_/view?usp=sharing"
+      },
+      {
+        "id": "1tHGwLrpUzvha3_uOnFq1Yr0s1KEtbgjP",
+        "filename": "04_สไลด์_การเตรียมอุปกรณ์และ_Maker_Kit.png",
+        "url": "https://lh3.googleusercontent.com/d/1tHGwLrpUzvha3_uOnFq1Yr0s1KEtbgjP",
+        "driveViewUrl": "https://drive.google.com/file/d/1tHGwLrpUzvha3_uOnFq1Yr0s1KEtbgjP/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 2": [
+      {
+        "id": "1iQmWaWHhZpLV4UTUL3Q_yZO0hPepm2CB",
+        "filename": "01_สไลด์_ปก_ติดตั้ง_Arduino_IDE_และโปรแกรมแรก.png",
+        "url": "https://lh3.googleusercontent.com/d/1iQmWaWHhZpLV4UTUL3Q_yZO0hPepm2CB",
+        "driveViewUrl": "https://drive.google.com/file/d/1iQmWaWHhZpLV4UTUL3Q_yZO0hPepm2CB/view?usp=sharing"
+      },
+      {
+        "id": "1DLD5WF73MVAs-yDlFfY07Pl81toy6BgN",
+        "filename": "02_สไลด์_โครงสร้างโค้ด_setup_และ_loop.png",
+        "url": "https://lh3.googleusercontent.com/d/1DLD5WF73MVAs-yDlFfY07Pl81toy6BgN",
+        "driveViewUrl": "https://drive.google.com/file/d/1DLD5WF73MVAs-yDlFfY07Pl81toy6BgN/view?usp=sharing"
+      },
+      {
+        "id": "1ies-1lX58fc1XqEpiCB3Pc92DjuNesfA",
+        "filename": "03_สไลด์_คำสั่ง_pinMode_และ_digitalWrite.png",
+        "url": "https://lh3.googleusercontent.com/d/1ies-1lX58fc1XqEpiCB3Pc92DjuNesfA",
+        "driveViewUrl": "https://drive.google.com/file/d/1ies-1lX58fc1XqEpiCB3Pc92DjuNesfA/view?usp=sharing"
+      },
+      {
+        "id": "1u_OYxoid5wB4RM0Bo6xVNa2YZvY8jJLo",
+        "filename": "04_สไลด์_โปรแกรมไฟกะพริบ_Blink_แรกของฉัน.png",
+        "url": "https://lh3.googleusercontent.com/d/1u_OYxoid5wB4RM0Bo6xVNa2YZvY8jJLo",
+        "driveViewUrl": "https://drive.google.com/file/d/1u_OYxoid5wB4RM0Bo6xVNa2YZvY8jJLo/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 5": [
+      {
+        "id": "1cd9JtlWeDZIUbqO0wLehRlhLv1i4RJiP",
+        "filename": "01_สไลด์_ปก_เซนเซอร์วัดสภาพแวดล้อม.png",
+        "url": "https://lh3.googleusercontent.com/d/1cd9JtlWeDZIUbqO0wLehRlhLv1i4RJiP",
+        "driveViewUrl": "https://drive.google.com/file/d/1cd9JtlWeDZIUbqO0wLehRlhLv1i4RJiP/view?usp=sharing"
+      },
+      {
+        "id": "1-akdUJeWG0Rc_zcNbBf631etmapXEImu",
+        "filename": "02_สไลด์_เซนเซอร์แสง_LDR_สวิตช์เปิดไฟกลางคืน.png",
+        "url": "https://lh3.googleusercontent.com/d/1-akdUJeWG0Rc_zcNbBf631etmapXEImu",
+        "driveViewUrl": "https://drive.google.com/file/d/1-akdUJeWG0Rc_zcNbBf631etmapXEImu/view?usp=sharing"
+      },
+      {
+        "id": "10gql3RcHrXr-Sz2P6XZNx2UPzaQEM45I",
+        "filename": "03_สไลด์_เซนเซอร์อุณหภูมิและความชื้น_DHT11.png",
+        "url": "https://lh3.googleusercontent.com/d/10gql3RcHrXr-Sz2P6XZNx2UPzaQEM45I",
+        "driveViewUrl": "https://drive.google.com/file/d/10gql3RcHrXr-Sz2P6XZNx2UPzaQEM45I/view?usp=sharing"
+      },
+      {
+        "id": "1qOyC1F0CEzaLfbNOvvugQsti5GaYVQVD",
+        "filename": "04_สไลด์_เซนเซอร์วัดระยะ_Ultrasonic_HC-SR04.png",
+        "url": "https://lh3.googleusercontent.com/d/1qOyC1F0CEzaLfbNOvvugQsti5GaYVQVD",
+        "driveViewUrl": "https://drive.google.com/file/d/1qOyC1F0CEzaLfbNOvvugQsti5GaYVQVD/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 6": [
+      {
+        "id": "1q_Kx1E-QmlXDsyZerlAzX2m5HxVvZjeU",
+        "filename": "01_สไลด์_ปก_การจำลองวงจรและดีบัก.png",
+        "url": "https://lh3.googleusercontent.com/d/1q_Kx1E-QmlXDsyZerlAzX2m5HxVvZjeU",
+        "driveViewUrl": "https://drive.google.com/file/d/1q_Kx1E-QmlXDsyZerlAzX2m5HxVvZjeU/view?usp=sharing"
+      },
+      {
+        "id": "1rrcZ5ba6MWk4lbwYssJ2YgwszIrl156v",
+        "filename": "02_สไลด์_การจำลองวงจรด้วย_Tinkercad_และ_Wokwi.png",
+        "url": "https://lh3.googleusercontent.com/d/1rrcZ5ba6MWk4lbwYssJ2YgwszIrl156v",
+        "driveViewUrl": "https://drive.google.com/file/d/1rrcZ5ba6MWk4lbwYssJ2YgwszIrl156v/view?usp=sharing"
+      },
+      {
+        "id": "1x0fPqeVUIxUDF-L59IX-ORCi5KuJTJ_R",
+        "filename": "03_สไลด์_Serial_Monitor_การสื่อสารและดีบัก.png",
+        "url": "https://lh3.googleusercontent.com/d/1x0fPqeVUIxUDF-L59IX-ORCi5KuJTJ_R",
+        "driveViewUrl": "https://drive.google.com/file/d/1x0fPqeVUIxUDF-L59IX-ORCi5KuJTJ_R/view?usp=sharing"
+      },
+      {
+        "id": "1VV7Z9qcB_Y9-ZCdH3ifOHxeEuCwOciwI",
+        "filename": "04_สไลด์_การแก้ปัญหา_COM_Port_และ_Bootloader.png",
+        "url": "https://lh3.googleusercontent.com/d/1VV7Z9qcB_Y9-ZCdH3ifOHxeEuCwOciwI",
+        "driveViewUrl": "https://drive.google.com/file/d/1VV7Z9qcB_Y9-ZCdH3ifOHxeEuCwOciwI/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 7": [
+      {
+        "id": "1loQlNwyC6aSX--eFlgGVgonn5DR_yFqZ",
+        "filename": "01_สไลด์_ปก_จอแสดงผล_LCD_OLED_และ_I2C.png",
+        "url": "https://lh3.googleusercontent.com/d/1loQlNwyC6aSX--eFlgGVgonn5DR_yFqZ",
+        "driveViewUrl": "https://drive.google.com/file/d/1loQlNwyC6aSX--eFlgGVgonn5DR_yFqZ/view?usp=sharing"
+      },
+      {
+        "id": "1EhVVEB3Qgl2B45IXWwSQZl4xeDJKeW1e",
+        "filename": "02_สไลด์_การสื่อสารแบบ_I2C_ประหยัดสายสัญญาณ.png",
+        "url": "https://lh3.googleusercontent.com/d/1EhVVEB3Qgl2B45IXWwSQZl4xeDJKeW1e",
+        "driveViewUrl": "https://drive.google.com/file/d/1EhVVEB3Qgl2B45IXWwSQZl4xeDJKeW1e/view?usp=sharing"
+      },
+      {
+        "id": "1LB3ZD5wR2JTkmzvUxR_-oXlYLFK4qQJh",
+        "filename": "03_สไลด์_การเขียนโค้ดคุมจอ_LCD_1602.png",
+        "url": "https://lh3.googleusercontent.com/d/1LB3ZD5wR2JTkmzvUxR_-oXlYLFK4qQJh",
+        "driveViewUrl": "https://drive.google.com/file/d/1LB3ZD5wR2JTkmzvUxR_-oXlYLFK4qQJh/view?usp=sharing"
+      },
+      {
+        "id": "1401qD9VxmgwyevyotIlH1iNpELLuaMsi",
+        "filename": "04_สไลด์_กราฟิกบนจอ_OLED_และการวาดภาพไอคอน.png",
+        "url": "https://lh3.googleusercontent.com/d/1401qD9VxmgwyevyotIlH1iNpELLuaMsi",
+        "driveViewUrl": "https://drive.google.com/file/d/1401qD9VxmgwyevyotIlH1iNpELLuaMsi/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 8": [
+      {
+        "id": "1A-S1qgH66s83upmaIM8AC8KfeMAWoTrB",
+        "filename": "01_สไลด์_ปก_โครงงาน_Arduino_สู่นวัตกรรม.png",
+        "url": "https://lh3.googleusercontent.com/d/1A-S1qgH66s83upmaIM8AC8KfeMAWoTrB",
+        "driveViewUrl": "https://drive.google.com/file/d/1A-S1qgH66s83upmaIM8AC8KfeMAWoTrB/view?usp=sharing"
+      },
+      {
+        "id": "1M8WOcK_y6TzGqkG8Yv0YGQDJ3IpKVEoN",
+        "filename": "02_สไลด์_โครงงานถังขยะอัจฉริยะ_Smart_Trash_Bin.png",
+        "url": "https://lh3.googleusercontent.com/d/1M8WOcK_y6TzGqkG8Yv0YGQDJ3IpKVEoN",
+        "driveViewUrl": "https://drive.google.com/file/d/1M8WOcK_y6TzGqkG8Yv0YGQDJ3IpKVEoN/view?usp=sharing"
+      },
+      {
+        "id": "1qrVwXQHJ_Fxi1v98sP999Qkzx67ifWYp",
+        "filename": "03_สไลด์_โครงงานระบบรดน้ำต้นไม้อัตโนมัติ.png",
+        "url": "https://lh3.googleusercontent.com/d/1qrVwXQHJ_Fxi1v98sP999Qkzx67ifWYp",
+        "driveViewUrl": "https://drive.google.com/file/d/1qrVwXQHJ_Fxi1v98sP999Qkzx67ifWYp/view?usp=sharing"
+      },
+      {
+        "id": "1HNH8MSXSWYYdaonIpa35u3V1cEvqZ2HM",
+        "filename": "04_สไลด์_การประกอบร่าง_กล่องโครงงานและการนำเสนอ.png",
+        "url": "https://lh3.googleusercontent.com/d/1HNH8MSXSWYYdaonIpa35u3V1cEvqZ2HM",
+        "driveViewUrl": "https://drive.google.com/file/d/1HNH8MSXSWYYdaonIpa35u3V1cEvqZ2HM/view?usp=sharing"
+      }
+    ]
+  },
+  "วิชาฐานข้อมูลเบื้องต้น มัธยมศึกษา ม.1-ม.3": {
+    "หน่วยที่ 1": [
+      {
+        "id": "1dcUfLRgDSaYXo_RyeVN08k6DD_Gx2RFI",
+        "filename": "01_สไลด์_ข้อมูล_สารสนเทศ_และฐานข้อมูล.png",
+        "url": "https://lh3.googleusercontent.com/d/1dcUfLRgDSaYXo_RyeVN08k6DD_Gx2RFI",
+        "driveViewUrl": "https://drive.google.com/file/d/1dcUfLRgDSaYXo_RyeVN08k6DD_Gx2RFI/view?usp=sharing"
+      },
+      {
+        "id": "1dTFc6ozWvF9qZGhBt2E4tiQ9EkMiLwzG",
+        "filename": "02_สไลด์_ข้อมูลกับสารสนเทศต่างกันอย่างไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1dTFc6ozWvF9qZGhBt2E4tiQ9EkMiLwzG",
+        "driveViewUrl": "https://drive.google.com/file/d/1dTFc6ozWvF9qZGhBt2E4tiQ9EkMiLwzG/view?usp=sharing"
+      },
+      {
+        "id": "1j1_Jw_lzosm02ZeRkZAnRkAnNcW_8kDi",
+        "filename": "03_สไลด์_ปัญหาของการเก็บข้อมูลแยกแฟ้ม.png",
+        "url": "https://lh3.googleusercontent.com/d/1j1_Jw_lzosm02ZeRkZAnRkAnNcW_8kDi",
+        "driveViewUrl": "https://drive.google.com/file/d/1j1_Jw_lzosm02ZeRkZAnRkAnNcW_8kDi/view?usp=sharing"
+      },
+      {
+        "id": "1WbPneI8N7bYKvAwvNVd3eQWxZtcAbA7b",
+        "filename": "04_สไลด์_ฐานข้อมูลช่วยอะไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1WbPneI8N7bYKvAwvNVd3eQWxZtcAbA7b",
+        "driveViewUrl": "https://drive.google.com/file/d/1WbPneI8N7bYKvAwvNVd3eQWxZtcAbA7b/view?usp=sharing"
+      },
+      {
+        "id": "1ugaW1X29rgChqVWY2-tOSYQLwwk6R6CK",
+        "filename": "05_สไลด์_ฐานข้อมูลรอบตัวเรา.png",
+        "url": "https://lh3.googleusercontent.com/d/1ugaW1X29rgChqVWY2-tOSYQLwwk6R6CK",
+        "driveViewUrl": "https://drive.google.com/file/d/1ugaW1X29rgChqVWY2-tOSYQLwwk6R6CK/view?usp=sharing"
+      },
+      {
+        "id": "1WUL4jNRvgL7wTL6rhgAHyDHfjDRcBGxH",
+        "filename": "06_สไลด์_จากข้อมูลดิบสู่สารสนเทศ.png",
+        "url": "https://lh3.googleusercontent.com/d/1WUL4jNRvgL7wTL6rhgAHyDHfjDRcBGxH",
+        "driveViewUrl": "https://drive.google.com/file/d/1WUL4jNRvgL7wTL6rhgAHyDHfjDRcBGxH/view?usp=sharing"
+      },
+      {
+        "id": "1Mdkb65Xr2UTor-MO7w1HM7ny41JXoxl9",
+        "filename": "07_สไลด์_ข้อมูลที่ดีเป็นอย่างไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1Mdkb65Xr2UTor-MO7w1HM7ny41JXoxl9",
+        "driveViewUrl": "https://drive.google.com/file/d/1Mdkb65Xr2UTor-MO7w1HM7ny41JXoxl9/view?usp=sharing"
+      },
+      {
+        "id": "1iQ5nITVNlfVeSv2jxUNVOGkX1OWWSQrN",
+        "filename": "08_สไลด์_ระบบจัดการฐานข้อมูล_DBMS.png",
+        "url": "https://lh3.googleusercontent.com/d/1iQ5nITVNlfVeSv2jxUNVOGkX1OWWSQrN",
+        "driveViewUrl": "https://drive.google.com/file/d/1iQ5nITVNlfVeSv2jxUNVOGkX1OWWSQrN/view?usp=sharing"
+      },
+      {
+        "id": "1jKrw2jL2X1wTJhcDZlXAwNgZGE9p5wAC",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_ข้อมูลและฐานข้อมูล.png",
+        "url": "https://lh3.googleusercontent.com/d/1jKrw2jL2X1wTJhcDZlXAwNgZGE9p5wAC",
+        "driveViewUrl": "https://drive.google.com/file/d/1jKrw2jL2X1wTJhcDZlXAwNgZGE9p5wAC/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 2": [
+      {
+        "id": "1Q0RkN7O_t795PX4B9_SJZbv0N1GvJflH",
+        "filename": "01_สไลด์_ตาราง_ระเบียน_เขตข้อมูล_และคีย์.png",
+        "url": "https://lh3.googleusercontent.com/d/1Q0RkN7O_t795PX4B9_SJZbv0N1GvJflH",
+        "driveViewUrl": "https://drive.google.com/file/d/1Q0RkN7O_t795PX4B9_SJZbv0N1GvJflH/view?usp=sharing"
+      },
+      {
+        "id": "1M8hp0ShGXL_sXiYeIIfKh-o8ackAIrfw",
+        "filename": "02_สไลด์_ส่วนประกอบของตาราง.png",
+        "url": "https://lh3.googleusercontent.com/d/1M8hp0ShGXL_sXiYeIIfKh-o8ackAIrfw",
+        "driveViewUrl": "https://drive.google.com/file/d/1M8hp0ShGXL_sXiYeIIfKh-o8ackAIrfw/view?usp=sharing"
+      },
+      {
+        "id": "1lF7IcDwrwXhncGIa1Ncx7ZrOWuHW8nrc",
+        "filename": "03_สไลด์_ชนิดของข้อมูลในเขตข้อมูล.png",
+        "url": "https://lh3.googleusercontent.com/d/1lF7IcDwrwXhncGIa1Ncx7ZrOWuHW8nrc",
+        "driveViewUrl": "https://drive.google.com/file/d/1lF7IcDwrwXhncGIa1Ncx7ZrOWuHW8nrc/view?usp=sharing"
+      },
+      {
+        "id": "15iLmvT-9S-6KWgikakjjf5yhn8JOR-M9",
+        "filename": "04_สไลด์_คีย์หลักและคีย์นอก.png",
+        "url": "https://lh3.googleusercontent.com/d/15iLmvT-9S-6KWgikakjjf5yhn8JOR-M9",
+        "driveViewUrl": "https://drive.google.com/file/d/15iLmvT-9S-6KWgikakjjf5yhn8JOR-M9/view?usp=sharing"
+      },
+      {
+        "id": "10XPVPE8Ruox1z7w6TzUhJLjU4S-1UhWY",
+        "filename": "05_สไลด์_ทำไมชื่อจึงไม่เหมาะเป็นคีย์หลัก.png",
+        "url": "https://lh3.googleusercontent.com/d/10XPVPE8Ruox1z7w6TzUhJLjU4S-1UhWY",
+        "driveViewUrl": "https://drive.google.com/file/d/10XPVPE8Ruox1z7w6TzUhJLjU4S-1UhWY/view?usp=sharing"
+      },
+      {
+        "id": "13ZiOw1JlcfwClGISASinT7VmQj8p18P1",
+        "filename": "06_สไลด์_ตารางคำนวณ_กับ_ฐานข้อมูล.png",
+        "url": "https://lh3.googleusercontent.com/d/13ZiOw1JlcfwClGISASinT7VmQj8p18P1",
+        "driveViewUrl": "https://drive.google.com/file/d/13ZiOw1JlcfwClGISASinT7VmQj8p18P1/view?usp=sharing"
+      },
+      {
+        "id": "1rhj49BZxTIK647luqHm5k0iUXuaS52ub",
+        "filename": "07_สไลด์_ตั้งชื่อเขตข้อมูลให้ดี.png",
+        "url": "https://lh3.googleusercontent.com/d/1rhj49BZxTIK647luqHm5k0iUXuaS52ub",
+        "driveViewUrl": "https://drive.google.com/file/d/1rhj49BZxTIK647luqHm5k0iUXuaS52ub/view?usp=sharing"
+      },
+      {
+        "id": "1Hl9leLNi4nDY00UtFAGjtYyB9srChPDA",
+        "filename": "08_สไลด์_ตรวจข้อมูลก่อนบันทึก_Validation.png",
+        "url": "https://lh3.googleusercontent.com/d/1Hl9leLNi4nDY00UtFAGjtYyB9srChPDA",
+        "driveViewUrl": "https://drive.google.com/file/d/1Hl9leLNi4nDY00UtFAGjtYyB9srChPDA/view?usp=sharing"
+      },
+      {
+        "id": "1VYMtniH26nRO9la7S7F3s3xz_T1Wuwnp",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_ตารางและคีย์.png",
+        "url": "https://lh3.googleusercontent.com/d/1VYMtniH26nRO9la7S7F3s3xz_T1Wuwnp",
+        "driveViewUrl": "https://drive.google.com/file/d/1VYMtniH26nRO9la7S7F3s3xz_T1Wuwnp/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 3": [
+      {
+        "id": "1fnQz-zkSHpuBBjbVk7JeUw78MNyuK58_",
+        "filename": "01_สไลด์_ความสัมพันธ์และแผนภาพ_ER.png",
+        "url": "https://lh3.googleusercontent.com/d/1fnQz-zkSHpuBBjbVk7JeUw78MNyuK58_",
+        "driveViewUrl": "https://drive.google.com/file/d/1fnQz-zkSHpuBBjbVk7JeUw78MNyuK58_/view?usp=sharing"
+      },
+      {
+        "id": "10vbja_7O-n4oD7bk_7-sAag5wwF1g7C4",
+        "filename": "02_สไลด์_เอนทิตีและแอตทริบิวต์.png",
+        "url": "https://lh3.googleusercontent.com/d/10vbja_7O-n4oD7bk_7-sAag5wwF1g7C4",
+        "driveViewUrl": "https://drive.google.com/file/d/10vbja_7O-n4oD7bk_7-sAag5wwF1g7C4/view?usp=sharing"
+      },
+      {
+        "id": "1c7c4t7KmtWIK7u42pJm0F7lNhXw9x5t6",
+        "filename": "03_สไลด์_ความสัมพันธ์_3_แบบ.png",
+        "url": "https://lh3.googleusercontent.com/d/1c7c4t7KmtWIK7u42pJm0F7lNhXw9x5t6",
+        "driveViewUrl": "https://drive.google.com/file/d/1c7c4t7KmtWIK7u42pJm0F7lNhXw9x5t6/view?usp=sharing"
+      },
+      {
+        "id": "1XGgPZk6TzuRjqWxvT92o4JRFjpDc_kM_",
+        "filename": "04_สไลด์_ER_Diagram_ระบบยืมหนังสือ.png",
+        "url": "https://lh3.googleusercontent.com/d/1XGgPZk6TzuRjqWxvT92o4JRFjpDc_kM_",
+        "driveViewUrl": "https://drive.google.com/file/d/1XGgPZk6TzuRjqWxvT92o4JRFjpDc_kM_/view?usp=sharing"
+      },
+      {
+        "id": "1PLQHmzf1KhnW-tA9gp8KBAXp0WqCco5g",
+        "filename": "05_สไลด์_วาด_ER_Diagram_ด้วย_drawio.png",
+        "url": "https://lh3.googleusercontent.com/d/1PLQHmzf1KhnW-tA9gp8KBAXp0WqCco5g",
+        "driveViewUrl": "https://drive.google.com/file/d/1PLQHmzf1KhnW-tA9gp8KBAXp0WqCco5g/view?usp=sharing"
+      },
+      {
+        "id": "14Eohl6u5w_pdjpLTvEb6mcCEBkQxJLG4",
+        "filename": "06_สไลด์_แปลง_MN_ด้วยตารางกลาง.png",
+        "url": "https://lh3.googleusercontent.com/d/14Eohl6u5w_pdjpLTvEb6mcCEBkQxJLG4",
+        "driveViewUrl": "https://drive.google.com/file/d/14Eohl6u5w_pdjpLTvEb6mcCEBkQxJLG4/view?usp=sharing"
+      },
+      {
+        "id": "14WJp7JGQuO4BwPLGC0WmKJzsj95qxaBI",
+        "filename": "07_สไลด์_อ่านแผนภาพ_ER_ให้เป็น.png",
+        "url": "https://lh3.googleusercontent.com/d/14WJp7JGQuO4BwPLGC0WmKJzsj95qxaBI",
+        "driveViewUrl": "https://drive.google.com/file/d/14WJp7JGQuO4BwPLGC0WmKJzsj95qxaBI/view?usp=sharing"
+      },
+      {
+        "id": "1f0O0oDKpKY3DbjtAvh9aDUE3vB6KUwNw",
+        "filename": "08_สไลด์_ฝึกหาความสัมพันธ์ในโรงเรียน.png",
+        "url": "https://lh3.googleusercontent.com/d/1f0O0oDKpKY3DbjtAvh9aDUE3vB6KUwNw",
+        "driveViewUrl": "https://drive.google.com/file/d/1f0O0oDKpKY3DbjtAvh9aDUE3vB6KUwNw/view?usp=sharing"
+      },
+      {
+        "id": "1G-rZmftKsDeO-JwygyaSvi-p5Zazd8JQ",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_ER_Diagram.png",
+        "url": "https://lh3.googleusercontent.com/d/1G-rZmftKsDeO-JwygyaSvi-p5Zazd8JQ",
+        "driveViewUrl": "https://drive.google.com/file/d/1G-rZmftKsDeO-JwygyaSvi-p5Zazd8JQ/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 4": [
+      {
+        "id": "1SQz3-p8jcQt01GUGtTTXH3LeJomzoDAb",
+        "filename": "01_สไลด์_ออกแบบฐานข้อมูลห้องเรียนของเรา.png",
+        "url": "https://lh3.googleusercontent.com/d/1SQz3-p8jcQt01GUGtTTXH3LeJomzoDAb",
+        "driveViewUrl": "https://drive.google.com/file/d/1SQz3-p8jcQt01GUGtTTXH3LeJomzoDAb/view?usp=sharing"
+      },
+      {
+        "id": "1cQXlS4bRb7uIdTJ5RVSEvb9ITfiEEfuH",
+        "filename": "02_สไลด์_ขั้นตอนการออกแบบฐานข้อมูล.png",
+        "url": "https://lh3.googleusercontent.com/d/1cQXlS4bRb7uIdTJ5RVSEvb9ITfiEEfuH",
+        "driveViewUrl": "https://drive.google.com/file/d/1cQXlS4bRb7uIdTJ5RVSEvb9ITfiEEfuH/view?usp=sharing"
+      },
+      {
+        "id": "1XsHry__wO2nzDC8V8PeaP05edvpKk8Lc",
+        "filename": "03_สไลด์_ตารางที่มีข้อมูลซ้ำซ้อน.png",
+        "url": "https://lh3.googleusercontent.com/d/1XsHry__wO2nzDC8V8PeaP05edvpKk8Lc",
+        "driveViewUrl": "https://drive.google.com/file/d/1XsHry__wO2nzDC8V8PeaP05edvpKk8Lc/view?usp=sharing"
+      },
+      {
+        "id": "1cs__CG16Nh4n_99tBWgr5V9aefCzTnBf",
+        "filename": "04_สไลด์_แยกตารางเพื่อลดความซ้ำซ้อน.png",
+        "url": "https://lh3.googleusercontent.com/d/1cs__CG16Nh4n_99tBWgr5V9aefCzTnBf",
+        "driveViewUrl": "https://drive.google.com/file/d/1cs__CG16Nh4n_99tBWgr5V9aefCzTnBf/view?usp=sharing"
+      },
+      {
+        "id": "1S57czZPka9qw--7yujus2bXxKdAWfAVC",
+        "filename": "05_สไลด์_ดูแลข้อมูลส่วนบุคคล.png",
+        "url": "https://lh3.googleusercontent.com/d/1S57czZPka9qw--7yujus2bXxKdAWfAVC",
+        "driveViewUrl": "https://drive.google.com/file/d/1S57czZPka9qw--7yujus2bXxKdAWfAVC/view?usp=sharing"
+      },
+      {
+        "id": "1lMJNjGDy8wxXI8zvRIcfSlx6b-QTUksb",
+        "filename": "06_สไลด์_สัมภาษณ์ผู้ใช้ก่อนออกแบบ.png",
+        "url": "https://lh3.googleusercontent.com/d/1lMJNjGDy8wxXI8zvRIcfSlx6b-QTUksb",
+        "driveViewUrl": "https://drive.google.com/file/d/1lMJNjGDy8wxXI8zvRIcfSlx6b-QTUksb/view?usp=sharing"
+      },
+      {
+        "id": "1bNFZQ9kjXxDw1eCbusYc1YX7igUq-ONP",
+        "filename": "07_สไลด์_พจนานุกรมข้อมูล_Data_Dictionary.png",
+        "url": "https://lh3.googleusercontent.com/d/1bNFZQ9kjXxDw1eCbusYc1YX7igUq-ONP",
+        "driveViewUrl": "https://drive.google.com/file/d/1bNFZQ9kjXxDw1eCbusYc1YX7igUq-ONP/view?usp=sharing"
+      },
+      {
+        "id": "14judYxTXiSyUoigA-B2Mi231KtM2Xid3",
+        "filename": "08_สไลด์_หลัก_PDPA_ที่นักออกแบบต้องรู้.png",
+        "url": "https://lh3.googleusercontent.com/d/14judYxTXiSyUoigA-B2Mi231KtM2Xid3",
+        "driveViewUrl": "https://drive.google.com/file/d/14judYxTXiSyUoigA-B2Mi231KtM2Xid3/view?usp=sharing"
+      },
+      {
+        "id": "1g5ZpULzHemCm7UA7IW3-54S5YCDPeGIT",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_การออกแบบ.png",
+        "url": "https://lh3.googleusercontent.com/d/1g5ZpULzHemCm7UA7IW3-54S5YCDPeGIT",
+        "driveViewUrl": "https://drive.google.com/file/d/1g5ZpULzHemCm7UA7IW3-54S5YCDPeGIT/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 5": [
+      {
+        "id": "1h5rRDWtw_q57whbKePpBOCRDsfasBTyb",
+        "filename": "01_สไลด์_ค้นหาข้อมูลด้วย_SQL_เบื้องต้น.png",
+        "url": "https://lh3.googleusercontent.com/d/1h5rRDWtw_q57whbKePpBOCRDsfasBTyb",
+        "driveViewUrl": "https://drive.google.com/file/d/1h5rRDWtw_q57whbKePpBOCRDsfasBTyb/view?usp=sharing"
+      },
+      {
+        "id": "1bw8DS3QeLodaPaUej8NomVsCrHhP30C4",
+        "filename": "02_สไลด์_SELECT_และ_WHERE.png",
+        "url": "https://lh3.googleusercontent.com/d/1bw8DS3QeLodaPaUej8NomVsCrHhP30C4",
+        "driveViewUrl": "https://drive.google.com/file/d/1bw8DS3QeLodaPaUej8NomVsCrHhP30C4/view?usp=sharing"
+      },
+      {
+        "id": "1-4I7kgkWjx9QNsn0_6GXCYSksOt__9Eu",
+        "filename": "03_สไลด์_เรียงลำดับด้วย_ORDER_BY.png",
+        "url": "https://lh3.googleusercontent.com/d/1-4I7kgkWjx9QNsn0_6GXCYSksOt__9Eu",
+        "driveViewUrl": "https://drive.google.com/file/d/1-4I7kgkWjx9QNsn0_6GXCYSksOt__9Eu/view?usp=sharing"
+      },
+      {
+        "id": "19G0ojzF3-OVuJhepnKCUFpK9SEPIb0Om",
+        "filename": "04_สไลด์_สรุปข้อมูลด้วยฟังก์ชัน.png",
+        "url": "https://lh3.googleusercontent.com/d/19G0ojzF3-OVuJhepnKCUFpK9SEPIb0Om",
+        "driveViewUrl": "https://drive.google.com/file/d/19G0ojzF3-OVuJhepnKCUFpK9SEPIb0Om/view?usp=sharing"
+      },
+      {
+        "id": "1azqICj3ZlDSacHY8UoaVJqPZ6gEp6ouX",
+        "filename": "05_สไลด์_ลองฝึกบน_SQLite_Online.png",
+        "url": "https://lh3.googleusercontent.com/d/1azqICj3ZlDSacHY8UoaVJqPZ6gEp6ouX",
+        "driveViewUrl": "https://drive.google.com/file/d/1azqICj3ZlDSacHY8UoaVJqPZ6gEp6ouX/view?usp=sharing"
+      },
+      {
+        "id": "1uoQuAQ5tj02eSct9loMX2P3cqIUdsfy6",
+        "filename": "06_สไลด์_ค้นหาด้วย_LIKE.png",
+        "url": "https://lh3.googleusercontent.com/d/1uoQuAQ5tj02eSct9loMX2P3cqIUdsfy6",
+        "driveViewUrl": "https://drive.google.com/file/d/1uoQuAQ5tj02eSct9loMX2P3cqIUdsfy6/view?usp=sharing"
+      },
+      {
+        "id": "1GxF-MKsxyrM6T9fGbWwmuZ-H0tepI8RA",
+        "filename": "07_สไลด์_เชื่อมสองตารางด้วย_JOIN.png",
+        "url": "https://lh3.googleusercontent.com/d/1GxF-MKsxyrM6T9fGbWwmuZ-H0tepI8RA",
+        "driveViewUrl": "https://drive.google.com/file/d/1GxF-MKsxyrM6T9fGbWwmuZ-H0tepI8RA/view?usp=sharing"
+      },
+      {
+        "id": "1dfBA3u1Bkr8SjqgFaUQBmZiZzLc9XjzD",
+        "filename": "08_สไลด์_เพิ่ม_แก้_ลบ_ข้อมูลอย่างระวัง.png",
+        "url": "https://lh3.googleusercontent.com/d/1dfBA3u1Bkr8SjqgFaUQBmZiZzLc9XjzD",
+        "driveViewUrl": "https://drive.google.com/file/d/1dfBA3u1Bkr8SjqgFaUQBmZiZzLc9XjzD/view?usp=sharing"
+      },
+      {
+        "id": "1-l1lnICb_8nUZT1S5H5DK8Pp1f2iJ4ia",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_SQL.png",
+        "url": "https://lh3.googleusercontent.com/d/1-l1lnICb_8nUZT1S5H5DK8Pp1f2iJ4ia",
+        "driveViewUrl": "https://drive.google.com/file/d/1-l1lnICb_8nUZT1S5H5DK8Pp1f2iJ4ia/view?usp=sharing"
+      }
+    ]
+  },
+  "วิชาเล่าเรื่องด้วยสื่อดิจิทัล มัธยมศึกษา ม.1-ม.3": {
+    "หน่วยที่ 1": [
+      {
+        "id": "1wHk5qH3jxPzg_C0iwk_gg1gx02mnZnee",
+        "filename": "01_สไลด์_เล่าเรื่องด้วยสื่อดิจิทัล.png",
+        "url": "https://lh3.googleusercontent.com/d/1wHk5qH3jxPzg_C0iwk_gg1gx02mnZnee",
+        "driveViewUrl": "https://drive.google.com/file/d/1wHk5qH3jxPzg_C0iwk_gg1gx02mnZnee/view?usp=sharing"
+      },
+      {
+        "id": "1VQQguYELNbcTQqvYMwk5jwhWnVnk_CXY",
+        "filename": "02_สไลด์_Digital_Storytelling_คืออะไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1VQQguYELNbcTQqvYMwk5jwhWnVnk_CXY",
+        "driveViewUrl": "https://drive.google.com/file/d/1VQQguYELNbcTQqvYMwk5jwhWnVnk_CXY/view?usp=sharing"
+      },
+      {
+        "id": "1DTgWHmwT1bKyTG7Vf22k6NiDOMEVhsZ0",
+        "filename": "03_สไลด์_รู้จักผู้ชมก่อนเล่า.png",
+        "url": "https://lh3.googleusercontent.com/d/1DTgWHmwT1bKyTG7Vf22k6NiDOMEVhsZ0",
+        "driveViewUrl": "https://drive.google.com/file/d/1DTgWHmwT1bKyTG7Vf22k6NiDOMEVhsZ0/view?usp=sharing"
+      },
+      {
+        "id": "1gO6xghpDzQchj_G5jexHmLzcyiuMf3Az",
+        "filename": "04_สไลด์_เลือกรูปแบบสื่อให้เหมาะ.png",
+        "url": "https://lh3.googleusercontent.com/d/1gO6xghpDzQchj_G5jexHmLzcyiuMf3Az",
+        "driveViewUrl": "https://drive.google.com/file/d/1gO6xghpDzQchj_G5jexHmLzcyiuMf3Az/view?usp=sharing"
+      },
+      {
+        "id": "1tGlibuws2TwLLJ17Ap4Ifd_oryOh5Qec",
+        "filename": "05_สไลด์_ตัวอย่าง_หัวข้อเดียว_ผู้ชมต่างกัน.png",
+        "url": "https://lh3.googleusercontent.com/d/1tGlibuws2TwLLJ17Ap4Ifd_oryOh5Qec",
+        "driveViewUrl": "https://drive.google.com/file/d/1tGlibuws2TwLLJ17Ap4Ifd_oryOh5Qec/view?usp=sharing"
+      },
+      {
+        "id": "1RCN7R4dArgZug4JKIKvBm3gtUqLOEKZE",
+        "filename": "06_สไลด์_องค์ประกอบ_7_ประการของเรื่องเล่า.png",
+        "url": "https://lh3.googleusercontent.com/d/1RCN7R4dArgZug4JKIKvBm3gtUqLOEKZE",
+        "driveViewUrl": "https://drive.google.com/file/d/1RCN7R4dArgZug4JKIKvBm3gtUqLOEKZE/view?usp=sharing"
+      },
+      {
+        "id": "1iXRsrYVnWKgjDWqM3oC4A-x4Ze2YefMQ",
+        "filename": "07_สไลด์_เลือกสัดส่วนภาพให้ตรงช่องทาง.png",
+        "url": "https://lh3.googleusercontent.com/d/1iXRsrYVnWKgjDWqM3oC4A-x4Ze2YefMQ",
+        "driveViewUrl": "https://drive.google.com/file/d/1iXRsrYVnWKgjDWqM3oC4A-x4Ze2YefMQ/view?usp=sharing"
+      },
+      {
+        "id": "1NkepjVI8A61AVBofPN4yhq2MjJS9CAu-",
+        "filename": "08_สไลด์_เรื่องเล่าแบบไหน_ตั้งใจอะไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1NkepjVI8A61AVBofPN4yhq2MjJS9CAu-",
+        "driveViewUrl": "https://drive.google.com/file/d/1NkepjVI8A61AVBofPN4yhq2MjJS9CAu-/view?usp=sharing"
+      },
+      {
+        "id": "14S9Izf2K1TjUOzIhLpX18gv05vEV_iPW",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_เรื่องเล่าและผู้ชม.png",
+        "url": "https://lh3.googleusercontent.com/d/14S9Izf2K1TjUOzIhLpX18gv05vEV_iPW",
+        "driveViewUrl": "https://drive.google.com/file/d/14S9Izf2K1TjUOzIhLpX18gv05vEV_iPW/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 2": [
+      {
+        "id": "18hOM1YUYslf74tciSkbFgaouO7kKssAY",
+        "filename": "01_สไลด์_โครงเรื่องและการเขียนบท.png",
+        "url": "https://lh3.googleusercontent.com/d/18hOM1YUYslf74tciSkbFgaouO7kKssAY",
+        "driveViewUrl": "https://drive.google.com/file/d/18hOM1YUYslf74tciSkbFgaouO7kKssAY/view?usp=sharing"
+      },
+      {
+        "id": "18jzU2uaSySeugp91ip_MXd7xxusnqwtH",
+        "filename": "02_สไลด์_โครงเรื่อง_4_ช่วง.png",
+        "url": "https://lh3.googleusercontent.com/d/18jzU2uaSySeugp91ip_MXd7xxusnqwtH",
+        "driveViewUrl": "https://drive.google.com/file/d/18jzU2uaSySeugp91ip_MXd7xxusnqwtH/view?usp=sharing"
+      },
+      {
+        "id": "1LXPlX9r1SnseMkzNnIx2SrB95MOf_wKB",
+        "filename": "03_สไลด์_3_วินาทีแรกต้องดึงดูด.png",
+        "url": "https://lh3.googleusercontent.com/d/1LXPlX9r1SnseMkzNnIx2SrB95MOf_wKB",
+        "driveViewUrl": "https://drive.google.com/file/d/1LXPlX9r1SnseMkzNnIx2SrB95MOf_wKB/view?usp=sharing"
+      },
+      {
+        "id": "19d6pOC2uGZ8ylUMt51pm46Z2pW9RiyRF",
+        "filename": "04_สไลด์_บทแบบภาพคู่เสียง.png",
+        "url": "https://lh3.googleusercontent.com/d/19d6pOC2uGZ8ylUMt51pm46Z2pW9RiyRF",
+        "driveViewUrl": "https://drive.google.com/file/d/19d6pOC2uGZ8ylUMt51pm46Z2pW9RiyRF/view?usp=sharing"
+      },
+      {
+        "id": "1n2Yv6LTarVtdFE5ompVQiOvKw5gr5ZUc",
+        "filename": "05_สไลด์_ตรวจความยาวของบท.png",
+        "url": "https://lh3.googleusercontent.com/d/1n2Yv6LTarVtdFE5ompVQiOvKw5gr5ZUc",
+        "driveViewUrl": "https://drive.google.com/file/d/1n2Yv6LTarVtdFE5ompVQiOvKw5gr5ZUc/view?usp=sharing"
+      },
+      {
+        "id": "1UO9iRw2gmegcrqwQ2ij_URVJUolNvYFv",
+        "filename": "06_สไลด์_สรุปเรื่องในประโยคเดียว.png",
+        "url": "https://lh3.googleusercontent.com/d/1UO9iRw2gmegcrqwQ2ij_URVJUolNvYFv",
+        "driveViewUrl": "https://drive.google.com/file/d/1UO9iRw2gmegcrqwQ2ij_URVJUolNvYFv/view?usp=sharing"
+      },
+      {
+        "id": "142m_Gexq9o-Sct7wVBpqUeGzOHJROW5P",
+        "filename": "07_สไลด์_แสดงให้เห็น_ดีกว่าบอก.png",
+        "url": "https://lh3.googleusercontent.com/d/142m_Gexq9o-Sct7wVBpqUeGzOHJROW5P",
+        "driveViewUrl": "https://drive.google.com/file/d/142m_Gexq9o-Sct7wVBpqUeGzOHJROW5P/view?usp=sharing"
+      },
+      {
+        "id": "13oK9FX9xPcz7MM4TstoswxVyrkPs82Y2",
+        "filename": "08_สไลด์_เขียนคำบรรยายให้ฟังง่าย.png",
+        "url": "https://lh3.googleusercontent.com/d/13oK9FX9xPcz7MM4TstoswxVyrkPs82Y2",
+        "driveViewUrl": "https://drive.google.com/file/d/13oK9FX9xPcz7MM4TstoswxVyrkPs82Y2/view?usp=sharing"
+      },
+      {
+        "id": "1JWI3ID56yGZTXPcTyWRiJePHeVOk_ubS",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_โครงเรื่องและบท.png",
+        "url": "https://lh3.googleusercontent.com/d/1JWI3ID56yGZTXPcTyWRiJePHeVOk_ubS",
+        "driveViewUrl": "https://drive.google.com/file/d/1JWI3ID56yGZTXPcTyWRiJePHeVOk_ubS/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 3": [
+      {
+        "id": "1pFD2RIcPSy_zZp_5D7RCAGxZowelvzGJ",
+        "filename": "01_สไลด์_สตอรี่บอร์ดและภาษาภาพ.png",
+        "url": "https://lh3.googleusercontent.com/d/1pFD2RIcPSy_zZp_5D7RCAGxZowelvzGJ",
+        "driveViewUrl": "https://drive.google.com/file/d/1pFD2RIcPSy_zZp_5D7RCAGxZowelvzGJ/view?usp=sharing"
+      },
+      {
+        "id": "1yITco3JHSQBgIogmP7o82YaV2l6erbsk",
+        "filename": "02_สไลด์_ในหนึ่งช่องสตอรี่บอร์ดมีอะไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1yITco3JHSQBgIogmP7o82YaV2l6erbsk",
+        "driveViewUrl": "https://drive.google.com/file/d/1yITco3JHSQBgIogmP7o82YaV2l6erbsk/view?usp=sharing"
+      },
+      {
+        "id": "1QjHd3LcnXZnXt6HgILgk0Xw6CBTjDmqa",
+        "filename": "03_สไลด์_ขนาดภาพเล่าเรื่องต่างกัน.png",
+        "url": "https://lh3.googleusercontent.com/d/1QjHd3LcnXZnXt6HgILgk0Xw6CBTjDmqa",
+        "driveViewUrl": "https://drive.google.com/file/d/1QjHd3LcnXZnXt6HgILgk0Xw6CBTjDmqa/view?usp=sharing"
+      },
+      {
+        "id": "1MxqxJ2iO3BQhY_IJBQTnjayrIJONA9qr",
+        "filename": "04_สไลด์_มุมกล้องกับความรู้สึก.png",
+        "url": "https://lh3.googleusercontent.com/d/1MxqxJ2iO3BQhY_IJBQTnjayrIJONA9qr",
+        "driveViewUrl": "https://drive.google.com/file/d/1MxqxJ2iO3BQhY_IJBQTnjayrIJONA9qr/view?usp=sharing"
+      },
+      {
+        "id": "1vflJ3mi765l5ugeMNIRZh4QIAuR24M83",
+        "filename": "05_สไลด์_กฎสามส่วน_Rule_of_Thirds.png",
+        "url": "https://lh3.googleusercontent.com/d/1vflJ3mi765l5ugeMNIRZh4QIAuR24M83",
+        "driveViewUrl": "https://drive.google.com/file/d/1vflJ3mi765l5ugeMNIRZh4QIAuR24M83/view?usp=sharing"
+      },
+      {
+        "id": "184FTViru3840Mnsljsk9VHJXc9_ALYua",
+        "filename": "06_สไลด์_การเคลื่อนกล้อง.png",
+        "url": "https://lh3.googleusercontent.com/d/184FTViru3840Mnsljsk9VHJXc9_ALYua",
+        "driveViewUrl": "https://drive.google.com/file/d/184FTViru3840Mnsljsk9VHJXc9_ALYua/view?usp=sharing"
+      },
+      {
+        "id": "17L7lJbQM2YfTZDHodlr0v_Wxwc4TH9fL",
+        "filename": "07_สไลด์_จากสตอรี่บอร์ดสู่รายการช็อต.png",
+        "url": "https://lh3.googleusercontent.com/d/17L7lJbQM2YfTZDHodlr0v_Wxwc4TH9fL",
+        "driveViewUrl": "https://drive.google.com/file/d/17L7lJbQM2YfTZDHodlr0v_Wxwc4TH9fL/view?usp=sharing"
+      },
+      {
+        "id": "1jhpvApZyMZVn8S9ZIfLfj6iG7sk4cmo7",
+        "filename": "08_สไลด์_อ่านภาพด้วยภาษาภาพ.png",
+        "url": "https://lh3.googleusercontent.com/d/1jhpvApZyMZVn8S9ZIfLfj6iG7sk4cmo7",
+        "driveViewUrl": "https://drive.google.com/file/d/1jhpvApZyMZVn8S9ZIfLfj6iG7sk4cmo7/view?usp=sharing"
+      },
+      {
+        "id": "1vtV6KDTrUXmTdrHBD7XaReyxhQHG5lQE",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_ภาษาภาพ.png",
+        "url": "https://lh3.googleusercontent.com/d/1vtV6KDTrUXmTdrHBD7XaReyxhQHG5lQE",
+        "driveViewUrl": "https://drive.google.com/file/d/1vtV6KDTrUXmTdrHBD7XaReyxhQHG5lQE/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 4": [
+      {
+        "id": "1zgV05xYuv1SKUIj9j4karNW3hGToCV6Y",
+        "filename": "01_สไลด์_ถ่ายทำและตัดต่อวิดีโอสั้น.png",
+        "url": "https://lh3.googleusercontent.com/d/1zgV05xYuv1SKUIj9j4karNW3hGToCV6Y",
+        "driveViewUrl": "https://drive.google.com/file/d/1zgV05xYuv1SKUIj9j4karNW3hGToCV6Y/view?usp=sharing"
+      },
+      {
+        "id": "1nHKFzOJ-oNbc2QFO2P2ITf_00PNJfTn0",
+        "filename": "02_สไลด์_แสงดี_หน้าสว่าง.png",
+        "url": "https://lh3.googleusercontent.com/d/1nHKFzOJ-oNbc2QFO2P2ITf_00PNJfTn0",
+        "driveViewUrl": "https://drive.google.com/file/d/1nHKFzOJ-oNbc2QFO2P2ITf_00PNJfTn0/view?usp=sharing"
+      },
+      {
+        "id": "1l5RedFtmOoTNuoxcSHRmn-l8bAk9bEkn",
+        "filename": "03_สไลด์_เสียงชัดสำคัญกว่าภาพสวย.png",
+        "url": "https://lh3.googleusercontent.com/d/1l5RedFtmOoTNuoxcSHRmn-l8bAk9bEkn",
+        "driveViewUrl": "https://drive.google.com/file/d/1l5RedFtmOoTNuoxcSHRmn-l8bAk9bEkn/view?usp=sharing"
+      },
+      {
+        "id": "18f98_VxD3Xfhy0MViGDOYP1kAj2HEDxw",
+        "filename": "04_สไลด์_ถ่ายเผื่อไว้ก่อน.png",
+        "url": "https://lh3.googleusercontent.com/d/18f98_VxD3Xfhy0MViGDOYP1kAj2HEDxw",
+        "driveViewUrl": "https://drive.google.com/file/d/18f98_VxD3Xfhy0MViGDOYP1kAj2HEDxw/view?usp=sharing"
+      },
+      {
+        "id": "1abNjF3-XzN_HNmH_KCpxkXclg2iUBHGQ",
+        "filename": "05_สไลด์_ขั้นตอนตัดต่อ.png",
+        "url": "https://lh3.googleusercontent.com/d/1abNjF3-XzN_HNmH_KCpxkXclg2iUBHGQ",
+        "driveViewUrl": "https://drive.google.com/file/d/1abNjF3-XzN_HNmH_KCpxkXclg2iUBHGQ/view?usp=sharing"
+      },
+      {
+        "id": "12O4Z0erkpsJ-517rEzu8YuPbPZFkbAS_",
+        "filename": "06_สไลด์_จัดระดับเสียงให้พอดี.png",
+        "url": "https://lh3.googleusercontent.com/d/12O4Z0erkpsJ-517rEzu8YuPbPZFkbAS_",
+        "driveViewUrl": "https://drive.google.com/file/d/12O4Z0erkpsJ-517rEzu8YuPbPZFkbAS_/view?usp=sharing"
+      },
+      {
+        "id": "1cI5jubDSKBDPSVQithum0O4sU7RS8_YB",
+        "filename": "07_สไลด์_คำบรรยายใต้ภาพที่อ่านทัน.png",
+        "url": "https://lh3.googleusercontent.com/d/1cI5jubDSKBDPSVQithum0O4sU7RS8_YB",
+        "driveViewUrl": "https://drive.google.com/file/d/1cI5jubDSKBDPSVQithum0O4sU7RS8_YB/view?usp=sharing"
+      },
+      {
+        "id": "1q510V_Wf_kcbktCK7aLopZt90pKqdDNx",
+        "filename": "08_สไลด์_ส่งออกและตั้งชื่อไฟล์.png",
+        "url": "https://lh3.googleusercontent.com/d/1q510V_Wf_kcbktCK7aLopZt90pKqdDNx",
+        "driveViewUrl": "https://drive.google.com/file/d/1q510V_Wf_kcbktCK7aLopZt90pKqdDNx/view?usp=sharing"
+      },
+      {
+        "id": "1gGrd3BR3POENNODM4rNOsLuAXKNQbyHN",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_ถ่ายทำและตัดต่อ.png",
+        "url": "https://lh3.googleusercontent.com/d/1gGrd3BR3POENNODM4rNOsLuAXKNQbyHN",
+        "driveViewUrl": "https://drive.google.com/file/d/1gGrd3BR3POENNODM4rNOsLuAXKNQbyHN/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 5": [
+      {
+        "id": "1ZeqAdJoHu1XTSf8v-fHTJMii1cJ0O9yq",
+        "filename": "01_สไลด์_เผยแพร่อย่างรับผิดชอบ.png",
+        "url": "https://lh3.googleusercontent.com/d/1ZeqAdJoHu1XTSf8v-fHTJMii1cJ0O9yq",
+        "driveViewUrl": "https://drive.google.com/file/d/1ZeqAdJoHu1XTSf8v-fHTJMii1cJ0O9yq/view?usp=sharing"
+      },
+      {
+        "id": "1uq58tP295EK1ZP3OLi8wRFCIsg8iOlTo",
+        "filename": "02_สไลด์_ลิขสิทธิ์ภาพและเพลง.png",
+        "url": "https://lh3.googleusercontent.com/d/1uq58tP295EK1ZP3OLi8wRFCIsg8iOlTo",
+        "driveViewUrl": "https://drive.google.com/file/d/1uq58tP295EK1ZP3OLi8wRFCIsg8iOlTo/view?usp=sharing"
+      },
+      {
+        "id": "1dLThQXlfZeMuQYPeHkXVhi5KZWzYpqf8",
+        "filename": "03_สไลด์_Creative_Commons_อ่านอย่างไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1dLThQXlfZeMuQYPeHkXVhi5KZWzYpqf8",
+        "driveViewUrl": "https://drive.google.com/file/d/1dLThQXlfZeMuQYPeHkXVhi5KZWzYpqf8/view?usp=sharing"
+      },
+      {
+        "id": "1MtuUvPokw9FgQXFD5VjE7tzDXjVpcSWB",
+        "filename": "04_สไลด์_เคารพความเป็นส่วนตัว.png",
+        "url": "https://lh3.googleusercontent.com/d/1MtuUvPokw9FgQXFD5VjE7tzDXjVpcSWB",
+        "driveViewUrl": "https://drive.google.com/file/d/1MtuUvPokw9FgQXFD5VjE7tzDXjVpcSWB/view?usp=sharing"
+      },
+      {
+        "id": "1w7aVfDKXKXA_vVPh0kXPGJMYosF8Z5PM",
+        "filename": "05_สไลด์_รายการตรวจก่อนกดโพสต์.png",
+        "url": "https://lh3.googleusercontent.com/d/1w7aVfDKXKXA_vVPh0kXPGJMYosF8Z5PM",
+        "driveViewUrl": "https://drive.google.com/file/d/1w7aVfDKXKXA_vVPh0kXPGJMYosF8Z5PM/view?usp=sharing"
+      },
+      {
+        "id": "1sZyLgf2EBkTUVoDgM4Q4i1pKc7u6010t",
+        "filename": "06_สไลด์_ใช้_AI_สร้างสื่ออย่างรับผิดชอบ.png",
+        "url": "https://lh3.googleusercontent.com/d/1sZyLgf2EBkTUVoDgM4Q4i1pKc7u6010t",
+        "driveViewUrl": "https://drive.google.com/file/d/1sZyLgf2EBkTUVoDgM4Q4i1pKc7u6010t/view?usp=sharing"
+      },
+      {
+        "id": "1-CX2kv_79jmcSuR90tfV3DyiahVZ0mIW",
+        "filename": "07_สไลด์_ให้ความเห็นแบบ_ชม_–_ถาม_–_เสนอแนะ.png",
+        "url": "https://lh3.googleusercontent.com/d/1-CX2kv_79jmcSuR90tfV3DyiahVZ0mIW",
+        "driveViewUrl": "https://drive.google.com/file/d/1-CX2kv_79jmcSuR90tfV3DyiahVZ0mIW/view?usp=sharing"
+      },
+      {
+        "id": "1OXxeGyPxicyZ1HDipZURRtV1y-3QpDrz",
+        "filename": "08_สไลด์_เกณฑ์ประเมินเรื่องเล่าดิจิทัล.png",
+        "url": "https://lh3.googleusercontent.com/d/1OXxeGyPxicyZ1HDipZURRtV1y-3QpDrz",
+        "driveViewUrl": "https://drive.google.com/file/d/1OXxeGyPxicyZ1HDipZURRtV1y-3QpDrz/view?usp=sharing"
+      },
+      {
+        "id": "14AnQPmWF4y9yLvHqO1ijPMxn7u69F3H1",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_เผยแพร่อย่างรับผิดชอบ.png",
+        "url": "https://lh3.googleusercontent.com/d/14AnQPmWF4y9yLvHqO1ijPMxn7u69F3H1",
+        "driveViewUrl": "https://drive.google.com/file/d/14AnQPmWF4y9yLvHqO1ijPMxn7u69F3H1/view?usp=sharing"
+      }
+    ]
+  },
+  "วิชาไอโอทีและโรงเรียนอัจฉริยะ มัธยมศึกษา ม.1-ม.3": {
+    "หน่วยที่ 1": [
+      {
+        "id": "1Kav07IU9dC-_et1E2RrTGIHFuWSmyrPO",
+        "filename": "01_สไลด์_IoT_รอบตัวเรา.png",
+        "url": "https://lh3.googleusercontent.com/d/1Kav07IU9dC-_et1E2RrTGIHFuWSmyrPO",
+        "driveViewUrl": "https://drive.google.com/file/d/1Kav07IU9dC-_et1E2RrTGIHFuWSmyrPO/view?usp=sharing"
+      },
+      {
+        "id": "1pkFQXa23ly6BhHU9knhg2y-L66rARc02",
+        "filename": "02_สไลด์_องค์ประกอบ_4_ส่วนของระบบ_IoT.png",
+        "url": "https://lh3.googleusercontent.com/d/1pkFQXa23ly6BhHU9knhg2y-L66rARc02",
+        "driveViewUrl": "https://drive.google.com/file/d/1pkFQXa23ly6BhHU9knhg2y-L66rARc02/view?usp=sharing"
+      },
+      {
+        "id": "1ZPhz8cGuEAfsxIIh3jCIpT_DzGCjqlt6",
+        "filename": "03_สไลด์_IoT_ใกล้ตัวที่เราใช้อยู่แล้ว.png",
+        "url": "https://lh3.googleusercontent.com/d/1ZPhz8cGuEAfsxIIh3jCIpT_DzGCjqlt6",
+        "driveViewUrl": "https://drive.google.com/file/d/1ZPhz8cGuEAfsxIIh3jCIpT_DzGCjqlt6/view?usp=sharing"
+      },
+      {
+        "id": "1d5UC75s92XF55TZLLnXp21MYH_mN7B_D",
+        "filename": "04_สไลด์_IoT_ช่วยโรงเรียนประหยัดพลังงาน.png",
+        "url": "https://lh3.googleusercontent.com/d/1d5UC75s92XF55TZLLnXp21MYH_mN7B_D",
+        "driveViewUrl": "https://drive.google.com/file/d/1d5UC75s92XF55TZLLnXp21MYH_mN7B_D/view?usp=sharing"
+      },
+      {
+        "id": "1JFRqksqpFNxKTt2CHxfepTTdcM_5f54n",
+        "filename": "05_สไลด์_ข้อมูลไหลอย่างไรในระบบ_IoT.png",
+        "url": "https://lh3.googleusercontent.com/d/1JFRqksqpFNxKTt2CHxfepTTdcM_5f54n",
+        "driveViewUrl": "https://drive.google.com/file/d/1JFRqksqpFNxKTt2CHxfepTTdcM_5f54n/view?usp=sharing"
+      },
+      {
+        "id": "1L5RkJVLPaeYZH3Kyf-kC76mxmr_TRJZf",
+        "filename": "06_สไลด์_วงจรการทำงานของ_IoT.png",
+        "url": "https://lh3.googleusercontent.com/d/1L5RkJVLPaeYZH3Kyf-kC76mxmr_TRJZf",
+        "driveViewUrl": "https://drive.google.com/file/d/1L5RkJVLPaeYZH3Kyf-kC76mxmr_TRJZf/view?usp=sharing"
+      },
+      {
+        "id": "1ViCZ65Y__OY2vQlz-v_mf0zsulyBH1VQ",
+        "filename": "07_สไลด์_ข้อดีและข้อควรระวังของ_IoT.png",
+        "url": "https://lh3.googleusercontent.com/d/1ViCZ65Y__OY2vQlz-v_mf0zsulyBH1VQ",
+        "driveViewUrl": "https://drive.google.com/file/d/1ViCZ65Y__OY2vQlz-v_mf0zsulyBH1VQ/view?usp=sharing"
+      },
+      {
+        "id": "1hNPPH5YK3zgWmzTr0vNCbH6IJQnheokF",
+        "filename": "08_สไลด์_สำรวจโรงเรียนของเรา.png",
+        "url": "https://lh3.googleusercontent.com/d/1hNPPH5YK3zgWmzTr0vNCbH6IJQnheokF",
+        "driveViewUrl": "https://drive.google.com/file/d/1hNPPH5YK3zgWmzTr0vNCbH6IJQnheokF/view?usp=sharing"
+      },
+      {
+        "id": "1LAn4a2J6_aS6AJZ8Grv5CZrxggFxGD0i",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_IoT_รอบตัวเรา.png",
+        "url": "https://lh3.googleusercontent.com/d/1LAn4a2J6_aS6AJZ8Grv5CZrxggFxGD0i",
+        "driveViewUrl": "https://drive.google.com/file/d/1LAn4a2J6_aS6AJZ8Grv5CZrxggFxGD0i/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 2": [
+      {
+        "id": "1WiGT25jWJ32h0TYE-ql-DG6ISgwHMhTB",
+        "filename": "01_สไลด์_เซนเซอร์และบอร์ด_GoGo_Board.png",
+        "url": "https://lh3.googleusercontent.com/d/1WiGT25jWJ32h0TYE-ql-DG6ISgwHMhTB",
+        "driveViewUrl": "https://drive.google.com/file/d/1WiGT25jWJ32h0TYE-ql-DG6ISgwHMhTB/view?usp=sharing"
+      },
+      {
+        "id": "1AIjAssOsT-BnlUvHQooEsYQq-DtayFWu",
+        "filename": "02_สไลด์_พอร์ตสองแบบบน_GoGo_Board.png",
+        "url": "https://lh3.googleusercontent.com/d/1AIjAssOsT-BnlUvHQooEsYQq-DtayFWu",
+        "driveViewUrl": "https://drive.google.com/file/d/1AIjAssOsT-BnlUvHQooEsYQq-DtayFWu/view?usp=sharing"
+      },
+      {
+        "id": "1QLqyzhSkwrcsPc6oOIsKyLOrRqhAyl9V",
+        "filename": "03_สไลด์_เซนเซอร์ที่ใช้บ่อย.png",
+        "url": "https://lh3.googleusercontent.com/d/1QLqyzhSkwrcsPc6oOIsKyLOrRqhAyl9V",
+        "driveViewUrl": "https://drive.google.com/file/d/1QLqyzhSkwrcsPc6oOIsKyLOrRqhAyl9V/view?usp=sharing"
+      },
+      {
+        "id": "1RI5jTqVb11rptOq1M-vr0Def0aAd0F8E",
+        "filename": "04_สไลด์_โปรแกรมแบบบล็อก_ถ้าแล้ว.png",
+        "url": "https://lh3.googleusercontent.com/d/1RI5jTqVb11rptOq1M-vr0Def0aAd0F8E",
+        "driveViewUrl": "https://drive.google.com/file/d/1RI5jTqVb11rptOq1M-vr0Def0aAd0F8E/view?usp=sharing"
+      },
+      {
+        "id": "1uMBENjFn-ApqUtiEP2uwNRS1_H31XKkz",
+        "filename": "05_สไลด์_กิจกรรมทดลองแบบไล่ระดับ.png",
+        "url": "https://lh3.googleusercontent.com/d/1uMBENjFn-ApqUtiEP2uwNRS1_H31XKkz",
+        "driveViewUrl": "https://drive.google.com/file/d/1uMBENjFn-ApqUtiEP2uwNRS1_H31XKkz/view?usp=sharing"
+      },
+      {
+        "id": "1Zf4XKpbkhXMZaG_ZoZ0Rf-VfyKFvxZm0",
+        "filename": "06_สไลด์_อ่านค่าเซนเซอร์ก่อนตั้งเงื่อนไข.png",
+        "url": "https://lh3.googleusercontent.com/d/1Zf4XKpbkhXMZaG_ZoZ0Rf-VfyKFvxZm0",
+        "driveViewUrl": "https://drive.google.com/file/d/1Zf4XKpbkhXMZaG_ZoZ0Rf-VfyKFvxZm0/view?usp=sharing"
+      },
+      {
+        "id": "1uG9UwlY0fOD8b5bVmDupbzXO-ZYz3K5C",
+        "filename": "07_สไลด์_สวิตช์กับเซนเซอร์_ต่างกันอย่างไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1uG9UwlY0fOD8b5bVmDupbzXO-ZYz3K5C",
+        "driveViewUrl": "https://drive.google.com/file/d/1uG9UwlY0fOD8b5bVmDupbzXO-ZYz3K5C/view?usp=sharing"
+      },
+      {
+        "id": "1G5Q1ZwUWsgXF73Y79zXKhr0Icchr3nmD",
+        "filename": "08_สไลด์_ตัวอย่างโปรแกรม_ไฟอัตโนมัติเมื่อมืด.png",
+        "url": "https://lh3.googleusercontent.com/d/1G5Q1ZwUWsgXF73Y79zXKhr0Icchr3nmD",
+        "driveViewUrl": "https://drive.google.com/file/d/1G5Q1ZwUWsgXF73Y79zXKhr0Icchr3nmD/view?usp=sharing"
+      },
+      {
+        "id": "1ibux3cquUnzcPkK28Nt8pjbOqHJjcU_S",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_เซนเซอร์และบอร์ด.png",
+        "url": "https://lh3.googleusercontent.com/d/1ibux3cquUnzcPkK28Nt8pjbOqHJjcU_S",
+        "driveViewUrl": "https://drive.google.com/file/d/1ibux3cquUnzcPkK28Nt8pjbOqHJjcU_S/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 4": [
+      {
+        "id": "1gW07ZBBSs96Rda6aCFLjqXpAy05xv17N",
+        "filename": "01_สไลด์_MQTT_และแพลตฟอร์ม_NETPIE.png",
+        "url": "https://lh3.googleusercontent.com/d/1gW07ZBBSs96Rda6aCFLjqXpAy05xv17N",
+        "driveViewUrl": "https://drive.google.com/file/d/1gW07ZBBSs96Rda6aCFLjqXpAy05xv17N/view?usp=sharing"
+      },
+      {
+        "id": "11NlqKLEXjtA5-4ZpuuarmRtSGqjbr9rl",
+        "filename": "02_สไลด์_Publish_และ_Subscribe.png",
+        "url": "https://lh3.googleusercontent.com/d/11NlqKLEXjtA5-4ZpuuarmRtSGqjbr9rl",
+        "driveViewUrl": "https://drive.google.com/file/d/11NlqKLEXjtA5-4ZpuuarmRtSGqjbr9rl/view?usp=sharing"
+      },
+      {
+        "id": "1mwbc9ntTxVtaHvVz5IfLI10EPd3oHrtC",
+        "filename": "03_สไลด์_NETPIE_ทำอะไรให้เราบ้าง.png",
+        "url": "https://lh3.googleusercontent.com/d/1mwbc9ntTxVtaHvVz5IfLI10EPd3oHrtC",
+        "driveViewUrl": "https://drive.google.com/file/d/1mwbc9ntTxVtaHvVz5IfLI10EPd3oHrtC/view?usp=sharing"
+      },
+      {
+        "id": "19tX9pki8M9II5rAPb89HPVWYnze6uvd5",
+        "filename": "04_สไลด์_ส่งค่าขึ้น_Device_Shadow.png",
+        "url": "https://lh3.googleusercontent.com/d/19tX9pki8M9II5rAPb89HPVWYnze6uvd5",
+        "driveViewUrl": "https://drive.google.com/file/d/19tX9pki8M9II5rAPb89HPVWYnze6uvd5/view?usp=sharing"
+      },
+      {
+        "id": "1bn_cXf1UfY5X8Tgd01V4rGSj1J1Q-qEE",
+        "filename": "05_สไลด์_เปรียบเทียบให้เห็นภาพ.png",
+        "url": "https://lh3.googleusercontent.com/d/1bn_cXf1UfY5X8Tgd01V4rGSj1J1Q-qEE",
+        "driveViewUrl": "https://drive.google.com/file/d/1bn_cXf1UfY5X8Tgd01V4rGSj1J1Q-qEE/view?usp=sharing"
+      },
+      {
+        "id": "181SirY1FAcwYp2RQaklU-52IKboCM7rx",
+        "filename": "06_สไลด์_ส่งหลายค่าด้วย_JSON.png",
+        "url": "https://lh3.googleusercontent.com/d/181SirY1FAcwYp2RQaklU-52IKboCM7rx",
+        "driveViewUrl": "https://drive.google.com/file/d/181SirY1FAcwYp2RQaklU-52IKboCM7rx/view?usp=sharing"
+      },
+      {
+        "id": "1jfBFgK6LMUK8l6Xmxnk2ILnvO64HoyS9",
+        "filename": "07_สไลด์_หัวข้อ_Topic_สำคัญของ_NETPIE_2020.png",
+        "url": "https://lh3.googleusercontent.com/d/1jfBFgK6LMUK8l6Xmxnk2ILnvO64HoyS9",
+        "driveViewUrl": "https://drive.google.com/file/d/1jfBFgK6LMUK8l6Xmxnk2ILnvO64HoyS9/view?usp=sharing"
+      },
+      {
+        "id": "1hs8GiQ8sLxXoDWq37vS5R5q6ICYh9sHL",
+        "filename": "08_สไลด์_เก็บข้อมูลย้อนหลังด้วย_Feed.png",
+        "url": "https://lh3.googleusercontent.com/d/1hs8GiQ8sLxXoDWq37vS5R5q6ICYh9sHL",
+        "driveViewUrl": "https://drive.google.com/file/d/1hs8GiQ8sLxXoDWq37vS5R5q6ICYh9sHL/view?usp=sharing"
+      },
+      {
+        "id": "17HS9Vx--_NAdSPyO81sldNM4TDHLHAgX",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_MQTT_และ_NETPIE.png",
+        "url": "https://lh3.googleusercontent.com/d/17HS9Vx--_NAdSPyO81sldNM4TDHLHAgX",
+        "driveViewUrl": "https://drive.google.com/file/d/17HS9Vx--_NAdSPyO81sldNM4TDHLHAgX/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 3": [
+      {
+        "id": "1tKlpMRKDvUxRCsLwBhs20EVFfXtm9fyq",
+        "filename": "01_สไลด์_ESP32_บอร์ดที่เชื่อมต่อ_Wi-Fi_ได้.png",
+        "url": "https://lh3.googleusercontent.com/d/1tKlpMRKDvUxRCsLwBhs20EVFfXtm9fyq",
+        "driveViewUrl": "https://drive.google.com/file/d/1tKlpMRKDvUxRCsLwBhs20EVFfXtm9fyq/view?usp=sharing"
+      },
+      {
+        "id": "1MvomP3Xnpnr9RigzHxhjU9qpdXEHn-p_",
+        "filename": "02_สไลด์_ESP32_กับ_Arduino_UNO_ต่างกันอย่างไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1MvomP3Xnpnr9RigzHxhjU9qpdXEHn-p_",
+        "driveViewUrl": "https://drive.google.com/file/d/1MvomP3Xnpnr9RigzHxhjU9qpdXEHn-p_/view?usp=sharing"
+      },
+      {
+        "id": "1spL607UJgOtgUI4n4H3QtbOywFXF0e3D",
+        "filename": "03_สไลด์_เชื่อม_Wi-Fi_ด้วยโค้ดไม่กี่บรรทัด.png",
+        "url": "https://lh3.googleusercontent.com/d/1spL607UJgOtgUI4n4H3QtbOywFXF0e3D",
+        "driveViewUrl": "https://drive.google.com/file/d/1spL607UJgOtgUI4n4H3QtbOywFXF0e3D/view?usp=sharing"
+      },
+      {
+        "id": "1N9DB3n07lUjMYXf4O6YsCR7sydcOK-vA",
+        "filename": "04_สไลด์_อ่านค่าความชื้นในดินเป็นเปอร์เซ็นต์.png",
+        "url": "https://lh3.googleusercontent.com/d/1N9DB3n07lUjMYXf4O6YsCR7sydcOK-vA",
+        "driveViewUrl": "https://drive.google.com/file/d/1N9DB3n07lUjMYXf4O6YsCR7sydcOK-vA/view?usp=sharing"
+      },
+      {
+        "id": "19ESH8h_-H8-q9XDalyQ1H2zA9acKMQU5",
+        "filename": "05_สไลด์_ไม่มีบอร์ดก็ทดลองได้.png",
+        "url": "https://lh3.googleusercontent.com/d/19ESH8h_-H8-q9XDalyQ1H2zA9acKMQU5",
+        "driveViewUrl": "https://drive.google.com/file/d/19ESH8h_-H8-q9XDalyQ1H2zA9acKMQU5/view?usp=sharing"
+      },
+      {
+        "id": "1jFJq0g8YZRrA72pQwM94o8hr6aEBwnkf",
+        "filename": "06_สไลด์_ขาของ_ESP32_ที่ต้องรู้.png",
+        "url": "https://lh3.googleusercontent.com/d/1jFJq0g8YZRrA72pQwM94o8hr6aEBwnkf",
+        "driveViewUrl": "https://drive.google.com/file/d/1jFJq0g8YZRrA72pQwM94o8hr6aEBwnkf/view?usp=sharing"
+      },
+      {
+        "id": "1qPuEfOx70v2LmkS0zBPO1-iwbjI1qc0i",
+        "filename": "07_สไลด์_อ่าน_Serial_Monitor_ให้เป็น.png",
+        "url": "https://lh3.googleusercontent.com/d/1qPuEfOx70v2LmkS0zBPO1-iwbjI1qc0i",
+        "driveViewUrl": "https://drive.google.com/file/d/1qPuEfOx70v2LmkS0zBPO1-iwbjI1qc0i/view?usp=sharing"
+      },
+      {
+        "id": "1gDR_VsxH146buC-tX9g_qdj6UM3DP0J9",
+        "filename": "08_สไลด์_เมื่อบอร์ดไม่ทำงาน_ตรวจตามลำดับนี้.png",
+        "url": "https://lh3.googleusercontent.com/d/1gDR_VsxH146buC-tX9g_qdj6UM3DP0J9",
+        "driveViewUrl": "https://drive.google.com/file/d/1gDR_VsxH146buC-tX9g_qdj6UM3DP0J9/view?usp=sharing"
+      },
+      {
+        "id": "1rtsLkFH-N7h1oISOIwO2yiVfrkcL3THc",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_ESP32.png",
+        "url": "https://lh3.googleusercontent.com/d/1rtsLkFH-N7h1oISOIwO2yiVfrkcL3THc",
+        "driveViewUrl": "https://drive.google.com/file/d/1rtsLkFH-N7h1oISOIwO2yiVfrkcL3THc/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 5": [
+      {
+        "id": "1uwEMYFn5TQN2TwarcaaybebI3l6mG1oK",
+        "filename": "01_สไลด์_แดชบอร์ดและการแจ้งเตือน.png",
+        "url": "https://lh3.googleusercontent.com/d/1uwEMYFn5TQN2TwarcaaybebI3l6mG1oK",
+        "driveViewUrl": "https://drive.google.com/file/d/1uwEMYFn5TQN2TwarcaaybebI3l6mG1oK/view?usp=sharing"
+      },
+      {
+        "id": "1YTE06NQZLHmHbsBmjrzPKHmW5nXDkuQl",
+        "filename": "02_สไลด์_วิดเจ็ตยอดนิยมบน_Freeboard.png",
+        "url": "https://lh3.googleusercontent.com/d/1YTE06NQZLHmHbsBmjrzPKHmW5nXDkuQl",
+        "driveViewUrl": "https://drive.google.com/file/d/1YTE06NQZLHmHbsBmjrzPKHmW5nXDkuQl/view?usp=sharing"
+      },
+      {
+        "id": "1YI-oHpdrTC7h262TDW4kodiG4sDKHfHX",
+        "filename": "03_สไลด์_ตั้งเงื่อนไขแจ้งเตือนอัตโนมัติ.png",
+        "url": "https://lh3.googleusercontent.com/d/1YI-oHpdrTC7h262TDW4kodiG4sDKHfHX",
+        "driveViewUrl": "https://drive.google.com/file/d/1YI-oHpdrTC7h262TDW4kodiG4sDKHfHX/view?usp=sharing"
+      },
+      {
+        "id": "1szleC2cUvjPD_GeWJndIMNi3lvLrczAR",
+        "filename": "04_สไลด์_ออกแบบแดชบอร์ดให้ใช้ง่าย.png",
+        "url": "https://lh3.googleusercontent.com/d/1szleC2cUvjPD_GeWJndIMNi3lvLrczAR",
+        "driveViewUrl": "https://drive.google.com/file/d/1szleC2cUvjPD_GeWJndIMNi3lvLrczAR/view?usp=sharing"
+      },
+      {
+        "id": "1YmITsdPEPXFJGz2inuD-AWKEulRGHejH",
+        "filename": "05_สไลด์_ทดสอบกับผู้ใช้จริง.png",
+        "url": "https://lh3.googleusercontent.com/d/1YmITsdPEPXFJGz2inuD-AWKEulRGHejH",
+        "driveViewUrl": "https://drive.google.com/file/d/1YmITsdPEPXFJGz2inuD-AWKEulRGHejH/view?usp=sharing"
+      },
+      {
+        "id": "1v0QYmVuZWEluqFcj1aCIbAaIrEsCDYaS",
+        "filename": "06_สไลด์_กดปุ่มบนแดชบอร์ด_แล้วอุปกรณ์ทำงานได้อย่างไร.png",
+        "url": "https://lh3.googleusercontent.com/d/1v0QYmVuZWEluqFcj1aCIbAaIrEsCDYaS",
+        "driveViewUrl": "https://drive.google.com/file/d/1v0QYmVuZWEluqFcj1aCIbAaIrEsCDYaS/view?usp=sharing"
+      },
+      {
+        "id": "1phY28iosO2rKwMnIe_1YeUEqs9ZAJhCw",
+        "filename": "07_สไลด์_ตั้งเงื่อนไขแจ้งเตือนให้ฉลาด.png",
+        "url": "https://lh3.googleusercontent.com/d/1phY28iosO2rKwMnIe_1YeUEqs9ZAJhCw",
+        "driveViewUrl": "https://drive.google.com/file/d/1phY28iosO2rKwMnIe_1YeUEqs9ZAJhCw/view?usp=sharing"
+      },
+      {
+        "id": "1ae8mMgSpdXeRvZrPr1CiYnXhnj6xXtFg",
+        "filename": "08_สไลด์_ตัวอย่าง_แดชบอร์ดห้องคอมพิวเตอร์.png",
+        "url": "https://lh3.googleusercontent.com/d/1ae8mMgSpdXeRvZrPr1CiYnXhnj6xXtFg",
+        "driveViewUrl": "https://drive.google.com/file/d/1ae8mMgSpdXeRvZrPr1CiYnXhnj6xXtFg/view?usp=sharing"
+      },
+      {
+        "id": "1CCDLb5A5G3sAJDPkp8vs3L9fA9BX6Awa",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_แดชบอร์ด.png",
+        "url": "https://lh3.googleusercontent.com/d/1CCDLb5A5G3sAJDPkp8vs3L9fA9BX6Awa",
+        "driveViewUrl": "https://drive.google.com/file/d/1CCDLb5A5G3sAJDPkp8vs3L9fA9BX6Awa/view?usp=sharing"
+      }
+    ],
+    "หน่วยที่ 6": [
+      {
+        "id": "1DAuAWbqo1xBtPZJyJ0Wkt3jAt_xW44Gb",
+        "filename": "01_สไลด์_โครงงานโรงเรียนอัจฉริยะ.png",
+        "url": "https://lh3.googleusercontent.com/d/1DAuAWbqo1xBtPZJyJ0Wkt3jAt_xW44Gb",
+        "driveViewUrl": "https://drive.google.com/file/d/1DAuAWbqo1xBtPZJyJ0Wkt3jAt_xW44Gb/view?usp=sharing"
+      },
+      {
+        "id": "1So-US3CREIfdCtNzDQEx5vQH7KzYzE08",
+        "filename": "02_สไลด์_ไอเดียโครงงานจากปัญหาจริง.png",
+        "url": "https://lh3.googleusercontent.com/d/1So-US3CREIfdCtNzDQEx5vQH7KzYzE08",
+        "driveViewUrl": "https://drive.google.com/file/d/1So-US3CREIfdCtNzDQEx5vQH7KzYzE08/view?usp=sharing"
+      },
+      {
+        "id": "17Mo5YBkAwNhI49kTgjiki0M-WLiw0TN4",
+        "filename": "03_สไลด์_ออกแบบด้วย_Input–Process–Output.png",
+        "url": "https://lh3.googleusercontent.com/d/17Mo5YBkAwNhI49kTgjiki0M-WLiw0TN4",
+        "driveViewUrl": "https://drive.google.com/file/d/17Mo5YBkAwNhI49kTgjiki0M-WLiw0TN4/view?usp=sharing"
+      },
+      {
+        "id": "1fckWaq4nN04FVRC9WeDs8SwkJ9-NkDsZ",
+        "filename": "04_สไลด์_IoT_ต้องปลอดภัย.png",
+        "url": "https://lh3.googleusercontent.com/d/1fckWaq4nN04FVRC9WeDs8SwkJ9-NkDsZ",
+        "driveViewUrl": "https://drive.google.com/file/d/1fckWaq4nN04FVRC9WeDs8SwkJ9-NkDsZ/view?usp=sharing"
+      },
+      {
+        "id": "11N2Yip0ABlB8ovdc-ygReiNkF8FnTbdh",
+        "filename": "05_สไลด์_ทดสอบ_บันทึก_และนำเสนอ.png",
+        "url": "https://lh3.googleusercontent.com/d/11N2Yip0ABlB8ovdc-ygReiNkF8FnTbdh",
+        "driveViewUrl": "https://drive.google.com/file/d/11N2Yip0ABlB8ovdc-ygReiNkF8FnTbdh/view?usp=sharing"
+      },
+      {
+        "id": "1iusjlik-AZIofOw0_DjhixzIcML4PFIe",
+        "filename": "06_สไลด์_วางแผนงบประมาณและอุปกรณ์.png",
+        "url": "https://lh3.googleusercontent.com/d/1iusjlik-AZIofOw0_DjhixzIcML4PFIe",
+        "driveViewUrl": "https://drive.google.com/file/d/1iusjlik-AZIofOw0_DjhixzIcML4PFIe/view?usp=sharing"
+      },
+      {
+        "id": "1yUv-ZdEkkmePRGx8uUMd4XAamLWEapAU",
+        "filename": "07_สไลด์_นำเสนอโครงงานด้วยหลักฐาน.png",
+        "url": "https://lh3.googleusercontent.com/d/1yUv-ZdEkkmePRGx8uUMd4XAamLWEapAU",
+        "driveViewUrl": "https://drive.google.com/file/d/1yUv-ZdEkkmePRGx8uUMd4XAamLWEapAU/view?usp=sharing"
+      },
+      {
+        "id": "1DoWAasgR-JbIsNLjox3kTInAsmI-EsPt",
+        "filename": "08_สไลด์_เกณฑ์ประเมินโครงงาน_IoT.png",
+        "url": "https://lh3.googleusercontent.com/d/1DoWAasgR-JbIsNLjox3kTInAsmI-EsPt",
+        "driveViewUrl": "https://drive.google.com/file/d/1DoWAasgR-JbIsNLjox3kTInAsmI-EsPt/view?usp=sharing"
+      },
+      {
+        "id": "1GNREcnm0lzf7J3seB4UhWTjGb6GpGoRS",
+        "filename": "09_สไลด์_ตรวจความเข้าใจ_โครงงาน_IoT.png",
+        "url": "https://lh3.googleusercontent.com/d/1GNREcnm0lzf7J3seB4UhWTjGb6GpGoRS",
+        "driveViewUrl": "https://drive.google.com/file/d/1GNREcnm0lzf7J3seB4UhWTjGb6GpGoRS/view?usp=sharing"
       }
     ]
   }

@@ -156,10 +156,10 @@ const RUNNER_GAME_STATION: GameStation = {
 };
 
 const CIRCUIT_GAME_STATION: GameStation = {
-  id: 'circuit-lab',
-  title: 'ห้องทดลองวงจรไฟฟ้า',
+  id: 'electronics-101',
+  title: 'ห้องแล็บอิเล็กทรอนิกส์ 3D',
   skill: 'ออกแบบวงจรและแก้ปัญหา',
-  path: '/games/circuit-lab',
+  path: '/games/electronics-101',
   color: '#0f766e',
 };
 

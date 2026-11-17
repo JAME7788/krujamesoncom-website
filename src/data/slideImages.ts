@@ -408,157 +408,402 @@ export const unitSlideImages: Record<string, Record<number, string[]>> = {
       "https://lh3.googleusercontent.com/d/1emTVU1TUFwqwoVfxRYJNODq2WF0KbMa8"
     ]
   },
-  "ai-p1-3": {
+  "python-basic": {
     "1": [
-      "https://lh3.googleusercontent.com/d/1bbUeax96RunLcFtCPGw4I5sR7B3HA2QT",
-      "https://lh3.googleusercontent.com/d/1y1iwxU4b1SygbFRUTe7zGDaVYX4N_pfb",
-      "https://lh3.googleusercontent.com/d/1OP8fWBpWYy0z5_NVqAdxryagNPnwRi0z",
-      "https://lh3.googleusercontent.com/d/1TIuOfV5AgyNLSDzUW7L_jeFXkLxncdWJ",
-      "https://lh3.googleusercontent.com/d/1DjgCKghw9PbNawZmBAcXFjxwciKtrJWt"
-    ],
-    "3": [
-      "https://lh3.googleusercontent.com/d/1TCuYTTIwm2cpohEXe_eHfDExK7uckhhx",
-      "https://lh3.googleusercontent.com/d/13nJsaX4bkNR_vZy37GAzbBxPZbkiafyg",
-      "https://lh3.googleusercontent.com/d/19SQglttvZACnE2iYpwcUC3VeOTEuwgu_",
-      "https://lh3.googleusercontent.com/d/1CxvQFI-fZnNotaY2IX59c4o4io0qBVI5",
-      "https://lh3.googleusercontent.com/d/1l9-A5Xy6ZjPR2lGx9Q43ecLNzW8x36Gi"
+      "https://lh3.googleusercontent.com/d/18RSotY88NkkQymgYMvUEbC_1dTbM3WBj",
+      "https://lh3.googleusercontent.com/d/1dVUtmAnOEQNT4UOsyCjLAGAfcGCMvGHI",
+      "https://lh3.googleusercontent.com/d/1DDME618sO5wBShAL4RaCVe1BUTSiHfzE",
+      "https://lh3.googleusercontent.com/d/1vb0JdEr3pRNb3w91PFKXOupO9gEz5FUm"
     ],
     "2": [
-      "https://lh3.googleusercontent.com/d/1fYT8Qx5rKsUc_LBj9IzpF6NR1ZR3_atB",
-      "https://lh3.googleusercontent.com/d/1l0OpVBpRbnEJios-tqSSAYMVV9UIRrKY",
-      "https://lh3.googleusercontent.com/d/1LzSj5c-byGt0-Xv772sCNwrdIicvJHQt",
-      "https://lh3.googleusercontent.com/d/1bTlGgf3Xfl-NXxZ6A0AX1_74qhTwhYO-",
-      "https://lh3.googleusercontent.com/d/1MY2WQMAl-jWyA1JbVfbTY6GDZd3Sv_wz"
+      "https://lh3.googleusercontent.com/d/1A7Y3JYOIsf_HDKiP5__hkzGQ4dezHTgJ",
+      "https://lh3.googleusercontent.com/d/1RGpLsreF-I9QyM9K6D2y7T2G7F7VZUO1",
+      "https://lh3.googleusercontent.com/d/1vd1kzqjatnDb6qKuuVBpSn6nS-JgiX-p",
+      "https://lh3.googleusercontent.com/d/1WZwFz_0xXF5E49zTA_NYYDLhueGFWGY-"
+    ],
+    "3": [
+      "https://lh3.googleusercontent.com/d/1L5yGjMjO5QaxzlsOjuq6xoYGIgm3KqWM",
+      "https://lh3.googleusercontent.com/d/17QoFvtX3NuxWm7Qrb_dyNvmQgPT7wSC9",
+      "https://lh3.googleusercontent.com/d/1hbqPCbPtxmGhP45dGzS5Ki7yi2TPmUd3",
+      "https://lh3.googleusercontent.com/d/1D8sF18IiMx5jyZrIzi0Ccfw8S7aFSssX"
+    ],
+    "4": [
+      "https://lh3.googleusercontent.com/d/1w2cvC6TcO2UEIfpMz6KYSKwKS258APDw",
+      "https://lh3.googleusercontent.com/d/1TAjV5tf3IsTFbSlSahe4BeUzdOdgNzkF",
+      "https://lh3.googleusercontent.com/d/1NFa4g9mOLFOWqkecBvc-TJKVBiNMuMlD",
+      "https://lh3.googleusercontent.com/d/1gVIx6G4Wm7icPxN4EU6Pt2UEoiKTLRbR"
+    ],
+    "5": [
+      "https://lh3.googleusercontent.com/d/15LqnJAlsMjcdAarXEezgjdetYsoJJGh4",
+      "https://lh3.googleusercontent.com/d/1xG38iXNOtVgsq-W6HWl3tZ6_fWDFlpjT",
+      "https://lh3.googleusercontent.com/d/1iVKzE36jSu8PeUGqwEodlG7Y60S91IrX",
+      "https://lh3.googleusercontent.com/d/1bnQv_oIeoFJqQlFJieHG8Me1NANm5o1v"
+    ],
+    "6": [
+      "https://lh3.googleusercontent.com/d/1OXJY-jylVZQ7QFC8vIP6oSMkVe0fx58a",
+      "https://lh3.googleusercontent.com/d/1aAUQirxyiu3SgTwt7LQOHJfAYAObHfKD",
+      "https://lh3.googleusercontent.com/d/1iet79XJ1AoeYRZctYCyi-6z1Kn-WS-eq",
+      "https://lh3.googleusercontent.com/d/1MUKoqJ1IEQ56750Wvc9FZJqaBMP5dlsa"
+    ],
+    "7": [
+      "https://lh3.googleusercontent.com/d/1LLSM0G-5iFkTUz_18wC5byGLwxFMQVvs",
+      "https://lh3.googleusercontent.com/d/1lqvONO5BiLH4FPhzI6Ibj8mhLpnybRTg",
+      "https://lh3.googleusercontent.com/d/1n417DQUtZEOZ-LAvb_b5W8jsnIQ8-chG",
+      "https://lh3.googleusercontent.com/d/1mlicLJB7t8L_QyxgYwb6J2bGo0Zf0X1e"
+    ],
+    "8": [
+      "https://lh3.googleusercontent.com/d/1ebRk86z-nrBugmy3tVrdFMTWyAng5bXm",
+      "https://lh3.googleusercontent.com/d/1N3E8oaA292V38Gl4iuTygtUawXzQssEz",
+      "https://lh3.googleusercontent.com/d/1mjJo3GUChub8-a6FmjPa-nvobZY2M5xp",
+      "https://lh3.googleusercontent.com/d/1V2poXVP0TwYauqmQKOTTUB5bO4OSL23w"
+    ]
+  },
+  "ai-p1-3": {
+    "1": [
+      "https://lh3.googleusercontent.com/d/1acZiyuM2MolJxpNsm0b_KfgZO2ltqwM1",
+      "https://lh3.googleusercontent.com/d/15JyXt2Bmo-eGdJWzunNuclzg8cvZpjE8",
+      "https://lh3.googleusercontent.com/d/1ldRT0oeWck4sajKqpFokXFBytuGPKGwA",
+      "https://lh3.googleusercontent.com/d/1VKJFm6m8xSiS1D0B4ZOAS4g-c6in0H-M"
+    ],
+    "2": [
+      "https://lh3.googleusercontent.com/d/1nxidVvF7mbTiEAtW6uVixko_qM7brllV",
+      "https://lh3.googleusercontent.com/d/1r3JzcocpnulKrfoUhCng-D8zAODm3X8s",
+      "https://lh3.googleusercontent.com/d/1ju6CwPbLMCc1Y3uw--WWMa32MJllwCfN",
+      "https://lh3.googleusercontent.com/d/1G6sMsi3WnxA0WvaJQ99xSzOkNMt10yZq"
+    ],
+    "3": [
+      "https://lh3.googleusercontent.com/d/1H8NNngSnQ0kEqiyVUXAypDYlPGduNgLb",
+      "https://lh3.googleusercontent.com/d/1kgEG4PQonZRZYNx3Suoi-E__tl3yQkAc",
+      "https://lh3.googleusercontent.com/d/1_rfHtcb5USfPDH4VFaWyErn329lUfYJU",
+      "https://lh3.googleusercontent.com/d/1dyMEwVmL0Geh-FjeyYv8p1TKuYjm_BLM"
     ]
   },
   "ai-p4-6": {
-    "4": [
-      "https://lh3.googleusercontent.com/d/1a0sfzF_Xn_KNfGqqoGgaNLmAne2LIVAQ",
-      "https://lh3.googleusercontent.com/d/1GmZza-GnxY4QJaz5Ry8_KrCVmat3uyVX",
-      "https://lh3.googleusercontent.com/d/1jLrhJUTckVhmcOdh046kSQoOI7fG4Ntk",
-      "https://lh3.googleusercontent.com/d/1BqnnLmiZQ2BdwQpufO0hYvwTibvC6W1k",
-      "https://lh3.googleusercontent.com/d/1D8YaDN4gK3HDv-8eqtrF9UJ1bAeSF9pa"
-    ],
-    "3": [
-      "/slides/ai-p4-6/3/01_สไลด์_ปก_Generative_AI_เครื่องมือสร้างสรรค์.png",
-      "/slides/ai-p4-6/3/02_สไลด์_การทำงานของ_LLM_และ_Diffusion_Model.png",
-      "/slides/ai-p4-6/3/03_สไลด์_เครื่องมือ_GenAI_ยุคใหม่_ChatGPT_DALL-E.png",
-      "/slides/ai-p4-6/3/04_สไลด์_คิดก่อนเชื่อ_AI_Hallucination_และการตรวจสอบ.png"
-    ],
     "1": [
-      "/slides/ai-p4-6/1/01_สไลด์_ปก_Machine_Learning_เบื้องต้น.png",
-      "/slides/ai-p4-6/1/02_สไลด์_ความต่างของโปรแกรมทั่วไป_กับ_Machine_Learning.png",
-      "/slides/ai-p4-6/1/03_สไลด์_3_ประเภทของ_Machine_Learning.png",
-      "/slides/ai-p4-6/1/04_สไลด์_วงจรการพัฒนาโมเดล_AI.png"
+      "https://lh3.googleusercontent.com/d/1Zv3jmy9aUpVsQ6iGd6z01hvaEf2ZNdnw",
+      "https://lh3.googleusercontent.com/d/1coHKgTkj48IS13F3Itrqj2Kphzh2tg58",
+      "https://lh3.googleusercontent.com/d/1VP5dsKnJKw7YlMlwfYuF5bi8vm2RsiXr",
+      "https://lh3.googleusercontent.com/d/1g785w0gLz-4_0pb8WZtjKVCPpJFKg2Nt"
     ],
     "2": [
-      "/slides/ai-p4-6/2/01_สไลด์_ปก_สร้างโมเดล_AI_ด้วยตัวเอง.png",
-      "/slides/ai-p4-6/2/02_สไลด์_การเตรียมชุดข้อมูล_Dataset_ที่ดี.png",
-      "/slides/ai-p4-6/2/03_สไลด์_กระบวนการ_Train_และประเมินผล_Accuracy.png",
-      "/slides/ai-p4-6/2/04_สไลด์_นำโมเดลไปต่อยอดโครงงาน.png"
+      "https://lh3.googleusercontent.com/d/1Lvr3cxNh1rHB12NJH3sE_dQZqfUA9TfE",
+      "https://lh3.googleusercontent.com/d/1yLRB39RYIIkT6GsI6sOZwfkvsKpgko41",
+      "https://lh3.googleusercontent.com/d/1PKgjePsKi-PICTv6Pmn1YxnCOTHq1q7i",
+      "https://lh3.googleusercontent.com/d/1C8-WXninrcQ-OaaBazFXP9U83DaoSLdD"
+    ],
+    "3": [
+      "https://lh3.googleusercontent.com/d/1MmVPUUywQXjKOcluOGfqJcHinFsTLYDt",
+      "https://lh3.googleusercontent.com/d/1xNPnF3wlnNUE8dzopXA0Y1k6SQDQhFfh",
+      "https://lh3.googleusercontent.com/d/1vIDIa98isARXQLrJKS0kCqUswJYBhm33",
+      "https://lh3.googleusercontent.com/d/1HjVhbdBvh-sQR1GSnAA-3usSE9REBe7F"
+    ],
+    "4": [
+      "https://lh3.googleusercontent.com/d/1WpKIgxG3X5wQI9u7UzBHthe9UGTJk-PY",
+      "https://lh3.googleusercontent.com/d/1n3EjXDlMtIPlXJ-OF5fBB7VHMkTsiCDv",
+      "https://lh3.googleusercontent.com/d/1azMkiytmKPMZZtTpxEqGjCUjAJoK7JIv",
+      "https://lh3.googleusercontent.com/d/1KRdju46Hm_eQ9scR0ZbbghDFsK3gxAKS"
     ]
   },
   "ai-m1-3": {
     "1": [
-      "https://lh3.googleusercontent.com/d/1z5MG7lBwOdf08SQWyldYAehi5gWJ9s9t",
-      "https://lh3.googleusercontent.com/d/1rhRCUgfKPHdjkq_eQ9PJa8ToIYZOntEq",
-      "https://lh3.googleusercontent.com/d/1QLBAmHwMI6y0Qgy0u37PkMd7mOUVHI-6",
-      "https://lh3.googleusercontent.com/d/1Te0eIKMLCo7K-TNE7TfetBBAmOTwec1O"
+      "https://lh3.googleusercontent.com/d/1id80mLzXka8RiBXdAzuvBucCnlc3dxNV",
+      "https://lh3.googleusercontent.com/d/1Sepj8M1YO7Kd4SgjJR5N-LNpgb--k1og",
+      "https://lh3.googleusercontent.com/d/1g5mbZlN2Y37rfRoOEqPmZ_6TpZFFNq2u",
+      "https://lh3.googleusercontent.com/d/1mZJSZezHJx2S4G4aJX42Rrb0E7Zdbm7B"
     ],
     "2": [
-      "/slides/ai-m1-3/2/01_สไลด์_ปก_Computer_Vision_และ_NLP.png",
-      "/slides/ai-m1-3/2/02_สไลด์_หลักการ_Computer_Vision_CNN_และการตรวจจับวัตถุ.png",
-      "/slides/ai-m1-3/2/03_สไลด์_NLP_Tokenization_สู่_Embeddings.png",
-      "/slides/ai-m1-3/2/04_สไลด์_การประยุกต์ใช้_Vision_และ_NLP_ในอุตสาหกรรม.png"
+      "https://lh3.googleusercontent.com/d/1i_mURg_VYrzzm0bWiNjBDPeWIZZDuqYg",
+      "https://lh3.googleusercontent.com/d/17UlDjhiBBmLZiNuqvUgrl8c3bsgGLgNZ",
+      "https://lh3.googleusercontent.com/d/1haMcqmGMVyZmuhrBovTTOE512-vvkn93",
+      "https://lh3.googleusercontent.com/d/1l23tB0YZ-5jkmqYHHfe_WEE5DvLyRliX"
     ],
     "3": [
-      "/slides/ai-m1-3/3/01_สไลด์_ปก_ศาสตร์แห่งการเขียน_Prompt.png",
-      "/slides/ai-m1-3/3/02_สไลด์_โครงสร้าง_Prompt_ตามหลัก_PARIS.png",
-      "/slides/ai-m1-3/3/03_สไลด์_เทคนิคระดับสูง_Few-shot_และ_Chain-of-Thought.png",
-      "/slides/ai-m1-3/3/04_สไลด์_การเขียน_System_Prompt_และการควบคุมผลลัพธ์.png"
+      "https://lh3.googleusercontent.com/d/13W41Zqo0M2E1jaysvw51lwBuL1W-9HIw",
+      "https://lh3.googleusercontent.com/d/15FI-GEAywLui042oEl0_inUn3a0C-bug",
+      "https://lh3.googleusercontent.com/d/1edsfA0z0wbxwgqnjxdGbEuwRfJQ7o-ns",
+      "https://lh3.googleusercontent.com/d/1n14WiiaQCnDl40bJMjYb6qai0PIc67vz"
     ],
     "4": [
-      "/slides/ai-m1-3/4/01_สไลด์_ปก_จริยธรรม_ลิขสิทธิ์_และกฎหมาย_AI.png",
-      "/slides/ai-m1-3/4/02_สไลด์_ลิขสิทธิ์ผลงาน_AI_และสิทธิ์ความเป็นเจ้าของ.png",
-      "/slides/ai-m1-3/4/03_สไลด์_มาตรฐานความปลอดภัย_AI_Act_และการกำกับดูแล.png",
-      "/slides/ai-m1-3/4/04_สไลด์_แนวปฏิบัติ_AI_ในโรงเรียนและที่ทำงาน.png"
+      "https://lh3.googleusercontent.com/d/1YsVlZazJs8qEsZEDRQ1LEPD7UVWKt25F",
+      "https://lh3.googleusercontent.com/d/1-y60fn5iOaEiQG2FteJ-hwEmAPhpkuI1",
+      "https://lh3.googleusercontent.com/d/1Ks10UyohQTZ0xscx4bXRsi_uhlfnVLVA",
+      "https://lh3.googleusercontent.com/d/1-iD8CRhZeN62RM96VOmjwBo6O2F0T2Bf"
     ],
     "5": [
-      "/slides/ai-m1-3/5/01_สไลด์_ปก_โครงงาน_AI_แก้ปัญหาชีวิตจริง.png",
-      "/slides/ai-m1-3/5/02_สไลด์_กระบวนการทำโครงงาน_AI_6_ขั้นตอน.png",
-      "/slides/ai-m1-3/5/03_สไลด์_ตัวอย่างโครงงาน_AI_เพื่อสังคมและสิ่งแวดล้อม.png",
-      "/slides/ai-m1-3/5/04_สไลด์_การทดสอบ_วัดผล_และการนำเสนอผลงาน.png"
+      "https://lh3.googleusercontent.com/d/1-9kDiJwh5IPGWA5B78EejXvUJSXDW48x",
+      "https://lh3.googleusercontent.com/d/1GPFVz7l7tucWg5oFfqlAfVXc9FhAjZWA",
+      "https://lh3.googleusercontent.com/d/1GqSczWrKsiYKIQjLWGEnAbj_S_jU72i0",
+      "https://lh3.googleusercontent.com/d/1Io4KZFwCjW7lAbNea7cwLNgHnu6RFXhH"
+    ]
+  },
+  "electronics-basic": {
+    "1": [
+      "https://lh3.googleusercontent.com/d/1eTZTCddHVUBlwHkpg962_A_cbYhcRvql",
+      "https://lh3.googleusercontent.com/d/1YnFHpsx0-X6wXgXDYCNbboVbQPgIKZSD",
+      "https://lh3.googleusercontent.com/d/1zRiKm2yM5nvvCyDnzK-0GOdtf0K1FzTv",
+      "https://lh3.googleusercontent.com/d/1-5I5kgDMg5rx38qpL_dCE23EN6P1XoNJ"
+    ],
+    "2": [
+      "https://lh3.googleusercontent.com/d/1fUUP5Dxdp8_vdVm9p3syWxdp4kCamqbh",
+      "https://lh3.googleusercontent.com/d/1qd-Ghm9V-Yl_ycdAh-SqouZu0iGhGIql",
+      "https://lh3.googleusercontent.com/d/12uq8-Hdaszy4lnjQEkToJK3DTrPldyQC",
+      "https://lh3.googleusercontent.com/d/1XUW4SbqiuR-i_nVoM6E_9VfplEnmxeRF"
+    ],
+    "3": [
+      "https://lh3.googleusercontent.com/d/19Ucnw8jC_kQ4ZwGC33X5QjYMHqaBaeMR",
+      "https://lh3.googleusercontent.com/d/1sqpa7D5HUSsQ_9ogeeaxkju27DZI6MMr",
+      "https://lh3.googleusercontent.com/d/1WmNF9rqPlcEdp37FA5hcPscFah6afiVF",
+      "https://lh3.googleusercontent.com/d/1AMFGEgNg327yGUBYntB47N5CvZC_bAyW"
+    ],
+    "4": [
+      "https://lh3.googleusercontent.com/d/1hkIVF2pxFzHVumKHJRHPKLm4kMmaiT_9",
+      "https://lh3.googleusercontent.com/d/1kdR2ptaN_d-Zj2RqCWgMznLav7kbvNhY",
+      "https://lh3.googleusercontent.com/d/19gMtXCjaV9kPPSHWGNlZTjeLds7_wXZ8",
+      "https://lh3.googleusercontent.com/d/1ZFvIvoU0qKS2K7qBDpirC5jZNOxYOzlU"
+    ],
+    "5": [
+      "https://lh3.googleusercontent.com/d/1Ep193KrOG8on9GX6WNVDeSMc_Tjd4yqj",
+      "https://lh3.googleusercontent.com/d/1PahyY5eigjEEi9sDvbM5WOcWQqv8869r",
+      "https://lh3.googleusercontent.com/d/103pPMSalmbYev2I3cFVWKYkdjNJsilK5",
+      "https://lh3.googleusercontent.com/d/1WCAv-ApFY75IBYPGLcQ0Qc3VIOkeHHgf"
+    ],
+    "6": [
+      "https://lh3.googleusercontent.com/d/1zIXVC7vvKGlFdw1StC0RTKgTSmnSh1o7",
+      "https://lh3.googleusercontent.com/d/1voTWO8hr5CojquJztOJebI-OTZh5gw33",
+      "https://lh3.googleusercontent.com/d/1qPNo25xmOivdCnodRqWwg_PMeIfRNTpL",
+      "https://lh3.googleusercontent.com/d/1X8cNvG88HJRTAyvpxFMuHWdTNTNZqVaW"
     ]
   },
   "arduino-basic": {
     "1": [
-      "https://lh3.googleusercontent.com/d/1q6UyFctuxQQFMqKHP0qRpQ5rQeqpKR5m",
-      "https://lh3.googleusercontent.com/d/1v3Gu4BwuAjDRPcLiIoQEYDtvZ5MHT2VV"
-    ],
-    "2": [],
-    "3": [],
-    "4": [],
-    "5": [],
-    "6": [],
-    "7": [],
-    "8": []
-  },
-  "electronics-basic": {
-    "1": [],
-    "2": [],
-    "3": [],
-    "4": [],
-    "5": [],
-    "6": []
-  },
-  "python-basic": {
-    "1": [
-      "/slides/python-basic/1/01_สไลด์_เริ่มต้นกับ_Python_ฉบับครูเจมส์.png",
-      "/slides/python-basic/1/02_สไลด์_ทำไมต้อง_Python_และประวัติความเป็นมา.png",
-      "/slides/python-basic/1/03_สไลด์_การติดตั้ง_Python_และ_VS_Code.png",
-      "/slides/python-basic/1/04_สไลด์_คำสั่ง_print_และ_input.png"
+      "https://lh3.googleusercontent.com/d/1pNwhDSd1WjLRyNJTm07AF94Sx_o_kYmX",
+      "https://lh3.googleusercontent.com/d/1LneWCDgW5AWr4bEYQId_PT4o5oW2mpNy",
+      "https://lh3.googleusercontent.com/d/185rkEIJxNt9RtkuMEY_n4nRfaM0r8MM_",
+      "https://lh3.googleusercontent.com/d/1tHGwLrpUzvha3_uOnFq1Yr0s1KEtbgjP"
     ],
     "2": [
-      "/slides/python-basic/2/01_สไลด์_ปก_ตัวแปรและชนิดข้อมูล.png",
-      "/slides/python-basic/2/02_สไลด์_กฎเหล็กการตั้งชื่อตัวแปร.png",
-      "/slides/python-basic/2/03_สไลด์_ชนิดข้อมูลพื้นฐาน_4_ชนิด_และ_type.png",
-      "/slides/python-basic/2/04_สไลด์_การแปลงชนิดข้อมูล_Type_Casting.png"
+      "https://lh3.googleusercontent.com/d/1iQmWaWHhZpLV4UTUL3Q_yZO0hPepm2CB",
+      "https://lh3.googleusercontent.com/d/1DLD5WF73MVAs-yDlFfY07Pl81toy6BgN",
+      "https://lh3.googleusercontent.com/d/1ies-1lX58fc1XqEpiCB3Pc92DjuNesfA",
+      "https://lh3.googleusercontent.com/d/1u_OYxoid5wB4RM0Bo6xVNa2YZvY8jJLo"
     ],
     "3": [
-      "/slides/python-basic/3/01_สไลด์_ปก_ตัวดำเนินการและโจทย์คำนวณ.png",
-      "/slides/python-basic/3/02_สไลด์_เครื่องหมายคำนวณ_7_ตัว_และ_PEMDAS.png",
-      "/slides/python-basic/3/03_สไลด์_ตัวดำเนินการเปรียบเทียบและตรรกศาสตร์.png",
-      "/slides/python-basic/3/04_สไลด์_โจทย์คำนวณในชีวิตจริง_เงินทอนและอุณหภูมิ.png"
+      "https://lh3.googleusercontent.com/d/1-MBCxVW_rzHYQPlS20hJOJdXanx8yEwM",
+      "https://lh3.googleusercontent.com/d/1_8LEcd-VX2EeOsVdEerQGE2gjxsDK6ow",
+      "https://lh3.googleusercontent.com/d/1qk7n4sYUBsfxD6N38FIsqBta5ggvORVL",
+      "https://lh3.googleusercontent.com/d/1UDEVlzzPkr2rTLTpSY2C_lQkr7NHEEfT"
     ],
     "4": [
-      "/slides/python-basic/4/01_สไลด์_ปก_การตัดสินใจและวนซ้ำ.png",
-      "/slides/python-basic/4/02_สไลด์_คำสั่ง_if_elif_else_และ_match_case.png",
-      "/slides/python-basic/4/03_สไลด์_การวนซ้ำด้วย_for_และ_range.png",
-      "/slides/python-basic/4/04_สไลด์_คำสั่งควบคุมลูป_break_continue_enumerate.png"
+      "https://lh3.googleusercontent.com/d/1KV4jqWvy_z8I970du9KL1t9pY5RJn6iZ",
+      "https://lh3.googleusercontent.com/d/1SkQxW2jwkseeL8UXijtO9i_u8MfoPCVP",
+      "https://lh3.googleusercontent.com/d/1MZF0UezD39L1Rh_O5b4D2YIz0YawrLQ1",
+      "https://lh3.googleusercontent.com/d/1y6YTo6SUF5Azs5Mp7LP3Yb4TQFfY_QLs"
     ],
     "5": [
-      "/slides/python-basic/5/01_สไลด์_ปก_เต่าไพทอนและโครงสร้างข้อมูล.png",
-      "/slides/python-basic/5/02_สไลด์_การจัดการข้อความ_String_Slicing_และ_fstring.png",
-      "/slides/python-basic/5/03_สไลด์_โครงสร้างข้อมูล_List_และเมธอดสำคัญ.png",
-      "/slides/python-basic/5/04_สไลด์_Dictionary_Tuple_และ_Set.png"
+      "https://lh3.googleusercontent.com/d/1cd9JtlWeDZIUbqO0wLehRlhLv1i4RJiP",
+      "https://lh3.googleusercontent.com/d/1-akdUJeWG0Rc_zcNbBf631etmapXEImu",
+      "https://lh3.googleusercontent.com/d/10gql3RcHrXr-Sz2P6XZNx2UPzaQEM45I",
+      "https://lh3.googleusercontent.com/d/1qOyC1F0CEzaLfbNOvvugQsti5GaYVQVD"
     ],
     "6": [
-      "/slides/python-basic/6/01_สไลด์_ปก_ลูป_while_และการเขียนอ่านไฟล์.png",
-      "/slides/python-basic/6/02_สไลด์_การทำงานของ_while_loop_และระวัง_Infinite_Loop.png",
-      "/slides/python-basic/6/03_สไลด์_การเขียนและอ่านไฟล์_Text_CSV_JSON.png",
-      "/slides/python-basic/6/04_สไลด์_การดักจับข้อผิดพลาด_try_except_finally.png"
+      "https://lh3.googleusercontent.com/d/1q_Kx1E-QmlXDsyZerlAzX2m5HxVvZjeU",
+      "https://lh3.googleusercontent.com/d/1rrcZ5ba6MWk4lbwYssJ2YgwszIrl156v",
+      "https://lh3.googleusercontent.com/d/1x0fPqeVUIxUDF-L59IX-ORCi5KuJTJ_R",
+      "https://lh3.googleusercontent.com/d/1VV7Z9qcB_Y9-ZCdH3ifOHxeEuCwOciwI"
     ],
     "7": [
-      "/slides/python-basic/7/01_สไลด์_ปก_การสร้างฟังก์ชันและโมดูล.png",
-      "/slides/python-basic/7/02_สไลด์_การนิยามฟังก์ชัน_def_พารามิเตอร์_และ_return.png",
-      "/slides/python-basic/7/03_สไลด์_โมดูลมาตรฐาน_random_math_time_webbrowser.png",
-      "/slides/python-basic/7/04_สไลด์_การสร้างโมดูลเองและการทำ_Unit_Test.png"
+      "https://lh3.googleusercontent.com/d/1loQlNwyC6aSX--eFlgGVgonn5DR_yFqZ",
+      "https://lh3.googleusercontent.com/d/1EhVVEB3Qgl2B45IXWwSQZl4xeDJKeW1e",
+      "https://lh3.googleusercontent.com/d/1LB3ZD5wR2JTkmzvUxR_-oXlYLFK4qQJh",
+      "https://lh3.googleusercontent.com/d/1401qD9VxmgwyevyotIlH1iNpELLuaMsi"
     ],
     "8": [
-      "/slides/python-basic/8/01_สไลด์_ปก_Data_Science_และ_OOP.png",
-      "/slides/python-basic/8/02_สไลด์_เครื่องมือ_NumPy_Pandas_และ_Matplotlib.png",
-      "/slides/python-basic/8/03_สไลด์_คลาสและออบเจ็กต์_พิมพ์เขียวสู่ชิ้นงานจริง.png",
-      "/slides/python-basic/8/04_สไลด์_4_เสาหลักของ_OOP_สำหรับเด็ก.png"
+      "https://lh3.googleusercontent.com/d/1A-S1qgH66s83upmaIM8AC8KfeMAWoTrB",
+      "https://lh3.googleusercontent.com/d/1M8WOcK_y6TzGqkG8Yv0YGQDJ3IpKVEoN",
+      "https://lh3.googleusercontent.com/d/1qrVwXQHJ_Fxi1v98sP999Qkzx67ifWYp",
+      "https://lh3.googleusercontent.com/d/1HNH8MSXSWYYdaonIpa35u3V1cEvqZ2HM"
+    ]
+  },
+  "database-basic": {
+    "1": [
+      "https://lh3.googleusercontent.com/d/1dcUfLRgDSaYXo_RyeVN08k6DD_Gx2RFI",
+      "https://lh3.googleusercontent.com/d/1dTFc6ozWvF9qZGhBt2E4tiQ9EkMiLwzG",
+      "https://lh3.googleusercontent.com/d/1j1_Jw_lzosm02ZeRkZAnRkAnNcW_8kDi",
+      "https://lh3.googleusercontent.com/d/1WbPneI8N7bYKvAwvNVd3eQWxZtcAbA7b",
+      "https://lh3.googleusercontent.com/d/1ugaW1X29rgChqVWY2-tOSYQLwwk6R6CK",
+      "https://lh3.googleusercontent.com/d/1WUL4jNRvgL7wTL6rhgAHyDHfjDRcBGxH",
+      "https://lh3.googleusercontent.com/d/1Mdkb65Xr2UTor-MO7w1HM7ny41JXoxl9",
+      "https://lh3.googleusercontent.com/d/1iQ5nITVNlfVeSv2jxUNVOGkX1OWWSQrN",
+      "https://lh3.googleusercontent.com/d/1jKrw2jL2X1wTJhcDZlXAwNgZGE9p5wAC"
+    ],
+    "2": [
+      "https://lh3.googleusercontent.com/d/1Q0RkN7O_t795PX4B9_SJZbv0N1GvJflH",
+      "https://lh3.googleusercontent.com/d/1M8hp0ShGXL_sXiYeIIfKh-o8ackAIrfw",
+      "https://lh3.googleusercontent.com/d/1lF7IcDwrwXhncGIa1Ncx7ZrOWuHW8nrc",
+      "https://lh3.googleusercontent.com/d/15iLmvT-9S-6KWgikakjjf5yhn8JOR-M9",
+      "https://lh3.googleusercontent.com/d/10XPVPE8Ruox1z7w6TzUhJLjU4S-1UhWY",
+      "https://lh3.googleusercontent.com/d/13ZiOw1JlcfwClGISASinT7VmQj8p18P1",
+      "https://lh3.googleusercontent.com/d/1rhj49BZxTIK647luqHm5k0iUXuaS52ub",
+      "https://lh3.googleusercontent.com/d/1Hl9leLNi4nDY00UtFAGjtYyB9srChPDA",
+      "https://lh3.googleusercontent.com/d/1VYMtniH26nRO9la7S7F3s3xz_T1Wuwnp"
+    ],
+    "3": [
+      "https://lh3.googleusercontent.com/d/1fnQz-zkSHpuBBjbVk7JeUw78MNyuK58_",
+      "https://lh3.googleusercontent.com/d/10vbja_7O-n4oD7bk_7-sAag5wwF1g7C4",
+      "https://lh3.googleusercontent.com/d/1c7c4t7KmtWIK7u42pJm0F7lNhXw9x5t6",
+      "https://lh3.googleusercontent.com/d/1XGgPZk6TzuRjqWxvT92o4JRFjpDc_kM_",
+      "https://lh3.googleusercontent.com/d/1PLQHmzf1KhnW-tA9gp8KBAXp0WqCco5g",
+      "https://lh3.googleusercontent.com/d/14Eohl6u5w_pdjpLTvEb6mcCEBkQxJLG4",
+      "https://lh3.googleusercontent.com/d/14WJp7JGQuO4BwPLGC0WmKJzsj95qxaBI",
+      "https://lh3.googleusercontent.com/d/1f0O0oDKpKY3DbjtAvh9aDUE3vB6KUwNw",
+      "https://lh3.googleusercontent.com/d/1G-rZmftKsDeO-JwygyaSvi-p5Zazd8JQ"
+    ],
+    "4": [
+      "https://lh3.googleusercontent.com/d/1SQz3-p8jcQt01GUGtTTXH3LeJomzoDAb",
+      "https://lh3.googleusercontent.com/d/1cQXlS4bRb7uIdTJ5RVSEvb9ITfiEEfuH",
+      "https://lh3.googleusercontent.com/d/1XsHry__wO2nzDC8V8PeaP05edvpKk8Lc",
+      "https://lh3.googleusercontent.com/d/1cs__CG16Nh4n_99tBWgr5V9aefCzTnBf",
+      "https://lh3.googleusercontent.com/d/1S57czZPka9qw--7yujus2bXxKdAWfAVC",
+      "https://lh3.googleusercontent.com/d/1lMJNjGDy8wxXI8zvRIcfSlx6b-QTUksb",
+      "https://lh3.googleusercontent.com/d/1bNFZQ9kjXxDw1eCbusYc1YX7igUq-ONP",
+      "https://lh3.googleusercontent.com/d/14judYxTXiSyUoigA-B2Mi231KtM2Xid3",
+      "https://lh3.googleusercontent.com/d/1g5ZpULzHemCm7UA7IW3-54S5YCDPeGIT"
+    ],
+    "5": [
+      "https://lh3.googleusercontent.com/d/1h5rRDWtw_q57whbKePpBOCRDsfasBTyb",
+      "https://lh3.googleusercontent.com/d/1bw8DS3QeLodaPaUej8NomVsCrHhP30C4",
+      "https://lh3.googleusercontent.com/d/1-4I7kgkWjx9QNsn0_6GXCYSksOt__9Eu",
+      "https://lh3.googleusercontent.com/d/19G0ojzF3-OVuJhepnKCUFpK9SEPIb0Om",
+      "https://lh3.googleusercontent.com/d/1azqICj3ZlDSacHY8UoaVJqPZ6gEp6ouX",
+      "https://lh3.googleusercontent.com/d/1uoQuAQ5tj02eSct9loMX2P3cqIUdsfy6",
+      "https://lh3.googleusercontent.com/d/1GxF-MKsxyrM6T9fGbWwmuZ-H0tepI8RA",
+      "https://lh3.googleusercontent.com/d/1dfBA3u1Bkr8SjqgFaUQBmZiZzLc9XjzD",
+      "https://lh3.googleusercontent.com/d/1-l1lnICb_8nUZT1S5H5DK8Pp1f2iJ4ia"
+    ]
+  },
+  "digital-story": {
+    "1": [
+      "https://lh3.googleusercontent.com/d/1wHk5qH3jxPzg_C0iwk_gg1gx02mnZnee",
+      "https://lh3.googleusercontent.com/d/1VQQguYELNbcTQqvYMwk5jwhWnVnk_CXY",
+      "https://lh3.googleusercontent.com/d/1DTgWHmwT1bKyTG7Vf22k6NiDOMEVhsZ0",
+      "https://lh3.googleusercontent.com/d/1gO6xghpDzQchj_G5jexHmLzcyiuMf3Az",
+      "https://lh3.googleusercontent.com/d/1tGlibuws2TwLLJ17Ap4Ifd_oryOh5Qec",
+      "https://lh3.googleusercontent.com/d/1RCN7R4dArgZug4JKIKvBm3gtUqLOEKZE",
+      "https://lh3.googleusercontent.com/d/1iXRsrYVnWKgjDWqM3oC4A-x4Ze2YefMQ",
+      "https://lh3.googleusercontent.com/d/1NkepjVI8A61AVBofPN4yhq2MjJS9CAu-",
+      "https://lh3.googleusercontent.com/d/14S9Izf2K1TjUOzIhLpX18gv05vEV_iPW"
+    ],
+    "2": [
+      "https://lh3.googleusercontent.com/d/18hOM1YUYslf74tciSkbFgaouO7kKssAY",
+      "https://lh3.googleusercontent.com/d/18jzU2uaSySeugp91ip_MXd7xxusnqwtH",
+      "https://lh3.googleusercontent.com/d/1LXPlX9r1SnseMkzNnIx2SrB95MOf_wKB",
+      "https://lh3.googleusercontent.com/d/19d6pOC2uGZ8ylUMt51pm46Z2pW9RiyRF",
+      "https://lh3.googleusercontent.com/d/1n2Yv6LTarVtdFE5ompVQiOvKw5gr5ZUc",
+      "https://lh3.googleusercontent.com/d/1UO9iRw2gmegcrqwQ2ij_URVJUolNvYFv",
+      "https://lh3.googleusercontent.com/d/142m_Gexq9o-Sct7wVBpqUeGzOHJROW5P",
+      "https://lh3.googleusercontent.com/d/13oK9FX9xPcz7MM4TstoswxVyrkPs82Y2",
+      "https://lh3.googleusercontent.com/d/1JWI3ID56yGZTXPcTyWRiJePHeVOk_ubS"
+    ],
+    "3": [
+      "https://lh3.googleusercontent.com/d/1pFD2RIcPSy_zZp_5D7RCAGxZowelvzGJ",
+      "https://lh3.googleusercontent.com/d/1yITco3JHSQBgIogmP7o82YaV2l6erbsk",
+      "https://lh3.googleusercontent.com/d/1QjHd3LcnXZnXt6HgILgk0Xw6CBTjDmqa",
+      "https://lh3.googleusercontent.com/d/1MxqxJ2iO3BQhY_IJBQTnjayrIJONA9qr",
+      "https://lh3.googleusercontent.com/d/1vflJ3mi765l5ugeMNIRZh4QIAuR24M83",
+      "https://lh3.googleusercontent.com/d/184FTViru3840Mnsljsk9VHJXc9_ALYua",
+      "https://lh3.googleusercontent.com/d/17L7lJbQM2YfTZDHodlr0v_Wxwc4TH9fL",
+      "https://lh3.googleusercontent.com/d/1jhpvApZyMZVn8S9ZIfLfj6iG7sk4cmo7",
+      "https://lh3.googleusercontent.com/d/1vtV6KDTrUXmTdrHBD7XaReyxhQHG5lQE"
+    ],
+    "4": [
+      "https://lh3.googleusercontent.com/d/1zgV05xYuv1SKUIj9j4karNW3hGToCV6Y",
+      "https://lh3.googleusercontent.com/d/1nHKFzOJ-oNbc2QFO2P2ITf_00PNJfTn0",
+      "https://lh3.googleusercontent.com/d/1l5RedFtmOoTNuoxcSHRmn-l8bAk9bEkn",
+      "https://lh3.googleusercontent.com/d/18f98_VxD3Xfhy0MViGDOYP1kAj2HEDxw",
+      "https://lh3.googleusercontent.com/d/1abNjF3-XzN_HNmH_KCpxkXclg2iUBHGQ",
+      "https://lh3.googleusercontent.com/d/12O4Z0erkpsJ-517rEzu8YuPbPZFkbAS_",
+      "https://lh3.googleusercontent.com/d/1cI5jubDSKBDPSVQithum0O4sU7RS8_YB",
+      "https://lh3.googleusercontent.com/d/1q510V_Wf_kcbktCK7aLopZt90pKqdDNx",
+      "https://lh3.googleusercontent.com/d/1gGrd3BR3POENNODM4rNOsLuAXKNQbyHN"
+    ],
+    "5": [
+      "https://lh3.googleusercontent.com/d/1ZeqAdJoHu1XTSf8v-fHTJMii1cJ0O9yq",
+      "https://lh3.googleusercontent.com/d/1uq58tP295EK1ZP3OLi8wRFCIsg8iOlTo",
+      "https://lh3.googleusercontent.com/d/1dLThQXlfZeMuQYPeHkXVhi5KZWzYpqf8",
+      "https://lh3.googleusercontent.com/d/1MtuUvPokw9FgQXFD5VjE7tzDXjVpcSWB",
+      "https://lh3.googleusercontent.com/d/1w7aVfDKXKXA_vVPh0kXPGJMYosF8Z5PM",
+      "https://lh3.googleusercontent.com/d/1sZyLgf2EBkTUVoDgM4Q4i1pKc7u6010t",
+      "https://lh3.googleusercontent.com/d/1-CX2kv_79jmcSuR90tfV3DyiahVZ0mIW",
+      "https://lh3.googleusercontent.com/d/1OXxeGyPxicyZ1HDipZURRtV1y-3QpDrz",
+      "https://lh3.googleusercontent.com/d/14AnQPmWF4y9yLvHqO1ijPMxn7u69F3H1"
+    ]
+  },
+  "iot-smart": {
+    "1": [
+      "https://lh3.googleusercontent.com/d/1Kav07IU9dC-_et1E2RrTGIHFuWSmyrPO",
+      "https://lh3.googleusercontent.com/d/1pkFQXa23ly6BhHU9knhg2y-L66rARc02",
+      "https://lh3.googleusercontent.com/d/1ZPhz8cGuEAfsxIIh3jCIpT_DzGCjqlt6",
+      "https://lh3.googleusercontent.com/d/1d5UC75s92XF55TZLLnXp21MYH_mN7B_D",
+      "https://lh3.googleusercontent.com/d/1JFRqksqpFNxKTt2CHxfepTTdcM_5f54n",
+      "https://lh3.googleusercontent.com/d/1L5RkJVLPaeYZH3Kyf-kC76mxmr_TRJZf",
+      "https://lh3.googleusercontent.com/d/1ViCZ65Y__OY2vQlz-v_mf0zsulyBH1VQ",
+      "https://lh3.googleusercontent.com/d/1hNPPH5YK3zgWmzTr0vNCbH6IJQnheokF",
+      "https://lh3.googleusercontent.com/d/1LAn4a2J6_aS6AJZ8Grv5CZrxggFxGD0i"
+    ],
+    "2": [
+      "https://lh3.googleusercontent.com/d/1WiGT25jWJ32h0TYE-ql-DG6ISgwHMhTB",
+      "https://lh3.googleusercontent.com/d/1AIjAssOsT-BnlUvHQooEsYQq-DtayFWu",
+      "https://lh3.googleusercontent.com/d/1QLqyzhSkwrcsPc6oOIsKyLOrRqhAyl9V",
+      "https://lh3.googleusercontent.com/d/1RI5jTqVb11rptOq1M-vr0Def0aAd0F8E",
+      "https://lh3.googleusercontent.com/d/1uMBENjFn-ApqUtiEP2uwNRS1_H31XKkz",
+      "https://lh3.googleusercontent.com/d/1Zf4XKpbkhXMZaG_ZoZ0Rf-VfyKFvxZm0",
+      "https://lh3.googleusercontent.com/d/1uG9UwlY0fOD8b5bVmDupbzXO-ZYz3K5C",
+      "https://lh3.googleusercontent.com/d/1G5Q1ZwUWsgXF73Y79zXKhr0Icchr3nmD",
+      "https://lh3.googleusercontent.com/d/1ibux3cquUnzcPkK28Nt8pjbOqHJjcU_S"
+    ],
+    "4": [
+      "https://lh3.googleusercontent.com/d/1gW07ZBBSs96Rda6aCFLjqXpAy05xv17N",
+      "https://lh3.googleusercontent.com/d/11NlqKLEXjtA5-4ZpuuarmRtSGqjbr9rl",
+      "https://lh3.googleusercontent.com/d/1mwbc9ntTxVtaHvVz5IfLI10EPd3oHrtC",
+      "https://lh3.googleusercontent.com/d/19tX9pki8M9II5rAPb89HPVWYnze6uvd5",
+      "https://lh3.googleusercontent.com/d/1bn_cXf1UfY5X8Tgd01V4rGSj1J1Q-qEE",
+      "https://lh3.googleusercontent.com/d/181SirY1FAcwYp2RQaklU-52IKboCM7rx",
+      "https://lh3.googleusercontent.com/d/1jfBFgK6LMUK8l6Xmxnk2ILnvO64HoyS9",
+      "https://lh3.googleusercontent.com/d/1hs8GiQ8sLxXoDWq37vS5R5q6ICYh9sHL",
+      "https://lh3.googleusercontent.com/d/17HS9Vx--_NAdSPyO81sldNM4TDHLHAgX"
+    ],
+    "3": [
+      "https://lh3.googleusercontent.com/d/1tKlpMRKDvUxRCsLwBhs20EVFfXtm9fyq",
+      "https://lh3.googleusercontent.com/d/1MvomP3Xnpnr9RigzHxhjU9qpdXEHn-p_",
+      "https://lh3.googleusercontent.com/d/1spL607UJgOtgUI4n4H3QtbOywFXF0e3D",
+      "https://lh3.googleusercontent.com/d/1N9DB3n07lUjMYXf4O6YsCR7sydcOK-vA",
+      "https://lh3.googleusercontent.com/d/19ESH8h_-H8-q9XDalyQ1H2zA9acKMQU5",
+      "https://lh3.googleusercontent.com/d/1jFJq0g8YZRrA72pQwM94o8hr6aEBwnkf",
+      "https://lh3.googleusercontent.com/d/1qPuEfOx70v2LmkS0zBPO1-iwbjI1qc0i",
+      "https://lh3.googleusercontent.com/d/1gDR_VsxH146buC-tX9g_qdj6UM3DP0J9",
+      "https://lh3.googleusercontent.com/d/1rtsLkFH-N7h1oISOIwO2yiVfrkcL3THc"
+    ],
+    "5": [
+      "https://lh3.googleusercontent.com/d/1uwEMYFn5TQN2TwarcaaybebI3l6mG1oK",
+      "https://lh3.googleusercontent.com/d/1YTE06NQZLHmHbsBmjrzPKHmW5nXDkuQl",
+      "https://lh3.googleusercontent.com/d/1YI-oHpdrTC7h262TDW4kodiG4sDKHfHX",
+      "https://lh3.googleusercontent.com/d/1szleC2cUvjPD_GeWJndIMNi3lvLrczAR",
+      "https://lh3.googleusercontent.com/d/1YmITsdPEPXFJGz2inuD-AWKEulRGHejH",
+      "https://lh3.googleusercontent.com/d/1v0QYmVuZWEluqFcj1aCIbAaIrEsCDYaS",
+      "https://lh3.googleusercontent.com/d/1phY28iosO2rKwMnIe_1YeUEqs9ZAJhCw",
+      "https://lh3.googleusercontent.com/d/1ae8mMgSpdXeRvZrPr1CiYnXhnj6xXtFg",
+      "https://lh3.googleusercontent.com/d/1CCDLb5A5G3sAJDPkp8vs3L9fA9BX6Awa"
+    ],
+    "6": [
+      "https://lh3.googleusercontent.com/d/1DAuAWbqo1xBtPZJyJ0Wkt3jAt_xW44Gb",
+      "https://lh3.googleusercontent.com/d/1So-US3CREIfdCtNzDQEx5vQH7KzYzE08",
+      "https://lh3.googleusercontent.com/d/17Mo5YBkAwNhI49kTgjiki0M-WLiw0TN4",
+      "https://lh3.googleusercontent.com/d/1fckWaq4nN04FVRC9WeDs8SwkJ9-NkDsZ",
+      "https://lh3.googleusercontent.com/d/11N2Yip0ABlB8ovdc-ygReiNkF8FnTbdh",
+      "https://lh3.googleusercontent.com/d/1iusjlik-AZIofOw0_DjhixzIcML4PFIe",
+      "https://lh3.googleusercontent.com/d/1yUv-ZdEkkmePRGx8uUMd4XAamLWEapAU",
+      "https://lh3.googleusercontent.com/d/1DoWAasgR-JbIsNLjox3kTInAsmI-EsPt",
+      "https://lh3.googleusercontent.com/d/1GNREcnm0lzf7J3seB4UhWTjGb6GpGoRS"
     ]
   }
 };

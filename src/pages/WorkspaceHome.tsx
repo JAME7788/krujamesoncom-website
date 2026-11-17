@@ -52,7 +52,7 @@ function Workspace() {
       <div className="workspace-features">
         <Link to="/games/digital-city-quest" className="workspace-feature"><img src="/media/games/tycoon-tech-city.webp" alt="แผนที่เมืองดิจิทัล" loading="lazy" /><div><span>01 / วางแผนและตัดสินใจ</span><h3>Digital City Quest</h3><p>ภารกิจกู้มหานครอัจฉริยะ</p><ArrowRight size={22} /></div></Link>
         <Link to="/games/coding-studio" className="workspace-feature"><img src="/media/lessons/curriculum-coding.webp" alt="ภาพประกอบบทเรียนการเขียนโปรแกรม" loading="lazy" /><div><span>02 / คิดเป็นขั้นตอน</span><h3>สตูดิโอเขียนโปรแกรม</h3><p>บล็อกคำสั่งและภาษา Python</p><ArrowRight size={22} /></div></Link>
-        <Link to="/games/circuit-lab" className="workspace-feature"><img src="/media/lessons/curriculum-electronics.webp" alt="ภาพประกอบการทดลองอิเล็กทรอนิกส์" loading="lazy" /><div><span>03 / ทดลองและค้นพบ</span><h3>ห้องทดลองวงจร</h3><p>เชื่อมสายไฟ เปิดสวิตช์ จุดประกายความคิด</p><ArrowRight size={22} /></div></Link>
+        <Link to="/games/electronics-101" className="workspace-feature"><img src="/media/lessons/curriculum-electronics.webp" alt="ภาพประกอบการทดลองอิเล็กทรอนิกส์" loading="lazy" /><div><span>03 / ทดลองและค้นพบ</span><h3>ห้องทดลองวงจร</h3><p>เชื่อมสายไฟ เปิดสวิตช์ จุดประกายความคิด</p><ArrowRight size={22} /></div></Link>
       </div>
     </section>
     <details className="workspace-announcements"><summary>ข่าวสารและประกาศจากครู</summary><AnnouncementBanner /></details>

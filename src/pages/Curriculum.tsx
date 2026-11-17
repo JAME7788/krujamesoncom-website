@@ -24,6 +24,7 @@ import {
 } from '../services/courseAccessService';
 import './Curriculum.css';
 import { isExternalVisitor } from '../services/userAccessService';
+import { getCourseCover } from '../data/courseCovers';
 
 const Curriculum: React.FC = () => {
   const { user } = useAuth();
@@ -187,7 +188,9 @@ const Curriculum: React.FC = () => {
         <ChevronRight className="is-course-arrow" size={22} aria-hidden />
       </Link>
       <div className="course-cards-grid">
-        {visibleGrades.map((g, i) => (
+        {visibleGrades.map((g, i) => {
+          const cover = getCourseCover(g.id);
+          return (
           <motion.div
             key={g.id}
             initial={{ opacity: 0, y: 20 }}
@@ -196,11 +199,20 @@ const Curriculum: React.FC = () => {
             className="course-card"
             onClick={() => setSelectedCourse(g)}
           >
-            <div className="course-card-header">
-              <div className="course-emoji-wrapper">
-                {g.emoji}
+            {cover ? (
+              <div className="course-card-header has-cover">
+                <img src={cover} alt={g.title} className="course-cover-img" loading="lazy" />
+                <div className="course-cover-badge" aria-hidden="true">
+                  {g.emoji}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="course-card-header">
+                <div className="course-emoji-wrapper">
+                  {g.emoji}
+                </div>
+              </div>
+            )}
             
             <div className="course-card-content">
               <h2>{g.title}</h2>
@@ -232,7 +244,8 @@ const Curriculum: React.FC = () => {
               </button>
             </div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Course Details Modal */}
@@ -257,13 +270,26 @@ const Curriculum: React.FC = () => {
                 <X size={24} />
               </button>
 
-              <div className="modal-header">
-                <div className="modal-emoji">{selectedCourse.emoji}</div>
-                <div className="modal-title-area">
-                  <h2>{selectedCourse.title}</h2>
-                  <p>รายละเอียดเนื้อหาและตัวชี้วัดทั้งหมดของชั้นเรียนนี้</p>
+              {getCourseCover(selectedCourse.id) ? (
+                <div className="modal-header has-cover">
+                  <img src={getCourseCover(selectedCourse.id)!} alt={selectedCourse.title} className="modal-header-cover-img" />
+                  <div className="modal-header-cover-overlay">
+                    <div className="modal-emoji">{selectedCourse.emoji}</div>
+                    <div className="modal-title-area">
+                      <h2>{selectedCourse.title}</h2>
+                      <p>รายละเอียดเนื้อหาและตัวชี้วัดทั้งหมดของชั้นเรียนนี้</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="modal-header">
+                  <div className="modal-emoji">{selectedCourse.emoji}</div>
+                  <div className="modal-title-area">
+                    <h2>{selectedCourse.title}</h2>
+                    <p>รายละเอียดเนื้อหาและตัวชี้วัดทั้งหมดของชั้นเรียนนี้</p>
+                  </div>
+                </div>
+              )}
 
               <div className="modal-content-scroll">
                 {/* Quick start */}

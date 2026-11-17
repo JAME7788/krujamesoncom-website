@@ -234,74 +234,9 @@ const auditRunner = () => {
   check(levelIndex >= 8, 'นักวิ่ง 3D ต้องมีอย่างน้อย 8 ด่าน');
 };
 
-const auditCircuits = () => {
-  const source = read('CircuitLabGame.tsx');
-  const levelPattern = /rows:\s*\[([\s\S]*?)\],\s*maxWires:\s*(\d+),\s*optimalWires:\s*(\d+)/g;
-  let match;
-  let levelIndex = 0;
-  while ((match = levelPattern.exec(source))) {
-    levelIndex += 1;
-    const rows = [...match[1].matchAll(/'([^']+)'/g)].map((item) => item[1]);
-    const maxWires = Number(match[2]);
-    const optimalWires = Number(match[3]);
-    const nodes = [];
-    const nodeByPosition = new Map();
-    const terminals = [];
-    rows.forEach((row, y) => [...row].forEach((cell, x) => {
-      if (cell === 'X' || cell === ' ') return;
-      const id = nodes.length;
-      nodes.push({ x, y, cost: cell === '.' ? 1 : 0 });
-      nodeByPosition.set(`${x},${y}`, id);
-      if (cell !== '.') terminals.push(id);
-    }));
-
-    const nodeCount = nodes.length;
-    const maskCount = 1 << terminals.length;
-    const infinity = 1e9;
-    const dp = Array.from({ length: maskCount }, () => new Float64Array(nodeCount).fill(infinity));
-    terminals.forEach((nodeId, terminalIndex) => { dp[1 << terminalIndex][nodeId] = 0; });
-
-    for (let mask = 1; mask < maskCount; mask += 1) {
-      for (let subset = (mask - 1) & mask; subset; subset = (subset - 1) & mask) {
-        const other = mask ^ subset;
-        if (subset > other) continue;
-        for (let nodeId = 0; nodeId < nodeCount; nodeId += 1) {
-          const value = dp[subset][nodeId] + dp[other][nodeId] - nodes[nodeId].cost;
-          if (value < dp[mask][nodeId]) dp[mask][nodeId] = value;
-        }
-      }
-      const visited = new Uint8Array(nodeCount);
-      for (let iteration = 0; iteration < nodeCount; iteration += 1) {
-        let current = -1;
-        let best = infinity;
-        for (let nodeId = 0; nodeId < nodeCount; nodeId += 1) {
-          if (!visited[nodeId] && dp[mask][nodeId] < best) {
-            current = nodeId;
-            best = dp[mask][nodeId];
-          }
-        }
-        if (current < 0) break;
-        visited[current] = 1;
-        const { x, y } = nodes[current];
-        [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
-          const neighbor = nodeByPosition.get(`${x + dx},${y + dy}`);
-          if (neighbor === undefined) return;
-          const value = best + nodes[neighbor].cost;
-          if (value < dp[mask][neighbor]) dp[mask][neighbor] = value;
-        });
-      }
-    }
-    const minimum = Math.min(...dp[maskCount - 1]);
-    check(minimum <= maxWires, `วงจรด่าน ${levelIndex} ต้องใช้ ${minimum} สาย แต่ให้สูงสุด ${maxWires}`);
-    check(minimum === optimalWires, `วงจรด่าน ${levelIndex} ค่า optimalWires ควรเป็น ${minimum} แต่กำหนดเป็น ${optimalWires}`);
-  }
-  check(levelIndex >= 10, 'ห้องทดลองวงจรต้องมีอย่างน้อย 10 ด่าน');
-};
-
 auditQuestionBanks();
 auditMazes();
 auditRunner();
-auditCircuits();
 
 if (failures.length > 0) {
   console.error(`Game content QA failed (${failures.length}/${checks} checks):`);

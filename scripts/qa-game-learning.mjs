@@ -64,7 +64,7 @@ try {
   await review.scrollIntoViewIfNeeded();
   await page.screenshot({ path: 'artifacts/game-learning/mobile-reflection.png' });
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
-  await page.goto((process.env.QA_BASE_URL || 'http://127.0.0.1:5180') + '/games/circuit-lab');
+  await page.goto((process.env.QA_BASE_URL || 'http://127.0.0.1:5180') + '/games/electronics-101');
   await page.getByRole('button', { name: /ท้าทายตัวเอง/ }).click();
   await page.screenshot({ path: 'artifacts/game-learning/mission-mobile.png', fullPage: true });
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));

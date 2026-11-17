@@ -1193,18 +1193,18 @@ const INTERACTIVE_SLIDE_REPORTS: MediaReportItem[] = [
 // 3. สื่อนวัตกรรมเกมการเรียนรู้ดิจิทัลทั้งหมดจาก gamesCatalog.ts (36 รายการ)
 const PORTFOLIO_36_GAME_IDS = new Set([
   'quick-answer', 'file-organizer', 'algorithm-runner-3d', 'coding-studio',
-  'circuit-lab', 'robot-maker', 'mouse', 'keyboard', 'algorithm', 'binary',
+  'robot-maker', 'mouse', 'keyboard', 'algorithm', 'binary',
   'memory', 'pattern', 'maze', 'snake', 'bug', 'device-match', 'step-sort',
   'safety', 'pixel-art', 'color-code-pixel', 'logic-gates', 'tech-system',
   'search-smart', 'ct-board', 'tycoon', 'digital-city-quest', 'cyber-shield',
   'sorting-dash', 'bomb-collector', 'obstacle-dodge', 'situation-reaction',
-  'pc-builder', 'stroop-color', 'space-treasure', 'cyber-cop', 'flowchart-bingo',
+  'pc-builder', 'stroop-color', 'space-treasure', 'cyber-cop', 'flowchart-bingo', 'electronics-101',
 ]);
 const GAMES_CATALOG_REPORTS: MediaReportItem[] = gamesCatalog.filter((g) => PORTFOLIO_36_GAME_IDS.has(g.id)).map((game) => {
   const gradeText = game.level ? `ระดับชั้น ${game.level}` : 'ทุกระดับชั้น (ป.1 - ม.3)';
 
   let subjectName = 'วิทยาการคำนวณ';
-  if (game.id.includes('circuit') || game.id.includes('pc-builder') || game.id.includes('tech-system')) {
+  if (game.id.includes('electronics') || game.id.includes('pc-builder') || game.id.includes('tech-system')) {
     subjectName = 'การออกแบบและเทคโนโลยี';
   } else if (game.skill?.includes('คำนวณ') || game.skill?.includes('แก้ปัญหา')) {
     subjectName = 'วิทยาการคำนวณ (ทักษะเชิงคำนวณ)';

@@ -9,8 +9,13 @@
     body { margin: 0; background: #f5f7fb; }
     main { max-width: 960px; margin: 0 auto; padding: 32px 18px 56px; }
     .sheet { background: #fff; border: 1px solid #d8dfeb; border-radius: 10px; padding: 28px; box-shadow: 0 10px 30px rgba(30,41,59,.08); }
-    .course { margin: 0 0 6px; font-size: 14px; font-weight: 700; color: #4338ca; letter-spacing: .02em; }
+    .worksheet-hero { width: 100%; height: 180px; border-radius: 8px; overflow: hidden; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(15,23,42,.08); border: 1px solid #cbd5e1; }
+    .worksheet-hero-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .worksheet-badge-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .sheet-tag { font-size: 12px; font-weight: 700; color: #4338ca; background: #eef2ff; padding: 3px 10px; border-radius: 999px; letter-spacing: .02em; }
+    .course { margin: 0; font-size: 14px; font-weight: 700; color: #4338ca; letter-spacing: .02em; }
     h1 { margin: 0 0 8px; font-size: 26px; line-height: 1.35; }
+    .goal { color: #334155; font-size: 15px; font-weight: 500; margin: 4px 0 14px; line-height: 1.6; }
     h2 { margin: 26px 0 10px; font-size: 18px; color: #4338ca; }
     p, li { line-height: 1.7; font-size: 16px; }
     .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
@@ -26,16 +31,30 @@
     .answer { border-bottom: 1px dotted #94a3b8; height: 34px; }
     .draw { border: 1px dashed #94a3b8; border-radius: 8px; height: 220px; margin-top: 8px; }
     footer { margin-top: 24px; font-size: 13px; color: #64748b; }
-    @media (max-width: 640px) { .meta { grid-template-columns: 1fr; } .sheet { padding: 18px; } }
-    @media print { body { background: white; } main { padding: 0; } .sheet { box-shadow: none; border: 0; } h2 { break-after: avoid; } table { break-inside: avoid; } }
+    @media (max-width: 640px) { .meta { grid-template-columns: 1fr; } .sheet { padding: 18px; } .worksheet-hero { height: 130px; } }
+    @media print {
+      body { background: white; }
+      main { padding: 0; }
+      .sheet { box-shadow: none; border: 0; }
+      .worksheet-hero { height: 110px; margin-bottom: 10px; }
+      h2 { break-after: avoid; }
+      table { break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
 <main>
   <section class="sheet">
-    <p class="course">วิชาเลือก ฐานข้อมูลเบื้องต้น ม.1–ม.3 • หน่วยที่ 4</p>
+    
+    <div class="worksheet-hero">
+      <img src="/slides/database-basic/4/01_สไลด์_ออกแบบฐานข้อมูลห้องเรียนของเรา.png" alt="ใบงานที่ 4: ออกแบบฐานข้อมูลระบบส่งงาน" class="worksheet-hero-img" />
+    </div>
+    <div class="worksheet-badge-row">
+      <p class="course">วิชาเลือก ฐานข้อมูลเบื้องต้น ม.1–ม.3 • หน่วยที่ 4</p>
+      <span class="sheet-tag">ใบงานการเรียนรู้</span>
+    </div>
     <h1>ใบงานที่ 4: ออกแบบฐานข้อมูลระบบส่งงาน</h1>
-    <p>เป้าหมาย: ออกแบบฐานข้อมูลที่ช่วยครูติดตามการส่งงาน โดยลดความซ้ำซ้อน มีพจนานุกรมข้อมูล และปฏิบัติตามหลัก PDPA</p>
+    <p class="goal">🎯 เป้าหมาย: ออกแบบฐานข้อมูลที่ช่วยครูติดตามการส่งงาน โดยลดความซ้ำซ้อน มีพจนานุกรมข้อมูล และปฏิบัติตามหลัก PDPA</p>
     <div class="meta">
       <div class="box">ชื่อ: ....................................</div>
       <div class="box">ชั้น: ................ เลขที่: ........</div>

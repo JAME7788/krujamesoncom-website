@@ -38,7 +38,6 @@ const LogicGatesGame = React.lazy(() => import('./pages/games/LogicGatesGame'));
 const FileOrganizerGame = React.lazy(() => import('./pages/games/FileOrganizerGame'));
 const AlgorithmRunner3D = React.lazy(() => import('./pages/games/AlgorithmRunner3D'));
 const CodingStudioGame = React.lazy(() => import('./pages/games/CodingStudioGame'));
-const CircuitLabGame = React.lazy(() => import('./pages/games/CircuitLabGame'));
 const CTBoardGame = React.lazy(() => import('./pages/games/CTBoardGame'));
 const TycoonGame = React.lazy(() => import('./pages/games/TycoonGame'));
 const DigitalCityQuestGame = React.lazy(() => import('./pages/games/DigitalCityQuestGame'));
@@ -148,7 +147,7 @@ function App() {
                   <Route path="/games/file-organizer" element={<LearningGameRoute gameId="file-organizer"><FileOrganizerGame /></LearningGameRoute>} />
                   <Route path="/games/algorithm-runner-3d" element={<LearningGameRoute gameId="algorithm-runner-3d"><AlgorithmRunner3D /></LearningGameRoute>} />
                   <Route path="/games/coding-studio" element={<LearningGameRoute gameId="coding-studio"><CodingStudioGame /></LearningGameRoute>} />
-                  <Route path="/games/circuit-lab" element={<LearningGameRoute gameId="circuit-lab"><CircuitLabGame /></LearningGameRoute>} />
+                  <Route path="/games/circuit-lab" element={<Navigate to="/games/electronics-101" replace />} />
                   <Route path="/games/ct-board" element={<LearningGameRoute gameId="ct-board"><CTBoardGame /></LearningGameRoute>} />
                   <Route path="/games/tycoon" element={<LearningGameRoute gameId="tycoon"><TycoonGame /></LearningGameRoute>} />
                   <Route path="/games/digital-city-quest" element={<LearningGameRoute gameId="digital-city-quest"><DigitalCityQuestGame /></LearningGameRoute>} />
