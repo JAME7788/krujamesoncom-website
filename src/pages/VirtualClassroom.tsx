@@ -382,6 +382,7 @@ const VirtualClassroom: React.FC = () => {
   const canParticipateRef = useRef(true);
   const joinStatusRef = useRef<'active' | 'waiting' | 'blocked'>('active');
   const summonRef = useRef<() => void>(() => undefined);
+  const teleportToPlayerRef = useRef<(target: WorldPlayer) => void>(() => undefined);
   const lastPresentationVersionRef = useRef(0);
   const lastGameVersionRef = useRef(0);
   const lastSummonVersionRef = useRef(0);
@@ -1717,11 +1718,59 @@ const VirtualClassroom: React.FC = () => {
       verticalVelocity = 8.2;
       setStatus('กระโดด!');
     };
+    const publishPresence = (force = false, motionState: 'idle' | 'walk' | 'jump' = 'idle') => {
+      void updateWorldPlayer({
+        id: playerId,
+        roomId,
+        name: displayName,
+        classroom: activeClassroom,
+        x: playerPosition.x,
+        y: playerPosition.y - 1.7,
+        z: playerPosition.z,
+        rotation: yaw,
+        color: avatarColorRef.current,
+        motion: motionState,
+        role: isTeacher ? 'teacher' : 'student',
+        joinStatus: joinStatusRef.current,
+        updatedAt: Date.now(),
+      }, force);
+    };
+
     summonRef.current = () => {
       const state = roomStateRef.current;
       playerPosition.set(state?.summonX || 0, 1.7, state?.summonZ || 10);
       verticalVelocity = 0;
       yaw = Math.PI;
+      publishPresence(true, 'idle');
+    };
+    teleportToPlayerRef.current = (target: WorldPlayer) => {
+      if (!target || target.id === playerId) return;
+      const offsetX = target.x >= 0 ? -1.5 : 1.5;
+      const offsetZ = 1.5;
+      const destX = THREE.MathUtils.clamp(target.x + offsetX, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
+      const destZ = THREE.MathUtils.clamp(target.z + offsetZ, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
+      const destY = Math.max(1.7, (target.y || 0) + 1.7);
+      playerPosition.set(destX, destY, destZ);
+      verticalVelocity = 0;
+      grounded = true;
+      const dx = target.x - destX;
+      const dz = target.z - destZ;
+      yaw = Math.atan2(-dx, -dz);
+      pitch = 0;
+      publishPresence(true, 'idle');
+      setStatus(`เดินไปหา ${target.role === 'teacher' ? 'ครู ' : ''}${target.name} แล้ว`);
+    };
+
+    // ส่งสถานะเข้าห้องทันทีที่โหลดฉาก และส่งซ้ำเป็นระยะแม้แท็บอยู่เบื้องหลัง
+    publishPresence(true, 'idle');
+    const presenceHeartbeatTimer = window.setInterval(() => {
+      publishPresence(true, 'idle');
+    }, 3_500);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') publishPresence(true, 'idle');
+    };
+    const onBeforeUnload = () => {
+      void removeWorldPlayer(roomId, playerId);
     };
 
     const onPointerLock = () => setPointerLocked(document.pointerLockElement === renderer.domElement);
@@ -1789,6 +1838,8 @@ const VirtualClassroom: React.FC = () => {
 
     document.addEventListener('pointerlockchange', onPointerLock);
     document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('beforeunload', onBeforeUnload);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('resize', onResize);
@@ -2040,21 +2091,7 @@ const VirtualClassroom: React.FC = () => {
 
       if (now - lastPresence > 1_200) {
         lastPresence = now;
-        void updateWorldPlayer({
-          id: playerId,
-          roomId,
-          name: displayName,
-          classroom: activeClassroom,
-          x: playerPosition.x,
-          y: playerPosition.y - 1.7,
-          z: playerPosition.z,
-          rotation: yaw,
-          color: avatarColorRef.current,
-          motion: !grounded ? 'jump' : isMoving ? 'walk' : 'idle',
-          role: isTeacher ? 'teacher' : 'student',
-          joinStatus: joinStatusRef.current,
-          updatedAt: Date.now(),
-        });
+        publishPresence(false, !grounded ? 'jump' : isMoving ? 'walk' : 'idle');
       }
 
       renderer.render(scene, camera);
@@ -2064,13 +2101,17 @@ const VirtualClassroom: React.FC = () => {
 
     return () => {
       cancelAnimationFrame(frame);
+      window.clearInterval(presenceHeartbeatTimer);
       respawnTimers.forEach((timer) => window.clearTimeout(timer));
       unsubscribeBlocks();
       unsubscribePlayers();
       void removeWorldPlayer(roomId, playerId);
       summonRef.current = () => undefined;
+      teleportToPlayerRef.current = () => undefined;
       document.removeEventListener('pointerlockchange', onPointerLock);
       document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('beforeunload', onBeforeUnload);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('resize', onResize);
@@ -2132,6 +2173,7 @@ const VirtualClassroom: React.FC = () => {
   };
 
   const selectedSlide = selectedBoard?.slides[slideIndex];
+  const otherPlayers = onlinePlayers.filter((player) => player.id !== playerId && player.joinStatus !== 'blocked');
 
   return (
     <div className="virtual-classroom">
@@ -2171,7 +2213,13 @@ const VirtualClassroom: React.FC = () => {
               </select>
             </label>
           ) : <strong>ห้อง {activeClassroom} 3D</strong>}
-          <span><Users size={15} /> {Math.max(1, onlinePlayers.length)}</span>
+          <span
+            onClick={() => setAvatarPanelOpen((open) => !open)}
+            style={{ cursor: 'pointer' }}
+            title="คลิกเพื่อดูรายชื่อเพื่อนในห้อง"
+          >
+            <Users size={15} /> {Math.max(1, onlinePlayers.length)}
+          </span>
           <span className="world-week-chip" title="แผนที่ประจำสัปดาห์นี้ รีเซ็ตอัตโนมัติทุกวันจันทร์">
             <Calendar size={13} /> {weekDisplayLabel}
           </span>
@@ -2188,6 +2236,74 @@ const VirtualClassroom: React.FC = () => {
             </button>
           )}
         </div>
+
+        {otherPlayers.length > 0 && (
+          <div
+            className="world-classmates-bar"
+            aria-label="เพื่อนในห้อง (คลิกเพื่อเดินไปหาเพื่อน)"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              flexWrap: 'wrap',
+              padding: '5px 10px',
+              borderRadius: 999,
+              background: 'rgba(15, 23, 42, 0.85)',
+              border: '1px solid rgba(255, 255, 255, 0.22)',
+              backdropFilter: 'blur(8px)',
+              color: '#fff',
+              fontSize: '0.78rem',
+            }}
+          >
+            <span style={{ fontWeight: 700, color: '#93c5fd', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Users size={13} /> เพื่อนในห้อง ({otherPlayers.length}):
+            </span>
+            {otherPlayers.slice(0, 6).map((player) => (
+              <button
+                key={player.id}
+                type="button"
+                onClick={() => teleportToPlayerRef.current(player)}
+                title={`คลิกเพื่อเดินไปหา ${player.role === 'teacher' ? 'ครู ' : ''}${player.name}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '3px 9px',
+                  borderRadius: 999,
+                  border: '1px solid rgba(255, 255, 255, 0.22)',
+                  background: 'rgba(255, 255, 255, 0.14)',
+                  color: '#fff',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                }}
+              >
+                <i style={{ width: 8, height: 8, borderRadius: '50%', background: player.color, display: 'inline-block' }} />
+                {player.role === 'teacher' ? 'ครู ' : ''}{player.name}
+              </button>
+            ))}
+            {otherPlayers.length > 6 && (
+              <button
+                type="button"
+                onClick={() => setAvatarPanelOpen(true)}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: 999,
+                  border: 0,
+                  background: 'rgba(59, 130, 246, 0.35)',
+                  color: '#fff',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                }}
+              >
+                +{otherPlayers.length - 6} คน
+              </button>
+            )}
+          </div>
+        )}
       </header>
 
       {pointerLocked && (
@@ -2246,9 +2362,20 @@ const VirtualClassroom: React.FC = () => {
           <h3><Users size={17} /> ผู้เล่นในห้อง ({Math.max(1, onlinePlayers.length)})</h3>
           <div className="world-player-list">
             {onlinePlayers.length > 0 ? onlinePlayers.map((player) => (
-              <span key={player.id}>
+              <span
+                key={player.id}
+                onClick={() => {
+                  if (player.id !== playerId) {
+                    teleportToPlayerRef.current(player);
+                    setAvatarPanelOpen(false);
+                  }
+                }}
+                style={{ cursor: player.id !== playerId ? 'pointer' : 'default' }}
+                title={player.id !== playerId ? `คลิกเพื่อเดินไปหา ${player.name}` : 'ตัวละครของคุณ'}
+              >
                 <i style={{ background: player.color }} />
                 {player.role === 'teacher' ? 'ครู ' : ''}{player.name}
+                {player.id !== playerId && <small style={{ marginLeft: 'auto', opacity: 0.78 }}>เดินไปหา →</small>}
                 {player.joinStatus === 'waiting' && <small>รออนุมัติ</small>}
               </span>
             )) : <span><i style={{ background: avatarColor }} />{displayName}</span>}

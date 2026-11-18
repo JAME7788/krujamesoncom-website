@@ -3,11 +3,13 @@ import {
   clearWorldBlocks,
   addWorldBlock,
   removeWorldBlock,
+  createPlayerPresenceTracker,
   getLocalWorldBlocks,
   getWeekDisplayLabel,
   getWorldDocId,
   getWorldWeekKey,
   MAX_WORLD_BLOCKS,
+  PLAYER_PRESENCE_TTL_MS,
 } from '../src/services/virtualClassroomService';
 import type { WorldBlock } from '../src/services/virtualClassroomService';
 
@@ -84,6 +86,85 @@ describe('Virtual Classroom Weekly Remap & Partitioning', () => {
 
     it('มีขีดจำกัดจำนวนบล็อกสูงสุดไม่เกิน 1,200 ก้อนเพื่อประสิทธิภาพ', () => {
       expect(MAX_WORLD_BLOCKS).toBe(1200);
+    });
+  });
+
+  describe('Multiplayer Presence & Clock-Skew Resilience', () => {
+    it('เห็นเพื่อนในห้องเดียวกันได้แม้เวลาเครื่องคอมพิวเตอร์สองเครื่องตั้งวันที่/เดือนต่างกัน (ผ่าน serverSeenAt)', () => {
+      const tracker = createPlayerPresenceTracker(PLAYER_PRESENCE_TTL_MS);
+      const localNow = new Date('2026-11-18T12:00:00Z').getTime();
+      const serverNow = new Date('2026-04-18T12:00:00Z').getTime();
+      const friendSkewedClock = new Date('2026-09-15T08:00:00Z').getTime();
+
+      const active = tracker.ingestSnapshot([
+        {
+          id: 'student_1',
+          roomId: 'class-ป1',
+          name: 'ด.ช.ก้อง',
+          classroom: 'ป.1',
+          x: 0,
+          y: 0,
+          z: 10,
+          rotation: 0,
+          color: '#2563eb',
+          updatedAt: localNow,
+          serverSeenAt: { toMillis: () => serverNow },
+        },
+        {
+          id: 'student_2',
+          roomId: 'class-ป1',
+          name: 'ด.ญ.ฟ้า',
+          classroom: 'ป.1',
+          x: 1.5,
+          y: 0,
+          z: 10,
+          rotation: 0,
+          color: '#e11d48',
+          updatedAt: friendSkewedClock,
+          serverSeenAt: { toMillis: () => serverNow - 2_000 },
+        },
+      ], localNow);
+
+      expect(active.map((p) => p.id)).toEqual(['student_1', 'student_2']);
+    });
+
+    it('กรองข้อมูลค้างเก่าจากสัปดาห์ก่อนออก แต่รับรู้ผู้เล่นที่ส่งสัญญาณชีพ (heartbeat) ทันทีแม้ไม่มี serverSeenAt', () => {
+      const tracker = createPlayerPresenceTracker(PLAYER_PRESENCE_TTL_MS);
+      const localNow = new Date('2026-11-18T12:00:00Z').getTime();
+      const staleTime = new Date('2026-09-15T08:00:00Z').getTime();
+
+      const first = tracker.ingestSnapshot([
+        {
+          id: 'stale_ghost',
+          roomId: 'class-ป1',
+          name: 'ข้อมูลค้าง',
+          classroom: 'ป.1',
+          x: 0,
+          y: 0,
+          z: 10,
+          rotation: 0,
+          color: '#16a34a',
+          updatedAt: staleTime,
+        },
+      ], localNow);
+      expect(first).toHaveLength(0);
+
+      const second = tracker.ingestSnapshot([
+        {
+          id: 'stale_ghost',
+          roomId: 'class-ป1',
+          name: 'เพื่อนออนไลน์จริงแต่เวลาเครื่องเพี้ยน',
+          classroom: 'ป.1',
+          x: 1,
+          y: 0,
+          z: 10,
+          rotation: 0,
+          color: '#16a34a',
+          updatedAt: staleTime + 3_500,
+        },
+      ], localNow + 3_500);
+      expect(second).toHaveLength(1);
+      expect(second[0].id).toBe('stale_ghost');
     });
   });
 });

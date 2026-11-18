@@ -7,6 +7,7 @@ import {
   getDocs,
   onSnapshot,
   query,
+  serverTimestamp,
   setDoc,
   updateDoc,
   where,
@@ -462,10 +463,12 @@ export const clearWorldBlocks = async (
   }
 };
 
+export const PLAYER_PRESENCE_TTL_MS = 90_000;
+
 const getLocalPlayers = (roomId: string): WorldPlayer[] => {
   const now = Date.now();
   return readLocal<WorldPlayer[]>(playerKey(roomId), [])
-    .filter((player) => now - player.updatedAt < 30_000);
+    .filter((player) => Math.abs(now - player.updatedAt) < PLAYER_PRESENCE_TTL_MS);
 };
 
 const cachePlayer = (player: WorldPlayer) => {
@@ -474,9 +477,115 @@ const cachePlayer = (player: WorldPlayer) => {
   emit(player.roomId);
 };
 
+const extractServerSeenAtMs = (raw: Record<string, unknown>): number | null => {
+  const candidate = raw.serverSeenAt as { toMillis?: () => number; seconds?: number } | number | undefined;
+  if (typeof candidate === 'number' && Number.isFinite(candidate)) return candidate;
+  if (candidate && typeof candidate === 'object') {
+    if (typeof candidate.toMillis === 'function') return candidate.toMillis();
+    if (typeof candidate.seconds === 'number') return candidate.seconds * 1000;
+  }
+  return null;
+};
+
+const stripInternalPlayerFields = (raw: Record<string, unknown>): WorldPlayer => {
+  const copy = { ...raw };
+  delete copy.serverSeenAt;
+  return copy as unknown as WorldPlayer;
+};
+
+/**
+ * ตัวติดตามผู้เล่นออนไลน์ที่ทนทานต่อปัญหาเวลาเครื่องคอมพิวเตอร์ในห้องเรียนไม่ตรงกัน (Clock Skew)
+ * โดยใช้ทั้งเวลาจากเซิร์ฟเวอร์ (serverSeenAt) และการตรวจจับการเปลี่ยนแปลงของสัญญาณชีพ (heartbeat updatedAt)
+ */
+export const createPlayerPresenceTracker = (ttlMs = PLAYER_PRESENCE_TTL_MS) => {
+  const observedUpdatedAt = new Map<string, number>();
+  const observedServerSeenAt = new Map<string, number>();
+  const lastActiveLocalMs = new Map<string, number>();
+  const latestPlayers = new Map<string, WorldPlayer>();
+
+  const ingestSnapshot = (
+    rawDocs: Array<Record<string, unknown>>,
+    now = Date.now(),
+  ): WorldPlayer[] => {
+    const presentIds = new Set<string>();
+    const parsed = rawDocs
+      .map((raw) => ({
+        player: stripInternalPlayerFields(raw),
+        serverSeenAtMs: extractServerSeenAtMs(raw),
+      }))
+      .filter((item) => Boolean(item.player?.id));
+
+    for (const { player, serverSeenAtMs } of parsed) {
+      presentIds.add(player.id);
+      latestPlayers.set(player.id, player);
+      const prevUpdated = observedUpdatedAt.get(player.id);
+      const prevServer = observedServerSeenAt.get(player.id);
+
+      const updatedAdvanced = prevUpdated !== undefined && prevUpdated !== player.updatedAt;
+      const serverAdvanced = prevServer !== undefined && serverSeenAtMs !== null && prevServer !== serverSeenAtMs;
+      const firstSeenNearLocalClock = prevUpdated === undefined && (
+        Math.abs(now - player.updatedAt) < ttlMs
+        || (serverSeenAtMs !== null && Math.abs(now - serverSeenAtMs) < ttlMs)
+      );
+
+      if (updatedAdvanced || serverAdvanced || firstSeenNearLocalClock) {
+        lastActiveLocalMs.set(player.id, now);
+      }
+      observedUpdatedAt.set(player.id, player.updatedAt);
+      if (serverSeenAtMs !== null) {
+        observedServerSeenAt.set(player.id, serverSeenAtMs);
+      }
+    }
+
+    // เทียบเวลาเซิร์ฟเวอร์ของผู้เล่นที่เพิ่งยืนยันว่าออนไลน์กับคนอื่นในห้องเดียวกัน (แก้ปัญหาเครื่องนักเรียนตั้งวันที่/ปีผิด)
+    let verifiedServerNowMs: number | null = null;
+    for (const { player, serverSeenAtMs } of parsed) {
+      const activeAt = lastActiveLocalMs.get(player.id);
+      if (activeAt !== undefined && now - activeAt < ttlMs && serverSeenAtMs !== null) {
+        if (verifiedServerNowMs === null || serverSeenAtMs > verifiedServerNowMs) {
+          verifiedServerNowMs = serverSeenAtMs;
+        }
+      }
+    }
+    if (verifiedServerNowMs !== null) {
+      for (const { player, serverSeenAtMs } of parsed) {
+        if (serverSeenAtMs !== null && Math.abs(verifiedServerNowMs - serverSeenAtMs) < ttlMs) {
+          if (!lastActiveLocalMs.has(player.id)) {
+            lastActiveLocalMs.set(player.id, now);
+          }
+        }
+      }
+    }
+
+    for (const id of Array.from(latestPlayers.keys())) {
+      if (!presentIds.has(id)) {
+        latestPlayers.delete(id);
+        observedUpdatedAt.delete(id);
+        observedServerSeenAt.delete(id);
+        lastActiveLocalMs.delete(id);
+      }
+    }
+
+    return getActivePlayers(now);
+  };
+
+  const getActivePlayers = (now = Date.now()): WorldPlayer[] => {
+    const active: WorldPlayer[] = [];
+    for (const [id, player] of latestPlayers.entries()) {
+      const activeAt = lastActiveLocalMs.get(id);
+      if (activeAt !== undefined && now - activeAt < ttlMs) {
+        active.push(player);
+      }
+    }
+    return active;
+  };
+
+  return { ingestSnapshot, getActivePlayers };
+};
+
 const remotePresence = new Map<string, { at: number; signature: string }>();
 
-export const updateWorldPlayer = async (player: WorldPlayer): Promise<void> => {
+export const updateWorldPlayer = async (player: WorldPlayer, force = false): Promise<void> => {
   cachePlayer(player);
   const id = playerDocId(player.roomId, player.id);
   const now = Date.now();
@@ -492,12 +601,17 @@ export const updateWorldPlayer = async (player: WorldPlayer): Promise<void> => {
     player.joinStatus || 'active',
   ].join('|');
   const previous = remotePresence.get(id);
-  if (previous && now - previous.at < 2_500) return;
-  if (previous?.signature === signature && now - previous.at < 7_500) return;
+  if (!force) {
+    if (previous && now - previous.at < 1_500) return;
+    if (previous?.signature === signature && now - previous.at < 4_500) return;
+  }
   remotePresence.set(id, { at: now, signature });
   if (!firebaseAvailable()) return;
   try {
-    await setDoc(doc(db, PLAYER_COLLECTION, id), player, { merge: true });
+    await setDoc(doc(db, PLAYER_COLLECTION, id), {
+      ...player,
+      serverSeenAt: serverTimestamp(),
+    }, { merge: true });
   } catch (error) {
     console.warn('player presence saved locally only', error);
   }
@@ -522,10 +636,18 @@ export const subscribeWorldPlayers = (
   onChange: (players: WorldPlayer[]) => void,
   onSyncMode?: (mode: WorldSyncMode) => void,
 ): (() => void) => {
+  const tracker = createPlayerPresenceTracker(PLAYER_PRESENCE_TTL_MS);
+  const mergeWithLocal = (remotePlayers: WorldPlayer[]): WorldPlayer[] => {
+    const merged = new Map<string, WorldPlayer>();
+    getLocalPlayers(roomId).forEach((p) => merged.set(p.id, p));
+    remotePlayers.forEach((p) => merged.set(p.id, p));
+    return Array.from(merged.values());
+  };
+
   onChange(getLocalPlayers(roomId));
   onSyncMode?.('connecting');
   const channel = new BroadcastChannel(channelName(roomId));
-  channel.onmessage = () => onChange(getLocalPlayers(roomId));
+  channel.onmessage = () => onChange(mergeWithLocal(tracker.getActivePlayers()));
   if (!firebaseAvailable()) {
     onSyncMode?.('local');
     return () => channel.close();
@@ -536,12 +658,12 @@ export const subscribeWorldPlayers = (
     playersQuery,
     (snapshot) => {
       onSyncMode?.('firebase');
-      const now = Date.now();
-      const players = snapshot.docs
-        .map((item) => item.data() as WorldPlayer)
-        .filter((player) => now - player.updatedAt < 30_000);
-      writeLocal(playerKey(roomId), players);
-      onChange(players);
+      const remotePlayers = tracker.ingestSnapshot(
+        snapshot.docs.map((item) => item.data() as Record<string, unknown>),
+      );
+      const combined = mergeWithLocal(remotePlayers);
+      writeLocal(playerKey(roomId), combined);
+      onChange(combined);
     },
     (error) => {
       onSyncMode?.('local');
@@ -549,7 +671,13 @@ export const subscribeWorldPlayers = (
     },
   );
 
+  const sweepInterval = setInterval(() => {
+    const combined = mergeWithLocal(tracker.getActivePlayers());
+    onChange(combined);
+  }, 15_000);
+
   return () => {
+    clearInterval(sweepInterval);
     channel.close();
     unsubscribe();
   };
