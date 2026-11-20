@@ -209,6 +209,39 @@ describe('3D circuit topologies & breadboard layouts', () => {
     expect(dc.wires[0].points[0]).toEqual(terms.p1);
   });
 
+  // เดิมจัมเปอร์ทุกเส้นเริ่มจากรางล่างแล้วลากข้ามทั้งบอร์ดไปหาอุปกรณ์ที่อยู่ครึ่งบน ดูต่อแปลก ๆ
+  it('wires every breadboard layout neatly: short jumpers, no shared holes, valid circuit', () => {
+    for (const [mode, topo] of Object.entries(TOPOLOGY_DEFINITIONS)) {
+      const holes = [
+        ...topo.bbParts.flatMap((p) => p.pins),
+        topo.dmmProbes.red,
+        topo.dmmProbes.black,
+        ...topo.bbJumpers.flatMap((j) => [j.from, j.to]),
+      ].map((h) => `${h.row}${h.col}`);
+      expect(holes.filter((h, i) => holes.indexOf(h) !== i), `${mode} มีสองอย่างเสียบรูเดียวกัน`).toEqual([]);
+
+      topo.bbJumpers
+        .filter((j) => j.from.col < BREADBOARD_COLS - 1)
+        .forEach((j) => {
+          const a = holeToWorld(j.from);
+          const b = holeToWorld(j.to);
+          expect(Math.hypot(a[0] - b[0], a[2] - b[2]), `${mode} จัมเปอร์ยาวเกินไป`).toBeLessThan(1.5);
+        });
+
+      expect(validateBreadboardWiring(topo, topo.bbJumpers).status, mode).toBe('complete');
+    }
+  });
+
+  it('flags a jumper that bypasses a part, even without a rail short', () => {
+    const dc = TOPOLOGY_DEFINITIONS.DC;
+    const bypass = validateBreadboardWiring(dc, [
+      ...dc.bbJumpers,
+      { from: { col: 8, row: 'a' }, to: { col: 12, row: 'f' }, color: '#f00', branch: 'main' },
+      { from: { col: 12, row: 'g' }, to: { col: 12, row: 'd' }, color: '#f00', branch: 'main' },
+    ]);
+    expect(bypass.status).toBe('incomplete');
+  });
+
   it('decodes 4-band resistor colour names and multipliers in Thai', () => {
     const info220 = decodeResistorBands(220);
     expect(info220.band1.nameTh).toBe('แดง');
@@ -238,7 +271,9 @@ describe('3D circuit topologies & breadboard layouts', () => {
       { from: { col: 13, row: 'd' }, to: { col: 12, row: '-B' }, color: '#0a0', branch: 'main' },
     ]);
     expect(solvedRes.status).toBe('complete');
-    expect(solvedRes.matchedCount).toBe(dc.bbJumpers.length);
+    // นับเป็นจำนวนจุดต่อที่วงจรต้องมี ไม่ใช่จำนวนสาย: ต่อตรงจากรางล่าง (2 เส้น) หรือผ่านรางบนพร้อมสายสะพาน (4 เส้น) ก็ได้คะแนนเท่ากัน
+    expect(solvedRes.matchedCount).toBe(solvedRes.requiredCount);
+    expect(validateBreadboardWiring(dc, dc.bbJumpers).matchedCount).toBe(solvedRes.matchedCount);
   });
 });
 

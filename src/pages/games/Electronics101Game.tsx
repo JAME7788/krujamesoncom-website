@@ -24,6 +24,7 @@ import {
   ROW_Z_MAP,
   TOPOLOGY_DEFINITIONS,
   getActiveBreadboardStrips,
+  getLabPartTerminals,
   holeToWorld,
   validateBreadboardWiring,
   type BreadboardHole,
@@ -983,14 +984,16 @@ const Electronics101Game: React.FC = () => {
     currentLesson.mode,
   ]);
 
+  // บันทึกภารกิจที่ผ่านระหว่าง render (React แนะนำแบบนี้แทน setState ใน effect ที่ทำให้ render ซ้ำ)
+  // ส่วนเสียงเป็น side effect จึงเล่นใน effect เมื่อจำนวนภารกิจที่ผ่านเพิ่มขึ้น
+  if (missionMode && missionEval.passed && !completedMissions.has(currentMission.id)) {
+    setCompletedMissions(new Set(completedMissions).add(currentMission.id));
+  }
+  const completedMissionCountRef = useRef(completedMissions.size);
   useEffect(() => {
-    if (missionMode && missionEval.passed && !completedMissions.has(currentMission.id)) {
-      const next = new Set(completedMissions);
-      next.add(currentMission.id);
-      setCompletedMissions(next);
-      playLabSound('chime', soundEnabled);
-    }
-  }, [missionMode, missionEval.passed, completedMissions, currentMission.id, soundEnabled]);
+    if (completedMissions.size > completedMissionCountRef.current) playLabSound('chime', soundEnabled);
+    completedMissionCountRef.current = completedMissions.size;
+  }, [completedMissions.size, soundEnabled]);
 
   const handleMarkLessonComplete = useCallback(() => {
     const next = new Set(completedLessons);
@@ -2548,9 +2551,20 @@ const Electronics101Game: React.FC = () => {
           pos: new THREE.Vector3(1.65, 1.48, -3.45),
         });
 
-        if (flags.buildOnBreadboard) {
-          const redHolePos = holeToWorld(topo.dmmProbes.red);
-          const blkHolePos = holeToWorld(topo.dmmProbes.black);
+        // บนเบรดบอร์ดโพรบจิ้มรูตามผังวงจร ส่วนบนแท่นไม้จิ้มขั้วของโหลดที่มิเตอร์วัด (LED หรือหลอดไฟ)
+        // จะได้เห็นว่ามิเตอร์ต่อคร่อมอุปกรณ์ไหน ไม่ลอยอยู่เฉย ๆ
+        const loadPart = flags.buildOnBreadboard
+          ? undefined
+          : topo.parts.find((part) => part.id === 'led1') ?? topo.parts.find((part) => part.kind === 'lamp');
+        const loadTerminals = loadPart ? getLabPartTerminals(loadPart) : undefined;
+        const probeTargets: [[number, number, number], [number, number, number]] | undefined = flags.buildOnBreadboard
+          ? [holeToWorld(topo.dmmProbes.red), holeToWorld(topo.dmmProbes.black)]
+          : loadTerminals
+            ? [loadTerminals.p1, loadTerminals.p2]
+            : undefined;
+
+        if (probeTargets) {
+          const [redHolePos, blkHolePos] = probeTargets;
 
           const redPenTop = buildProbePenAt(redHolePos, 0xdc2626);
           const blkPenTop = buildProbePenAt(blkHolePos, 0x1e293b);

@@ -201,7 +201,7 @@ const WIRE_GREEN = '#1f7a4c';
 const WIRE_BLUE = '#2563eb';
 const WIRE_AMBER = '#d97706';
 
-export const TOPOLOGY_DEFINITIONS: Record<CircuitTopologyMode, TopologyDefinition> = {
+const RAW_TOPOLOGY_DEFINITIONS: Record<CircuitTopologyMode, TopologyDefinition> = {
   DC: {
     mode: 'DC',
     titleTh: 'วงจรไฟตรงพื้นฐาน (Simple DC Loop)',
@@ -425,7 +425,7 @@ export const TOPOLOGY_DEFINITIONS: Record<CircuitTopologyMode, TopologyDefinitio
       { id: 'supply', kind: 'battery', label: 'BATTERY', x: -3.5, z: 0, rotY: 0 },
       { id: 'sw1', kind: 'switch', label: 'SWITCH', x: -1.6, z: -1.55, rotY: 0 },
       { id: 'r1', kind: 'resistor', label: 'R1 (BRANCH 1)', x: 0.85, z: -1.55, rotY: 0 },
-      { id: 'led1', kind: 'led_red', label: 'LED 1', x: 3.1, z: -0.45, rotY: Math.PI / 2 },
+      { id: 'led1', kind: 'led_red', label: 'LED 1', x: 3.65, z: -0.45, rotY: Math.PI / 2 },
       { id: 'r2', kind: 'resistor', label: 'R2 (BRANCH 2)', x: 0.85, z: 0.15, rotY: 0 },
       { id: 'led2', kind: 'led_green', label: 'LED 2', x: 2.35, z: 0.85, rotY: Math.PI / 2 },
     ],
@@ -461,8 +461,8 @@ export const TOPOLOGY_DEFINITIONS: Record<CircuitTopologyMode, TopologyDefinitio
         branch: 'branch1',
         points: [
           [1.53, 0.34, -1.55],
-          [3.1, 0.34, -1.55],
-          [3.1, 0.34, -0.91],
+          [3.65, 0.34, -1.55],
+          [3.65, 0.34, -0.91],
         ],
       },
       {
@@ -478,8 +478,8 @@ export const TOPOLOGY_DEFINITIONS: Record<CircuitTopologyMode, TopologyDefinitio
         color: WIRE_GREEN,
         branch: 'branch1',
         points: [
-          [3.1, 0.34, 0.01],
-          [3.1, 0.34, 1.55],
+          [3.65, 0.34, 0.01],
+          [3.65, 0.34, 1.55],
         ],
       },
       {
@@ -494,7 +494,7 @@ export const TOPOLOGY_DEFINITIONS: Record<CircuitTopologyMode, TopologyDefinitio
         color: WIRE_GREEN,
         branch: 'main',
         points: [
-          [3.1, 0.34, 1.55],
+          [3.65, 0.34, 1.55],
           [-3.5, 0.34, 1.55],
           [-3.5, 0.34, 1.18],
         ],
@@ -1588,6 +1588,85 @@ export const TOPOLOGY_DEFINITIONS: Record<CircuitTopologyMode, TopologyDefinitio
   },
 };
 
+const UPPER_ROWS: BreadboardRow[] = ['a', 'b', 'c', 'd', 'e'];
+const LOWER_ROWS: BreadboardRow[] = ['j', 'i', 'h', 'g', 'f'];
+const isRail = (row: BreadboardRow) => row === '+T' || row === '-T' || row === '+B' || row === '-B';
+const holeKey = (h: BreadboardHole) => `${h.row}${h.col}`;
+/** Bridge wires from the bottom rails (where the power supply plugs in) to the top rails, at the free right-hand end. */
+export const RAIL_BRIDGE_COLS = { plus: BREADBOARD_COLS, minus: BREADBOARD_COLS - 1 };
+
+/**
+ * The hand-written layouts put the parts on the top half of the board but fed every jumper from the
+ * bottom rails, so each wire stretched across the whole board and the centre gap. This keeps the same
+ * circuit but routes each rail jumper to the rail beside its strip, as you would wire it for real:
+ * top-half strips use the top rails, bottom-half strips the bottom rails, and the wire runs straight
+ * along its own column from the hole nearest the rail. Two bridge wires feed the top rails.
+ */
+function tidyBreadboard(topo: TopologyDefinition): TopologyDefinition {
+  const partHoles = new Set<string>(topo.bbParts.flatMap((part) => part.pins.map(holeKey)));
+  const used = new Set<string>([
+    ...topo.bbParts.flatMap((part) => part.pins.map(holeKey)),
+    holeKey(topo.dmmProbes.red),
+    holeKey(topo.dmmProbes.black),
+    ...topo.bbJumpers.flatMap((j) => [holeKey(j.from), holeKey(j.to)]),
+  ]);
+  let usesTopPlus = false;
+  let usesTopMinus = false;
+
+  const jumpers = topo.bbJumpers.map((jumper): BreadboardJumper => {
+    const railFirst = isRail(jumper.from.row);
+    if (railFirst === isRail(jumper.to.row)) {
+      // จัมเปอร์ข้ามร่องกลาง: ถ้าเสียบซ้ำรูที่มีขาอุปกรณ์ ย้ายไปรูว่างในแถบเดียวกันที่ใกล้ร่องกลางที่สุด
+      const freeNearGap = (h: BreadboardHole): BreadboardHole => {
+        if (isRail(h.row) || !partHoles.has(holeKey(h))) return h;
+        const order = UPPER_ROWS.includes(h.row) ? [...UPPER_ROWS].reverse() : [...LOWER_ROWS].reverse();
+        const row = order.find((r) => !used.has(`${r}${h.col}`));
+        if (!row) return h;
+        const moved = { col: h.col, row };
+        used.add(holeKey(moved));
+        return moved;
+      };
+      return { ...jumper, from: freeNearGap(jumper.from), to: freeNearGap(jumper.to) };
+    }
+    const rail = railFirst ? jumper.from : jumper.to;
+    const strip = railFirst ? jumper.to : jumper.from;
+    const upper = UPPER_ROWS.includes(strip.row);
+    const positive = rail.row.startsWith('+');
+    const railRow: BreadboardRow = upper ? (positive ? '+T' : '-T') : positive ? '+B' : '-B';
+    if (railRow === '+T') usesTopPlus = true;
+    if (railRow === '-T') usesTopMinus = true;
+
+    used.delete(holeKey(strip));
+    const row = (upper ? UPPER_ROWS : LOWER_ROWS).find((r) => !used.has(`${r}${strip.col}`)) ?? strip.row;
+    const newStrip: BreadboardHole = { col: strip.col, row };
+    const newRail: BreadboardHole = { col: strip.col, row: railRow };
+    used.add(holeKey(newStrip));
+    return railFirst ? { ...jumper, from: newRail, to: newStrip } : { ...jumper, from: newStrip, to: newRail };
+  });
+
+  if (usesTopPlus) {
+    jumpers.push({
+      from: { col: RAIL_BRIDGE_COLS.plus, row: '+B' },
+      to: { col: RAIL_BRIDGE_COLS.plus, row: '+T' },
+      color: WIRE_RED,
+      branch: 'main',
+    });
+  }
+  if (usesTopMinus) {
+    jumpers.push({
+      from: { col: RAIL_BRIDGE_COLS.minus, row: '-B' },
+      to: { col: RAIL_BRIDGE_COLS.minus, row: '-T' },
+      color: WIRE_GREEN,
+      branch: 'main',
+    });
+  }
+  return { ...topo, bbJumpers: jumpers };
+}
+
+export const TOPOLOGY_DEFINITIONS = Object.fromEntries(
+  Object.entries(RAW_TOPOLOGY_DEFINITIONS).map(([mode, topo]) => [mode, tidyBreadboard(topo)]),
+) as Record<CircuitTopologyMode, TopologyDefinition>;
+
 export function getActiveBreadboardStrips(topo: TopologyDefinition): {
   upperCols: Set<number>;
   lowerCols: Set<number>;
@@ -1640,7 +1719,7 @@ export function validateBreadboardWiring(
   userJumpers: BreadboardJumper[],
 ): WiringValidationResult {
   const required = topo.bbJumpers;
-  const requiredCount = required.length;
+  let requiredCount = required.length;
 
   const adj = new Map<string, Set<string>>();
   const addEdge = (s1: string, s2: string) => {
@@ -1681,10 +1760,10 @@ export function validateBreadboardWiring(
     return false;
   };
 
-  if (
-    areStripsConnected('RAIL_+B', 'RAIL_-B') ||
-    areStripsConnected('RAIL_+T', 'RAIL_-T')
-  ) {
+  const shorted = ['RAIL_+B', 'RAIL_+T'].some((plus) =>
+    ['RAIL_-B', 'RAIL_-T'].some((minus) => areStripsConnected(plus, minus)),
+  );
+  if (shorted) {
     return {
       status: 'short',
       matchedCount: 0,
@@ -1693,13 +1772,55 @@ export function validateBreadboardWiring(
     };
   }
 
-  let matchedCount = 0;
+  // ตรวจตามวงจรไฟฟ้า ไม่ใช่ตามตำแหน่งสาย: แถบที่ต้องต่อถึงกันคือแถบที่มีขาอุปกรณ์หรือรางที่ปลั๊กแหล่งจ่ายเสียบอยู่
+  // และอยู่ในโหนดเดียวกันของวงจรตัวอย่าง จะเดินสายผ่านรางบนหรือรางล่างก็ได้
+  const meaningful = new Set<string>(['RAIL_+B', 'RAIL_-B']);
+  topo.bbParts.forEach((part) => part.pins.forEach((pin) => meaningful.add(getBreadboardStripId(pin))));
+  const refParent = new Map<string, string>();
+  const find = (x: string): string => {
+    const p = refParent.get(x) ?? x;
+    if (p === x) return x;
+    const root = find(p);
+    refParent.set(x, root);
+    return root;
+  };
   for (const req of required) {
-    const reqA = getBreadboardStripId(req.from);
-    const reqB = getBreadboardStripId(req.to);
-    if (areStripsConnected(reqA, reqB)) {
-      matchedCount++;
-    }
+    const a = find(getBreadboardStripId(req.from));
+    const b = find(getBreadboardStripId(req.to));
+    if (a !== b) refParent.set(a, b);
+  }
+  const nets = new Map<string, string[]>();
+  meaningful.forEach((strip) => {
+    const root = find(strip);
+    nets.set(root, [...(nets.get(root) ?? []), strip]);
+  });
+  let connectionsNeeded = 0;
+  let matchedCount = 0;
+  nets.forEach((strips) => {
+    if (strips.length < 2) return;
+    connectionsNeeded += strips.length - 1;
+    const groups: string[] = [];
+    strips.forEach((strip) => {
+      if (!groups.some((g) => areStripsConnected(g, strip))) groups.push(strip);
+    });
+    matchedCount += strips.length - groups.length;
+  });
+  requiredCount = connectionsNeeded;
+
+  // สายที่เชื่อมสองโหนดที่ต้องแยกกัน เช่น ต่อคร่อมตัวต้านทานจนกระแสไม่ผ่านมัน
+  const netRoots = [...nets.keys()];
+  const crossed = netRoots.some((rootA, i) =>
+    netRoots.slice(i + 1).some((rootB) =>
+      nets.get(rootA)!.some((a) => nets.get(rootB)!.some((b) => areStripsConnected(a, b))),
+    ),
+  );
+  if (crossed) {
+    return {
+      status: 'incomplete',
+      matchedCount: 0,
+      requiredCount,
+      message: '⚠️ มีสายเชื่อมจุดที่ต้องแยกกัน กระแสจึงลัดผ่านอุปกรณ์บางตัว ลองดูแผนภาพแล้วย้ายสายเส้นนั้น',
+    };
   }
 
   if (matchedCount >= requiredCount) {
