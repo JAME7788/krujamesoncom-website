@@ -417,6 +417,8 @@ const VirtualClassroom: React.FC = () => {
   });
   const [customSlides, setCustomSlides] = useState<Record<number, RichSlide[]>>({});
   const [status, setStatus] = useState('');
+  // จอเล็กเริ่มแบบย่อ จะได้ไม่บังฉากครึ่งจอ
+  const [buildMissionOpen, setBuildMissionOpen] = useState(() => !window.matchMedia('(max-width: 720px)').matches);
   const [pointerLocked, setPointerLocked] = useState(false);
   const navigate = useNavigate();
   const [exitModalOpen, setExitModalOpen] = useState(false);
@@ -2232,7 +2234,7 @@ const VirtualClassroom: React.FC = () => {
               }}
               title="ล้างบล็อกทั้งหมดในแผนที่สัปดาห์นี้"
             >
-              <RotateCcw size={13} /> รีแมพ
+              <RotateCcw size={13} /> <span>รีแมพ</span>
             </button>
           )}
         </div>
@@ -2502,16 +2504,35 @@ const VirtualClassroom: React.FC = () => {
       )}
 
       {mode === 'build' && currentBuildMission && (
-        <div style={{ position: 'absolute', zIndex: 6, top: 146, right: 14, width: 204, background: 'rgba(255,255,255,0.94)', border: '1px solid rgba(15,23,42,0.12)', borderRadius: 10, boxShadow: '0 8px 24px rgba(15,23,42,0.14)', backdropFilter: 'blur(8px)', padding: '10px 12px' }}>
-          <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#92400E', display: 'flex', alignItems: 'center', gap: 5 }}>{currentBuildMission.icon} ภารกิจสร้าง {buildMissionIdx + 1}/{BUILD_MISSIONS.length}</div>
-          <div style={{ fontWeight: 700, fontSize: '0.88rem', margin: '5px 0 2px', color: '#172033' }}>{currentBuildMission.goal}</div>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', lineHeight: 1.45 }}>💡 {currentBuildMission.concept}</div>
-          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f766e', margin: '7px 0' }}>{currentBuildMission.progress(buildStats)}</div>
-          <button onClick={checkBuildMission} style={{ width: '100%', padding: '8px', borderRadius: 8, border: 0, background: currentBuildMission.check(buildStats) ? '#16a34a' : 'linear-gradient(135deg, #FFD43B, #FAB005)', color: currentBuildMission.check(buildStats) ? '#fff' : '#1D1D1F', fontWeight: 800, fontSize: '0.8rem', fontFamily: 'inherit', cursor: 'pointer' }}>✓ ตรวจภารกิจ (+{currentBuildMission.stars}⭐)</button>
-        </div>
+        <section className={`world-build-mission ${buildMissionOpen ? '' : 'is-folded'}`} aria-label="ภารกิจสร้าง">
+          <button
+            type="button"
+            className="world-build-mission-head"
+            onClick={() => setBuildMissionOpen((open) => !open)}
+            aria-expanded={buildMissionOpen}
+            title={buildMissionOpen ? 'ย่อการ์ดภารกิจ' : 'เปิดการ์ดภารกิจ'}
+          >
+            <span>{currentBuildMission.icon} ภารกิจสร้าง {buildMissionIdx + 1}/{BUILD_MISSIONS.length}</span>
+            <small>{buildMissionOpen ? 'ย่อ' : currentBuildMission.progress(buildStats)}</small>
+          </button>
+          {buildMissionOpen && (
+            <>
+              <strong>{currentBuildMission.goal}</strong>
+              <p>💡 {currentBuildMission.concept}</p>
+              <em>{currentBuildMission.progress(buildStats)}</em>
+              <button
+                type="button"
+                className={`world-build-mission-check ${currentBuildMission.check(buildStats) ? 'is-ready' : ''}`}
+                onClick={checkBuildMission}
+              >
+                ✓ ตรวจภารกิจ (+{currentBuildMission.stars}⭐)
+              </button>
+            </>
+          )}
+        </section>
       )}
       {mode === 'build' && !currentBuildMission && (
-        <div style={{ position: 'absolute', zIndex: 6, top: 146, right: 14, width: 204, background: 'rgba(220,252,231,0.95)', border: '1px solid #86efac', borderRadius: 10, padding: '10px 12px', fontSize: '0.82rem', fontWeight: 700, color: '#15803d' }}>🎉 ทำภารกิจสร้างครบทุกข้อแล้ว! เก่งมาก</div>
+        <div className="world-build-mission is-done">🎉 ทำภารกิจสร้างครบทุกข้อแล้ว! เก่งมาก</div>
       )}
 
       <div className="world-mode-control" role="group" aria-label="โหมดการใช้งาน">

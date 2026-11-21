@@ -1277,21 +1277,81 @@
   font-weight: 600;
 }
 
-@media (pointer: fine) and (min-width: 901px) {
-  .world-dpad { opacity: 0.24; transition: opacity 0.2s ease; }
-  .world-dpad:hover { opacity: 1; }
+/* การ์ดภารกิจสร้าง (ย้ายจาก inline style มาที่นี่ จะได้ปรับตามขนาดจอได้) */
+.world-build-mission {
+  position: absolute;
+  z-index: 6;
+  top: 146px;
+  right: 14px;
+  width: 216px;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(8px);
+  color: #172033;
+}
+.world-build-mission-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #92400e;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+.world-build-mission-head small { color: #64748b; font-size: 0.7rem; font-weight: 700; white-space: nowrap; }
+.world-build-mission strong { font-size: 0.88rem; }
+.world-build-mission p { margin: 0; color: #64748b; font-size: 0.74rem; line-height: 1.45; }
+.world-build-mission em { color: #0f766e; font-size: 0.78rem; font-style: normal; font-weight: 800; }
+.world-build-mission-check {
+  margin-top: 4px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffd43b, #fab005);
+  color: #1d1d1f;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.world-build-mission-check.is-ready { background: #16a34a; color: #ffffff; }
+.world-build-mission.is-folded { width: auto; padding: 8px 10px; }
+.world-build-mission.is-done {
+  background: rgba(220, 252, 231, 0.95);
+  border-color: #86efac;
+  color: #15803d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+/* ปุ่มลูกศรเดินมีไว้สำหรับจอสัมผัส เครื่องที่มีเมาส์ใช้ WASD จึงซ่อนไว้ไม่ให้บังฉาก */
+@media (hover: hover) and (pointer: fine) {
+  .world-dpad { display: none; }
 }
 
 @media (max-width: 720px) {
   .virtual-classroom { min-height: 540px; }
-  .world-top-nav { top: 10px; left: 10px; gap: 6px; }
+  .world-top-nav { top: 10px; left: 10px; right: 10px; gap: 6px; flex-wrap: nowrap; }
+  .world-top-nav .world-room-label { min-width: 0; overflow: hidden; }
+  .world-top-nav .world-week-chip { display: none; }
   .world-nav-btn { min-height: 36px; padding: 6px 10px; font-size: 0.8rem; }
   .world-nav-btn span { display: none; }
   .world-week-chip { display: none; }
   .world-room-label { top: 0; left: 0; }
   .world-room-label strong { display: none; }
   .world-room-picker select { max-width: 86px; }
-  .world-star-score { top: 130px; left: 118px; height: 46px; }
+  .world-star-score { top: 60px; left: 62px; height: 44px; }
   .world-build-capacity {
     bottom: 62px;
     min-height: 28px;
@@ -1303,7 +1363,7 @@
   .world-avatar-badge > span:last-child { display: none; }
   .world-avatar-panel { top: 108px; left: 10px; }
   .world-teacher-panel { top: 108px; right: 10px; width: calc(100vw - 20px); max-height: calc(100dvh - 120px); }
-  .world-mode-control { top: 78px; }
+  .world-mode-control { top: 60px; left: auto; right: 8px; transform: none; }
   .world-mode-control button { min-width: 46px; width: 46px; }
   .world-mode-control button span { display: none; }
   .world-materials {
@@ -1316,8 +1376,27 @@
     overflow-x: auto;
   }
   .world-materials button { width: 32px; height: 32px; flex: 0 0 32px; }
-  .world-actions { top: auto; right: 12px; bottom: 20px; flex-direction: column; }
-  .world-dpad { left: 12px; bottom: 20px; }
+  /* แถบบล็อกอยู่ล่างสุด ปุ่มลูกศรกับปุ่มเครื่องมือยกขึ้นไปอยู่เหนือแถบ ไม่ทับกัน */
+  .world-actions {
+    top: auto;
+    right: 8px;
+    bottom: 64px;
+    display: grid;
+    grid-template-columns: repeat(2, 40px);
+    gap: 4px;
+  }
+  .world-dpad {
+    left: 8px;
+    bottom: 64px;
+    grid-template-columns: repeat(3, 40px);
+    grid-template-rows: repeat(2, 40px);
+  }
+  .world-dpad button { width: 40px; height: 40px; }
+  .world-build-capacity { bottom: 160px; }
+  .world-room-label { flex-wrap: nowrap; white-space: nowrap; gap: 8px; }
+  .world-remap-btn span { display: none; }
+  .world-build-mission { top: 112px; right: 8px; width: min(216px, calc(100vw - 16px)); }
+  .world-build-mission.is-folded { width: auto; }
   .world-status { bottom: 126px; max-width: 70vw; text-align: center; }
   .world-lesson-modal { padding: 24px 18px; }
   .world-mission-hint {
