@@ -209,7 +209,7 @@
 }
 
 .world-avatar-badge {
-  top: 68px;
+  top: 102px;
   left: 18px;
   min-height: 52px;
   max-width: 250px;
@@ -253,7 +253,7 @@
 
 .world-avatar-panel {
   z-index: 12;
-  top: 128px;
+  top: 158px;
   left: 18px;
   width: min(300px, calc(100vw - 36px));
   padding: 18px;
@@ -373,8 +373,8 @@
 }
 
 .world-star-score {
-  top: 86px;
-  left: 260px;
+  top: 104px;
+  left: 274px;
   min-width: 54px;
   height: 46px;
   display: flex;
@@ -416,7 +416,7 @@
 }
 
 .world-mode-control {
-  top: 86px;
+  top: 104px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -490,7 +490,7 @@
 }
 
 .world-actions {
-  top: 86px;
+  top: 104px;
   right: 18px;
   display: flex;
   gap: 5px;
@@ -1281,7 +1281,7 @@
 .world-build-mission {
   position: absolute;
   z-index: 6;
-  top: 146px;
+  top: 162px;
   right: 14px;
   width: 216px;
   display: grid;

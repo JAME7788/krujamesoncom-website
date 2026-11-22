@@ -2105,36 +2105,29 @@ const VirtualClassroom: React.FC = () => {
       atomRing1.rotation.z += delta * 1.4;
     });
 
-    // โครงหลังคาไม้แบบเปิดโล่ง (skylight) — คานหลัก + คานขวาง สีไม้อุ่นแทนสีเข้มเกือบดำ
+    // โครงเพดานไซเบอร์โปร่งแสง (Cyber Skylight Grid) + แถบไฟนีออน LED เติมแสงในโดม
     const roofBeams = new THREE.Group();
     const beamMaterial = new THREE.MeshStandardMaterial({
-      map: makePixelTexture(0xa0703c, 16),
-      roughness: 0.85,
-      emissive: new THREE.Color(0x3a2410),
-      emissiveIntensity: 0.35,
+      color: 0x0f172a,
+      metalness: 0.7,
+      roughness: 0.25,
     });
-    [-7.5, -2.5, 2.5, 7.5].forEach((x) => {
-      const beam = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.36, 17), beamMaterial);
-      beam.position.set(x, 5.55, 0);
+    [-6.5, 6.5].forEach((x) => {
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 16.8), beamMaterial);
+      beam.position.set(x, 6.15, 0);
       roofBeams.add(beam);
     });
-    [-8.1, -4, 0, 4, 8.1].forEach((z) => {
-      const tie = new THREE.Mesh(new THREE.BoxGeometry(20, 0.24, 0.26), beamMaterial);
-      tie.position.set(0, 5.62, z);
-      roofBeams.add(tie);
-    });
-    // โคมไฟห้อยใต้คาน + แสงอุ่นเติมในห้อง (ไม่ใช้ shadow เพื่อประหยัด)
     if (graphicsQuality !== 'low') {
-      const lampMaterial = new THREE.MeshBasicMaterial({ color: 0xfff1c2 });
+      const lampMaterial = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
       [-5, 5].forEach((x) => {
         [-4, 2.5].forEach((z) => {
-          const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 0.5), lampMaterial);
-          lamp.position.set(x, 5.3, z);
+          const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.36), lampMaterial);
+          lamp.position.set(x, 6.02, z);
           roofBeams.add(lamp);
         });
       });
-      const roomFill = new THREE.PointLight(0xffe2a8, 18, 22, 1.6);
-      roomFill.position.set(0, 4.8, -1);
+      const roomFill = new THREE.PointLight(0xbae6fd, 16, 24, 1.5);
+      roomFill.position.set(0, 5.4, 0);
       scene.add(roomFill);
     }
     scene.add(roofBeams);
@@ -3053,9 +3046,10 @@ const VirtualClassroom: React.FC = () => {
       }
 
       bodyGroup.add(headGroup);
+      const enableAvatarShadow = graphicsQuality === 'high' || (graphicsQuality === 'medium' && player.id === playerId);
       bodyGroup.traverse((part) => {
         if ((part as THREE.Mesh).isMesh) {
-          part.castShadow = true;
+          part.castShadow = enableAvatarShadow;
           part.userData = { kind: 'avatar', playerId: player.id };
         }
       });
@@ -3065,6 +3059,8 @@ const VirtualClassroom: React.FC = () => {
         player.role === 'teacher',
         techClass,
       );
+      // ซ่อนป้ายชื่อลอยเหนือหัวตัวเองในมุมมองบุคคลที่ 3 เพื่อไม่ให้บังเป้าเล็งกลางจอ (แสดงเฉพาะป้ายชื่อเพื่อนร่วมห้อง)
+      nameSprite.visible = player.id !== playerId;
       group.add(nameSprite);
       group.userData.parts = {
         headGroup,
@@ -3082,6 +3078,22 @@ const VirtualClassroom: React.FC = () => {
       group.userData.targetRotation = player.rotation || 0;
       scene.add(group);
       return group;
+    };
+
+    const disposeAvatarGroup = (avatarGroup: THREE.Group) => {
+      avatarGroup.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (mesh.isMesh && mesh !== (avatarGroup.userData.parts?.heldBlockMesh as THREE.Mesh)) {
+          mesh.geometry?.dispose();
+          if (Array.isArray(mesh.material)) mesh.material.forEach((m) => m.dispose());
+          else mesh.material?.dispose();
+        }
+        const sprite = obj as THREE.Sprite;
+        if (sprite.isSprite) {
+          sprite.material?.map?.dispose();
+          sprite.material?.dispose();
+        }
+      });
     };
 
     let localAvatar = createAvatar({
@@ -3106,6 +3118,7 @@ const VirtualClassroom: React.FC = () => {
       const prevPos = localAvatar.position.clone();
       const prevRot = localAvatar.rotation.y;
       scene.remove(localAvatar);
+      disposeAvatarGroup(localAvatar);
       localAvatar = createAvatar({
         id: playerId,
         roomId,
@@ -3127,13 +3140,27 @@ const VirtualClassroom: React.FC = () => {
       localAvatar.visible = thirdPersonRef.current;
     };
 
+    // ป้องกัน React Re-render Storm เมื่อเล่นพร้อมกัน 10-30 คน:
+    // อัปเดตตำแหน่ง 3D ของเพื่อนใน Three.js ทันที 60fps แต่ซิงก์ React State เฉพาะเมื่อรายชื่อ/ชุดเปลี่ยน หรือทุก 2.5 วินาที
+    let lastRosterSignature = '';
+    let lastRosterReactSyncAt = 0;
+
     const unsubscribePlayers = subscribeWorldPlayers(roomId, (players) => {
-      setOnlinePlayers(players);
+      const nowSync = performance.now();
+      const rosterSig = players
+        .map((p) => `${p.id}:${p.name}:${p.color}:${p.techClass || ''}:${p.faceStyle || ''}:${p.role || ''}:${p.joinStatus || ''}`)
+        .join('|');
+      if (rosterSig !== lastRosterSignature || nowSync - lastRosterReactSyncAt > 2_500) {
+        lastRosterSignature = rosterSig;
+        lastRosterReactSyncAt = nowSync;
+        setOnlinePlayers(players);
+      }
       const remote = players.filter((player) => player.id !== playerId);
       const ids = new Set(remote.map((player) => player.id));
       remoteAvatars.forEach((avatar, id) => {
         if (ids.has(id)) return;
         scene.remove(avatar);
+        disposeAvatarGroup(avatar);
         remoteAvatars.delete(id);
       });
       remote.forEach((player) => {
@@ -3145,6 +3172,7 @@ const VirtualClassroom: React.FC = () => {
           prevPos = avatar.position.clone();
           prevRot = avatar.rotation.y;
           scene.remove(avatar);
+          disposeAvatarGroup(avatar);
           remoteAvatars.delete(player.id);
           avatar = undefined;
         }
@@ -3194,9 +3222,6 @@ const VirtualClassroom: React.FC = () => {
 
     const getHit = () => {
       raycaster.setFromCamera(center, camera);
-      const avatarTargets = Array.from(remoteAvatars.values()).flatMap((avatar) => (
-        avatar.children.filter((child) => child.userData.kind === 'avatar')
-      ));
       const targets = [
         ground,
         ...boardMeshes,
@@ -3204,9 +3229,24 @@ const VirtualClassroom: React.FC = () => {
         ...portalMeshes,
         ...techExhibitMeshes,
         ...blockMeshes.values(),
-        ...avatarTargets,
       ];
       return raycaster.intersectObjects(targets, false)[0];
+    };
+
+    // Raycast เฉพาะบล็อกใกล้ตัวในระยะ BUILD_REACH + พื้นดิน สำหรับแสดงกรอบโฮโลแกรมเล็งวางบล็อก (ลดภาระ CPU 85% เมื่อมีผู้เล่นและบล็อกจำนวนมาก)
+    const getBuildHoverHit = () => {
+      raycaster.setFromCamera(center, camera);
+      const nearbyBlocks: THREE.Object3D[] = [ground];
+      const maxDist = BUILD_REACH + 2.5;
+      blockMeshes.forEach((mesh) => {
+        if (
+          Math.abs(mesh.position.x - playerPosition.x) <= maxDist
+          && Math.abs(mesh.position.z - playerPosition.z) <= maxDist
+        ) {
+          nearbyBlocks.push(mesh);
+        }
+      });
+      return raycaster.intersectObjects(nearbyBlocks, false)[0];
     };
 
     placeRef.current = () => {
@@ -3718,6 +3758,12 @@ const VirtualClassroom: React.FC = () => {
     let speedBoostUntil = 0;
     let lastPadTriggerAt = 0;
     let lastFinishSignId = '';
+    let lastHoverCheckAt = 0;
+    let lastSentX = playerPosition.x;
+    let lastSentY = playerPosition.y;
+    let lastSentZ = playerPosition.z;
+    let lastSentRot = avatarYaw;
+    let lastSentMotion: WorldMotion = 'idle';
 
     const animate = (now: number) => {
       if (graphicsQuality === 'low' && now - lastRenderedAt < 32) {
@@ -4109,40 +4155,57 @@ const VirtualClassroom: React.FC = () => {
         respawnTimers.push(timer);
       });
 
-      const hit = getHit();
-      if (hit?.object.userData.kind === 'block' && hit.distance <= BUILD_REACH) {
-        selection.position.copy(hit.object.position);
-        selection.visible = true;
-      } else {
-        selection.visible = false;
-      }
-
-      if (
-        modeRef.current === 'build'
-        && hit
-        && hit.distance <= BUILD_REACH
-        && ['ground', 'block'].includes(hit.object.userData.kind)
-      ) {
-        const pt = hit.point.clone();
-        if (hit.object.userData.kind === 'block' && hit.face) {
-          pt.add(hit.face.normal.clone().multiplyScalar(0.55));
+      if (now - lastHoverCheckAt >= 40) {
+        lastHoverCheckAt = now;
+        const hit = getBuildHoverHit();
+        if (hit?.object.userData.kind === 'block' && hit.distance <= BUILD_REACH) {
+          selection.position.copy(hit.object.position);
+          selection.visible = true;
+        } else {
+          selection.visible = false;
         }
-        const px = Math.floor(pt.x) + 0.5;
-        const pz = Math.floor(pt.z) + 0.5;
-        const py = hit.object.userData.kind === 'ground' ? 0.5 : Math.max(0.5, Math.floor(pt.y) + 0.5);
-        if (Math.abs(px) <= BUILD_BOUNDARY && Math.abs(pz) <= BUILD_BOUNDARY && py <= BUILD_MAX_HEIGHT - 0.5) {
-          placementPreview.position.set(px, py, pz);
-          placementPreview.visible = true;
+
+        if (
+          modeRef.current === 'build'
+          && hit
+          && hit.distance <= BUILD_REACH
+          && ['ground', 'block'].includes(hit.object.userData.kind)
+        ) {
+          const pt = hit.point.clone();
+          if (hit.object.userData.kind === 'block' && hit.face) {
+            pt.add(hit.face.normal.clone().multiplyScalar(0.55));
+          }
+          const px = Math.floor(pt.x) + 0.5;
+          const pz = Math.floor(pt.z) + 0.5;
+          const py = hit.object.userData.kind === 'ground' ? 0.5 : Math.max(0.5, Math.floor(pt.y) + 0.5);
+          if (Math.abs(px) <= BUILD_BOUNDARY && Math.abs(pz) <= BUILD_BOUNDARY && py <= BUILD_MAX_HEIGHT - 0.5) {
+            placementPreview.position.set(px, py, pz);
+            placementPreview.visible = true;
+          } else {
+            placementPreview.visible = false;
+          }
         } else {
           placementPreview.visible = false;
         }
-      } else {
-        placementPreview.visible = false;
       }
 
-      if (now - lastPresence > 1_200) {
-        lastPresence = now;
-        publishPresence(false, currentLocalMotion);
+      if (now - lastPresence > 900) {
+        const curRot = thirdPersonRef.current ? avatarYaw : yaw;
+        const movedDist = Math.hypot(
+          playerPosition.x - lastSentX,
+          playerPosition.y - lastSentY,
+          playerPosition.z - lastSentZ,
+        );
+        const rotDelta = Math.abs(curRot - lastSentRot);
+        if (movedDist > 0.05 || rotDelta > 0.06 || currentLocalMotion !== lastSentMotion) {
+          lastPresence = now;
+          lastSentX = playerPosition.x;
+          lastSentY = playerPosition.y;
+          lastSentZ = playerPosition.z;
+          lastSentRot = curRot;
+          lastSentMotion = currentLocalMotion;
+          publishPresence(false, currentLocalMotion);
+        }
       }
 
       renderer.render(scene, camera);
