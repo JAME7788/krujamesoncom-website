@@ -528,6 +528,15 @@ const VirtualClassroom: React.FC = () => {
   const [selectedOrganIdx, setSelectedOrganIdx] = useState(0);
   const [selectedGenG, setSelectedGenG] = useState<'1G' | '2G' | '3G' | '4G' | '5G'>('5G');
   const [studioBackdropIdx, setStudioBackdropIdx] = useState(0);
+  const [visitedTechZones, setVisitedTechZones] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(`kj_world_techpassport_${playerId}`);
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  const applyStudioBackdropRef = useRef<(idx: number) => void>(() => undefined);
   const teleportToTechZoneRef = useRef<(zone: TechZoneInfo, openModal?: boolean) => void>(() => undefined);
   const [mode, setMode] = useState<WorldMode>('build');
   const [material, setMaterial] = useState<BlockMaterial>('grass');
@@ -1667,13 +1676,75 @@ const VirtualClassroom: React.FC = () => {
     rightGlass.position.set(0.24, 1.45, 0);
     chipMascot.add(chipBody, chipHatBrim, chipHatTop, leftGlass, rightGlass);
     chipMascot.rotation.y = -Math.PI / 2;
-    chipMascot.position.set(0.5, 0, -2.2);
-    zone3Group.add(hcwWall, chipMascot);
+    chipMascot.position.set(0.5, 0, -2.6);
+
+    // 3 ตู้จัดแสดงนิทรรศการ (จากภาพที่ 2, 5, 7, 9):
+    // 1) ตู้กระจกรุ่นที่ 1 หลอดสุญญากาศ (1940-1956)
+    // 2) ตู้กระจกรุ่นที่ 4 ไมโครโพรเซสเซอร์ & คอมคลาสสิก (1972-2010)
+    // 3) แท่นแว่น VR "เร็ว แรง ทะลุอนาคต (FAST AND FURIOUS)"
+    const glassCaseMat = new THREE.MeshStandardMaterial({
+      color: 0x7dd3fc,
+      transparent: true,
+      opacity: 0.35,
+      roughness: 0.15,
+    });
+    const casePedestalMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 });
+
+    const case1 = new THREE.Group();
+    const ped1 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.85, 0.95), casePedestalMat);
+    ped1.position.y = 0.425;
+    const glass1 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.75, 0.9), glassCaseMat);
+    glass1.position.y = 1.22;
+    const vacuumTube = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.14, 0.16, 0.45, 12),
+      new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: new THREE.Color(0xf59e0b), emissiveIntensity: 0.85 }),
+    );
+    vacuumTube.position.y = 1.15;
+    case1.add(ped1, glass1, vacuumTube);
+    case1.position.set(0.6, 0, -1.25);
+
+    const case2 = new THREE.Group();
+    const ped2 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.85, 0.95), casePedestalMat);
+    ped2.position.y = 0.425;
+    const glass2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.75, 0.9), glassCaseMat);
+    glass2.position.y = 1.22;
+    const retroPc = new THREE.Mesh(
+      new THREE.BoxGeometry(0.52, 0.28, 0.48),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.6 }),
+    );
+    retroPc.position.y = 1.05;
+    const cpuChip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.24, 0.08, 0.24),
+      new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6, roughness: 0.3 }),
+    );
+    cpuChip.position.set(0, 1.28, 0);
+    case2.add(ped2, glass2, retroPc, cpuChip);
+    case2.position.set(0.6, 0, 0.25);
+
+    const vrPod = new THREE.Group();
+    const ped3 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.85, 0.95), casePedestalMat);
+    ped3.position.y = 0.425;
+    const vrVisor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.54, 0.28, 0.36),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.25 }),
+    );
+    vrVisor.position.y = 1.32;
+    const vrStrap = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.14, 0.44),
+      new THREE.MeshStandardMaterial({ color: 0xf8fafc }),
+    );
+    vrStrap.position.set(0.08, 1.32, 0);
+    vrPod.add(ped3, vrVisor, vrStrap);
+    vrPod.position.set(0.6, 0, 1.85);
+
+    zone3Group.add(hcwWall, chipMascot, case1, case2, vrPod);
     zone3Group.position.set(19.5, 0, -1);
     tagExhibitGroup(zone3Group, zone3Info);
     scene.add(zone3Group);
-    techAnimatedObjects.push((now) => {
+    techAnimatedObjects.push((now, delta) => {
       chipMascot.position.y = Math.abs(Math.sin(now * 0.003)) * 0.18;
+      vrVisor.rotation.y += delta * 1.1;
+      vrStrap.rotation.y = vrVisor.rotation.y;
     });
 
     // --- ZONE 4: วิวัฒนาการเครือข่ายไร้สาย 1G → 2G → 3G → 4G → 5G (x = -19.5, z = 12.5) ---
@@ -1772,10 +1843,54 @@ const VirtualClassroom: React.FC = () => {
     camMonitor.position.set(-0.1, 2.15, 0);
     camGroup.add(tripod, camBody, camMonitor);
     camGroup.position.set(-1.6, 0, 0);
-    zone5Group.add(studioStage, greenBackdrop, studioDesk, camGroup);
+
+    // ประติมากรรมฉากหลังสตูดิโอ STEM (อะตอม + ไม้ฉากสามเหลี่ยมสีเหลือง + หลอดไฟไอเดีย จากภาพที่ 10!)
+    const stemDecor = new THREE.Group();
+    const atomCore = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.55, 0.55),
+      new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: new THREE.Color(0xe11d48), emissiveIntensity: 0.5 }),
+    );
+    atomCore.position.set(2.4, 2.2, -3.5);
+    const atomRing1 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.95, 0.08, 8, 24),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: new THREE.Color(0x0284c7), emissiveIntensity: 0.45 }),
+    );
+    atomRing1.position.copy(atomCore.position);
+    atomRing1.rotation.y = Math.PI / 3;
+    const yellowTriangle = new THREE.Mesh(
+      new THREE.ConeGeometry(1.15, 2.1, 3),
+      new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }),
+    );
+    yellowTriangle.position.set(2.4, 2.4, 3.5);
+    yellowTriangle.rotation.z = 0.25;
+    const ideaBulb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.68, 0.85, 0.68),
+      new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: new THREE.Color(0xfacc15), emissiveIntensity: 0.9 }),
+    );
+    ideaBulb.position.set(2.4, 3.8, 0);
+    stemDecor.add(atomCore, atomRing1, yellowTriangle, ideaBulb);
+
+    applyStudioBackdropRef.current = (idx: number) => {
+      const palette: Array<[number, number]> = [
+        [0x16a34a, 0x15803d],
+        [0x1e1b4b, 0x4f46e5],
+        [0x1e3a8a, 0x0284c7],
+        [0x4a044e, 0xd97706],
+      ];
+      const [baseHex, emHex] = palette[idx] || palette[0];
+      chromaGreenMat.color.setHex(baseHex);
+      chromaGreenMat.emissive.setHex(emHex);
+      (camMonitor.material as THREE.MeshStandardMaterial).color.setHex(baseHex);
+      (camMonitor.material as THREE.MeshStandardMaterial).emissive.setHex(emHex);
+    };
+
+    zone5Group.add(studioStage, greenBackdrop, studioDesk, camGroup, stemDecor);
     zone5Group.position.set(19.5, 0, 12.5);
     tagExhibitGroup(zone5Group, zone5Info);
     scene.add(zone5Group);
+    techAnimatedObjects.push((_now, delta) => {
+      atomRing1.rotation.z += delta * 1.4;
+    });
 
     // โครงหลังคาไม้แบบเปิดโล่ง (skylight) — คานหลัก + คานขวาง สีไม้อุ่นแทนสีเข้มเกือบดำ
     const roofBeams = new THREE.Group();
@@ -3426,32 +3541,38 @@ const VirtualClassroom: React.FC = () => {
             fontSize: '0.75rem',
           }}
         >
-          <span style={{ fontWeight: 800, color: '#38bdf8' }}>🏛️ โลกเทคโนโลยี:</span>
-          {TECH_ZONES.map((zone) => (
-            <button
-              key={zone.id}
-              type="button"
-              onClick={() => teleportToTechZoneRef.current(zone, true)}
-              title={`วาร์ปไปโซน ${zone.title}`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '2px 8px',
-                borderRadius: 999,
-                border: `1px solid ${zone.accent}`,
-                background: 'rgba(255, 255, 255, 0.1)',
-                color: '#ffffff',
-                fontSize: '0.73rem',
-                fontWeight: 700,
-                fontFamily: 'inherit',
-                cursor: 'pointer',
-              }}
-            >
-              <span>{zone.icon}</span>
-              <span>{zone.shortTitle}</span>
-            </button>
-          ))}
+          <span style={{ fontWeight: 800, color: '#38bdf8' }}>
+            🏛️ โลกเทคโนโลยี ({visitedTechZones.length}/{TECH_ZONES.length}):
+          </span>
+          {TECH_ZONES.map((zone) => {
+            const visited = visitedTechZones.includes(zone.id);
+            return (
+              <button
+                key={zone.id}
+                type="button"
+                onClick={() => teleportToTechZoneRef.current(zone, true)}
+                title={`วาร์ปไปโซน ${zone.title}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '2px 8px',
+                  borderRadius: 999,
+                  border: `1px solid ${visited ? '#4ade80' : zone.accent}`,
+                  background: visited ? 'rgba(22, 163, 74, 0.28)' : 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  fontSize: '0.73rem',
+                  fontWeight: 700,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                }}
+              >
+                <span>{zone.icon}</span>
+                <span>{zone.shortTitle}</span>
+                {visited && <span style={{ color: '#4ade80', fontWeight: 900 }}>✓</span>}
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -4948,6 +5069,25 @@ const VirtualClassroom: React.FC = () => {
                     </button>
                   ))}
                 </div>
+                <div style={{ padding: 12, borderRadius: 10, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#9a3412', marginBottom: 8 }}>
+                    🏛️ 3 ตู้จัดแสดงพิเศษหน้าบอร์ด (จากยุคหลอดสุญญากาศ สู่โลกเสมือนจริง VR)
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))', gap: 8 }}>
+                    <div style={{ padding: 9, borderRadius: 8, background: '#ffffff', border: '1px solid #ffedd5' }}>
+                      <strong style={{ fontSize: '0.8rem', color: '#c2410c' }}>💡 รุ่นที่ 1 หลอดสุญญากาศ (1940–1956)</strong>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#475569' }}>ใช้หลอดสุญญากาศและบัตรเจาะรู (เช่น UNIVAC) เครื่องใหญ่เท่าห้องเรียนและเกิดความร้อนสูง</p>
+                    </div>
+                    <div style={{ padding: 9, borderRadius: 8, background: '#ffffff', border: '1px solid #ffedd5' }}>
+                      <strong style={{ fontSize: '0.8rem', color: '#c2410c' }}>🔲 รุ่นที่ 4 ไมโครโพรเซสเซอร์ (1972–2010)</strong>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#475569' }}>ย่อทรานซิสเตอร์นับล้านชิ้นลงบนชิป CPU แผ่นเดียว เกิดเป็นคอมพิวเตอร์ส่วนบุคคล (PC) และระบบเครือข่าย</p>
+                    </div>
+                    <div style={{ padding: 9, borderRadius: 8, background: '#ffffff', border: '1px solid #ffedd5' }}>
+                      <strong style={{ fontSize: '0.8rem', color: '#c2410c' }}>🥽 เร็ว แรง ทะลุอนาคต (VR & AI)</strong>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#475569' }}>แว่น VR และความเร็วการประมวลผลยุคใหม่สร้างชุมชนโลกเสมือนจริง (Virtual Community) ที่เราเรียนร่วมกันได้</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -5066,7 +5206,10 @@ const VirtualClassroom: React.FC = () => {
                           <button
                             key={b.name}
                             type="button"
-                            onClick={() => setStudioBackdropIdx(idx)}
+                            onClick={() => {
+                              setStudioBackdropIdx(idx);
+                              applyStudioBackdropRef.current(idx);
+                            }}
                             style={{
                               flex: 1,
                               minWidth: 140,
@@ -5096,10 +5239,24 @@ const VirtualClassroom: React.FC = () => {
                 type="button"
                 onClick={() => {
                   celebrate();
-                  setWorldStars((s) => s + 2);
+                  const alreadyVisited = visitedTechZones.includes(activeTechZone.id);
+                  const nextVisited = alreadyVisited
+                    ? visitedTechZones
+                    : [...visitedTechZones, activeTechZone.id];
+                  const completedAllNow = !alreadyVisited && nextVisited.length === TECH_ZONES.length;
+                  const earnedStars = completedAllNow ? 12 : 2;
+                  setVisitedTechZones(nextVisited);
+                  try {
+                    localStorage.setItem(`kj_world_techpassport_${playerId}`, JSON.stringify(nextVisited));
+                  } catch { /* ignore */ }
+                  setWorldStars((s) => s + earnedStars);
                   const unitNo = boards[0]?.unitNo || 1;
                   void recordActivity('question', `u${unitNo}-techzone-${activeTechZone.id}`, unitNo, `เรียนรู้โซนโลกเทคโนโลยี: ${activeTechZone.title}`);
-                  setStatus(`🌟 สำรวจโซน "${activeTechZone.shortTitle}" สำเร็จ รับ +2⭐!`);
+                  setStatus(
+                    completedAllNow
+                      ? '🏆 ยินดีด้วย! สำรวจพาสปอร์ตโลกเทคโนโลยีครบทั้ง 5 โซน รับโบนัสใหญ่ +12⭐!'
+                      : `🌟 สำรวจโซน "${activeTechZone.shortTitle}" สำเร็จ (${nextVisited.length}/${TECH_ZONES.length}) รับ +2⭐!`,
+                  );
                   setActiveTechZone(null);
                 }}
                 style={{
@@ -5114,7 +5271,7 @@ const VirtualClassroom: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                🌟 บันทึกการสำรวจโซนนี้ (+2⭐)
+                🌟 บันทึกพาสปอร์ตนักสำรวจ ({visitedTechZones.includes(activeTechZone.id) ? 'สำรวจแล้ว ✓' : '+2⭐'})
               </button>
               <button
                 type="button"
