@@ -452,11 +452,71 @@ const TECH_ZONES: TechZoneInfo[] = [
   },
 ];
 
-const WORLD_SIZE = 96;
-const BUILD_REACH = 15;
-const BUILD_BOUNDARY = 46;
-const BUILD_MAX_HEIGHT = 24;
-const PLAYER_BOUNDARY = 47;
+const WORLD_SIZE = 160;
+const BUILD_REACH = 18;
+const BUILD_BOUNDARY = 76;
+const BUILD_MAX_HEIGHT = 36;
+const PLAYER_BOUNDARY = 78;
+
+interface BuilderPlotInfo {
+  id: string;
+  label: string;
+  theme: string;
+  x: number;
+  z: number;
+  color: number;
+  hex: string;
+}
+
+const BUILDER_PLOTS: BuilderPlotInfo[] = [
+  { id: 'plot_w1', label: '🏗️ แปลงสร้าง W1 (Smart Home)', theme: 'ลานสร้างบ้านอัจฉริยะ IoT & วงจรไฟ 0/1', x: -40, z: -18, color: 0x38bdf8, hex: '#38bdf8' },
+  { id: 'plot_w2', label: '🏗️ แปลงสร้าง W2 (Pixel Art)', theme: 'ลานวาดภาพพิกเซลอาร์ต & ประติมากรรม 3D', x: -40, z: -2, color: 0xf43f5e, hex: '#f43f5e' },
+  { id: 'plot_w3', label: '🏗️ แปลงสร้าง W3 (AI Robot)', theme: 'ลานสร้างหุ่นยนต์ AI & เครื่องจักรอนาคต', x: -40, z: 14, color: 0xa855f7, hex: '#a855f7' },
+  { id: 'plot_w4', label: '🏗️ แปลงสร้าง W4 (Parkour)', theme: 'ลานออกแบบด่านกระโดด Parkour ให้เพื่อนเล่น', x: -40, z: 30, color: 0x10b981, hex: '#10b981' },
+  { id: 'plot_e1', label: '🏗️ แปลงสร้าง E1 (Cyber Tower)', theme: 'ลานสร้างหอคอยไซเบอร์ & เสาอากาศ 5G', x: 40, z: -18, color: 0xfacc15, hex: '#facc15' },
+  { id: 'plot_e2', label: '🏗️ แปลงสร้าง E2 (Computer Lab)', theme: 'ลานสร้างคอมพิวเตอร์ยักษ์ Input-Process-Output', x: 40, z: -2, color: 0x06b6d4, hex: '#06b6d4' },
+  { id: 'plot_e3', label: '🏗️ แปลงสร้าง E3 (Quantum Core)', theme: 'ลานสร้างเตาปฏิกรณ์ควอนตัม & ยานอวกาศ', x: 40, z: 14, color: 0x22c55e, hex: '#22c55e' },
+  { id: 'plot_e4', label: '🏗️ แปลงสร้าง E4 (Free Sandbox)', theme: 'ลานสร้างสรรค์อิสระร่วมกับเพื่อนในห้อง', x: 40, z: 30, color: 0xf97316, hex: '#f97316' },
+];
+
+const BINARY_HACK_QUESTIONS = [
+  { q: 'รหัสฐานสอง 0101 แปลงเป็นเลขฐานสิบได้เท่าไร?', options: ['5', '3', '9', '10'], ans: 0, explain: '0×8 + 1×4 + 0×2 + 1×1 = 5' },
+  { q: 'รหัสฐานสอง 1010 แปลงเป็นเลขฐานสิบได้เท่าไร?', options: ['10', '6', '12', '8'], ans: 0, explain: '1×8 + 0×4 + 1×2 + 0×1 = 10' },
+  { q: 'ในบอร์ดสร้างรหัสลับ NSM (A=1..Z=26) คำว่า "AI" ตรงกับรหัสตัวเลขใด?', options: ['1 - 9', '1 - 8', '2 - 9', '1 - 10'], ans: 0, explain: 'A คือตัวอักษรที่ 1 และ I คือตัวอักษรที่ 9' },
+  { q: 'เลขฐานสิบ 15 เขียนเป็นรหัสฐานสอง 4 บิตได้อย่างไร?', options: ['1111', '1011', '1110', '0111'], ans: 0, explain: '8 + 4 + 2 + 1 = 15 ดังนั้นเปิดไฟครบทั้ง 4 บิต = 1111' },
+  { q: 'วงจรลอจิก AND Gate จะให้ผลลัพธ์เป็น 1 (ไฟติด) เมื่อใด?', options: ['เมื่ออินพุตเป็น 1 ทั้งสองตัว (1 AND 1)', 'เมื่ออินพุตเป็น 0 ทั้งสองตัว', 'เมื่อมีตัวใดตัวหนึ่งเป็น 0', 'ไฟติดตลอดเวลา'], ans: 0, explain: 'AND Gate ต้องเป็นจริง (1) ทั้งสองฝั่ง ผลลัพธ์จึงจะเป็น 1' },
+];
+
+const DEEPFAKE_DETECTIVE_CASES = [
+  {
+    title: 'เคสที่ 1: คลิปวิดีโอดาราดังชวนลงทุนคริปโต การันตีกำไรวันละ 50%',
+    clue: 'สังเกตพบขอบปากขยับไม่ตรงเสียง และแสงเงาที่แก้มกระตุกแปลก ๆ',
+    options: ['เป็นคลิป Deepfake ตัดต่อใบหน้า/เสียง ห้ามโอนเงินและห้ามแชร์ต่อ', 'เชื่อถือได้เพราะเห็นหน้าดาราชัดเจน', 'รีบแชร์เข้ากลุ่มเพื่อนทันที', 'กรอกรหัสผ่านธนาคารเพื่อทดลอง'],
+    ans: 0,
+    explain: 'คลิป Deepfake มักมีความผิดปกติที่ขอบใบหน้า การกะพริบตา และใช้อ้างผลตอบแทนเกินจริง ต้องตรวจต้นฉบับและเทียบหลายแหล่งเสมอ',
+  },
+  {
+    title: 'เคสที่ 2: ได้รับ SMS แจ้งว่า "พัสดุตกค้าง กรุณากดลิงก์ http://bit.ly/fake-post-login เพื่อกรอกรหัสผ่าน"',
+    clue: 'ชื่อโดเมนไม่ใช่เว็บทางการ และเร่งรัดให้กรอกข้อมูลส่วนตัว',
+    options: ['เป็นลิงก์ฟิชชิ่ง (Phishing) ห้ามกดและห้ามกรอกรหัสผ่านเด็ดขาด', 'รีบกดลิงก์แล้วกรอกรหัสผ่านทันที', 'ส่งต่อให้เพื่อนช่วยกด', 'บอกรหัส OTP ให้คนส่ง'],
+    ans: 0,
+    explain: 'การหลอกลวงแบบ Phishing มักใช้ลิงก์ปลอมเพื่อขโมยรหัสผ่านหรือ OTP',
+  },
+  {
+    title: 'เคสที่ 3: เพื่อนส่งข่าวด่วนในแชทว่า "พรุ่งนี้โรงเรียนหยุดฉุกเฉิน 1 สัปดาห์" โดยไม่มีประกาศจากเพจโรงเรียน',
+    clue: 'ไม่มีแหล่งอ้างอิง ไม่มีวันที่ และไม่มีประกาศจากครูหรือโรงเรียน',
+    options: ['ตรวจสอบจากเพจทางการของโรงเรียนหรือถามครูประจำชั้นก่อนแชร์', 'แชร์ต่อให้ครบทุกกลุ่มทันที', 'หยุดเรียนเลยโดยไม่ต้องเช็ก', 'โพสต์ด่าในโซเชียล'],
+    ans: 0,
+    explain: 'ทักษะความเข้าใจดิจิทัล (Digital Literacy): ต้องค้นหาต้นฉบับ เทียบหลายแหล่ง และตรวจวันเวลา/บริบทก่อนเชื่อหรือแชร์',
+  },
+  {
+    title: 'เคสที่ 4: คำคมของ Tim Berners-Lee ผู้ประดิษฐ์ World Wide Web เตือนสติเราเรื่องใด?',
+    clue: '"You affect the world by what you browse" (คุณสร้างผลกระทบต่อโลกจากสิ่งที่คุณเรียกดู)',
+    options: ['ทุกการค้นหา กดไลก์ และแชร์ของเรา ส่งผลกระทบต่อสังคมออนไลน์เสมอ', 'อินเทอร์เน็ตไม่มีผลกระทบต่อโลกความจริง', 'เราโพสต์อะไรก็ได้โดยไม่ต้องรับผิดชอบ', 'เว็บไซต์ทำงานได้โดยไม่ต้องมีเซิร์ฟเวอร์'],
+    ans: 0,
+    explain: 'รอยเท้าดิจิทัล (Digital Footprint) และการเลือกเสพ/แชร์เนื้อหาของเราส่งผลต่อสังคมโดยตรง',
+  },
+];
 
 const playerHash = (id: string) => {
   let hash = 0;
@@ -693,6 +753,18 @@ const VirtualClassroom: React.FC = () => {
   const [quantumQubits, setQuantumQubits] = useState(4);
   const [agentGoalIdx, setAgentGoalIdx] = useState(0);
   const [selectedConsoleEra, setSelectedConsoleEra] = useState<'fc' | 'sfc' | 'n64'>('fc');
+  const [miniGameOpen, setMiniGameOpen] = useState(false);
+  const [miniGameTab, setMiniGameTab] = useState<'obby' | 'hack' | 'detective' | 'rescue'>('obby');
+  const [hackQIdx, setHackQIdx] = useState(0);
+  const [hackPicked, setHackPicked] = useState<number | null>(null);
+  const [hackCorrectCount, setHackCorrectCount] = useState(0);
+  const [detectiveIdx, setDetectiveIdx] = useState(0);
+  const [detectivePicked, setDetectivePicked] = useState<number | null>(null);
+  const [detectiveCorrectCount, setDetectiveCorrectCount] = useState(0);
+  const [rescueProgram, setRescueProgram] = useState<Array<'F' | 'R' | 'L'>>(['F', 'F', 'R', 'F', 'F']);
+  const [rescueStatusMsg, setRescueStatusMsg] = useState('จัดเรียงคำสั่งให้หุ่นยนต์สุนัขเดินจาก (0,0) ไปเก็บถังออกซิเจนที่ (2,2) โดยหลบหลุมอุกกาบาตที่ (0,1)');
+  const [obbyBestStage, setObbyBestStage] = useState(0);
+  const teleportToCoordsRef = useRef<(x: number, y: number, z: number, label: string) => void>(() => undefined);
   const [visitedTechZones, setVisitedTechZones] = useState<string[]>(() => {
     try {
       const raw = localStorage.getItem(`kj_world_techpassport_${playerId}`);
@@ -1133,8 +1205,8 @@ const VirtualClassroom: React.FC = () => {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0c192c);
-    scene.fog = new THREE.Fog(0x0c192c, 28, graphicsQuality === 'low' ? 54 : 76);
-    const camera = new THREE.PerspectiveCamera(70, mount.clientWidth / mount.clientHeight, 0.1, 130);
+    scene.fog = new THREE.Fog(0x0c192c, 42, graphicsQuality === 'low' ? 92 : 140);
+    const camera = new THREE.PerspectiveCamera(70, mount.clientWidth / mount.clientHeight, 0.1, 210);
     const spawn = playerSpawn(playerId);
     const playerPosition = new THREE.Vector3(spawn.x, 1.7, spawn.z);
     camera.position.copy(playerPosition);
@@ -1475,7 +1547,7 @@ const VirtualClassroom: React.FC = () => {
       emissiveIntensity: 0.35,
       roughness: 0.35,
     });
-    const hillCenters = [[-28, -24], [28, -23], [-30, 23], [30, 24]] as const;
+    const hillCenters = [[-62, -56], [62, -56], [-64, 56], [64, 56]] as const;
     const hillRadius = graphicsQuality === 'low' ? 4 : 7;
     const dirtPositions: THREE.Vector3[] = [];
     const grassPositions: THREE.Vector3[] = [];
@@ -1550,7 +1622,7 @@ const VirtualClassroom: React.FC = () => {
     applyWorldTimeRef.current = (timeMode: 'day' | 'sunset' | 'night') => {
       if (timeMode === 'night') {
         scene.background = new THREE.Color(0x050b14);
-        scene.fog = new THREE.Fog(0x050b14, 28, graphicsQuality === 'low' ? 54 : 76);
+        scene.fog = new THREE.Fog(0x050b14, 42, graphicsQuality === 'low' ? 92 : 140);
         hemiLight.color.setHex(0x38bdf8);
         hemiLight.groundColor.setHex(0x090d16);
         hemiLight.intensity = 1.1;
@@ -1559,7 +1631,7 @@ const VirtualClassroom: React.FC = () => {
         (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0xe2e8f0);
       } else if (timeMode === 'sunset') {
         scene.background = new THREE.Color(0x2e1065);
-        scene.fog = new THREE.Fog(0x2e1065, 28, graphicsQuality === 'low' ? 54 : 76);
+        scene.fog = new THREE.Fog(0x2e1065, 42, graphicsQuality === 'low' ? 92 : 140);
         hemiLight.color.setHex(0xf472b6);
         hemiLight.groundColor.setHex(0x1e1b4b);
         hemiLight.intensity = 1.75;
@@ -1568,7 +1640,7 @@ const VirtualClassroom: React.FC = () => {
         (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0xf97316);
       } else {
         scene.background = new THREE.Color(0x0c192c);
-        scene.fog = new THREE.Fog(0x0c192c, 28, graphicsQuality === 'low' ? 54 : 76);
+        scene.fog = new THREE.Fog(0x0c192c, 42, graphicsQuality === 'low' ? 92 : 140);
         hemiLight.color.setHex(0xbae6fd);
         hemiLight.groundColor.setHex(0x0f172a);
         hemiLight.intensity = 2.15;
@@ -1599,8 +1671,8 @@ const VirtualClassroom: React.FC = () => {
       ctx.textBaseline = 'middle';
       ctx.fillText('🚀 KRUJAMES DIGITAL PLAYGROUND · โลกเทคโนโลยี 3D', 512, 72);
       ctx.fillStyle = '#38bdf8';
-      ctx.font = '700 30px Sarabun, sans-serif';
-      ctx.fillText('5 โซนนิทรรศการไอที · สร้างบล็อกและวงจร 0/1 · โค้ดดิ้งอัลกอริทึม · สวมบทบาทนักคอม 6 สายอาชีพ', 512, 138);
+      ctx.font = '700 28px Sarabun, sans-serif';
+      ctx.fillText('10 โซนพิพิธภัณฑ์ไอที อพวช. · ลานสร้างบล็อก 8 แปลง · หอคอย Sky Obby & 4 มินิเกมโค้ดดิ้ง', 512, 138);
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       pixelTextures.push(texture);
@@ -2818,6 +2890,165 @@ const VirtualClassroom: React.FC = () => {
     };
     [[-15, -9], [15, -9], [-15, 8], [15, 8]].forEach(([x, z]) => makeTree(x, z));
 
+    // =========================================================================
+    // 🏗️ 8 แปลงลานสร้างสรรค์ของนักเรียน (STUDENT BUILDER PLOTS · W1–W4 & E1–E4)
+    // ขยายเขตแดนออกไปวงนอก (x = ±40) พร้อมกรอบนีออน 10×10 ช่อง และเสาป้ายประจำแปลง
+    // =========================================================================
+    [
+      [-27, 0, 22, 0.35],
+      [27, 0, 22, 0.35],
+      [-40, 3, 0.4, 52],
+      [40, 3, 0.4, 52],
+    ].forEach(([tx, tz, tw, td]) => {
+      const road = new THREE.Mesh(
+        new THREE.BoxGeometry(tw, 0.05, td),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
+      );
+      road.position.set(tx, 0.025, tz);
+      scene.add(road);
+    });
+
+    BUILDER_PLOTS.forEach((plot) => {
+      const plotGroup = new THREE.Group();
+      const plotColor = new THREE.Color(plot.color);
+      const borderMat = new THREE.MeshBasicMaterial({ color: plotColor });
+      const padMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        emissive: plotColor,
+        emissiveIntensity: 0.12,
+        roughness: 0.55,
+      });
+      const padFloor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.05, 10), padMat);
+      padFloor.position.set(0, 0.02, 0);
+      padFloor.userData = { kind: 'ground', sampleColor: plot.hex };
+      plotGroup.add(padFloor);
+
+      // กรอบนีออนรอบแปลง 10×10
+      [
+        [0, -5, 10.2, 0.18],
+        [0, 5, 10.2, 0.18],
+        [-5, 0, 0.18, 10.2],
+        [5, 0, 0.18, 10.2],
+      ].forEach(([bx, bz, bw, bd]) => {
+        const edge = new THREE.Mesh(new THREE.BoxGeometry(bw, 0.1, bd), borderMat);
+        edge.position.set(bx, 0.06, bz);
+        plotGroup.add(edge);
+      });
+
+      // ป้ายโฮโลแกรมประจำแปลง (คลิกเพื่อเปิดโหมดสร้างบล็อกหรือ Code Builder ทันที)
+      const signPost = new THREE.Mesh(
+        new THREE.BoxGeometry(3.4, 1.35, 0.2),
+        new THREE.MeshStandardMaterial({
+          map: makeExhibitPosterTexture(
+            '#0f172a',
+            '#1e293b',
+            plot.hex,
+            `BUILDER PLOT ${plot.id.toUpperCase()} (10×10)`,
+            plot.label,
+            `หัวข้อแนะนำ: ${plot.theme}`,
+            [
+              '• พื้นที่ส่วนตัว 10×10 ช่อง สูงสุด 36 ชั้น สำหรับสร้างผลงาน 3D',
+              '• กด [2 โหมดสร้าง] หรือปุ่ม [🤖 โค้ดสร้างบล็อก] เพื่อเสกสิ่งปลูกสร้าง',
+              '• วางบล็อกป้ายชื่อ 🪧 เพื่อเขียนชื่อเจ้าของผลงานได้เลย!',
+            ],
+          ),
+          roughness: 0.3,
+        }),
+      );
+      const signSideX = plot.x < 0 ? 5.2 : -5.2;
+      signPost.position.set(signSideX, 1.3, 0);
+      signPost.rotation.y = plot.x < 0 ? Math.PI / 2 : -Math.PI / 2;
+      signPost.userData = { kind: 'builder_plot', plot };
+      techExhibitMeshes.push(signPost);
+      plotGroup.add(signPost);
+
+      plotGroup.position.set(plot.x, 0, plot.z);
+      scene.add(plotGroup);
+    });
+
+    // =========================================================================
+    // 🏃‍♂️ หอคอยกระโดดลอยฟ้า 3D CYBER SKY OBBY (10 ด่านลอยฟ้า + ถ้วยรางวัลยอดหอคอย +15⭐)
+    // และตู้ Kiosk ศูนย์รวม 4 กิจกรรม & มินิเกมโค้ดดิ้ง (x = 0, z = -25.2..-45.5)
+    // =========================================================================
+    const obbyKiosk = new THREE.Mesh(
+      new THREE.BoxGeometry(5.6, 2.3, 0.28),
+      new THREE.MeshStandardMaterial({
+        map: makeExhibitPosterTexture(
+          '#1e1b4b',
+          '#090d16',
+          '#facc15',
+          'CYBER SKY OBBY & MINI-GAMES',
+          '🎯 ลานกิจกรรม & 4 มินิเกมโลกเทคโนโลยี',
+          'กระโดดพิชิตยอดหอคอย Sky Obby 10 ขั้น หรือคลิกเปิดศูนย์มินิเกม!',
+          [
+            '1) 🏃 Cyber Sky Obby: กระโดดขึ้นแท่นนีออนลอยฟ้า 10 ขั้นไปแตะถ้วยทอง (+15⭐)',
+            '2) ⚡ Speed Hack 0/1 & รหัสลับ A=1..Z=26 (+10⭐)',
+            '3) 🕵️ นักสืบจับผิด Deepfake & ข่าวปลอม (+10⭐) | 4) 🐕 โค้ดดิ้งหุ่นสุนัขกู้ภัย (+12⭐)',
+          ],
+        ),
+        roughness: 0.25,
+      }),
+    );
+    obbyKiosk.position.set(0, 1.65, -25.2);
+    obbyKiosk.userData = { kind: 'minigame_kiosk' };
+    techExhibitMeshes.push(obbyKiosk);
+    scene.add(obbyKiosk);
+
+    const obbyStages: Array<{ x: number; y: number; z: number; w: number; d: number; color: number }> = [
+      { x: 0, y: 1.0, z: -27.5, w: 3.2, d: 2.4, color: 0x38bdf8 },
+      { x: -3.2, y: 1.9, z: -29.8, w: 2.8, d: 2.4, color: 0x22d3ee },
+      { x: -6.2, y: 2.8, z: -32.2, w: 2.8, d: 2.4, color: 0x4ade80 },
+      { x: -3.0, y: 3.7, z: -34.8, w: 2.7, d: 2.4, color: 0xa3e635 },
+      { x: 0.4, y: 4.6, z: -37.0, w: 2.7, d: 2.4, color: 0xfacc15 },
+      { x: 3.8, y: 5.5, z: -39.2, w: 2.7, d: 2.4, color: 0xfb923c },
+      { x: 6.6, y: 6.4, z: -41.5, w: 2.7, d: 2.4, color: 0xf43f5e },
+      { x: 3.4, y: 7.4, z: -43.5, w: 2.7, d: 2.4, color: 0xe879f9 },
+      { x: -0.2, y: 8.4, z: -44.8, w: 2.8, d: 2.4, color: 0xa78bfa },
+      { x: 0, y: 9.5, z: -47.5, w: 4.6, d: 4.6, color: 0xfacc15 },
+    ];
+    obbyStages.forEach((st) => {
+      const padMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(st.w, 0.32, st.d),
+        new THREE.MeshStandardMaterial({
+          color: 0x0f172a,
+          emissive: new THREE.Color(st.color),
+          emissiveIntensity: 0.65,
+          roughness: 0.25,
+          metalness: 0.4,
+        }),
+      );
+      padMesh.position.set(st.x, st.y - 0.16, st.z);
+      padMesh.castShadow = true;
+      padMesh.receiveShadow = true;
+      scene.add(padMesh);
+      platforms.push({
+        minX: st.x - st.w / 2,
+        maxX: st.x + st.w / 2,
+        minZ: st.z - st.d / 2,
+        maxZ: st.z + st.d / 2,
+        top: st.y,
+      });
+    });
+
+    const skyObbyTrophy = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.75, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0xfacc15,
+        emissive: new THREE.Color(0xf59e0b),
+        emissiveIntensity: 0.95,
+        metalness: 0.7,
+        roughness: 0.15,
+      }),
+    );
+    skyObbyTrophy.position.set(0, 10.9, -47.5);
+    skyObbyTrophy.userData = { kind: 'minigame_kiosk' };
+    techExhibitMeshes.push(skyObbyTrophy);
+    scene.add(skyObbyTrophy);
+    techAnimatedObjects.push((now, delta) => {
+      skyObbyTrophy.rotation.y += delta * 1.6;
+      skyObbyTrophy.position.y = 10.9 + Math.sin(now * 0.003) * 0.18;
+    });
+
     const starGeometry = new THREE.OctahedronGeometry(0.3, 0);
     const starMaterial = new THREE.MeshStandardMaterial({
       color: 0xfacc15,
@@ -3794,6 +4025,17 @@ const VirtualClassroom: React.FC = () => {
         void recordActivity('slide', `u${unitNo}-techexhibit-${zone.id}`, unitNo, `สำรวจนิทรรศการโลกเทคโนโลยี: ${zone.title}`);
         return;
       }
+      if (hit && hit.object.userData.kind === 'minigame_kiosk' && hit.distance <= 26) {
+        if (document.pointerLockElement) document.exitPointerLock();
+        setMiniGameOpen(true);
+        return;
+      }
+      if (hit && hit.object.userData.kind === 'builder_plot' && hit.distance <= 26) {
+        const plot = hit.object.userData.plot as (typeof BUILDER_PLOTS)[number];
+        setMode('build');
+        setStatus(`🏗️ เข้าสู่ "${plot.label}" (${plot.theme}) — เปิดโหมดสร้างบล็อกแล้ว! คลิกซ้ายวางบล็อก หรือกด [🤖 โค้ดสร้างบล็อก]`);
+        return;
+      }
       if (hit && hit.object.userData.kind === 'portal' && hit.distance <= 24) {
         if (document.pointerLockElement) document.exitPointerLock();
         setGamesPanelOpen(true);
@@ -4053,6 +4295,18 @@ const VirtualClassroom: React.FC = () => {
         if (document.pointerLockElement) document.exitPointerLock();
         setActiveTechZone(zone);
       }
+    };
+    teleportToCoordsRef.current = (tx: number, ty: number, tz: number, label: string) => {
+      playerPosition.set(tx, ty, tz);
+      verticalVelocity = 0;
+      velX = 0;
+      velZ = 0;
+      grounded = true;
+      flyingRef.current = false;
+      setIsFlying(false);
+      pitch = 0;
+      publishPresence(true, 'idle');
+      setStatus(label);
     };
 
     // ส่งสถานะเข้าห้องทันทีที่โหลดฉาก และส่งซ้ำเป็นระยะแม้แท็บอยู่เบื้องหลัง
@@ -4579,6 +4833,34 @@ const VirtualClassroom: React.FC = () => {
         respawnTimers.push(timer);
       });
 
+      // ตรวจสอบการกระโดดพิชิตด่านหอคอยลอยฟ้า 3D Cyber Sky Obby (10 ด่าน)
+      if (!flyingRef.current && grounded && playerPosition.z < -26) {
+        for (let idx = 0; idx < obbyStages.length; idx += 1) {
+          const st = obbyStages[idx];
+          if (
+            Math.abs(playerPosition.x - st.x) <= st.w / 2 + 0.25
+            && Math.abs(playerPosition.z - st.z) <= st.d / 2 + 0.25
+            && Math.abs((playerPosition.y - 1.7) - st.y) <= 0.35
+          ) {
+            const stageNum = idx + 1;
+            setObbyBestStage((prev) => {
+              if (stageNum <= prev) return prev;
+              if (stageNum === 10) {
+                celebrate();
+                setWorldStars((s) => s + 15);
+                const unitNo = boards[0]?.unitNo || 1;
+                void recordActivity('game', `u${unitNo}-sky-obby-clear`, unitNo, 'พิชิตยอดหอคอย 3D Cyber Sky Obby 10 ชั้น');
+                setStatus('🏆 สุดยอด! กระโดดพิชิตยอดหอคอย 3D Cyber Sky Obby ชั้นที่ 10 สำเร็จ รับโบนัส +15⭐!');
+              } else {
+                setStatus(`🏃‍♂️ Cyber Sky Obby: ผ่านด่านลอยฟ้าขั้นที่ ${stageNum}/10 แล้ว! กระโดดต่อไปให้ถึงยอดหอคอย!`);
+              }
+              return stageNum;
+            });
+            break;
+          }
+        }
+      }
+
       if (now - lastHoverCheckAt >= 40) {
         lastHoverCheckAt = now;
         const hit = getBuildHoverHit();
@@ -4897,6 +5179,58 @@ const VirtualClassroom: React.FC = () => {
             fontSize: '0.75rem',
           }}
         >
+          <button
+            type="button"
+            onClick={() => {
+              if (document.pointerLockElement) document.exitPointerLock();
+              setMiniGameTab('obby');
+              setMiniGameOpen(true);
+            }}
+            title="เปิดศูนย์กิจกรรม หอคอย 3D Sky Obby, ลานสร้างบล็อก 8 แปลง และ 4 มินิเกมโค้ดดิ้ง"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              flexShrink: 0,
+              padding: '3px 10px',
+              borderRadius: 999,
+              border: '1px solid #facc15',
+              background: 'linear-gradient(135deg, #ca8a04, #eab308)',
+              color: '#0f172a',
+              fontSize: '0.74rem',
+              fontWeight: 900,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            🎯 กิจกรรม & 4 มินิเกม (+47⭐)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (document.pointerLockElement) document.exitPointerLock();
+              setMiniGameTab('obby');
+              setMiniGameOpen(true);
+            }}
+            title="เลือกวาร์ปไปแปลงก่อสร้างส่วนตัว 8 แปลง (W1–W4, E1–E4)"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              flexShrink: 0,
+              padding: '3px 9px',
+              borderRadius: 999,
+              border: '1px solid #38bdf8',
+              background: 'rgba(14, 165, 233, 0.28)',
+              color: '#e0f2fe',
+              fontSize: '0.73rem',
+              fontWeight: 800,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            🏗️ ลานสร้าง 8 แปลง
+          </button>
           <span style={{ fontWeight: 800, color: '#38bdf8', flexShrink: 0 }}>
             🏛️ โลกเทคโนโลยี ({visitedTechZones.length}/{TECH_ZONES.length}):
           </span>
@@ -7261,6 +7595,529 @@ const VirtualClassroom: React.FC = () => {
                 ปิดหน้าต่าง
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {miniGameOpen && (
+        <div
+          className="world-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="ศูนย์กิจกรรม 3D ลานสร้างบล็อก 8 แปลง และ 4 มินิเกมโลกเทคโนโลยี"
+          onClick={() => setMiniGameOpen(false)}
+        >
+          <div
+            className="world-modal"
+            style={{ maxWidth: 820, maxHeight: '88vh', overflowY: 'auto' }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+              <div>
+                <span className="world-kicker" style={{ color: '#0284c7' }}>
+                  🎯 KRUJAMES 3D METAVERSE · ACTIVITIES & BUILDER PLOTS
+                </span>
+                <h2 style={{ margin: '4px 0 6px', fontSize: '1.25rem' }}>
+                  ศูนย์กิจกรรม 3D · ลานสร้างบล็อก 8 แปลง & 4 มินิเกมเทคโนโลยี
+                </h2>
+                <p style={{ margin: 0, fontSize: '0.84rem', color: '#475569' }}>
+                  เลือกวาร์ปไปกระโดดหอคอย 3D Cyber Sky Obby, จองแปลงสร้างผลงาน 3D ส่วนตัว หรือเล่นมินิเกมสะสมดาว!
+                </p>
+              </div>
+              <button
+                type="button"
+                className="world-btn-cancel"
+                onClick={() => setMiniGameOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '12px 0' }}>
+              {[
+                { id: 'obby' as const, label: '🏃 Sky Obby & 🏗️ ลานสร้าง 8 แปลง' },
+                { id: 'hack' as const, label: '⚡ ถอดรหัสไว 0/1 & รหัสลับ (+10⭐)' },
+                { id: 'detective' as const, label: '🕵️ นักสืบจับผิด Deepfake (+10⭐)' },
+                { id: 'rescue' as const, label: '🐕 โค้ดดิ้งหุ่นสุนัขกู้ภัย (+12⭐)' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setMiniGameTab(t.id)}
+                  style={{
+                    flex: 1,
+                    minWidth: 165,
+                    padding: '9px 10px',
+                    borderRadius: 10,
+                    border: miniGameTab === t.id ? '2px solid #0284c7' : '1px solid #cbd5e1',
+                    background: miniGameTab === t.id ? '#e0f2fe' : '#f8fafc',
+                    color: '#0f172a',
+                    fontWeight: 800,
+                    fontSize: '0.8rem',
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {miniGameTab === 'obby' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ padding: 14, borderRadius: 12, background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', color: '#fff', border: '2px solid #facc15' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <div style={{ fontSize: '0.76rem', color: '#fde047', fontWeight: 800 }}>
+                        🏃‍♂️ กิจกรรมกระโดดในฉาก 3D · CYBER SKY OBBY (10 ด่านลอยฟ้า)
+                      </div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 900, marginTop: 2 }}>
+                        สถิติสูงสุดของคุณ: ด่านที่ {obbyBestStage} / 10 {obbyBestStage >= 10 ? '🏆 (พิชิตยอดหอคอยแล้ว!)' : ''}
+                      </div>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                        กดปุ่มวาร์ปไปจุดเริ่มต้นด้านหลังโดม แล้วใช้ปุ่ม W A S D + Spacebar กระโดดไต่แท่นนีออนลอยฟ้า 10 ชั้นขึ้นไปแตะถ้วยทองคำบนยอดหอคอย รับทันที +15⭐!
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMiniGameOpen(false);
+                        teleportToCoordsRef.current(
+                          0,
+                          1.7,
+                          -25.8,
+                          '🏃‍♂️ วาร์ปมาจุดเริ่ม 3D Cyber Sky Obby แล้ว! กด Space กระโดดไต่แท่นนีออน 10 ชั้นขึ้นไปแตะถ้วยทองเลย!',
+                        );
+                      }}
+                      style={{
+                        padding: '10px 16px',
+                        borderRadius: 10,
+                        border: 0,
+                        background: 'linear-gradient(135deg, #eab308, #f59e0b)',
+                        color: '#0f172a',
+                        fontWeight: 900,
+                        fontSize: '0.86rem',
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🚀 วาร์ปไปจุดเริ่ม Sky Obby (+15⭐)
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: '0.95rem', color: '#0f172a', marginBottom: 8 }}>
+                    🏗️ ลานสร้างสรรค์ของนักเรียน 8 แปลง (Student Builder Plots · ขนาดแปลงละ 10×10 ช่อง สูง 36 ชั้น)
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))', gap: 8 }}>
+                    {BUILDER_PLOTS.map((plot) => (
+                      <div
+                        key={plot.id}
+                        style={{
+                          padding: 10,
+                          borderRadius: 10,
+                          background: '#f8fafc',
+                          border: `2px solid ${plot.hex}`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: 8,
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 900, fontSize: '0.85rem', color: '#0f172a' }}>{plot.label}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: 2 }}>
+                            โจทย์แนะนำ: <strong>{plot.theme}</strong>
+                          </div>
+                          <div style={{ fontSize: '0.71rem', color: '#64748b', marginTop: 2 }}>
+                            พิกัด: ({plot.x}, {plot.z})
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMiniGameOpen(false);
+                            setMode('build');
+                            teleportToCoordsRef.current(
+                              plot.x,
+                              1.7,
+                              plot.z,
+                              `🏗️ วาร์ปมายัง "${plot.label}" (${plot.theme}) พร้อมเปิดโหมดสร้างบล็อกแล้ว! คลิกซ้ายวางบล็อก หรือกด [🤖 โค้ดสร้างบล็อก] ได้เลย`,
+                            );
+                          }}
+                          style={{
+                            padding: '7px 10px',
+                            borderRadius: 8,
+                            border: 0,
+                            background: '#0f172a',
+                            color: '#ffffff',
+                            fontWeight: 800,
+                            fontSize: '0.76rem',
+                            fontFamily: 'inherit',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          🏗️ วาร์ปไปสร้างที่แปลง {plot.id.toUpperCase()}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {miniGameTab === 'hack' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {(() => {
+                  const q = BINARY_HACK_QUESTIONS[hackQIdx] || BINARY_HACK_QUESTIONS[0];
+                  return (
+                    <div style={{ padding: 14, borderRadius: 12, background: '#0f172a', color: '#fff', border: '2px solid #38bdf8' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38bdf8' }}>
+                          ⚡ BINARY & SECRET CODE SPEED HACK · ข้อที่ {hackQIdx + 1} / {BINARY_HACK_QUESTIONS.length}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#4ade80' }}>
+                          ตอบถูกสะสม: {hackCorrectCount} ข้อ
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '1rem', fontWeight: 800, marginBottom: 12, lineHeight: 1.45 }}>
+                        {q.q}
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
+                        {q.options.map((ch, idx) => {
+                          const isSelected = hackPicked === idx;
+                          const isAnswer = idx === q.ans;
+                          const bg = hackPicked === null
+                            ? '#1e293b'
+                            : isAnswer
+                              ? '#166534'
+                              : isSelected
+                                ? '#991b1b'
+                                : '#1e293b';
+                          return (
+                            <button
+                              key={ch}
+                              type="button"
+                              onClick={() => {
+                                if (hackPicked !== null) return;
+                                setHackPicked(idx);
+                                if (idx === q.ans) {
+                                  const nextCount = hackCorrectCount + 1;
+                                  setHackCorrectCount(nextCount);
+                                  celebrate();
+                                  setWorldStars((s) => s + 2);
+                                  const unitNo = boards[0]?.unitNo || 1;
+                                  void recordActivity('game', `u${unitNo}-binary-hack-q${hackQIdx + 1}`, unitNo, `ถอดรหัส Binary/Secret Code ข้อที่ ${hackQIdx + 1}`);
+                                }
+                              }}
+                              style={{
+                                padding: '10px 12px',
+                                borderRadius: 10,
+                                border: isSelected ? '2px solid #facc15' : '1px solid #475569',
+                                background: bg,
+                                color: '#fff',
+                                fontWeight: 800,
+                                fontSize: '0.86rem',
+                                fontFamily: 'inherit',
+                                cursor: hackPicked === null ? 'pointer' : 'default',
+                              }}
+                            >
+                              {ch}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {hackPicked !== null && (
+                        <div style={{ marginTop: 12, padding: 10, borderRadius: 8, background: 'rgba(56, 189, 248, 0.16)', border: '1px solid #38bdf8', fontSize: '0.82rem' }}>
+                          <strong>{hackPicked === q.ans ? '✅ ถูกต้อง! (+2⭐) ' : '💡 เฉลย: '}</strong>
+                          {q.explain}
+                          <div style={{ marginTop: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHackPicked(null);
+                                setHackQIdx((idx) => (idx + 1) % BINARY_HACK_QUESTIONS.length);
+                              }}
+                              style={{
+                                padding: '6px 14px',
+                                borderRadius: 8,
+                                border: 0,
+                                background: '#38bdf8',
+                                color: '#0f172a',
+                                fontWeight: 900,
+                                fontSize: '0.8rem',
+                                fontFamily: 'inherit',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ข้อถัดไป ▶
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {miniGameTab === 'detective' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {(() => {
+                  const item = DEEPFAKE_DETECTIVE_CASES[detectiveIdx] || DEEPFAKE_DETECTIVE_CASES[0];
+                  return (
+                    <div style={{ padding: 14, borderRadius: 12, background: '#1e1b4b', color: '#fff', border: '2px solid #f472b6' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f472b6' }}>
+                          🕵️ แฟ้มคดีนักสืบไซเบอร์ · คดีที่ {detectiveIdx + 1} / {DEEPFAKE_DETECTIVE_CASES.length}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#4ade80' }}>
+                          ไขคดีสำเร็จ: {detectiveCorrectCount} คดี
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.98rem', fontWeight: 900, color: '#fde047', marginBottom: 4 }}>
+                        {item.title}
+                      </div>
+                      <p style={{ margin: '0 0 12px', fontSize: '0.86rem', color: '#e2e8f0', lineHeight: 1.5 }}>
+                        เบาะแส: “{item.clue}”
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {item.options.map((ch, idx) => {
+                          const isSelected = detectivePicked === idx;
+                          const isAnswer = idx === item.ans;
+                          const bg = detectivePicked === null
+                            ? '#312e81'
+                            : isAnswer
+                              ? '#166534'
+                              : isSelected
+                                ? '#991b1b'
+                                : '#312e81';
+                          return (
+                            <button
+                              key={ch}
+                              type="button"
+                              onClick={() => {
+                                if (detectivePicked !== null) return;
+                                setDetectivePicked(idx);
+                                if (idx === item.ans) {
+                                  setDetectiveCorrectCount((c) => c + 1);
+                                  celebrate();
+                                  setWorldStars((s) => s + 3);
+                                  const unitNo = boards[0]?.unitNo || 1;
+                                  void recordActivity('game', `u${unitNo}-deepfake-detective-${detectiveIdx + 1}`, unitNo, `ไขคดีนักสืบไซเบอร์: ${item.title}`);
+                                }
+                              }}
+                              style={{
+                                textAlign: 'left',
+                                padding: '10px 12px',
+                                borderRadius: 10,
+                                border: isSelected ? '2px solid #fde047' : '1px solid #6366f1',
+                                background: bg,
+                                color: '#fff',
+                                fontWeight: 800,
+                                fontSize: '0.84rem',
+                                fontFamily: 'inherit',
+                                cursor: detectivePicked === null ? 'pointer' : 'default',
+                              }}
+                            >
+                              {ch}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {detectivePicked !== null && (
+                        <div style={{ marginTop: 12, padding: 10, borderRadius: 8, background: 'rgba(244, 114, 182, 0.16)', border: '1px solid #f472b6', fontSize: '0.82rem' }}>
+                          <strong>{detectivePicked === item.ans ? '✅ วินิจฉัยถูกต้อง! (+3⭐) ' : '💡 คำแนะนำนักสืบไซเบอร์: '}</strong>
+                          {item.explain}
+                          <div style={{ marginTop: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDetectivePicked(null);
+                                setDetectiveIdx((idx) => (idx + 1) % DEEPFAKE_DETECTIVE_CASES.length);
+                              }}
+                              style={{
+                                padding: '6px 14px',
+                                borderRadius: 8,
+                                border: 0,
+                                background: '#f472b6',
+                                color: '#0f172a',
+                                fontWeight: 900,
+                                fontSize: '0.8rem',
+                                fontFamily: 'inherit',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              คดีถัดไป ▶
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {miniGameTab === 'rescue' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ padding: 14, borderRadius: 12, background: '#0f172a', color: '#fff', border: '2px solid #34d399' }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#34d399' }}>
+                    🐕 SPACE RESCUE · โค้ดดิ้งสั่งการหุ่นยนต์สุนัข 4 ขากู้ภัยอวกาศ (NSM Zone 4)
+                  </div>
+                  <p style={{ margin: '4px 0 10px', fontSize: '0.82rem', color: '#cbd5e1' }}>
+                    ภารกิจ: หุ่นสุนัขเริ่มต้นที่ช่อง <strong>(0,0) หันหน้าไปทางขวา (➡️ ทิศตะวันออก)</strong> ต้องเดินไปเก็บถังออกซิเจน <strong>⛽ ที่ช่อง (2,2)</strong> โดยห้ามชนหลุมอุกกาบาต <strong>☄️ ที่ (1,0) และ (2,1)</strong>! (คำใบ้: หันลง ➡️ เดินหน้า 2 ครั้ง ➡️ หันซ้าย ➡️ เดินหน้า 2 ครั้ง)
+                  </p>
+
+                  {/* ตารางดาวอังคาร 3x3 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 68px)', gap: 6, justifyContent: 'center', margin: '10px 0' }}>
+                    {[0, 1, 2].map((row) =>
+                      [0, 1, 2].map((col) => {
+                        const isStart = row === 0 && col === 0;
+                        const isGoal = row === 2 && col === 2;
+                        const isHazard = (row === 0 && col === 1) || (row === 1 && col === 2);
+                        return (
+                          <div
+                            key={`${row}-${col}`}
+                            style={{
+                              width: 68,
+                              height: 68,
+                              borderRadius: 10,
+                              background: isGoal ? '#065f46' : isHazard ? '#7f1d1d' : isStart ? '#1e3a8a' : '#1e293b',
+                              border: '2px solid #475569',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '1.25rem',
+                            }}
+                          >
+                            <span>{isStart ? '🐕➡️' : isGoal ? '⛽' : isHazard ? '☄️' : '·'}</span>
+                            <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>({col},{row})</span>
+                          </div>
+                        );
+                      }),
+                    )}
+                  </div>
+
+                  {/* ปุ่มเพิ่มชุดคำสั่ง */}
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8 }}>
+                    {[
+                      { cmd: 'F' as const, label: '⬆️ เดินหน้า 1 ช่อง (F)', bg: '#0284c7' },
+                      { cmd: 'L' as const, label: '↩️ หันซ้าย 90° (L)', bg: '#7c3aed' },
+                      { cmd: 'R' as const, label: '↪️ หันขวา 90° (R)', bg: '#d97706' },
+                    ].map((b) => (
+                      <button
+                        key={b.cmd}
+                        type="button"
+                        onClick={() => {
+                          if (rescueProgram.length >= 10) return;
+                          setRescueProgram((p) => [...p, b.cmd]);
+                        }}
+                        style={{
+                          padding: '7px 12px',
+                          borderRadius: 8,
+                          border: 0,
+                          background: b.bg,
+                          color: '#fff',
+                          fontWeight: 800,
+                          fontSize: '0.78rem',
+                          fontFamily: 'inherit',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        + {b.label}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRescueProgram([]);
+                        setRescueStatusMsg('ล้างลำดับคำสั่งแล้ว — เรียงคำสั่งใหม่ได้เลย!');
+                      }}
+                      style={{
+                        padding: '7px 12px',
+                        borderRadius: 8,
+                        border: '1px solid #94a3b8',
+                        background: 'transparent',
+                        color: '#e2e8f0',
+                        fontWeight: 800,
+                        fontSize: '0.78rem',
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🗑️ ล้างคำสั่ง
+                    </button>
+                  </div>
+
+                  {/* แสดงโปรแกรมที่เรียงไว้ */}
+                  <div style={{ margin: '10px 0', padding: 10, borderRadius: 8, background: '#090d16', border: '1px solid #334155', fontFamily: 'monospace', fontSize: '0.84rem' }}>
+                    <strong>ลำดับคำสั่ง ({rescueProgram.length}/10): </strong>
+                    {rescueProgram.length === 0
+                      ? 'ยังไม่มีคำสั่ง (กดปุ่มด้านบนเพื่อเรียงบล็อกคำสั่ง)'
+                      : rescueProgram.map((c, i) => `${i + 1}.${c === 'F' ? 'เดินหน้า(F)' : c === 'L' ? 'หันซ้าย(L)' : 'หันขวา(R)'}`).join(' → ')}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // จำลองการทำงานของหุ่นสุนัข: เริ่มที่ (col=0, row=0), dir=0 (0:ขวา, 1:ลง, 2:ซ้าย, 3:ขึ้น)
+                        let col = 0;
+                        let row = 0;
+                        let dir = 0;
+                        const dx = [1, 0, -1, 0];
+                        const dy = [0, 1, 0, -1];
+                        for (let step = 0; step < rescueProgram.length; step += 1) {
+                          const cmd = rescueProgram[step];
+                          if (cmd === 'R') dir = (dir + 1) % 4;
+                          else if (cmd === 'L') dir = (dir + 3) % 4;
+                          else if (cmd === 'F') {
+                            col += dx[dir];
+                            row += dy[dir];
+                            if (col < 0 || col > 2 || row < 0 || row > 2) {
+                              setRescueStatusMsg(`❌ ขั้นที่ ${step + 1}: หุ่นสุนัขเดินหลุดออกนอกแผนที่ดาวอังคาร! ลองปรับคำสั่งใหม่นะ`);
+                              return;
+                            }
+                            if ((row === 0 && col === 1) || (row === 1 && col === 2)) {
+                              setRescueStatusMsg(`💥 ขั้นที่ ${step + 1}: หุ่นสุนัขชนหลุมอุกกาบาตที่ช่อง (${col},${row})! ลองหันหลบก่อนเดินหน้านะ`);
+                              return;
+                            }
+                          }
+                        }
+                        if (col === 2 && row === 2) {
+                          celebrate();
+                          setWorldStars((s) => s + 12);
+                          const unitNo = boards[0]?.unitNo || 1;
+                          void recordActivity('game', `u${unitNo}-robodog-space-rescue`, unitNo, 'เขียนโปรแกรมหุ่นสุนัขกู้ภัย SPACE RESCUE สำเร็จ');
+                          setRescueStatusMsg('🏆 ภารกิจสำเร็จ! หุ่นยนต์สุนัข 4 ขาเดินทางถึงช่อง (2,2) และเก็บถังออกซิเจนกู้ภัยสำเร็จ รับโบนัส +12⭐!');
+                        } else {
+                          setRescueStatusMsg(`🤖 หุ่นสุนัขหยุดอยู่ที่ช่อง (${col},${row}) ยังไม่ถึงถังออกซิเจน (2,2) — ลองเพิ่มคำสั่งอีกนิด!`);
+                        }
+                      }}
+                      style={{
+                        padding: '9px 18px',
+                        borderRadius: 10,
+                        border: 0,
+                        background: 'linear-gradient(135deg, #059669, #10b981)',
+                        color: '#fff',
+                        fontWeight: 900,
+                        fontSize: '0.86rem',
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ▶ รันโปรแกรมหุ่นสุนัขกู้ภัย (+12⭐)
+                    </button>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fde047' }}>
+                      {rescueStatusMsg}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
