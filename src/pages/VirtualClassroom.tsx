@@ -63,6 +63,7 @@ import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import { fetchCustomSlides } from '../services/slideService';
 import {
   addWorldBlock,
+  addWorldBlocksBatch,
   cleanupVirtualQaRoom,
   clearWorldBlocks,
   defaultVirtualRoomState,
@@ -436,6 +437,14 @@ const VirtualClassroom: React.FC = () => {
   const interactRef = useRef<() => void>(() => undefined);
   const lockRef = useRef<() => void>(() => undefined);
   const jumpRef = useRef<() => void>(() => undefined);
+  const flyingRef = useRef(false);
+  const applyWorldTimeRef = useRef<(t: 'day' | 'sunset' | 'night') => void>(() => undefined);
+  const runCodeBuilderRef = useRef<(kind: string, stepsCount: number) => void>(() => undefined);
+  const [isFlying, setIsFlying] = useState(false);
+  const [worldTime, setWorldTime] = useState<'day' | 'sunset' | 'night'>('day');
+  const [codeBuilderOpen, setCodeBuilderOpen] = useState(false);
+  const [codeBuilderTab, setCodeBuilderTab] = useState<'algo' | 'blueprint'>('algo');
+  const [algoSteps, setAlgoSteps] = useState(5);
   const [mode, setMode] = useState<WorldMode>('build');
   const [material, setMaterial] = useState<BlockMaterial>('grass');
   const [teacherRoom, setTeacherRoom] = useState(user?.classroom || 'ป.1');
@@ -885,7 +894,8 @@ const VirtualClassroom: React.FC = () => {
     renderer.domElement.setAttribute('aria-label', 'ห้องเรียนออนไลน์สามมิติ');
     mount.appendChild(renderer.domElement);
 
-    scene.add(new THREE.HemisphereLight(0xdff4ff, 0x4d6b3c, 2.1));
+    const hemiLight = new THREE.HemisphereLight(0xdff4ff, 0x4d6b3c, 2.1);
+    scene.add(hemiLight);
     const sun = new THREE.DirectionalLight(0xffffff, 2.2);
     sun.position.set(14, 24, 10);
     sun.castShadow = graphicsQuality !== 'low';
@@ -1158,6 +1168,105 @@ const VirtualClassroom: React.FC = () => {
       skyDecor.add(cloud);
     });
     scene.add(skyDecor);
+
+    applyWorldTimeRef.current = (timeMode: 'day' | 'sunset' | 'night') => {
+      if (timeMode === 'night') {
+        scene.background = new THREE.Color(0x0f172a);
+        scene.fog = new THREE.Fog(0x0f172a, 24, graphicsQuality === 'low' ? 50 : 68);
+        hemiLight.color.setHex(0x38bdf8);
+        hemiLight.groundColor.setHex(0x1e293b);
+        hemiLight.intensity = 0.85;
+        sun.color.setHex(0x93c5fd);
+        sun.intensity = 0.75;
+        (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0xe2e8f0);
+      } else if (timeMode === 'sunset') {
+        scene.background = new THREE.Color(0xfd9869);
+        scene.fog = new THREE.Fog(0xfd9869, 24, graphicsQuality === 'low' ? 50 : 68);
+        hemiLight.color.setHex(0xfef08a);
+        hemiLight.groundColor.setHex(0x5c4033);
+        hemiLight.intensity = 1.6;
+        sun.color.setHex(0xfb923c);
+        sun.intensity = 1.85;
+        (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0xf97316);
+      } else {
+        scene.background = new THREE.Color(0x9bd9ff);
+        scene.fog = new THREE.Fog(0x9bd9ff, 24, graphicsQuality === 'low' ? 48 : 65);
+        hemiLight.color.setHex(0xdff4ff);
+        hemiLight.groundColor.setHex(0x4d6b3c);
+        hemiLight.intensity = 2.1;
+        sun.color.setHex(0xffffff);
+        sun.intensity = 2.2;
+        (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0xffee77);
+      }
+    };
+
+    // ป้ายแลนด์มาร์กหน้าอาคารเรียน "KRUJAMES CRAFT · ห้องเรียนวิทยาการคำนวณ 3D" + เสาธงโรงเรียนพิกเซล
+    const makeSchoolBannerTexture = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 192;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, 1024, 192);
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(8, 8, 1008, 176);
+      ctx.fillStyle = '#facc15';
+      ctx.font = '800 50px Sarabun, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⚡ KRUJAMES CRAFT · ห้องเรียนวิทยาการคำนวณ 3D', 512, 74);
+      ctx.fillStyle = '#7dd3fc';
+      ctx.font = '700 32px Sarabun, sans-serif';
+      ctx.fillText('สร้างสรรค์บล็อก · วงจรลอจิก 0/1 · โค้ดดิ้งอัลกอริทึม · เรียนรู้ร่วมกับเพื่อน', 512, 138);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      pixelTextures.push(texture);
+      return texture;
+    };
+    const bannerTex = makeSchoolBannerTexture();
+    const schoolBanner = new THREE.Mesh(
+      new THREE.BoxGeometry(13.5, 1.9, 0.28),
+      new THREE.MeshStandardMaterial({
+        map: bannerTex,
+        emissive: new THREE.Color(0x1e293b),
+        emissiveIntensity: 0.45,
+        roughness: 0.4,
+      }),
+    );
+    schoolBanner.position.set(0, 6.25, 8.2);
+    scene.add(schoolBanner);
+
+    // เสาธงชาติไทยพิกเซลหน้าลานกิจกรรม
+    const flagGroup = new THREE.Group();
+    const poleMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.24, 7.2, 0.24),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.6, roughness: 0.3 }),
+    );
+    poleMesh.position.set(0, 3.6, 0);
+    const poleBase = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4, 0.45, 1.4),
+      new THREE.MeshStandardMaterial({ map: makePixelTexture(0x94a3b8, 18), roughness: 0.9 }),
+    );
+    poleBase.position.set(0, 0.225, 0);
+    flagGroup.add(poleMesh, poleBase);
+    const flagStripes: Array<[number, number, number]> = [
+      [0xdc2626, 0.2, 6.85],
+      [0xffffff, 0.2, 6.65],
+      [0x1d4ed8, 0.4, 6.35],
+      [0xffffff, 0.2, 6.05],
+      [0xdc2626, 0.2, 5.85],
+    ];
+    flagStripes.forEach(([hex, h, yPos]) => {
+      const stripe = new THREE.Mesh(
+        new THREE.BoxGeometry(1.85, h, 0.1),
+        new THREE.MeshStandardMaterial({ color: hex, roughness: 0.7 }),
+      );
+      stripe.position.set(1.02, yPos, 0);
+      flagGroup.add(stripe);
+    });
+    flagGroup.position.set(-11.5, 0, 13.5);
+    scene.add(flagGroup);
 
     // โครงหลังคาไม้แบบเปิดโล่ง (skylight) — คานหลัก + คานขวาง สีไม้อุ่นแทนสีเข้มเกือบดำ
     const roofBeams = new THREE.Group();
@@ -1915,10 +2024,158 @@ const VirtualClassroom: React.FC = () => {
         setStatus('ครูพักการเดินชั่วคราว');
         return;
       }
+      if (flyingRef.current) {
+        playerPosition.y = Math.min(BUILD_MAX_HEIGHT + 2, playerPosition.y + 1.35);
+        setStatus('🕊️ บินขึ้น (+1 ชั้น)');
+        return;
+      }
       if (!grounded) return;
       grounded = false;
       verticalVelocity = 8.2;
       setStatus('กระโดด!');
+    };
+
+    runCodeBuilderRef.current = (kind: string, stepsCount: number) => {
+      if (!canParticipateRef.current) return;
+      if (!isTeacher && roomStateRef.current?.buildLocked) {
+        setStatus('ครูปิดโหมดสร้างชั่วคราว');
+        return;
+      }
+      const n = Math.max(2, Math.min(10, stepsCount || 5));
+      const fX = -Math.sin(yaw);
+      const fZ = -Math.cos(yaw);
+      const stepDx = Math.abs(fX) >= Math.abs(fZ) ? (fX >= 0 ? 1 : -1) : 0;
+      const stepDz = Math.abs(fZ) > Math.abs(fX) ? (fZ >= 0 ? 1 : -1) : 0;
+      const rightDx = -stepDz;
+      const rightDz = stepDx;
+      const anchorX = Math.floor(playerPosition.x + fX * 2.6) + 0.5;
+      const anchorZ = Math.floor(playerPosition.z + fZ * 2.6) + 0.5;
+      const baseY = Math.max(0.5, Math.floor(playerPosition.y - 1.7) + 0.5);
+      const mat = materialRef.current;
+      const candidates: WorldBlock[] = [];
+      let labelSummary = '';
+
+      const pushBlock = (
+        relForward: number,
+        relUp: number,
+        relRight: number,
+        blockMat: BlockMaterial,
+        extra?: Partial<Pick<WorldBlock, 'label' | 'powered'>>,
+      ) => {
+        const bx = anchorX + relForward * stepDx + relRight * rightDx;
+        const bz = anchorZ + relForward * stepDz + relRight * rightDz;
+        const by = baseY + relUp;
+        if (Math.abs(bx) > BUILD_BOUNDARY || Math.abs(bz) > BUILD_BOUNDARY || by > BUILD_MAX_HEIGHT - 0.5) return;
+        candidates.push({
+          id: `${playerId}_${Date.now()}_${candidates.length}_${Math.random().toString(36).slice(2, 6)}`,
+          x: bx,
+          y: by,
+          z: bz,
+          material: blockMat,
+          ownerId: playerId,
+          ownerName: displayName,
+          ...extra,
+          createdAt: Date.now(),
+        });
+      };
+
+      if (kind === 'wall_loop') {
+        for (let i = 0; i < n; i += 1) {
+          pushBlock(i, 0, 0, mat);
+          pushBlock(i, 1, 0, mat);
+        }
+        labelSummary = `รัน Loop สร้างกำแพง ${n} ช่องสำเร็จ!`;
+      } else if (kind === 'stairs_algo') {
+        for (let i = 0; i < n; i += 1) {
+          pushBlock(i, i, 0, mat);
+        }
+        labelSummary = `รัน Algorithm สร้างบันได ${n} ขั้นสำเร็จ!`;
+      } else if (kind === 'binary_tower') {
+        pushBlock(0, 0, -1, 'switch', { powered: true });
+        for (let i = 0; i < n; i += 1) {
+          pushBlock(0, i, 0, i % 2 === 0 ? mat : 'lamp');
+        }
+        labelSummary = `รันเงื่อนไข If-Else สร้างหอคอยเลขฐานสอง ${n} ชั้นพร้อมสวิตช์ 0/1!`;
+      } else if (kind === 'grid_nested') {
+        for (let r = 0; r < 4; r += 1) {
+          for (let c = -1; c <= 2; c += 1) {
+            pushBlock(r, 0, c, mat);
+          }
+        }
+        labelSummary = 'รัน Nested Loop 2 มิติ สร้างลาน 4×4 สำเร็จ!';
+      } else if (kind === 'bp_pc') {
+        // โต๊ะ + หน้าจอคอม + เคส CPU + คีย์บอร์ด + ป้าย IPO
+        for (let c = -1; c <= 1; c += 1) pushBlock(1, 0, c, 'wood');
+        for (let c = -1; c <= 1; c += 1) {
+          pushBlock(1, 1, c, 'stone');
+          pushBlock(1, 2, c, c === 0 ? 'lamp' : 'glass');
+        }
+        pushBlock(1, 1, 2, 'gold');
+        pushBlock(1, 2, 2, 'switch', { powered: true });
+        pushBlock(0, 0, 0, 'sign', { label: '🖥️ คอมพิวเตอร์ (Input→CPU→Output)' });
+        labelSummary = 'เสกแม่แบบ "คอมพิวเตอร์ยักษ์ 3D (Input → CPU → Output)" สำเร็จ!';
+      } else if (kind === 'bp_smarthome') {
+        for (let f = 0; f <= 3; f += 1) {
+          for (let r = -1; r <= 2; r += 1) {
+            const isEdge = f === 0 || f === 3 || r === -1 || r === 2;
+            const isDoor = f === 0 && r === 0;
+            if (isEdge && !isDoor) {
+              pushBlock(f + 1, 0, r, 'brick');
+              pushBlock(f + 1, 1, r, (f === 0 || f === 3) ? 'glass' : 'brick');
+            }
+            pushBlock(f + 1, 2, r, f === 1 && r === 0 ? 'lamp' : 'wood');
+          }
+        }
+        pushBlock(0, 0, -1, 'switch', { powered: true });
+        pushBlock(0, 0, 1, 'sign', { label: `🏠 Smart Home IoT ของ ${displayName}` });
+        labelSummary = 'เสกแม่แบบ "บ้านสมาร์ตโฮม IoT + สวิตช์ไฟ 0/1" สำเร็จ!';
+      } else if (kind === 'bp_robot') {
+        pushBlock(1, 0, -1, 'stone');
+        pushBlock(1, 0, 1, 'stone');
+        for (let r = -1; r <= 1; r += 1) {
+          pushBlock(1, 1, r, r === 0 ? 'switch' : 'gold', r === 0 ? { powered: true } : undefined);
+          pushBlock(1, 2, r, 'gold');
+        }
+        pushBlock(1, 3, -1, 'lamp');
+        pushBlock(1, 3, 0, 'stone');
+        pushBlock(1, 3, 1, 'lamp');
+        pushBlock(0, 0, 0, 'sign', { label: `🤖 หุ่นยนต์ AI ของ ${displayName}` });
+        labelSummary = 'เสกแม่แบบ "หุ่นยนต์โค้ดดิ้ง AI" สำเร็จ!';
+      } else if (kind === 'bp_parkour') {
+        pushBlock(0, 0, 0, 'speedpad');
+        pushBlock(1, 0, 0, 'jumppad');
+        pushBlock(3, 2, 0, 'gold');
+        pushBlock(4, 2, 0, 'jumppad');
+        pushBlock(6, 4, 0, 'ruby');
+        pushBlock(7, 4, 0, 'sign', { label: '🏁 เส้นชัย Parkour! พิชิตสำเร็จ' });
+        labelSummary = 'เสกแม่แบบ "ชุดด่าน Parkour อัลกอริทึม + เส้นชัย 🏁" สำเร็จ!';
+      } else if (kind === 'bp_pixelboard') {
+        for (let h = 0; h < 5; h += 1) {
+          for (let c = -2; c <= 2; c += 1) {
+            const isFrame = h === 0 || h === 4 || c === -2 || c === 2;
+            pushBlock(1, h, c, isFrame ? 'stone' : mat);
+          }
+        }
+        pushBlock(0, 0, 0, 'sign', { label: `🎨 กระดาน Pixel Art ของ ${displayName}` });
+        labelSummary = 'เสกแม่แบบ "กระดานวาดภาพ Pixel Art 5×5" สำเร็จ!';
+      }
+
+      void addWorldBlocksBatch(roomId, candidates).then((addedCount) => {
+        if (addedCount === 0) {
+          setStatus('พื้นที่ด้านหน้ามีบล็อกเต็มหรือติดขอบแผนที่ ลองขยับไปลานโล่ง ๆ นะ');
+          return;
+        }
+        celebrate();
+        setCodeBuilderOpen(false);
+        setStatus(`🤖 ${labelSummary} (+${addedCount} บล็อก)`);
+        const unitNo = boards[0]?.unitNo || 1;
+        void recordActivity(
+          'artifact',
+          `u${unitNo}-codebuilder-${kind}`,
+          unitNo,
+          `เขียนโค้ดสร้างบล็อก 3D: ${labelSummary}`,
+        );
+      }).catch((err) => setStatus(err instanceof Error ? err.message : 'รันโค้ดสร้างไม่สำเร็จ'));
     };
     const publishPresence = (force = false, motionState: 'idle' | 'walk' | 'jump' = 'idle') => {
       void updateWorldPlayer({
@@ -1982,11 +2239,19 @@ const VirtualClassroom: React.FC = () => {
       pitch -= event.movementY * 0.0022;
       pitch = Math.max(-1.25, Math.min(1.25, pitch));
     };
+    let lastSpaceTapAt = 0;
     const onKeyDown = (event: KeyboardEvent) => {
       keysRef.current.add(event.code);
       if (event.code === 'KeyE') interactRef.current();
       if (event.code === 'KeyQ') placeRef.current();
       if (event.code === 'KeyR') removeRef.current();
+      if (event.code === 'KeyF' && canParticipateRef.current) {
+        const nextFly = !flyingRef.current;
+        flyingRef.current = nextFly;
+        setIsFlying(nextFly);
+        verticalVelocity = 0;
+        setStatus(nextFly ? '🕊️ เปิดโหมดบินสร้าง (กด Space บินขึ้น / Shift บินลง / F หรือ Space 2 ครั้งเพื่อลงพื้น)' : 'เดินบนพื้นปกติ');
+      }
       if (event.code.startsWith('Digit')) {
         const slot = Number(event.code.slice(5));
         if (slot >= 1 && slot <= MATERIALS.length) {
@@ -1996,7 +2261,18 @@ const VirtualClassroom: React.FC = () => {
       }
       if (event.code === 'Space') {
         event.preventDefault();
-        jumpRef.current();
+        const nowTap = performance.now();
+        if (!event.repeat && nowTap - lastSpaceTapAt < 340 && canParticipateRef.current) {
+          const nextFly = !flyingRef.current;
+          flyingRef.current = nextFly;
+          setIsFlying(nextFly);
+          verticalVelocity = 0;
+          lastSpaceTapAt = 0;
+          setStatus(nextFly ? '🕊️ เปิดโหมดบินสร้าง (กด Space ค้างบินขึ้น / Shift บินลง)' : 'ลงสู่พื้นปกติ');
+          return;
+        }
+        lastSpaceTapAt = nowTap;
+        if (!flyingRef.current) jumpRef.current();
       }
     };
     const onKeyUp = (event: KeyboardEvent) => keysRef.current.delete(event.code);
@@ -2187,8 +2463,20 @@ const VirtualClassroom: React.FC = () => {
         }
       }
 
-      verticalVelocity -= 20 * delta;
-      playerPosition.y += verticalVelocity * delta;
+      if (flyingRef.current && movementAllowed) {
+        verticalVelocity = 0;
+        grounded = false;
+        const flyUp = keys.has('Space') ? 1 : 0;
+        const flyDown = (keys.has('ShiftLeft') || keys.has('ShiftRight') || keys.has('KeyC')) ? 1 : 0;
+        playerPosition.y = THREE.MathUtils.clamp(
+          playerPosition.y + (flyUp - flyDown) * 6.8 * delta,
+          1.7,
+          BUILD_MAX_HEIGHT + 2.5,
+        );
+      } else {
+        verticalVelocity -= 20 * delta;
+        playerPosition.y += verticalVelocity * delta;
+      }
 
       // ตรวจสอบการชนศีรษะด้านบน (Ceiling Overhead Collision ป้องกันกระโดดทะลุเพดาน/บล็อก)
       if (verticalVelocity > 0) {
@@ -2470,6 +2758,38 @@ const VirtualClassroom: React.FC = () => {
           <span className="world-week-chip" title="แผนที่ประจำสัปดาห์นี้ รีเซ็ตอัตโนมัติทุกวันจันทร์">
             <Calendar size={13} /> {weekDisplayLabel}
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              const nextTime = worldTime === 'day' ? 'sunset' : worldTime === 'sunset' ? 'night' : 'day';
+              setWorldTime(nextTime);
+              applyWorldTimeRef.current(nextTime);
+              setStatus(
+                nextTime === 'night'
+                  ? '🌙 โหมดกลางคืนไซเบอร์ — บล็อกไฟนีออนและสวิตช์จะเรืองแสงชัดเจน!'
+                  : nextTime === 'sunset'
+                    ? '🌅 บรรยากาศยามเย็น'
+                    : '☀️ บรรยากาศกลางวันสดใส',
+              );
+            }}
+            title="สลับบรรยากาศ กลางวัน / ยามเย็น / กลางคืนไซเบอร์"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '3px 8px',
+              borderRadius: 6,
+              border: '1px solid #cbd5e1',
+              background: worldTime === 'night' ? '#0f172a' : worldTime === 'sunset' ? '#fff7ed' : '#f8fafc',
+              color: worldTime === 'night' ? '#fde047' : worldTime === 'sunset' ? '#c2410c' : '#334155',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            {worldTime === 'night' ? '🌙 กลางคืน' : worldTime === 'sunset' ? '🌅 ยามเย็น' : '☀️ กลางวัน'}
+          </button>
           {isTeacher && (
             <button
               className="world-remap-btn"
@@ -2797,6 +3117,18 @@ const VirtualClassroom: React.FC = () => {
         >
           <Hammer size={19} /><span>สร้าง</span>
         </button>
+        <button
+          className={codeBuilderOpen ? 'active' : ''}
+          onClick={() => {
+            if (document.pointerLockElement) document.exitPointerLock();
+            setCodeBuilderOpen((open) => !open);
+          }}
+          title="เขียนโค้ดสั่งบอทสร้างอัลกอริทึม & เสกแม่แบบวิชาคอมพิวเตอร์"
+          aria-label="โค้ดสร้าง"
+          disabled={!canParticipate || (!isTeacher && roomState.buildLocked)}
+        >
+          <span aria-hidden="true">🤖</span><span>โค้ดสร้าง</span>
+        </button>
       </div>
 
       <div className="world-materials" aria-label="แถบเลือกบล็อกและบล็อกวิเศษ" style={{ maxWidth: 'calc(100vw - 24px)', overflowX: 'auto' }}>
@@ -2833,8 +3165,22 @@ const VirtualClassroom: React.FC = () => {
         <button onClick={() => setThirdPerson((active) => !active)} title="สลับมุมมองตัวละคร" aria-label="สลับมุมมองตัวละคร" className={thirdPerson ? 'active' : ''}>
           <ScanFace size={20} />
         </button>
-        <button onClick={() => jumpRef.current()} title="กระโดด" aria-label="กระโดด" disabled={!canParticipate || (!isTeacher && roomState.movementLocked)}>
+        <button onClick={() => jumpRef.current()} title="กระโดด (กด Space 2 ครั้งติดกันเพื่อบินสร้างแบบมายคราฟ)" aria-label="กระโดด" disabled={!canParticipate || (!isTeacher && roomState.movementLocked)}>
           <ChevronsUp size={20} />
+        </button>
+        <button
+          onClick={() => {
+            const nextFly = !flyingRef.current;
+            flyingRef.current = nextFly;
+            setIsFlying(nextFly);
+            setStatus(nextFly ? '🕊️ เปิดโหมดบินสร้าง (กด Space บินขึ้น / Shift บินลง)' : 'ลงสู่พื้นปกติ');
+          }}
+          title="โหมดบินสร้างแบบมายคราฟ (กด F หรือกด Space 2 ครั้ง)"
+          aria-label="โหมดบินสร้าง"
+          className={isFlying ? 'active' : ''}
+          disabled={!canParticipate || (!isTeacher && roomState.movementLocked)}
+        >
+          <span style={{ fontSize: '1.05rem', lineHeight: 1 }} aria-hidden="true">🕊️</span>
         </button>
         <button onClick={() => interactRef.current()} title="โต้ตอบกับสไลด์ สถานีเกม สวิตช์ 0/1 หรือป้ายชื่อผลงาน (กด E)" aria-label="โต้ตอบกับสไลด์หรือเกม" disabled={!canParticipate}>
           <Hand size={20} />
@@ -3501,6 +3847,302 @@ const VirtualClassroom: React.FC = () => {
                 onClick={() => setEditingSignBlock(null)}
               >
                 ปิด
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* หน้าต่าง KruJames Code Builder & แม่แบบวิชาคอมพิวเตอร์ */}
+      {codeBuilderOpen && (
+        <div
+          className="world-modal-backdrop"
+          onClick={() => setCodeBuilderOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="world-codebuilder-title"
+        >
+          <div
+            className="world-modal-card"
+            onClick={(event) => event.stopPropagation()}
+            style={{ maxWidth: 680, width: 'calc(100vw - 28px)', maxHeight: '88vh', overflowY: 'auto' }}
+          >
+            <div className="world-modal-header">
+              <div className="world-modal-title" style={{ color: '#1d4ed8' }}>
+                <span style={{ fontSize: '1.4rem' }}>🤖</span>
+                <h3 id="world-codebuilder-title">KruJames Code Builder · เขียนโค้ดสร้างโลก 3D</h3>
+              </div>
+              <button
+                className="world-modal-close-btn"
+                onClick={() => setCodeBuilderOpen(false)}
+                aria-label="ปิด"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              <button
+                type="button"
+                onClick={() => setCodeBuilderTab('algo')}
+                style={{
+                  flex: 1,
+                  padding: '9px 12px',
+                  borderRadius: 8,
+                  border: codeBuilderTab === 'algo' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                  background: codeBuilderTab === 'algo' ? '#eff6ff' : '#ffffff',
+                  color: codeBuilderTab === 'algo' ? '#1d4ed8' : '#475569',
+                  fontWeight: 800,
+                  fontSize: '0.88rem',
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                }}
+              >
+                🧩 โค้ดอัลกอริทึม (Loop & If-Else)
+              </button>
+              <button
+                type="button"
+                onClick={() => setCodeBuilderTab('blueprint')}
+                style={{
+                  flex: 1,
+                  padding: '9px 12px',
+                  borderRadius: 8,
+                  border: codeBuilderTab === 'blueprint' ? '2px solid #7c3aed' : '1px solid #cbd5e1',
+                  background: codeBuilderTab === 'blueprint' ? '#f5f3ff' : '#ffffff',
+                  color: codeBuilderTab === 'blueprint' ? '#6d28d9' : '#475569',
+                  fontWeight: 800,
+                  fontSize: '0.88rem',
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                }}
+              >
+                🖥️ เสกแม่แบบวิชาคอม (KruJames Craft)
+              </button>
+            </div>
+
+            {codeBuilderTab === 'algo' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                  }}
+                >
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>
+                    บล็อกที่ใช้สร้าง:{' '}
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: '2px 8px',
+                        borderRadius: 6,
+                        background: MATERIALS.find((m) => m.id === material)?.color || '#65a30d',
+                        color: '#fff',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+                      }}
+                    >
+                      {MATERIALS.find((m) => m.id === material)?.icon || '🧱'}{' '}
+                      {MATERIALS.find((m) => m.id === material)?.label}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 700 }}>
+                    <span>จำนวนรอบ (N):</span>
+                    {[3, 5, 7, 9].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setAlgoSteps(n)}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 6,
+                          border: algoSteps === n ? '2px solid #1d4ed8' : '1px solid #cbd5e1',
+                          background: algoSteps === n ? '#1d4ed8' : '#ffffff',
+                          color: algoSteps === n ? '#ffffff' : '#1e293b',
+                          fontWeight: 800,
+                          fontFamily: 'inherit',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
+                  {[
+                    {
+                      id: 'wall_loop',
+                      title: '🔁 Loop กำแพงเรียงลำดับ',
+                      concept: 'การทำซ้ำ (For Loop) ช่วยวางบล็อกแนวยาวแทนการคลิกทีละก้อน',
+                      code: `for step in range(${algoSteps}):\n  place_block(forward=step, height=2)`,
+                    },
+                    {
+                      id: 'stairs_algo',
+                      title: '🪜 Algorithm บันไดขึ้นฟ้า',
+                      concept: 'เพิ่มตำแหน่งแนวราบ (X/Z) และความสูง (Y) พร้อมกันทีละขั้น',
+                      code: `for step in range(${algoSteps}):\n  place_block(forward=step, up=step)`,
+                    },
+                    {
+                      id: 'binary_tower',
+                      title: '🔀 If-Else หอคอยเลขฐานสอง 0/1',
+                      concept: 'เงื่อนไขคู่/คี่ สลับบล็อกปกติกับไฟนีออน พร้อมสวิตช์ 0/1 ที่ฐาน',
+                      code: `for y in range(${algoSteps}):\n  if y % 2 == 0: place("${material}")\n  else: place("lamp")`,
+                    },
+                    {
+                      id: 'grid_nested',
+                      title: '🟦 Nested Loop ลาน 4×4',
+                      concept: 'ลูปซ้อนลูป 2 มิติ (แถว × คอลัมน์) สร้างพื้นอาคาร 16 บล็อกทันที',
+                      code: `for row in range(4):\n  for col in range(4):\n    place_block(row, col)`,
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: 8,
+                        padding: 12,
+                        borderRadius: 10,
+                        border: '1px solid #cbd5e1',
+                        background: '#ffffff',
+                      }}
+                    >
+                      <div>
+                        <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>{item.title}</strong>
+                        <p style={{ margin: '4px 0 8px', fontSize: '0.78rem', color: '#475569', lineHeight: 1.4 }}>
+                          {item.concept}
+                        </p>
+                        <pre
+                          style={{
+                            margin: 0,
+                            padding: '7px 9px',
+                            borderRadius: 6,
+                            background: '#0f172a',
+                            color: '#38bdf8',
+                            fontSize: '0.74rem',
+                            overflowX: 'auto',
+                          }}
+                        >
+                          <code>{item.code}</code>
+                        </pre>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => runCodeBuilderRef.current(item.id, algoSteps)}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: 7,
+                          border: 0,
+                          background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                          color: '#ffffff',
+                          fontWeight: 800,
+                          fontSize: '0.84rem',
+                          fontFamily: 'inherit',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        ▶ รันโค้ดสร้างตรงหน้า
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 10 }}>
+                {[
+                  {
+                    id: 'bp_pc',
+                    icon: '🖥️',
+                    title: 'คอมพิวเตอร์ยักษ์ 3D (IPO)',
+                    desc: 'ชุดโต๊ะคอมพิวเตอร์ เคส CPU หน้าจอไฟนีออน และสวิตช์เปิดเครื่อง เรียนรู้ Input → Process → Output',
+                  },
+                  {
+                    id: 'bp_smarthome',
+                    icon: '🏠',
+                    title: 'บ้านสมาร์ตโฮม IoT + สวิตช์ 0/1',
+                    desc: 'โครงบ้านอิฐมีหน้าต่างกระจก โคมไฟเพดาน และสวิตช์ลอจิกหน้าประตูที่กดเปิด-ปิดไฟบ้านได้จริง',
+                  },
+                  {
+                    id: 'bp_robot',
+                    icon: '🤖',
+                    title: 'หุ่นยนต์โค้ดดิ้ง AI ประจำห้อง',
+                    desc: 'หุ่นยนต์พิกเซลสีทองมีดวงตาไฟนีออนและสวิตช์แกนพลังงานที่หน้าอก พร้อมป้ายชื่อผู้สร้าง',
+                  },
+                  {
+                    id: 'bp_parkour',
+                    icon: '🚀',
+                    title: 'ชุดด่าน Parkour อัลกอริทึม',
+                    desc: 'ลู่เร่งสปีด + แท่นสปริงเด้งสูง + แท่นลอยฟ้า 3 ระดับ พร้อมป้าย 🏁 เส้นชัยจุดพลุฉลองบนยอด',
+                  },
+                  {
+                    id: 'bp_pixelboard',
+                    icon: '🎨',
+                    title: 'กระดานวาดภาพ Pixel Art 5×5',
+                    desc: 'กรอบกระดานแนวตั้งพร้อมป้ายชื่อแกลเลอรี ให้ทุบ/แต้มสีบล็อกวาดเป็นรูปพิกเซลโชว์เพื่อน',
+                  },
+                ].map((bp) => (
+                  <div
+                    key={bp.id}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                      padding: 12,
+                      borderRadius: 10,
+                      border: '1px solid #ddd6fe',
+                      background: '#faf5ff',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '1.45rem', marginBottom: 4 }}>{bp.icon}</div>
+                      <strong style={{ fontSize: '0.92rem', color: '#4c1d95' }}>{bp.title}</strong>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#5b21b6', lineHeight: 1.42 }}>
+                        {bp.desc}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => runCodeBuilderRef.current(bp.id, algoSteps)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: 7,
+                        border: 0,
+                        background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                        color: '#ffffff',
+                        fontWeight: 800,
+                        fontSize: '0.84rem',
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ✨ เสกแม่แบบตรงหน้า
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="world-modal-footer" style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                className="world-btn-cancel"
+                onClick={() => setCodeBuilderOpen(false)}
+              >
+                ปิดหน้าต่าง
               </button>
             </div>
           </div>

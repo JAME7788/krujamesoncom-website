@@ -429,6 +429,44 @@ export const addWorldBlock = async (
   return true;
 };
 
+export const addWorldBlocksBatch = async (
+  roomId: string,
+  candidateBlocks: WorldBlock[],
+  weekKey = getWorldWeekKey(),
+): Promise<number> => {
+  const docId = getWorldDocId(roomId, weekKey);
+  const current = getLocalWorldBlocks(roomId, weekKey);
+  const occupied = new Set(current.map((item) => `${item.x},${item.y},${item.z}`));
+  const added: WorldBlock[] = [];
+  for (const block of candidateBlocks) {
+    if (current.length + added.length >= MAX_WORLD_BLOCKS) break;
+    const key = `${block.x},${block.y},${block.z}`;
+    if (occupied.has(key)) continue;
+    occupied.add(key);
+    added.push(block);
+  }
+  if (added.length === 0) return 0;
+  const next = [...current, ...added];
+  writeLocal(blockKey(roomId, weekKey), next);
+  emitWorldBlocks(roomId, weekKey);
+  if (!firebaseAvailable()) return added.length;
+  try {
+    const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
+      roomId,
+      weekKey,
+      blocks: arrayUnion(...added),
+      updatedAt: Date.now(),
+    }, { merge: true });
+    await Promise.race([
+      writePromise,
+      new Promise((resolve) => setTimeout(resolve, 1800)),
+    ]);
+  } catch (error) {
+    console.warn('batch blocks saved locally only', error);
+  }
+  return added.length;
+};
+
 export const removeWorldBlock = async (
   roomId: string,
   block: WorldBlock,

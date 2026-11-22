@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import {
   clearWorldBlocks,
   addWorldBlock,
+  addWorldBlocksBatch,
   removeWorldBlock,
   updateWorldBlock,
   createPlayerPresenceTracker,
@@ -124,6 +125,19 @@ describe('Virtual Classroom Weekly Remap & Partitioning', () => {
       const blocks = getLocalWorldBlocks(roomId, weekKey);
       expect(blocks.find((b) => b.id === 'sw_1')?.powered).toBe(false);
       expect(blocks.find((b) => b.id === 'sign_1')?.label).toBe('🏁 เส้นชัย Parkour!');
+    });
+
+    it('รองรับการรันโค้ดสร้างบล็อกเป็นชุด (addWorldBlocksBatch) สำหรับ KruJames Code Builder และแม่แบบวิชาคอม', async () => {
+      const roomId = 'test-room-codebuilder';
+      const weekKey = '2026-W36';
+      const batch: WorldBlock[] = [
+        { id: 'cb_1', x: 0.5, y: 0.5, z: 0.5, material: 'wood', ownerId: 'student_1', createdAt: 1 },
+        { id: 'cb_2', x: 1.5, y: 1.5, z: 0.5, material: 'lamp', ownerId: 'student_1', createdAt: 2 },
+        { id: 'cb_dup', x: 0.5, y: 0.5, z: 0.5, material: 'stone', ownerId: 'student_1', createdAt: 3 },
+      ];
+      const addedCount = await addWorldBlocksBatch(roomId, batch, weekKey);
+      expect(addedCount).toBe(2);
+      expect(getLocalWorldBlocks(roomId, weekKey)).toHaveLength(2);
     });
   });
 
