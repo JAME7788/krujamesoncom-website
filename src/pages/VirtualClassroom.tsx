@@ -228,6 +228,84 @@ const BUILD_MISSIONS: BuildMission[] = [
   { id: 'parkour1', icon: '🚀', title: 'นักออกแบบด่าน Parkour', concept: 'ออกแบบลำดับขั้นและจุดหมายให้เพื่อนร่วมชั้นทดลองเล่น', goal: 'วางสปริงหรือสปีด 2 ชิ้น และป้ายผลงาน 1 ป้าย', stars: 4, check: (s) => s.parkourCount >= 2 && s.signCount >= 1, progress: (s) => `สปริง/สปีด ${s.parkourCount}/2 · ป้าย ${s.signCount}/1` },
 ];
 
+type TechZoneId = 'zero_to_one' | 'matrix_cube' | 'how_computer_works' | 'wireless_5g' | 'green_studio';
+
+interface TechZoneInfo {
+  id: TechZoneId;
+  icon: string;
+  shortTitle: string;
+  title: string;
+  subtitle: string;
+  accent: string;
+  x: number;
+  z: number;
+  lookX: number;
+  lookZ: number;
+}
+
+const TECH_ZONES: TechZoneInfo[] = [
+  {
+    id: 'zero_to_one',
+    icon: '0️⃣',
+    shortTitle: 'Zero to One 0/1',
+    title: 'DIGITAL PLAYGROUND · FROM ZERO TO ONE',
+    subtitle: '0 และ 1 สร้างความเป็นไปได้ไม่สิ้นสุด · แท่นโฮโลแกรม BINARY & ไทม์ไลน์คอมพิวเตอร์ 1936–ปัจจุบัน',
+    accent: '#06b6d4',
+    x: 0,
+    z: 13.2,
+    lookX: 0,
+    lookZ: 17.5,
+  },
+  {
+    id: 'matrix_cube',
+    icon: '🟢',
+    shortTitle: 'ห้องเมทริกซ์ 0/1',
+    title: 'Matrix Binary Room & อุโมงค์ไฟอินฟินิตี้ LED',
+    subtitle: 'เบื้องหลังภาพ เสียง AI และโลก Metaverse ล้วนเกิดจากสายธารข้อมูลรหัสฐานสอง 0 และ 1',
+    accent: '#10b981',
+    x: -15.2,
+    z: -1,
+    lookX: -19.5,
+    lookZ: -1,
+  },
+  {
+    id: 'how_computer_works',
+    icon: '🧠',
+    shortTitle: 'คอมทำงานอย่างไร',
+    title: 'HOW COMPUTER WORKS? · คอมพิวเตอร์กับร่างกายมนุษย์',
+    subtitle: 'เปรียบเทียบอุปกรณ์คอมพิวเตอร์กับอวัยวะในร่างกาย และระบบ Input → Memory/CPU → Output',
+    accent: '#f59e0b',
+    x: 15.2,
+    z: -1,
+    lookX: 19.5,
+    lookZ: -1,
+  },
+  {
+    id: 'wireless_5g',
+    icon: '📡',
+    shortTitle: 'ไร้สาย 1G–5G',
+    title: 'Evolution of Wireless Networks · วิวัฒนาการ 1G สู่ 5G',
+    subtitle: 'จากมือถืออนาล็อกยุค 1980s สู่เครือข่ายอัจฉริยะ 5G ความเร็วสูงเชื่อมต่อ IoT และ Smart City',
+    accent: '#8b5cf6',
+    x: -15.2,
+    z: 12.5,
+    lookX: -19.5,
+    lookZ: 12.5,
+  },
+  {
+    id: 'green_studio',
+    icon: '🎬',
+    shortTitle: 'สตูดิโอ Green Screen',
+    title: 'KruJames Studio · สตูดิโอถ่ายทอดสด & ฉาก Green Screen',
+    subtitle: 'เรียนรู้เทคนิค Chroma Key ตัดพื้นหลังสีเขียวเปลี่ยนเป็นฉากโลกอนาคต อวกาศ และห้องข่าวดิจิทัล',
+    accent: '#16a34a',
+    x: 15.2,
+    z: 12.5,
+    lookX: 19.5,
+    lookZ: 12.5,
+  },
+];
+
 const WORLD_SIZE = 96;
 const BUILD_REACH = 15;
 const BUILD_BOUNDARY = 46;
@@ -445,6 +523,12 @@ const VirtualClassroom: React.FC = () => {
   const [codeBuilderOpen, setCodeBuilderOpen] = useState(false);
   const [codeBuilderTab, setCodeBuilderTab] = useState<'algo' | 'blueprint'>('algo');
   const [algoSteps, setAlgoSteps] = useState(5);
+  const [activeTechZone, setActiveTechZone] = useState<TechZoneInfo | null>(null);
+  const [binaryBits, setBinaryBits] = useState<[number, number, number, number]>([0, 1, 0, 1]);
+  const [selectedOrganIdx, setSelectedOrganIdx] = useState(0);
+  const [selectedGenG, setSelectedGenG] = useState<'1G' | '2G' | '3G' | '4G' | '5G'>('5G');
+  const [studioBackdropIdx, setStudioBackdropIdx] = useState(0);
+  const teleportToTechZoneRef = useRef<(zone: TechZoneInfo, openModal?: boolean) => void>(() => undefined);
   const [mode, setMode] = useState<WorldMode>('build');
   const [material, setMaterial] = useState<BlockMaterial>('grass');
   const [teacherRoom, setTeacherRoom] = useState(user?.classroom || 'ป.1');
@@ -1268,6 +1352,431 @@ const VirtualClassroom: React.FC = () => {
     flagGroup.position.set(-11.5, 0, 13.5);
     scene.add(flagGroup);
 
+    // =========================================================================
+    // 🌐 5 โซนโลกเทคโนโลยีสารสนเทศ 3D (DIGITAL PLAYGROUND: FROM ZERO TO ONE)
+    // =========================================================================
+    const techExhibitMeshes: THREE.Object3D[] = [];
+    const techAnimatedObjects: Array<(now: number, delta: number) => void> = [];
+
+    const makeExhibitPosterTexture = (
+      bgTop: string,
+      bgBottom: string,
+      borderHex: string,
+      badgeText: string,
+      headline: string,
+      subHeadline: string,
+      lines: string[],
+    ) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 640;
+      const ctx = canvas.getContext('2d')!;
+      const grad = ctx.createLinearGradient(0, 0, 0, 640);
+      grad.addColorStop(0, bgTop);
+      grad.addColorStop(1, bgBottom);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1024, 640);
+      ctx.strokeStyle = borderHex;
+      ctx.lineWidth = 12;
+      ctx.strokeRect(10, 10, 1004, 620);
+      ctx.fillStyle = borderHex;
+      ctx.fillRect(42, 38, 420, 54);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '800 28px Sarabun, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(badgeText, 60, 65);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 54px Sarabun, sans-serif';
+      ctx.fillText(headline, 44, 148);
+      ctx.fillStyle = borderHex;
+      ctx.font = '700 32px Sarabun, sans-serif';
+      ctx.fillText(subHeadline, 44, 208);
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '600 28px Sarabun, sans-serif';
+      lines.forEach((line, idx) => {
+        ctx.fillText(line, 52, 280 + idx * 54);
+      });
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.fillRect(42, 546, 940, 56);
+      ctx.fillStyle = '#fde047';
+      ctx.font = '800 26px Sarabun, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('✨ คลิกซ้าย หรือกดปุ่ม [E / ✋] เพื่อเปิดห้องทดลองอินเทอร์แอกทีฟ (+2⭐)', 512, 575);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      pixelTextures.push(texture);
+      return texture;
+    };
+
+    const tagExhibitGroup = (root: THREE.Object3D, zone: TechZoneInfo) => {
+      root.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          child.userData = { kind: 'tech_exhibit', techZone: zone };
+          techExhibitMeshes.push(child);
+        }
+      });
+    };
+
+    // เส้นลายวงจรดิจิทัลเรืองแสงเชื่อมลานกลางไปสู่ทั้ง 5 โซนเทคโนโลยี
+    const circuitTraceMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+    [
+      [0, 12.5, 0.45, 7],
+      [-9.5, 12.5, 16, 0.35],
+      [9.5, 12.5, 16, 0.35],
+      [-14.5, 5.5, 0.35, 14],
+      [14.5, 5.5, 0.35, 14],
+    ].forEach(([cx, cz, cw, cd]) => {
+      const trace = new THREE.Mesh(new THREE.BoxGeometry(cw, 0.05, cd), circuitTraceMat);
+      trace.position.set(cx, 0.03, cz);
+      scene.add(trace);
+    });
+
+    // --- ZONE 1: DIGITAL PLAYGROUND · FROM ZERO TO ONE (x = 0, z = 16.5) ---
+    const zone1Info = TECH_ZONES[0];
+    const zone1Group = new THREE.Group();
+    const neonZeroMat = new THREE.MeshStandardMaterial({
+      color: 0xf43f5e,
+      emissive: new THREE.Color(0xe11d48),
+      emissiveIntensity: 0.9,
+      roughness: 0.2,
+    });
+    const neonOneMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: new THREE.Color(0x0284c7),
+      emissiveIntensity: 0.9,
+      roughness: 0.2,
+    });
+    // เลข 0 นีออนสีชมพู-แดง
+    const zeroGroup = new THREE.Group();
+    [
+      [-0.75, 2.2, 0.42, 3.2],
+      [0.75, 2.2, 0.42, 3.2],
+      [0, 3.6, 1.92, 0.42],
+      [0, 0.8, 1.92, 0.42],
+    ].forEach(([zx, zy, zw, zh]) => {
+      const seg = new THREE.Mesh(new THREE.BoxGeometry(zw, zh, 0.45), neonZeroMat);
+      seg.position.set(zx, zy, 0);
+      zeroGroup.add(seg);
+    });
+    zeroGroup.position.set(-2.5, 0, 18.2);
+    // เลข 1 นีออนสีฟ้าไซเบอร์
+    const oneGroup = new THREE.Group();
+    const oneStem = new THREE.Mesh(new THREE.BoxGeometry(0.48, 3.2, 0.45), neonOneMat);
+    oneStem.position.set(0, 2.2, 0);
+    const oneTop = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.42, 0.45), neonOneMat);
+    oneTop.position.set(-0.25, 3.58, 0);
+    const oneBase = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.42, 0.45), neonOneMat);
+    oneBase.position.set(0, 0.8, 0);
+    oneGroup.add(oneStem, oneTop, oneBase);
+    oneGroup.position.set(2.5, 0, 18.2);
+
+    // ป้ายซุ้มโค้ง FROM ZERO TO ONE + แท่นโฮโลแกรมวงกลม BINARY
+    const zeroOnePoster = new THREE.Mesh(
+      new THREE.BoxGeometry(7.6, 1.6, 0.25),
+      new THREE.MeshStandardMaterial({
+        map: makeExhibitPosterTexture(
+          '#090d16',
+          '#1e1b4b',
+          '#38bdf8',
+          'NSM · DIGITAL PLAYGROUND',
+          'FROM ZERO TO ONE (0 และ 1)',
+          'เบื้องหลังการทำงานของโลกดิจิทัล คือ “รหัสฐานสอง”',
+          [
+            '• 0 (ปิด) และ 1 (เปิด) สร้างข้อความ ภาพ เสียง AI และ Metaverse',
+            '• 1936 Turing Machine → 1946 ENIAC → 1947 Transistor',
+            '• 1958 Integrated Circuit (IC) → 1971 Microprocessor → 1980 PC',
+          ],
+        ),
+        emissive: new THREE.Color(0x0ea5e9),
+        emissiveIntensity: 0.25,
+      }),
+    );
+    zeroOnePoster.position.set(0, 4.75, 18.2);
+
+    const holoBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.55, 1.7, 0.88, 24),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.35 }),
+    );
+    holoBase.position.set(0, 0.44, 15.2);
+    const makeHoloDiscTexture = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 512;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, 512, 512);
+      const rings: Array<[number, string]> = [
+        [240, '#a3e635'],
+        [195, '#38bdf8'],
+        [145, '#0ea5e9'],
+        [95, '#f43f5e'],
+      ];
+      rings.forEach(([r, col]) => {
+        ctx.beginPath();
+        ctx.arc(256, 256, r, 0, Math.PI * 2);
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 16;
+        ctx.stroke();
+      });
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 46px Sarabun, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('BINARY 0/1', 256, 225);
+      ctx.fillStyle = '#a3e635';
+      ctx.font = '700 28px Sarabun, sans-serif';
+      ctx.fillText('คลิกทดลองถอดรหัส', 256, 282);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      pixelTextures.push(tex);
+      return tex;
+    };
+    const holoDisc = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.48, 1.48, 0.08, 24),
+      new THREE.MeshStandardMaterial({
+        map: makeHoloDiscTexture(),
+        emissive: new THREE.Color(0x22d3ee),
+        emissiveIntensity: 0.65,
+      }),
+    );
+    holoDisc.position.set(0, 0.92, 15.2);
+    zone1Group.add(zeroGroup, oneGroup, zeroOnePoster, holoBase, holoDisc);
+    tagExhibitGroup(zone1Group, zone1Info);
+    scene.add(zone1Group);
+    techAnimatedObjects.push((now, delta) => {
+      holoDisc.rotation.y += delta * 0.95;
+      zeroGroup.position.y = Math.sin(now * 0.0022) * 0.12;
+      oneGroup.position.y = Math.cos(now * 0.0022) * 0.12;
+    });
+
+    // --- ZONE 2: MATRIX BINARY 0/1 ROOM & INFINITY LED CUBE (x = -19.5, z = -1) ---
+    const zone2Info = TECH_ZONES[1];
+    const zone2Group = new THREE.Group();
+    const makeMatrixWallTexture = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#02120a';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.font = '800 22px monospace';
+      for (let col = 0; col < 16; col += 1) {
+        for (let row = 0; row < 18; row += 1) {
+          const bit = (col * 7 + row * 13) % 2 === 0 ? '1' : '0';
+          ctx.fillStyle = (row + col) % 4 === 0 ? '#86efac' : '#16a34a';
+          ctx.fillText(bit, 16 + col * 31, 24 + row * 28);
+        }
+      }
+      ctx.fillStyle = 'rgba(2, 18, 10, 0.72)';
+      ctx.fillRect(36, 175, 440, 155);
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(36, 175, 440, 155);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 42px Sarabun, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('DIGITAL PLAYGROUND', 256, 232);
+      ctx.fillStyle = '#4ade80';
+      ctx.font = '700 26px Sarabun, sans-serif';
+      ctx.fillText('ห้องเมทริกซ์ 0/1 & อุโมงค์ไฟอินฟินิตี้', 256, 286);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      pixelTextures.push(tex);
+      return tex;
+    };
+    const matrixTex = makeMatrixWallTexture();
+    const matrixWallMat = new THREE.MeshStandardMaterial({
+      map: matrixTex,
+      emissive: new THREE.Color(0x16a34a),
+      emissiveIntensity: 0.55,
+      roughness: 0.3,
+    });
+    const matrixFloor = new THREE.Mesh(
+      new THREE.BoxGeometry(6.2, 0.16, 6.2),
+      new THREE.MeshStandardMaterial({ color: 0x052e16, metalness: 0.65, roughness: 0.2 }),
+    );
+    matrixFloor.position.set(0, 0.08, 0);
+    const matrixBack = new THREE.Mesh(new THREE.BoxGeometry(0.25, 4.2, 6.2), matrixWallMat);
+    matrixBack.position.set(-3, 2.1, 0);
+    const matrixLeft = new THREE.Mesh(new THREE.BoxGeometry(6.2, 4.2, 0.25), matrixWallMat);
+    matrixLeft.position.set(0, 2.1, -3);
+    const matrixRight = new THREE.Mesh(new THREE.BoxGeometry(6.2, 4.2, 0.25), matrixWallMat);
+    matrixRight.position.set(0, 2.1, 3);
+    const ledPillars: THREE.Mesh[] = [];
+    const ledPillarMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: new THREE.Color(0x38bdf8),
+      emissiveIntensity: 0.95,
+    });
+    [[-1.6, -1.6], [-1.6, 1.6], [1.2, -1.6], [1.2, 1.6]].forEach(([px, pz]) => {
+      const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.9, 0.22), ledPillarMat);
+      pillar.position.set(px, 2.0, pz);
+      ledPillars.push(pillar);
+      zone2Group.add(pillar);
+    });
+    zone2Group.add(matrixFloor, matrixBack, matrixLeft, matrixRight);
+    zone2Group.position.set(-19.5, 0, -1);
+    tagExhibitGroup(zone2Group, zone2Info);
+    scene.add(zone2Group);
+
+    // --- ZONE 3: HOW COMPUTER WORKS? & น้องชิปสีส้มสวมหมวก (x = 19.5, z = -1) ---
+    const zone3Info = TECH_ZONES[2];
+    const zone3Group = new THREE.Group();
+    const hcwWall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 4.3, 6.8),
+      new THREE.MeshStandardMaterial({
+        map: makeExhibitPosterTexture(
+          '#d97706',
+          '#b45309',
+          '#fef08a',
+          'HOW COMPUTER WORKS?',
+          'คอมพิวเตอร์ทำงานอย่างไร?',
+          'เปรียบเทียบส่วนประกอบคอมพิวเตอร์กับอวัยวะในร่างกายของเรา',
+          [
+            '• 🧠 สมอง = ซีพียู (CPU) & แรม (RAM) ประมวลผลและจดจำข้อมูล',
+            '• 👁️ ดวงตา = กล้อง/สแกนเนอร์  |  👂 หู = ไมโครโฟน  |  👄 ปาก = ลำโพง',
+            '• 🖐️ มือ = คีย์บอร์ด & เมาส์   |  🩸 เส้นเลือด = สายไฟ & บัสข้อมูล',
+            '• 4 ยุคคอมพิวเตอร์: หลอดสุญญากาศ → ทรานซิสเตอร์ → IC → ไมโครโพรเซสเซอร์',
+          ],
+        ),
+        roughness: 0.5,
+      }),
+    );
+    hcwWall.position.set(2.2, 2.2, 0);
+    // มาสคอต "น้องชิปสีส้มสวมหมวก" 3D (จากภาพนิทรรศการ)
+    const chipMascot = new THREE.Group();
+    const chipBody = new THREE.Mesh(
+      new THREE.BoxGeometry(1.35, 1.15, 0.45),
+      new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.45 }),
+    );
+    chipBody.position.set(0, 1.35, 0);
+    const chipHatBrim = new THREE.Mesh(
+      new THREE.BoxGeometry(0.85, 0.12, 0.52),
+      new THREE.MeshStandardMaterial({ color: 0x172033 }),
+    );
+    chipHatBrim.position.set(0, 1.98, 0);
+    const chipHatTop = new THREE.Mesh(
+      new THREE.BoxGeometry(0.54, 0.42, 0.46),
+      new THREE.MeshStandardMaterial({ color: 0x172033 }),
+    );
+    chipHatTop.position.set(0, 2.24, 0);
+    const eyeGlassMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const leftGlass = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.48), eyeGlassMat);
+    leftGlass.position.set(-0.24, 1.45, 0);
+    const rightGlass = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.48), eyeGlassMat);
+    rightGlass.position.set(0.24, 1.45, 0);
+    chipMascot.add(chipBody, chipHatBrim, chipHatTop, leftGlass, rightGlass);
+    chipMascot.rotation.y = -Math.PI / 2;
+    chipMascot.position.set(0.5, 0, -2.2);
+    zone3Group.add(hcwWall, chipMascot);
+    zone3Group.position.set(19.5, 0, -1);
+    tagExhibitGroup(zone3Group, zone3Info);
+    scene.add(zone3Group);
+    techAnimatedObjects.push((now) => {
+      chipMascot.position.y = Math.abs(Math.sin(now * 0.003)) * 0.18;
+    });
+
+    // --- ZONE 4: วิวัฒนาการเครือข่ายไร้สาย 1G → 2G → 3G → 4G → 5G (x = -19.5, z = 12.5) ---
+    const zone4Info = TECH_ZONES[3];
+    const zone4Group = new THREE.Group();
+    const wirelessWall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 4.1, 6.6),
+      new THREE.MeshStandardMaterial({
+        map: makeExhibitPosterTexture(
+          '#3b0764',
+          '#065f46',
+          '#c084fc',
+          'EVOLUTION OF WIRELESS NETWORKS',
+          'วิวัฒนาการเครือข่ายไร้สาย 1G → 5G',
+          'จากยุคเสียงอนาล็อก 1980s สู่ยุค 5G IoT & Smart City',
+          [
+            '• 1G (1980s): โทรศัพท์มือถืออนาล็อกรุ่นกระติกน้ำ โทรคุยเสียงอย่างเดียว',
+            '• 2G (1990s): สัญญาณดิจิทัล ส่งข้อความ SMS   |   3G (2000s): อินเทอร์เน็ตมือถือ',
+            '• 4G (2010s): วิดีโอสตรีมมิง HD ความเร็วสูง   |   5G (2020s+): เชื่อมต่อ IoT & AI',
+          ],
+        ),
+        roughness: 0.45,
+      }),
+    );
+    wirelessWall.position.set(-2.2, 2.1, 0);
+    // โมเดลมือถือ 1G สีม่วงยุค 1980s บนแท่นจัดแสดง + เสาอากาศ 5G
+    const phonePedestal = new THREE.Mesh(
+      new THREE.BoxGeometry(1.1, 1.0, 1.1),
+      new THREE.MeshStandardMaterial({ color: 0xf8fafc }),
+    );
+    phonePedestal.position.set(-0.6, 0.5, -1.6);
+    const brickPhone1G = new THREE.Mesh(
+      new THREE.BoxGeometry(0.38, 0.85, 0.42),
+      new THREE.MeshStandardMaterial({ color: 0x6d28d9, roughness: 0.4 }),
+    );
+    brickPhone1G.position.set(-0.6, 1.42, -1.6);
+    const tower5G = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.16, 0.35, 5.2, 8),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.6, roughness: 0.3 }),
+    );
+    tower5G.position.set(-0.6, 2.6, 2.1);
+    const signalRing = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.18, 1.2),
+      new THREE.MeshBasicMaterial({ color: 0x22d3ee }),
+    );
+    signalRing.position.set(-0.6, 4.9, 2.1);
+    zone4Group.add(wirelessWall, phonePedestal, brickPhone1G, tower5G, signalRing);
+    zone4Group.position.set(-19.5, 0, 12.5);
+    tagExhibitGroup(zone4Group, zone4Info);
+    scene.add(zone4Group);
+    techAnimatedObjects.push((now, delta) => {
+      signalRing.rotation.y += delta * 2.2;
+      const pulse = 1 + Math.sin(now * 0.004) * 0.35;
+      signalRing.scale.set(pulse, 1, pulse);
+    });
+
+    // --- ZONE 5: KRUJAMES STUDIO · สตูดิโอถ่ายทอดสด & เวที GREEN SCREEN (x = 19.5, z = 12.5) ---
+    const zone5Info = TECH_ZONES[4];
+    const zone5Group = new THREE.Group();
+    const chromaGreenMat = new THREE.MeshStandardMaterial({
+      color: 0x16a34a,
+      emissive: new THREE.Color(0x15803d),
+      emissiveIntensity: 0.25,
+      roughness: 0.6,
+    });
+    const studioStage = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.2, 0.26, 24), chromaGreenMat);
+    studioStage.position.set(1.2, 0.13, 0);
+    const greenBackdrop = new THREE.Mesh(new THREE.BoxGeometry(0.28, 3.9, 5.6), chromaGreenMat);
+    greenBackdrop.position.set(3.4, 2.0, 0);
+    // โต๊ะเรียนไม้บนเวที Green Screen (เหมือนภาพที่ 8 ใน NSM Studio!)
+    const studioDesk = new THREE.Mesh(
+      new THREE.BoxGeometry(1.1, 0.82, 1.4),
+      new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7 }),
+    );
+    studioDesk.position.set(1.3, 0.65, 0);
+    // กล้องถ่ายทอดสดโทรทัศน์บนขาตั้ง (NSM / KruJames Studio Camera)
+    const camGroup = new THREE.Group();
+    const tripod = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.55, 1.45, 6),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a }),
+    );
+    tripod.position.set(0, 0.72, 0);
+    const camBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 0.55, 0.52),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5 }),
+    );
+    camBody.position.set(0, 1.62, 0);
+    const camMonitor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.45, 0.45),
+      new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        emissive: new THREE.Color(0x0284c7),
+        emissiveIntensity: 0.75,
+      }),
+    );
+    camMonitor.position.set(-0.1, 2.15, 0);
+    camGroup.add(tripod, camBody, camMonitor);
+    camGroup.position.set(-1.6, 0, 0);
+    zone5Group.add(studioStage, greenBackdrop, studioDesk, camGroup);
+    zone5Group.position.set(19.5, 0, 12.5);
+    tagExhibitGroup(zone5Group, zone5Info);
+    scene.add(zone5Group);
+
     // โครงหลังคาไม้แบบเปิดโล่ง (skylight) — คานหลัก + คานขวาง สีไม้อุ่นแทนสีเข้มเกือบดำ
     const roofBeams = new THREE.Group();
     const beamMaterial = new THREE.MeshStandardMaterial({
@@ -1882,6 +2391,7 @@ const VirtualClassroom: React.FC = () => {
         ...boardMeshes,
         ...gameMeshes,
         ...portalMeshes,
+        ...techExhibitMeshes,
         ...blockMeshes.values(),
         ...avatarTargets,
       ];
@@ -1997,6 +2507,14 @@ const VirtualClassroom: React.FC = () => {
           }
           return;
         }
+      }
+      if (hit && hit.object.userData.kind === 'tech_exhibit' && hit.distance <= 26) {
+        if (document.pointerLockElement) document.exitPointerLock();
+        const zone = hit.object.userData.techZone as TechZoneInfo;
+        setActiveTechZone(zone);
+        const unitNo = boards[0]?.unitNo || 1;
+        void recordActivity('slide', `u${unitNo}-techexhibit-${zone.id}`, unitNo, `สำรวจนิทรรศการโลกเทคโนโลยี: ${zone.title}`);
+        return;
       }
       if (hit && hit.object.userData.kind === 'portal' && hit.distance <= 24) {
         if (document.pointerLockElement) document.exitPointerLock();
@@ -2219,6 +2737,24 @@ const VirtualClassroom: React.FC = () => {
       publishPresence(true, 'idle');
       setStatus(`เดินไปหา ${target.role === 'teacher' ? 'ครู ' : ''}${target.name} แล้ว`);
     };
+    teleportToTechZoneRef.current = (zone: TechZoneInfo, openModal = false) => {
+      if (!zone) return;
+      playerPosition.set(zone.x, 1.7, zone.z);
+      verticalVelocity = 0;
+      grounded = true;
+      flyingRef.current = false;
+      setIsFlying(false);
+      const dx = zone.lookX - zone.x;
+      const dz = zone.lookZ - zone.z;
+      yaw = Math.atan2(-dx, -dz);
+      pitch = 0;
+      publishPresence(true, 'idle');
+      setStatus(`🏛️ วาร์ปมายังโซน "${zone.shortTitle}" แล้ว — คลิกที่นิทรรศการเพื่อทดลองเล่น!`);
+      if (openModal) {
+        if (document.pointerLockElement) document.exitPointerLock();
+        setActiveTechZone(zone);
+      }
+    };
 
     // ส่งสถานะเข้าห้องทันทีที่โหลดฉาก และส่งซ้ำเป็นระยะแม้แท็บอยู่เบื้องหลัง
     publishPresence(true, 'idle');
@@ -2294,7 +2830,7 @@ const VirtualClassroom: React.FC = () => {
         const kind = hit?.object.userData.kind;
         const targetBlock = kind === 'block' ? blockData.get(hit?.object.userData.blockId as string) : undefined;
         if (kind === 'portal') { if (document.pointerLockElement) document.exitPointerLock(); setGamesPanelOpen(true); }
-        else if (kind === 'board' || kind === 'game') interactRef.current();
+        else if (kind === 'board' || kind === 'game' || kind === 'tech_exhibit') interactRef.current();
         else if (modeRef.current === 'explore' && (targetBlock?.material === 'switch' || targetBlock?.material === 'sign')) interactRef.current();
         else removeRef.current();
       } else if (event.button === 2) {
@@ -2591,6 +3127,7 @@ const VirtualClassroom: React.FC = () => {
         prop.rotation.y += delta * (0.65 + index * 0.08);
         prop.position.y = prop.userData.baseY + Math.sin(now * 0.0018 + index) * 0.08;
       });
+      techAnimatedObjects.forEach((fn) => fn(now, delta));
 
       collectibles.forEach((star, index) => {
         star.rotation.y += delta * 1.8;
@@ -2871,6 +3408,51 @@ const VirtualClassroom: React.FC = () => {
             )}
           </div>
         )}
+
+        <div
+          className="world-techzones-bar"
+          aria-label="โซนนิทรรศการโลกเทคโนโลยี (คลิกเพื่อวาร์ปไปชม)"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            flexWrap: 'wrap',
+            padding: '4px 9px',
+            borderRadius: 999,
+            background: 'rgba(15, 23, 42, 0.88)',
+            border: '1px solid rgba(56, 189, 248, 0.45)',
+            backdropFilter: 'blur(8px)',
+            color: '#fff',
+            fontSize: '0.75rem',
+          }}
+        >
+          <span style={{ fontWeight: 800, color: '#38bdf8' }}>🏛️ โลกเทคโนโลยี:</span>
+          {TECH_ZONES.map((zone) => (
+            <button
+              key={zone.id}
+              type="button"
+              onClick={() => teleportToTechZoneRef.current(zone, true)}
+              title={`วาร์ปไปโซน ${zone.title}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '2px 8px',
+                borderRadius: 999,
+                border: `1px solid ${zone.accent}`,
+                background: 'rgba(255, 255, 255, 0.1)',
+                color: '#ffffff',
+                fontSize: '0.73rem',
+                fontWeight: 700,
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+              }}
+            >
+              <span>{zone.icon}</span>
+              <span>{zone.shortTitle}</span>
+            </button>
+          ))}
+        </div>
       </header>
 
       {pointerLocked && (
@@ -4141,6 +4723,403 @@ const VirtualClassroom: React.FC = () => {
                 type="button"
                 className="world-btn-cancel"
                 onClick={() => setCodeBuilderOpen(false)}
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* หน้าต่างสำรวจนิทรรศการโลกเทคโนโลยี 3D (NSM Digital Playground: From Zero to One) */}
+      {activeTechZone && (
+        <div
+          className="world-modal-backdrop"
+          onClick={() => setActiveTechZone(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="world-techzone-title"
+        >
+          <div
+            className="world-modal-card"
+            onClick={(event) => event.stopPropagation()}
+            style={{ maxWidth: 720, width: 'calc(100vw - 28px)', maxHeight: '88vh', overflowY: 'auto' }}
+          >
+            <div className="world-modal-header">
+              <div className="world-modal-title" style={{ color: activeTechZone.accent }}>
+                <span style={{ fontSize: '1.5rem' }}>{activeTechZone.icon}</span>
+                <div>
+                  <h3 id="world-techzone-title" style={{ margin: 0 }}>{activeTechZone.title}</h3>
+                  <small style={{ color: '#64748b', fontWeight: 600 }}>{activeTechZone.subtitle}</small>
+                </div>
+              </div>
+              <button
+                className="world-modal-close-btn"
+                onClick={() => setActiveTechZone(null)}
+                aria-label="ปิด"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* แถบเลือกสลับทั้ง 5 โซนภายในหน้าต่าง */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+              {TECH_ZONES.map((z) => (
+                <button
+                  key={z.id}
+                  type="button"
+                  onClick={() => teleportToTechZoneRef.current(z, true)}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 999,
+                    border: activeTechZone.id === z.id ? `2px solid ${z.accent}` : '1px solid #cbd5e1',
+                    background: activeTechZone.id === z.id ? '#0f172a' : '#f8fafc',
+                    color: activeTechZone.id === z.id ? '#ffffff' : '#334155',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {z.icon} {z.shortTitle}
+                </button>
+              ))}
+            </div>
+
+            {activeTechZone.id === 'zero_to_one' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ padding: 14, borderRadius: 12, background: '#0f172a', color: '#fff', border: '2px solid #38bdf8' }}>
+                  <div style={{ fontWeight: 800, color: '#38bdf8', marginBottom: 8 }}>
+                    🎛️ แท่นโฮโลแกรม BINARY 0/1 · ลองกดสลับสวิตช์บิต (4-Bit Decoder)
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap', margin: '10px 0' }}>
+                    {binaryBits.map((bit, idx) => {
+                      const placeVal = 8 >> idx;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            const next: [number, number, number, number] = [...binaryBits] as [number, number, number, number];
+                            next[idx] = bit === 1 ? 0 : 1;
+                            setBinaryBits(next);
+                          }}
+                          style={{
+                            width: 68,
+                            padding: '10px 6px',
+                            borderRadius: 10,
+                            border: bit === 1 ? '2px solid #38bdf8' : '2px solid #f43f5e',
+                            background: bit === 1 ? 'rgba(56, 189, 248, 0.22)' : 'rgba(244, 63, 94, 0.18)',
+                            color: '#ffffff',
+                            fontWeight: 900,
+                            fontSize: '1.25rem',
+                            fontFamily: 'inherit',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <div>{bit}</div>
+                          <small style={{ fontSize: '0.68rem', color: '#cbd5e1', fontWeight: 700 }}>หลัก {placeVal}</small>
+                        </button>
+                      );
+                    })}
+                    <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#a3e635', padding: '0 8px' }}>
+                      = เลขฐานสิบ: {binaryBits[0] * 8 + binaryBits[1] * 4 + binaryBits[2] * 2 + binaryBits[3] * 1}
+                    </div>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#cbd5e1', textAlign: 'center' }}>
+                    รหัสฐานสองใช้เพียงเลข <strong>0 (ปิด)</strong> และ <strong>1 (เปิด)</strong> เป็นจุดกำเนิดของคอมพิวเตอร์ ปัญญาประดิษฐ์ (AI) และโลกเสมือน (Metaverse)
+                  </p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
+                  {[
+                    ['1936 · Turing Machine', 'อลัน ทัวริง คิดค้นแบบจำลองเครื่องจักรทัวริง ต้นแบบคอมพิวเตอร์ที่ทำงานตามอัลกอริทึม'],
+                    ['1946 · ENIAC (เอนิแอก)', 'คอมพิวเตอร์อิเล็กทรอนิกส์ยุคแรก ใช้หลอดสุญญากาศกว่า 17,000 หลอด'],
+                    ['1947 · Transistor', 'ทรานซิสเตอร์เข้ามาแทนหลอดสุญญากาศ ทำให้คอมพิวเตอร์เล็กลงและประหยัดไฟ'],
+                    ['1958 · Integrated Circuit', 'วงจรรวม (IC) รวมชิ้นส่วนอิเล็กทรอนิกส์จำนวนมากไว้บนชิปแผ่นเดียว'],
+                    ['1971 · Microprocessor', 'ไมโครโพรเซสเซอร์ (CPU บนชิปเดียว) จุดประกายยุคคอมพิวเตอร์ส่วนบุคคล'],
+                    ['1980–ปัจจุบัน · PC, AI & Metaverse', 'จากคอมพิวเตอร์ตั้งโต๊ะสู่สมาร์ตโฟน ปัญญาประดิษฐ์ และโลกเสมือน 3D'],
+                  ].map(([era, desc]) => (
+                    <div key={era} style={{ padding: 10, borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                      <strong style={{ fontSize: '0.84rem', color: '#0284c7' }}>{era}</strong>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.76rem', color: '#475569', lineHeight: 1.4 }}>{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTechZone.id === 'matrix_cube' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ padding: 14, borderRadius: 12, background: '#02120a', color: '#4ade80', border: '2px solid #22c55e' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', marginBottom: 6, color: '#86efac' }}>
+                    🟢 เครื่องแปลงชื่อนักเรียนเป็นรหัสฐานสอง (Binary Matrix Encoder)
+                  </div>
+                  <div style={{ fontSize: '0.84rem', color: '#d1fae5', marginBottom: 8 }}>
+                    ชื่อของคุณ: <strong>{displayName}</strong> เมื่อคอมพิวเตอร์เก็บในหน่วยความจำ จะมองเห็นเป็นรหัส 0 และ 1 ดังนี้:
+                  </div>
+                  <div
+                    style={{
+                      padding: 10,
+                      borderRadius: 8,
+                      background: 'rgba(0,0,0,0.65)',
+                      fontFamily: 'monospace',
+                      fontSize: '0.82rem',
+                      color: '#4ade80',
+                      lineHeight: 1.6,
+                      wordBreak: 'break-all',
+                    }}
+                  >
+                    {Array.from(displayName.slice(0, 12))
+                      .map((ch) => ch.charCodeAt(0).toString(2).padStart(12, '0'))
+                      .join('  ')}
+                  </div>
+                </div>
+                <div style={{ padding: 12, borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: '0.83rem', color: '#14532d', lineHeight: 1.5 }}>
+                  💡 <strong>ความลับของห้องอุโมงค์ไฟอินฟินิตี้ LED:</strong> ดวงไฟแต่ละดวงเปรียบเสมือน <strong>1 บิต (Bit)</strong> เมื่อนำหลอดไฟหลายล้านดวงมาเรียงต่อกันและสั่งเปิด (1) หรือปิด (0) ด้วยความเร็วสูง จึงกลายเป็นหน้าจอภาพยนตร์ เกม 3D และเครือข่ายอินเทอร์เน็ตที่เชื่อมโลกเข้าด้วยกัน!
+                </div>
+              </div>
+            )}
+
+            {activeTechZone.id === 'how_computer_works' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#92400e' }}>
+                  คลิกเลือกอวัยวะของร่างกาย เพื่อดูว่าตรงกับชิ้นส่วนใดของคอมพิวเตอร์:
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))', gap: 8 }}>
+                  {[
+                    {
+                      organ: '🧠 สมองมนุษย์',
+                      hw: 'ซีพียู (CPU), แรม (RAM) & ฮาร์ดดิสก์',
+                      role: 'Process & Memory',
+                      desc: 'ทำหน้าที่คิดคำนวณ ประมวลผลคำสั่ง และจดจำข้อมูลเหมือนสมองของเรา',
+                    },
+                    {
+                      organ: '👁️ ดวงตา',
+                      hw: 'กล้องเว็บแคม & สแกนเนอร์',
+                      role: 'Input Device (รับภาพ)',
+                      desc: 'ทำหน้าที่มองเห็นและรับข้อมูลภาพเข้าสู่เครื่องคอมพิวเตอร์',
+                    },
+                    {
+                      organ: '👂 หู',
+                      hw: 'ไมโครโฟน (Microphone)',
+                      role: 'Input Device (รับเสียง)',
+                      desc: 'ทำหน้าที่ฟังและรับคลื่นเสียงแปลงเป็นสัญญาณดิจิทัลเข้าสู่เครื่อง',
+                    },
+                    {
+                      organ: '👄 ปาก',
+                      hw: 'ลำโพง & หูฟัง (Speaker)',
+                      role: 'Output Device (ส่งเสียง)',
+                      desc: 'ทำหน้าที่เปล่งเสียงพูด เสียงเพลง และผลลัพธ์เสียงออกมาให้เราได้ยิน',
+                    },
+                    {
+                      organ: '🖐️ มือและการสัมผัส',
+                      hw: 'คีย์บอร์ด, เมาส์ & จอทัชสกรีน',
+                      role: 'Input Device (สั่งงาน)',
+                      desc: 'รับการกดปุ่มและการชี้ตำแหน่งจากผู้ใช้เข้าสู่ระบบ',
+                    },
+                    {
+                      organ: '🩸 เส้นเลือด & ระบบประสาท',
+                      hw: 'สายไฟ & สายส่งข้อมูล (Data Bus)',
+                      role: 'System Bus & Power',
+                      desc: 'ลำเลียงพลังงานไฟฟ้าและส่งผ่านข้อมูลระหว่างอุปกรณ์ทุกชิ้นในเครื่อง',
+                    },
+                  ].map((item, idx) => (
+                    <button
+                      key={item.organ}
+                      type="button"
+                      onClick={() => setSelectedOrganIdx(idx)}
+                      style={{
+                        textAlign: 'left',
+                        padding: 11,
+                        borderRadius: 10,
+                        border: selectedOrganIdx === idx ? '2px solid #d97706' : '1px solid #fde68a',
+                        background: selectedOrganIdx === idx ? '#fffbeb' : '#ffffff',
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#92400e' }}>{item.organ}</div>
+                      <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#1d4ed8', margin: '3px 0' }}>↔ {item.hw}</div>
+                      <span style={{ display: 'inline-block', padding: '1px 6px', borderRadius: 4, background: '#fef3c7', color: '#b45309', fontSize: '0.7rem', fontWeight: 700 }}>
+                        {item.role}
+                      </span>
+                      <p style={{ margin: '5px 0 0', fontSize: '0.75rem', color: '#475569', lineHeight: 1.38 }}>{item.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTechZone.id === 'wireless_5g' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {(['1G', '2G', '3G', '4G', '5G'] as const).map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setSelectedGenG(g)}
+                      style={{
+                        flex: 1,
+                        minWidth: 72,
+                        padding: '10px 8px',
+                        borderRadius: 10,
+                        border: selectedGenG === g ? '2px solid #7c3aed' : '1px solid #cbd5e1',
+                        background: selectedGenG === g ? 'linear-gradient(135deg, #7c3aed, #059669)' : '#f8fafc',
+                        color: selectedGenG === g ? '#ffffff' : '#1e293b',
+                        fontWeight: 900,
+                        fontSize: '1.05rem',
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+                {(() => {
+                  const specs: Record<'1G' | '2G' | '3G' | '4G' | '5G', { era: string; speed: string; icon: string; title: string; detail: string }> = {
+                    '1G': {
+                      era: 'ทศวรรษ 1980s',
+                      speed: '~2.4 Kbps (สัญญาณอนาล็อก)',
+                      icon: '📻',
+                      title: 'ยุคที่ 1 (1G) · โทรศัพท์มือถือรุ่นกระติกน้ำ',
+                      detail: 'ใช้สัญญาณวิทยุแบบอนาล็อก โทรพูดคุยด้วยเสียงได้อย่างเดียว ตัวเครื่องมีขนาดใหญ่และหนักมาก ยังส่งข้อความหรือเล่นอินเทอร์เน็ตไม่ได้',
+                    },
+                    '2G': {
+                      era: 'ทศวรรษ 1990s',
+                      speed: '~64 Kbps (สัญญาณดิจิทัล)',
+                      icon: '💬',
+                      title: 'ยุคที่ 2 (2G) · ก้าวสู่ระบบดิจิทัล & ข้อความ SMS',
+                      detail: 'เปลี่ยนเสียงเป็นรหัสดิจิทัล 0/1 ทำให้เสียงคมชัดขึ้น ปลอดภัยขึ้น และส่งข้อความสั้น (SMS) กับริงโทนได้เป็นครั้งแรก!',
+                    },
+                    '3G': {
+                      era: 'ทศวรรษ 2000s',
+                      speed: '~2–14 Mbps',
+                      icon: '🌐',
+                      title: 'ยุคที่ 3 (3G) · อินเทอร์เน็ตบนสมาร์ตโฟน',
+                      detail: 'เปิดโลกการเข้าเว็บไซต์ แชต ส่งรูปภาพ แผนที่นำทาง GPS และวิดีโอคอลบนหน้าจอสมาร์ตโฟนได้ทุกที่',
+                    },
+                    '4G': {
+                      era: 'ทศวรรษ 2010s',
+                      speed: '~100 Mbps',
+                      icon: '🎬',
+                      title: 'ยุคที่ 4 (4G) · วิดีโอสตรีมมิง HD & เกมออนไลน์',
+                      detail: 'ความเร็วสูงระดับบรอดแบนด์ ดูวิดีโอ YouTube ความละเอียดสูง ไลฟ์สด และเรียนออนไลน์ผ่านมือถือได้อย่างลื่นไหล',
+                    },
+                    '5G': {
+                      era: 'ทศวรรษ 2020s – ปัจจุบัน',
+                      speed: '~1,000–10,000 Mbps (1–10 Gbps)',
+                      icon: '🚀',
+                      title: 'ยุคที่ 5 (5G) · เครือข่ายอัจฉริยะ IoT, AI & Smart City',
+                      detail: 'ความหน่วงต่ำมาก (Real-time) เชื่อมต่ออุปกรณ์ IoT นับล้านชิ้น หุ่นยนต์ผ่าตัดทางไกล รถยนต์ไร้คนขับ และห้องเรียน Metaverse 3D!',
+                    },
+                  };
+                  const cur = specs[selectedGenG];
+                  return (
+                    <div style={{ padding: 14, borderRadius: 12, background: '#faf5ff', border: '2px solid #c084fc' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                        <strong style={{ fontSize: '1rem', color: '#581c87' }}>{cur.icon} {cur.title}</strong>
+                        <span style={{ padding: '3px 9px', borderRadius: 999, background: '#065f46', color: '#fff', fontSize: '0.75rem', fontWeight: 800 }}>
+                          {cur.era} · ความเร็ว {cur.speed}
+                        </span>
+                      </div>
+                      <p style={{ margin: '8px 0 0', fontSize: '0.85rem', color: '#3b0764', lineHeight: 1.5 }}>{cur.detail}</p>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {activeTechZone.id === 'green_studio' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {(() => {
+                  const backdrops = [
+                    { name: '🟩 ฉาก Green Screen ต้นฉบับ', bg: 'linear-gradient(135deg, #16a34a, #22c55e)', desc: 'ในสตูดิโอจริงจะใช้ผ้าหรือผนังสีเขียวสด เพราะสีเขียวไม่ตรงกับสีผิวมนุษย์ ทำให้คอมพิวเตอร์แยกตัวคนออกจากฉากหลังได้แม่นยำ' },
+                    { name: '🌌 ฉากอวกาศไซเบอร์ Metaverse', bg: 'linear-gradient(135deg, #0f172a, #1d4ed8, #7c3aed)', desc: 'คอมพิวเตอร์ตัดสีเขียวออก (Chroma Key) แล้วแทนที่ด้วยภาพกราฟิกอวกาศ 3D ทันที!' },
+                    { name: '📰 ห้องข่าวเยาวชน KruJames News', bg: 'linear-gradient(135deg, #1e3a8a, #0284c7)', desc: 'ใช้รายงานข่าวสารเทคโนโลยีและผลงานของนักเรียนหน้ากล้องถ่ายทอดสด' },
+                    { name: '🤖 ห้องปฏิบัติการ AI อนาคต', bg: 'linear-gradient(135deg, #31102f, #be185d, #f59e0b)', desc: 'จำลองฉากห้องแล็บหุ่นยนต์และปัญญาประดิษฐ์เหมือนในภาพยนตร์ไซไฟ' },
+                  ];
+                  const cur = backdrops[studioBackdropIdx] || backdrops[0];
+                  return (
+                    <>
+                      <div
+                        style={{
+                          padding: 18,
+                          borderRadius: 12,
+                          background: cur.bg,
+                          color: '#ffffff',
+                          border: '3px solid #0f172a',
+                          textAlign: 'center',
+                          boxShadow: 'inset 0 0 24px rgba(0,0,0,0.35)',
+                        }}
+                      >
+                        <div style={{ fontSize: '0.75rem', fontWeight: 800, opacity: 0.9 }}>🔴 LIVE · KRUJAMES STUDIO MONITOR</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 900, margin: '6px 0' }}>🎙️ ผู้ประกาศข่าวดิจิทัล: {displayName}</div>
+                        <div style={{ fontSize: '0.84rem', background: 'rgba(0,0,0,0.45)', padding: '6px 12px', borderRadius: 8, display: 'inline-block' }}>
+                          {cur.name}
+                        </div>
+                        <p style={{ margin: '8px 0 0', fontSize: '0.8rem', opacity: 0.95 }}>{cur.desc}</p>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {backdrops.map((b, idx) => (
+                          <button
+                            key={b.name}
+                            type="button"
+                            onClick={() => setStudioBackdropIdx(idx)}
+                            style={{
+                              flex: 1,
+                              minWidth: 140,
+                              padding: '8px 10px',
+                              borderRadius: 8,
+                              border: studioBackdropIdx === idx ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                              background: studioBackdropIdx === idx ? '#dcfce7' : '#ffffff',
+                              color: '#14532d',
+                              fontWeight: 800,
+                              fontSize: '0.78rem',
+                              fontFamily: 'inherit',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {b.name}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            <div className="world-modal-footer" style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  celebrate();
+                  setWorldStars((s) => s + 2);
+                  const unitNo = boards[0]?.unitNo || 1;
+                  void recordActivity('question', `u${unitNo}-techzone-${activeTechZone.id}`, unitNo, `เรียนรู้โซนโลกเทคโนโลยี: ${activeTechZone.title}`);
+                  setStatus(`🌟 สำรวจโซน "${activeTechZone.shortTitle}" สำเร็จ รับ +2⭐!`);
+                  setActiveTechZone(null);
+                }}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: 8,
+                  border: 0,
+                  background: 'linear-gradient(135deg, #059669, #10b981)',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  fontSize: '0.88rem',
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                }}
+              >
+                🌟 บันทึกการสำรวจโซนนี้ (+2⭐)
+              </button>
+              <button
+                type="button"
+                className="world-btn-cancel"
+                onClick={() => setActiveTechZone(null)}
               >
                 ปิดหน้าต่าง
               </button>
