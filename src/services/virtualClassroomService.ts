@@ -30,7 +30,15 @@ export type BlockMaterial =
 export type WorldSyncMode = 'connecting' | 'firebase' | 'local';
 export type WorldJoinStatus = 'active' | 'waiting' | 'blocked';
 export type WorldActivityKind = 'slide' | 'question' | 'game' | 'artifact';
-export type WorldMotion = 'idle' | 'walk' | 'jump';
+export type WorldMotion = 'idle' | 'walk' | 'jump' | 'fly' | 'wave' | 'cheer' | 'dance' | 'build';
+export type AvatarTechClass =
+  | 'coder'
+  | 'ai_engineer'
+  | 'cyber_guardian'
+  | 'vr_explorer'
+  | 'hardware_maker'
+  | 'game_creator';
+export type AvatarFaceStyle = 'happy' | 'cool' | 'excited' | 'focused' | 'robo';
 export type CamouflagePose = 'stand' | 'crouch' | 'freeze';
 
 export interface CamouflageRound {
@@ -66,6 +74,8 @@ export interface WorldPlayer {
   z: number;
   rotation: number;
   color: string;
+  techClass?: AvatarTechClass;
+  faceStyle?: AvatarFaceStyle;
   camouflageColor?: string;
   camouflagePose?: CamouflagePose;
   motion?: WorldMotion;
@@ -686,6 +696,8 @@ export const updateWorldPlayer = async (player: WorldPlayer, force = false): Pro
     Math.round(player.z * 4),
     Math.round(player.rotation * 8),
     player.color,
+    player.techClass || 'coder',
+    player.faceStyle || 'happy',
     player.camouflageColor || '',
     player.camouflagePose || 'stand',
     player.motion || 'idle',

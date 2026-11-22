@@ -84,10 +84,13 @@ import {
   verifyVirtualRoomAccessCode,
 } from '../services/virtualClassroomService';
 import type {
+  AvatarFaceStyle,
+  AvatarTechClass,
   BlockMaterial,
   VirtualRoomState,
   WorldActivityEvent,
   WorldBlock,
+  WorldMotion,
   WorldPlayer,
   WorldSyncMode,
 } from '../services/virtualClassroomService';
@@ -118,8 +121,81 @@ interface GameStation {
 }
 
 const CLASSROOMS = ['ป.1', 'ป.2', 'ป.3', 'ป.4', 'ป.5', 'ป.6', 'ม.1', 'ม.2', 'ม.3'];
-const AVATAR_COLORS = ['#2563eb', '#e11d48', '#16a34a', '#9333ea', '#ea580c', '#0891b2'];
+const AVATAR_COLORS = ['#2563eb', '#e11d48', '#16a34a', '#9333ea', '#ea580c', '#0891b2', '#0f172a', '#d97706'];
 const LESSON_COLORS = ['#2563eb', '#ea580c', '#16a34a', '#7c3aed'];
+
+const TECH_CLASSES: Array<{
+  id: AvatarTechClass;
+  icon: string;
+  title: string;
+  badge: string;
+  gearDesc: string;
+  accent: string;
+}> = [
+  {
+    id: 'coder',
+    icon: '💻',
+    title: 'นักเขียนโค้ด',
+    badge: '💻 Full-Stack Coder',
+    gearDesc: 'หูฟังโค้ดดิ้ง RGB + เป้แล็ปท็อป + ป้ายโค้ด </>',
+    accent: '#38bdf8',
+  },
+  {
+    id: 'ai_engineer',
+    icon: '🤖',
+    title: 'วิศวกร AI & หุ่นยนต์',
+    badge: '🤖 AI & Robotics',
+    gearDesc: 'แว่นโฮโลแกรมไซเบอร์ + เสาอากาศ AI + แกนพลังงานหน้าอก',
+    accent: '#22d3ee',
+  },
+  {
+    id: 'cyber_guardian',
+    icon: '🛡️',
+    title: 'นักรบไซเบอร์',
+    badge: '🛡️ Cyber Guardian',
+    gearDesc: 'หมวกเกราะไซเบอร์ดำทอง + โล่ไฟร์วอลล์ป้องกันไวรัสที่แขน',
+    accent: '#f59e0b',
+  },
+  {
+    id: 'vr_explorer',
+    icon: '🥽',
+    title: 'นักสำรวจโลกเสมือน VR',
+    badge: '🥽 VR Metaverse',
+    gearDesc: 'แว่น VR Headset 3D + เจ็ตแพ็กไอพ่นคู่ด้านหลัง',
+    accent: '#a855f7',
+  },
+  {
+    id: 'hardware_maker',
+    icon: '🔧',
+    title: 'วิศวกรฮาร์ดแวร์ IoT',
+    badge: '🔧 Hardware Maker',
+    gearDesc: 'หมวกวิศวกรพร้อมไฟฉาย + เข็มขัดแผงวงจร + ประแจดิจิทัล',
+    accent: '#eab308',
+  },
+  {
+    id: 'game_creator',
+    icon: '🎮',
+    title: 'นักสร้างเกม 3D',
+    badge: '🎮 3D Game Creator',
+    gearDesc: 'มงกุฎพิกเซลทองคำ + แว่น 8-Bit + คฑาเสกบล็อกเรืองแสง',
+    accent: '#ec4899',
+  },
+];
+
+const FACE_STYLES: Array<{ id: AvatarFaceStyle; icon: string; label: string }> = [
+  { id: 'happy', icon: '😊', label: 'ยิ้มสดใส' },
+  { id: 'cool', icon: '😎', label: 'แว่นเท่สายโค้ด' },
+  { id: 'excited', icon: '🤩', label: 'ตาวาวตื่นเต้น' },
+  { id: 'focused', icon: '🧐', label: 'โฟกัสแก้บั๊ก' },
+  { id: 'robo', icon: '🤖', label: 'หน้าดิจิทัล LED' },
+];
+
+const AVATAR_ACTIONS: Array<{ id: WorldMotion; icon: string; label: string; keyHint: string }> = [
+  { id: 'wave', icon: '👋', label: 'โบกมือทัก', keyHint: 'Z' },
+  { id: 'cheer', icon: '🙌', label: 'กระโดดดีใจ', keyHint: 'X' },
+  { id: 'dance', icon: '💃', label: 'เต้นไซเบอร์', keyHint: 'C' },
+  { id: 'build', icon: '🔨', label: 'ท่าสร้างงาน', keyHint: 'V' },
+];
 
 const initialGraphicsQuality = (): GraphicsQuality => {
   const saved = localStorage.getItem('kj_world_graphics');
@@ -425,23 +501,30 @@ const createGameTexture = (game: GameStation) => {
   return texture;
 };
 
-const createNameSprite = (name: string, isTeacher = false) => {
+const createNameSprite = (name: string, isTeacher = false, techClass: AvatarTechClass = 'coder') => {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
-  canvas.height = 128;
+  canvas.height = 160;
   const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = isTeacher ? 'rgba(146,64,14,.94)' : 'rgba(17,24,39,.88)';
-  ctx.fillRect(0, 10, 512, 100);
+  const classInfo = TECH_CLASSES.find((c) => c.id === techClass) || TECH_CLASSES[0];
+  ctx.fillStyle = isTeacher ? 'rgba(146,64,14,.94)' : 'rgba(15,23,42,.9)';
+  ctx.fillRect(12, 10, 488, 138);
+  ctx.strokeStyle = isTeacher ? '#facc15' : classInfo.accent;
+  ctx.lineWidth = 5;
+  ctx.strokeRect(14, 12, 484, 134);
   ctx.fillStyle = '#ffffff';
-  ctx.font = '700 42px Sarabun, sans-serif';
+  ctx.font = '800 38px Sarabun, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`${isTeacher ? 'ครู ' : ''}${name}`.slice(0, 22), 256, 60);
+  ctx.fillText(`${isTeacher ? '👑 ครู ' : ''}${name}`.slice(0, 22), 256, 56);
+  ctx.fillStyle = isTeacher ? '#fde047' : classInfo.accent;
+  ctx.font = '700 26px Sarabun, sans-serif';
+  ctx.fillText(isTeacher ? '⚡ อาจารย์ที่ปรึกษาโลก 3D' : classInfo.badge, 256, 110);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
-  sprite.scale.set(3.2, 0.8, 1);
-  sprite.position.y = 2.8;
+  sprite.scale.set(3.2, 0.96, 1);
+  sprite.position.y = 2.95;
   return sprite;
 };
 
@@ -501,6 +584,12 @@ const VirtualClassroom: React.FC = () => {
   const modeRef = useRef<WorldMode>('build');
   const materialRef = useRef<BlockMaterial>('grass');
   const avatarColorRef = useRef(playerColor(playerId));
+  const techClassRef = useRef<AvatarTechClass>('coder');
+  const faceStyleRef = useRef<AvatarFaceStyle>('happy');
+  const activeEmoteRef = useRef<WorldMotion | null>(null);
+  const emoteUntilRef = useRef(0);
+  const rebuildLocalAvatarRef = useRef<() => void>(() => undefined);
+  const triggerEmoteRef = useRef<(emote: WorldMotion, durationMs?: number) => void>(() => undefined);
   const thirdPersonRef = useRef(false);
   const roomStateRef = useRef<VirtualRoomState | null>(null);
   const canParticipateRef = useRef(true);
@@ -544,6 +633,13 @@ const VirtualClassroom: React.FC = () => {
   const [avatarColor, setAvatarColor] = useState(() => (
     localStorage.getItem(`kj_world_avatar_${playerId}`) || playerColor(playerId)
   ));
+  const [avatarTechClass, setAvatarTechClass] = useState<AvatarTechClass>(() => (
+    (localStorage.getItem(`kj_world_class_${playerId}`) as AvatarTechClass) || 'coder'
+  ));
+  const [avatarFaceStyle, setAvatarFaceStyle] = useState<AvatarFaceStyle>(() => (
+    (localStorage.getItem(`kj_world_face_${playerId}`) as AvatarFaceStyle) || 'happy'
+  ));
+  const [activeEmote, setActiveEmote] = useState<WorldMotion | null>(null);
   const [thirdPerson, setThirdPerson] = useState(false);
   const [graphicsQuality, setGraphicsQuality] = useState<GraphicsQuality>(initialGraphicsQuality);
   const [avatarPanelOpen, setAvatarPanelOpen] = useState(false);
@@ -936,7 +1032,20 @@ const VirtualClassroom: React.FC = () => {
   useEffect(() => {
     avatarColorRef.current = avatarColor;
     localStorage.setItem(`kj_world_avatar_${playerId}`, avatarColor);
+    rebuildLocalAvatarRef.current();
   }, [avatarColor, playerId]);
+
+  useEffect(() => {
+    techClassRef.current = avatarTechClass;
+    localStorage.setItem(`kj_world_class_${playerId}`, avatarTechClass);
+    rebuildLocalAvatarRef.current();
+  }, [avatarTechClass, playerId]);
+
+  useEffect(() => {
+    faceStyleRef.current = avatarFaceStyle;
+    localStorage.setItem(`kj_world_face_${playerId}`, avatarFaceStyle);
+    rebuildLocalAvatarRef.current();
+  }, [avatarFaceStyle, playerId]);
 
   useEffect(() => {
     thirdPersonRef.current = thirdPerson;
@@ -2354,95 +2463,441 @@ const VirtualClassroom: React.FC = () => {
       group: THREE.Group,
       moving: boolean,
       jumping: boolean,
+      flying: boolean,
+      motion: WorldMotion,
       now: number,
+      delta: number,
       speedScale = 1,
     ) => {
       const parts = group.userData.parts as {
-        leftArm: THREE.Mesh;
-        rightArm: THREE.Mesh;
-        leftLeg: THREE.Mesh;
-        rightLeg: THREE.Mesh;
+        headGroup: THREE.Group;
+        bodyGroup: THREE.Group;
+        leftArmPivot: THREE.Group;
+        rightArmPivot: THREE.Group;
+        leftLegPivot: THREE.Group;
+        rightLegPivot: THREE.Group;
       };
       if (!parts) return;
-      const swing = moving ? Math.sin(now * 0.011 * speedScale) * 0.62 : 0;
-      const jumpLift = jumping ? -0.38 : 0;
-      parts.leftArm.rotation.x = swing + jumpLift;
-      parts.rightArm.rotation.x = -swing + jumpLift;
-      parts.leftLeg.rotation.x = -swing * 0.72;
-      parts.rightLeg.rotation.x = swing * 0.72;
+      const damp = Math.min(1, delta * 14);
+      const t = now * 0.011 * speedScale;
+      const walkSwing = moving ? Math.sin(t) * 0.68 : 0;
+      const breath = Math.sin(now * 0.0028) * 0.035;
+
+      let targetLX = walkSwing;
+      let targetLZ = -0.05 - Math.abs(breath);
+      let targetRX = -walkSwing;
+      let targetRZ = 0.05 + Math.abs(breath);
+      let targetLegLX = -walkSwing * 0.78;
+      let targetLegRX = walkSwing * 0.78;
+      let targetHeadX = moving ? 0.04 : breath * 0.6;
+      let targetHeadY = 0;
+      let targetHeadZ = 0;
+      let targetBodyY = moving ? Math.abs(Math.sin(t)) * 0.04 : 0;
+
+      if (flying || motion === 'fly') {
+        targetLX = 0.25;
+        targetLZ = -0.28;
+        targetRX = 0.25;
+        targetRZ = 0.28;
+        targetLegLX = 0.34 + Math.sin(now * 0.006) * 0.08;
+        targetLegRX = 0.34 - Math.sin(now * 0.006) * 0.08;
+        targetBodyY = Math.sin(now * 0.005) * 0.07;
+      } else if (jumping || motion === 'jump') {
+        targetLX = -0.55;
+        targetLZ = -0.22;
+        targetRX = -0.55;
+        targetRZ = 0.22;
+        targetLegLX = -0.28;
+        targetLegRX = 0.22;
+      }
+
+      if (motion === 'wave') {
+        targetRX = -2.55;
+        targetRZ = 0.35 + Math.sin(now * 0.016) * 0.45;
+        targetHeadZ = Math.sin(now * 0.008) * 0.1;
+        targetHeadY = Math.sin(now * 0.006) * 0.12;
+      } else if (motion === 'cheer') {
+        targetLX = -2.65;
+        targetLZ = -0.35 - Math.sin(now * 0.015) * 0.18;
+        targetRX = -2.65;
+        targetRZ = 0.35 + Math.sin(now * 0.015) * 0.18;
+        targetBodyY = Math.abs(Math.sin(now * 0.012)) * 0.18;
+        targetHeadX = -0.15;
+      } else if (motion === 'dance') {
+        const beat = now * 0.012;
+        targetLX = -1.35 + Math.sin(beat) * 0.75;
+        targetLZ = -0.35;
+        targetRX = -1.35 - Math.sin(beat) * 0.75;
+        targetRZ = 0.35;
+        targetLegLX = Math.sin(beat) * 0.55;
+        targetLegRX = -Math.sin(beat) * 0.55;
+        targetHeadZ = Math.cos(beat) * 0.16;
+        targetBodyY = Math.abs(Math.sin(beat * 2)) * 0.11;
+      } else if (motion === 'build') {
+        targetRX = -1.05 + Math.sin(now * 0.026) * 0.78;
+        targetRZ = 0.1;
+        targetHeadX = 0.12;
+      }
+
+      parts.leftArmPivot.rotation.x = THREE.MathUtils.lerp(parts.leftArmPivot.rotation.x, targetLX, damp);
+      parts.leftArmPivot.rotation.z = THREE.MathUtils.lerp(parts.leftArmPivot.rotation.z, targetLZ, damp);
+      parts.rightArmPivot.rotation.x = THREE.MathUtils.lerp(parts.rightArmPivot.rotation.x, targetRX, damp);
+      parts.rightArmPivot.rotation.z = THREE.MathUtils.lerp(parts.rightArmPivot.rotation.z, targetRZ, damp);
+      parts.leftLegPivot.rotation.x = THREE.MathUtils.lerp(parts.leftLegPivot.rotation.x, targetLegLX, damp);
+      parts.rightLegPivot.rotation.x = THREE.MathUtils.lerp(parts.rightLegPivot.rotation.x, targetLegRX, damp);
+      parts.headGroup.rotation.x = THREE.MathUtils.lerp(parts.headGroup.rotation.x, targetHeadX, damp);
+      parts.headGroup.rotation.y = THREE.MathUtils.lerp(parts.headGroup.rotation.y, targetHeadY, damp);
+      parts.headGroup.rotation.z = THREE.MathUtils.lerp(parts.headGroup.rotation.z, targetHeadZ, damp);
+      parts.bodyGroup.position.y = THREE.MathUtils.lerp(parts.bodyGroup.position.y, targetBodyY, damp);
     };
 
     const createAvatar = (player: WorldPlayer) => {
       const group = new THREE.Group();
-      const shirtMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(player.color) });
-      group.userData.profile = `${player.name}_${player.classroom}_${player.color}_${player.role || 'student'}`;
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.8, 1.15, 0.48),
-        shirtMaterial,
+      const bodyGroup = new THREE.Group();
+      group.add(bodyGroup);
+      const techClass: AvatarTechClass = player.techClass || 'coder';
+      const faceStyle: AvatarFaceStyle = player.faceStyle || 'happy';
+      const shirtMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(player.color), roughness: 0.65 });
+      const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xf4c7a1, roughness: 0.7 });
+      group.userData.profile = `${player.name}_${player.classroom}_${player.color}_${player.role || 'student'}_${techClass}_${faceStyle}`;
+
+      // ลำตัว + ลายเสื้อนักคอม
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.96, 0.46), shirtMaterial);
+      body.position.y = 1.24;
+      const collar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.42, 0.14, 0.48),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.7 }),
       );
-      body.position.y = 1.15;
-      const head = new THREE.Mesh(
-        new THREE.BoxGeometry(0.62, 0.62, 0.62),
-        new THREE.MeshStandardMaterial({ color: 0xf4c7a1 }),
-      );
-      head.position.y = 2.05;
-      const legGeometry = new THREE.BoxGeometry(0.27, 0.82, 0.4);
-      const legMaterial = new THREE.MeshStandardMaterial({ color: 0x263449 });
+      collar.position.set(0, 1.66, 0);
+      bodyGroup.add(body, collar);
+
+      // ขาซ้าย-ขวา หมุนจากข้อสะโพก (y = 0.78) + รองเท้าผ้าใบ
+      const legGeometry = new THREE.BoxGeometry(0.28, 0.66, 0.36);
+      const legMaterial = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+      const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 });
+      const leftLegPivot = new THREE.Group();
+      leftLegPivot.position.set(-0.19, 0.78, 0);
       const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-      leftLeg.position.set(-0.18, 0.42, 0);
-      const rightLeg = leftLeg.clone();
-      rightLeg.position.x = 0.18;
-      const hair = new THREE.Mesh(
-        new THREE.BoxGeometry(0.66, 0.17, 0.66),
-        new THREE.MeshStandardMaterial({ color: 0x382519 }),
-      );
-      hair.position.set(0, 2.35, 0);
-      const eyeMaterial = new THREE.MeshStandardMaterial({ color: 0x172033 });
-      const leftEye = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.04), eyeMaterial);
-      leftEye.position.set(-0.16, 2.1, -0.325);
-      const rightEye = leftEye.clone();
-      rightEye.position.x = 0.16;
-      const smile = new THREE.Mesh(
-        new THREE.BoxGeometry(0.23, 0.055, 0.04),
-        new THREE.MeshStandardMaterial({ color: 0x9f1239 }),
-      );
-      smile.position.set(0, 1.92, -0.325);
-      const armGeometry = new THREE.BoxGeometry(0.22, 1.02, 0.3);
+      leftLeg.position.set(0, -0.33, 0);
+      const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.16, 0.44), shoeMaterial);
+      leftShoe.position.set(0, -0.7, -0.04);
+      leftLegPivot.add(leftLeg, leftShoe);
+
+      const rightLegPivot = new THREE.Group();
+      rightLegPivot.position.set(0.19, 0.78, 0);
+      const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+      rightLeg.position.set(0, -0.33, 0);
+      const rightShoe = leftShoe.clone();
+      rightLegPivot.add(rightLeg, rightShoe);
+      bodyGroup.add(leftLegPivot, rightLegPivot);
+
+      // แขนซ้าย-ขวา หมุนจากหัวไหล่ (y = 1.64) + มือ
+      const armGeometry = new THREE.BoxGeometry(0.23, 0.74, 0.28);
+      const handGeometry = new THREE.BoxGeometry(0.21, 0.2, 0.24);
+      const leftArmPivot = new THREE.Group();
+      leftArmPivot.position.set(-0.53, 1.64, 0);
       const leftArm = new THREE.Mesh(armGeometry, shirtMaterial);
-      leftArm.position.set(-0.54, 1.15, 0);
-      const rightArm = leftArm.clone();
-      rightArm.position.x = 0.54;
-      const avatarMeshes = [body, head, leftLeg, rightLeg, hair, leftArm, rightArm];
-      avatarMeshes.forEach((part) => {
-        part.castShadow = true;
-        part.userData = { kind: 'avatar', playerId: player.id };
-      });
-      const nameSprite = createNameSprite(
-        player.name,
-        player.role === 'teacher',
+      leftArm.position.set(0, -0.34, 0);
+      const leftHand = new THREE.Mesh(handGeometry, skinMaterial);
+      leftHand.position.set(0, -0.78, 0);
+      leftArmPivot.add(leftArm, leftHand);
+
+      const rightArmPivot = new THREE.Group();
+      rightArmPivot.position.set(0.53, 1.64, 0);
+      const rightArm = new THREE.Mesh(armGeometry, shirtMaterial);
+      rightArm.position.set(0, -0.34, 0);
+      const rightHand = new THREE.Mesh(handGeometry, skinMaterial);
+      rightHand.position.set(0, -0.78, 0);
+      rightArmPivot.add(rightArm, rightHand);
+      bodyGroup.add(leftArmPivot, rightArmPivot);
+
+      // ศีรษะ หมุนจากคอ (y = 1.74)
+      const headGroup = new THREE.Group();
+      headGroup.position.set(0, 1.74, 0);
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.64, 0.64, 0.64),
+        faceStyle === 'robo'
+          ? new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.4, roughness: 0.3 })
+          : skinMaterial,
       );
-      group.add(
-        body, head, leftLeg, rightLeg, hair, leftEye, rightEye, smile, leftArm, rightArm,
-        nameSprite,
-      );
-      group.userData.parts = { leftArm, rightArm, leftLeg, rightLeg };
-      group.userData.nameSprite = nameSprite;
-      group.userData.playerId = player.id;
-      group.userData.motion = player.motion || 'idle';
-      group.userData.targetPosition = new THREE.Vector3(player.x, player.y || 0, player.z);
+      head.position.y = 0.32;
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x2c1d14, roughness: 0.85 });
+      const hairTop = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.18, 0.68), hairMat);
+      hairTop.position.set(0, 0.64, 0);
+      const hairBack = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.42, 0.14), hairMat);
+      hairBack.position.set(0, 0.42, 0.29);
+      headGroup.add(head, hairTop, hairBack);
+
+      // ปรับหน้าตา 5 รูปแบบ (faceStyle)
+      if (faceStyle === 'robo') {
+        const ledMat = new THREE.MeshStandardMaterial({
+          color: 0x38bdf8,
+          emissive: new THREE.Color(0x0ea5e9),
+          emissiveIntensity: 0.95,
+        });
+        const lEye = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.1, 0.04), ledMat);
+        lEye.position.set(-0.16, 0.36, -0.33);
+        const rEye = lEye.clone();
+        rEye.position.x = 0.16;
+        const roboMouth = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.06, 0.04), ledMat);
+        roboMouth.position.set(0, 0.18, -0.33);
+        headGroup.add(lEye, rEye, roboMouth);
+      } else if (faceStyle === 'cool') {
+        const shadeMat = new THREE.MeshStandardMaterial({ color: 0x090d16, metalness: 0.7, roughness: 0.15 });
+        const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.14, 0.05), shadeMat);
+        bridge.position.set(0, 0.37, -0.335);
+        const smirk = new THREE.Mesh(
+          new THREE.BoxGeometry(0.22, 0.05, 0.04),
+          new THREE.MeshStandardMaterial({ color: 0x9f1239 }),
+        );
+        smirk.position.set(0.03, 0.18, -0.33);
+        smirk.rotation.z = 0.12;
+        headGroup.add(bridge, smirk);
+      } else if (faceStyle === 'excited') {
+        const starEyeMat = new THREE.MeshStandardMaterial({
+          color: 0xfacc15,
+          emissive: new THREE.Color(0xeab308),
+          emissiveIntensity: 0.85,
+        });
+        const lEye = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.04), starEyeMat);
+        lEye.position.set(-0.16, 0.37, -0.33);
+        const rEye = lEye.clone();
+        rEye.position.x = 0.16;
+        const wowMouth = new THREE.Mesh(
+          new THREE.BoxGeometry(0.18, 0.12, 0.04),
+          new THREE.MeshStandardMaterial({ color: 0xbe123c }),
+        );
+        wowMouth.position.set(0, 0.17, -0.33);
+        headGroup.add(lEye, rEye, wowMouth);
+      } else if (faceStyle === 'focused') {
+        const eyeMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+        const lEye = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.04), eyeMat);
+        lEye.position.set(-0.16, 0.36, -0.33);
+        const rEye = lEye.clone();
+        rEye.position.x = 0.16;
+        const browL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.045), hairMat);
+        browL.position.set(-0.16, 0.45, -0.33);
+        browL.rotation.z = -0.18;
+        const browR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.045), hairMat);
+        browR.position.set(0.16, 0.45, -0.33);
+        browR.rotation.z = 0.18;
+        const focusMouth = new THREE.Mesh(
+          new THREE.BoxGeometry(0.18, 0.045, 0.04),
+          new THREE.MeshStandardMaterial({ color: 0x881337 }),
+        );
+        focusMouth.position.set(0, 0.18, -0.33);
+        headGroup.add(lEye, rEye, browL, browR, focusMouth);
+      } else {
+        // happy (ค่าเริ่มต้น)
+        const eyeMat = new THREE.MeshStandardMaterial({ color: 0x172033 });
+        const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const blushMat = new THREE.MeshBasicMaterial({ color: 0xfda4af });
+        const lEye = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.11, 0.04), eyeMat);
+        lEye.position.set(-0.16, 0.37, -0.33);
+        const rEye = lEye.clone();
+        rEye.position.x = 0.16;
+        const lSpark = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.045), sparkMat);
+        lSpark.position.set(-0.14, 0.39, -0.332);
+        const rSpark = lSpark.clone();
+        rSpark.position.x = 0.18;
+        const lBlush = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.05, 0.04), blushMat);
+        lBlush.position.set(-0.22, 0.26, -0.328);
+        const rBlush = lBlush.clone();
+        rBlush.position.x = 0.22;
+        const smile = new THREE.Mesh(
+          new THREE.BoxGeometry(0.24, 0.06, 0.04),
+          new THREE.MeshStandardMaterial({ color: 0x9f1239 }),
+        );
+        smile.position.set(0, 0.18, -0.33);
+        headGroup.add(lEye, rEye, lSpark, rSpark, lBlush, rBlush, smile);
+      }
+
+      // ชุดอุปกรณ์นักคอมพิวเตอร์ 6 สายอาชีพ (techClass)
+      if (techClass === 'coder') {
+        // 🎧 หูฟัง RGB + เป้แล็ปท็อป + ป้ายโค้ด </>
+        const phoneMat = new THREE.MeshStandardMaterial({
+          color: 0x38bdf8,
+          emissive: new THREE.Color(0x0284c7),
+          emissiveIntensity: 0.7,
+        });
+        const band = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.09, 0.16), phoneMat);
+        band.position.set(0, 0.71, 0);
+        const earL = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.24, 0.24), phoneMat);
+        earL.position.set(-0.36, 0.35, 0);
+        const earR = earL.clone();
+        earR.position.x = 0.36;
+        headGroup.add(band, earL, earR);
+        const backpack = new THREE.Mesh(
+          new THREE.BoxGeometry(0.56, 0.68, 0.24),
+          new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 }),
+        );
+        backpack.position.set(0, 1.25, 0.34);
+        const chestBadge = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.16, 0.03), phoneMat);
+        chestBadge.position.set(0, 1.36, -0.245);
+        bodyGroup.add(backpack, chestBadge);
+      } else if (techClass === 'ai_engineer') {
+        // 🥽 แว่นโฮโลแกรมไซเบอร์ + เสาอากาศ AI + แกนพลังงานหน้าอก
+        const aiMat = new THREE.MeshStandardMaterial({
+          color: 0x22d3ee,
+          emissive: new THREE.Color(0x06b6d4),
+          emissiveIntensity: 0.9,
+          transparent: true,
+          opacity: 0.88,
+        });
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.17, 0.12), aiMat);
+        visor.position.set(0, 0.37, -0.31);
+        const antennaStem = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.025, 0.025, 0.32, 8),
+          new THREE.MeshStandardMaterial({ color: 0x94a3b8 }),
+        );
+        antennaStem.position.set(0, 0.84, 0);
+        const antennaOrb = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.13), aiMat);
+        antennaOrb.position.set(0, 1.02, 0);
+        headGroup.add(visor, antennaStem, antennaOrb);
+        const arcCore = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.05), aiMat);
+        arcCore.position.set(0, 1.32, -0.24);
+        bodyGroup.add(arcCore);
+      } else if (techClass === 'cyber_guardian') {
+        // 🪖 หมวกเกราะไซเบอร์ + โล่ไฟร์วอลล์ที่แขนซ้าย
+        const helmMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.6, roughness: 0.3 });
+        const goldMat = new THREE.MeshStandardMaterial({
+          color: 0xfacc15,
+          emissive: new THREE.Color(0xd97706),
+          emissiveIntensity: 0.5,
+        });
+        const helmCrest = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.24, 0.72), helmMat);
+        helmCrest.position.set(0, 0.66, 0);
+        const helmTrim = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.76), goldMat);
+        helmTrim.position.set(0, 0.72, 0);
+        headGroup.add(helmCrest, helmTrim);
+        const shield = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.68, 0.54), goldMat);
+        shield.position.set(-0.18, -0.42, 0);
+        const shieldCore = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.44, 0.34), helmMat);
+        shieldCore.position.set(-0.19, -0.42, 0);
+        leftArmPivot.add(shield, shieldCore);
+      } else if (techClass === 'vr_explorer') {
+        // 🥽 แว่น VR Headset 3D + 🚀 เจ็ตแพ็กไอพ่นคู่ด้านหลัง
+        const vrBodyMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.2 });
+        const vrGlowMat = new THREE.MeshStandardMaterial({
+          color: 0xc084fc,
+          emissive: new THREE.Color(0x9333ea),
+          emissiveIntensity: 0.85,
+        });
+        const vrGoggle = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.24, 0.22), vrBodyMat);
+        vrGoggle.position.set(0, 0.37, -0.32);
+        const vrStrip = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.08, 0.24), vrGlowMat);
+        vrStrip.position.set(0, 0.37, -0.33);
+        headGroup.add(vrGoggle, vrStrip);
+        const jetpackGroup = new THREE.Group();
+        [-0.18, 0.18].forEach((jx) => {
+          const tank = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.11, 0.13, 0.64, 10),
+            new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.6, roughness: 0.3 }),
+          );
+          tank.position.set(jx, 1.28, 0.34);
+          const flame = new THREE.Mesh(
+            new THREE.ConeGeometry(0.09, 0.26, 8),
+            new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: new THREE.Color(0x0284c7), emissiveIntensity: 0.95 }),
+          );
+          flame.rotation.x = Math.PI;
+          flame.position.set(jx, 0.86, 0.34);
+          jetpackGroup.add(tank, flame);
+        });
+        bodyGroup.add(jetpackGroup);
+      } else if (techClass === 'hardware_maker') {
+        // ⛑️ หมวกนิรภัยวิศวกรสีเหลือง + ไฟฉายคาดหัว + ประแจดิจิทัลที่มือขวา
+        const hatMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.35 });
+        const hardHat = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.24, 0.74), hatMat);
+        hardHat.position.set(0, 0.66, -0.02);
+        const headlamp = new THREE.Mesh(
+          new THREE.BoxGeometry(0.18, 0.12, 0.08),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: new THREE.Color(0xfef08a), emissiveIntensity: 0.95 }),
+        );
+        headlamp.position.set(0, 0.66, -0.39);
+        headGroup.add(hardHat, headlamp);
+        const toolBelt = new THREE.Mesh(
+          new THREE.BoxGeometry(0.84, 0.14, 0.5),
+          new THREE.MeshStandardMaterial({ color: 0x15803d }),
+        );
+        toolBelt.position.set(0, 0.84, 0);
+        bodyGroup.add(toolBelt);
+        const wrench = new THREE.Mesh(
+          new THREE.BoxGeometry(0.1, 0.12, 0.54),
+          new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.6 }),
+        );
+        wrench.position.set(0, -0.78, -0.24);
+        rightArmPivot.add(wrench);
+      } else if (techClass === 'game_creator') {
+        // 👑 มงกุฎพิกเซลทองคำ + 🪄 คฑาบล็อกเรืองแสงที่มือขวา
+        const crownMat = new THREE.MeshStandardMaterial({
+          color: 0xfacc15,
+          emissive: new THREE.Color(0xca8a04),
+          emissiveIntensity: 0.5,
+          metalness: 0.6,
+        });
+        [-0.2, 0, 0.2].forEach((cx) => {
+          const spike = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.24, 0.14), crownMat);
+          spike.position.set(cx, 0.82, -0.12);
+          headGroup.add(spike);
+        });
+        const wandShaft = new THREE.Mesh(
+          new THREE.BoxGeometry(0.08, 0.08, 0.62),
+          new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6 }),
+        );
+        wandShaft.position.set(0, -0.78, -0.26);
+        const wandCube = new THREE.Mesh(
+          new THREE.BoxGeometry(0.22, 0.22, 0.22),
+          new THREE.MeshStandardMaterial({
+            color: 0xf43f5e,
+            emissive: new THREE.Color(0xe11d48),
+            emissiveIntensity: 0.9,
+          }),
+        );
+        wandCube.position.set(0, -0.78, -0.58);
+        rightArmPivot.add(wandShaft, wandCube);
+      }
+
       if (player.role === 'teacher') {
         const crownMaterial = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.55 });
         [-0.2, 0, 0.2].forEach((x) => {
           const point = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 4), crownMaterial);
-          point.position.set(x, 2.57, 0);
-          group.add(point);
+          point.position.set(x, 0.86, 0);
+          headGroup.add(point);
         });
       }
+
+      bodyGroup.add(headGroup);
+      bodyGroup.traverse((part) => {
+        if ((part as THREE.Mesh).isMesh) {
+          part.castShadow = true;
+          part.userData = { kind: 'avatar', playerId: player.id };
+        }
+      });
+
+      const nameSprite = createNameSprite(
+        player.name,
+        player.role === 'teacher',
+        techClass,
+      );
+      group.add(nameSprite);
+      group.userData.parts = {
+        headGroup,
+        bodyGroup,
+        leftArmPivot,
+        rightArmPivot,
+        leftLegPivot,
+        rightLegPivot,
+      };
+      group.userData.nameSprite = nameSprite;
+      group.userData.playerId = player.id;
+      group.userData.motion = player.motion || 'idle';
+      group.userData.targetPosition = new THREE.Vector3(player.x, player.y || 0, player.z);
+      group.userData.targetRotation = player.rotation || 0;
       scene.add(group);
       return group;
     };
 
-    const localAvatar = createAvatar({
+    let localAvatar = createAvatar({
       id: playerId,
       roomId,
       name: displayName,
@@ -2452,11 +2907,38 @@ const VirtualClassroom: React.FC = () => {
       z: spawn.z,
       rotation: yaw,
       color: avatarColorRef.current,
+      techClass: techClassRef.current,
+      faceStyle: faceStyleRef.current,
       motion: 'idle',
       role: isTeacher ? 'teacher' : 'student',
       updatedAt: Date.now(),
     });
     localAvatar.visible = thirdPersonRef.current;
+
+    rebuildLocalAvatarRef.current = () => {
+      const prevPos = localAvatar.position.clone();
+      const prevRot = localAvatar.rotation.y;
+      scene.remove(localAvatar);
+      localAvatar = createAvatar({
+        id: playerId,
+        roomId,
+        name: displayName,
+        classroom: activeClassroom,
+        x: prevPos.x,
+        y: prevPos.y,
+        z: prevPos.z,
+        rotation: prevRot,
+        color: avatarColorRef.current,
+        techClass: techClassRef.current,
+        faceStyle: faceStyleRef.current,
+        motion: activeEmoteRef.current || 'idle',
+        role: isTeacher ? 'teacher' : 'student',
+        updatedAt: Date.now(),
+      });
+      localAvatar.position.copy(prevPos);
+      localAvatar.rotation.y = prevRot;
+      localAvatar.visible = thirdPersonRef.current;
+    };
 
     const unsubscribePlayers = subscribeWorldPlayers(roomId, (players) => {
       setOnlinePlayers(players);
@@ -2469,21 +2951,30 @@ const VirtualClassroom: React.FC = () => {
       });
       remote.forEach((player) => {
         let avatar = remoteAvatars.get(player.id);
-        const profile = `${player.name}_${player.classroom}_${player.color}_${player.role || 'student'}`;
+        const profile = `${player.name}_${player.classroom}_${player.color}_${player.role || 'student'}_${player.techClass || 'coder'}_${player.faceStyle || 'happy'}`;
+        let prevPos: THREE.Vector3 | null = null;
+        let prevRot: number | null = null;
         if (avatar && avatar.userData.profile !== profile) {
+          prevPos = avatar.position.clone();
+          prevRot = avatar.rotation.y;
           scene.remove(avatar);
           remoteAvatars.delete(player.id);
           avatar = undefined;
         }
         avatar ||= createAvatar(player);
         remoteAvatars.set(player.id, avatar);
-        if (!avatar.userData.hasPosition) {
+        if (prevPos) {
+          avatar.position.copy(prevPos);
+          avatar.rotation.y = prevRot ?? player.rotation;
+          avatar.userData.hasPosition = true;
+        } else if (!avatar.userData.hasPosition) {
           avatar.position.set(player.x, player.y || 0, player.z);
+          avatar.rotation.y = player.rotation || 0;
           avatar.userData.hasPosition = true;
         }
         (avatar.userData.targetPosition as THREE.Vector3).set(player.x, player.y || 0, player.z);
+        avatar.userData.targetRotation = player.rotation || 0;
         avatar.userData.motion = player.motion || 'idle';
-        avatar.rotation.y = player.rotation;
       });
     }, setSyncMode);
 
@@ -2578,6 +3069,7 @@ const VirtualClassroom: React.FC = () => {
           setEditingSignBlock(block);
           setSignDraftText(block.label || `⭐ ผลงานของ ${displayName}`);
         }
+        triggerEmoteRef.current('build', 650);
         setStatus(`วางบล็อก${MATERIALS.find((item) => item.id === block.material)?.label || ''}แล้ว`);
         const unitNo = boards[0]?.unitNo || 1;
         void recordActivity(
@@ -2598,6 +3090,7 @@ const VirtualClassroom: React.FC = () => {
       const block = blockData.get(hit.object.userData.blockId as string);
       if (!block) return;
       void removeWorldBlock(roomId, block);
+      triggerEmoteRef.current('build', 550);
       setStatus('ลบบล็อกแล้ว');
     };
 
@@ -2810,7 +3303,10 @@ const VirtualClassroom: React.FC = () => {
         );
       }).catch((err) => setStatus(err instanceof Error ? err.message : 'รันโค้ดสร้างไม่สำเร็จ'));
     };
-    const publishPresence = (force = false, motionState: 'idle' | 'walk' | 'jump' = 'idle') => {
+    const publishPresence = (force = false, motionState: WorldMotion = 'idle') => {
+      const effectiveMotion: WorldMotion = (activeEmoteRef.current && performance.now() < emoteUntilRef.current)
+        ? activeEmoteRef.current
+        : motionState;
       void updateWorldPlayer({
         id: playerId,
         roomId,
@@ -2821,11 +3317,20 @@ const VirtualClassroom: React.FC = () => {
         z: playerPosition.z,
         rotation: yaw,
         color: avatarColorRef.current,
-        motion: motionState,
+        techClass: techClassRef.current,
+        faceStyle: faceStyleRef.current,
+        motion: effectiveMotion,
         role: isTeacher ? 'teacher' : 'student',
         joinStatus: joinStatusRef.current,
         updatedAt: Date.now(),
       }, force);
+    };
+
+    triggerEmoteRef.current = (emote: WorldMotion, durationMs = 2_800) => {
+      activeEmoteRef.current = emote;
+      emoteUntilRef.current = performance.now() + durationMs;
+      setActiveEmote(emote);
+      publishPresence(true, emote);
     };
 
     summonRef.current = () => {
@@ -2896,6 +3401,22 @@ const VirtualClassroom: React.FC = () => {
       if (event.code === 'KeyE') interactRef.current();
       if (event.code === 'KeyQ') placeRef.current();
       if (event.code === 'KeyR') removeRef.current();
+      if (event.code === 'KeyZ' && !event.repeat) {
+        triggerEmoteRef.current('wave', 2_800);
+        setStatus('👋 โบกมือทักทายเพื่อนในห้อง!');
+      }
+      if (event.code === 'KeyX' && !event.repeat) {
+        triggerEmoteRef.current('cheer', 2_800);
+        setStatus('🙌 กระโดดดีใจ เย้!');
+      }
+      if (event.code === 'KeyC' && !event.repeat && !flyingRef.current) {
+        triggerEmoteRef.current('dance', 3_600);
+        setStatus('💃 ออกสเต็ปเต้นโรบอทไซเบอร์!');
+      }
+      if (event.code === 'KeyV' && !event.repeat) {
+        triggerEmoteRef.current('build', 2_200);
+        setStatus('🔨 ท่าลงมือสร้างงาน!');
+      }
       if (event.code === 'KeyF' && canParticipateRef.current) {
         const nextFly = !flyingRef.current;
         flyingRef.current = nextFly;
@@ -3216,16 +3737,57 @@ const VirtualClassroom: React.FC = () => {
       playerPosition.x = THREE.MathUtils.clamp(playerPosition.x, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
       playerPosition.z = THREE.MathUtils.clamp(playerPosition.z, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
       const isMoving = Math.abs(forwardAmount) + Math.abs(sideAmount) > 0;
+      if (activeEmoteRef.current && now >= emoteUntilRef.current) {
+        activeEmoteRef.current = null;
+        setActiveEmote(null);
+      }
+      const currentLocalMotion: WorldMotion = activeEmoteRef.current
+        ? activeEmoteRef.current
+        : flyingRef.current
+          ? 'fly'
+          : !grounded
+            ? 'jump'
+            : isMoving
+              ? 'walk'
+              : 'idle';
       localAvatar.visible = thirdPersonRef.current;
       localAvatar.position.set(playerPosition.x, playerPosition.y - 1.7, playerPosition.z);
       localAvatar.rotation.y = yaw;
-      animateAvatar(localAvatar, isMoving, !grounded, now, keys.has('ShiftLeft') ? 1.35 : 1);
+      animateAvatar(
+        localAvatar,
+        isMoving,
+        !grounded,
+        flyingRef.current,
+        currentLocalMotion,
+        now,
+        delta,
+        keys.has('ShiftLeft') ? 1.35 : 1,
+      );
       remoteAvatars.forEach((avatar) => {
         const target = avatar.userData.targetPosition as THREE.Vector3;
         const distance = target ? avatar.position.distanceTo(target) : 0;
-        if (target) avatar.position.lerp(target, Math.min(1, delta * 9));
-        const remoteMoving = avatar.userData.motion === 'walk' || distance > 0.035;
-        animateAvatar(avatar, remoteMoving, avatar.userData.motion === 'jump', now, 0.9);
+        if (target) {
+          if (distance > 14) avatar.position.copy(target);
+          else avatar.position.lerp(target, Math.min(1, delta * 11));
+        }
+        const targetRot = typeof avatar.userData.targetRotation === 'number'
+          ? (avatar.userData.targetRotation as number)
+          : avatar.rotation.y;
+        let rotDiff = ((targetRot - avatar.rotation.y + Math.PI) % (Math.PI * 2)) - Math.PI;
+        if (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+        avatar.rotation.y += rotDiff * Math.min(1, delta * 12);
+        const remoteMotion = (avatar.userData.motion as WorldMotion) || 'idle';
+        const remoteMoving = remoteMotion === 'walk' || distance > 0.04;
+        animateAvatar(
+          avatar,
+          remoteMoving,
+          remoteMotion === 'jump',
+          remoteMotion === 'fly',
+          remoteMotion,
+          now,
+          delta,
+          0.95,
+        );
       });
       if (thirdPersonRef.current) {
         camera.position.copy(playerPosition).addScaledVector(forward, -4.8);
@@ -3276,7 +3838,7 @@ const VirtualClassroom: React.FC = () => {
 
       if (now - lastPresence > 1_200) {
         lastPresence = now;
-        publishPresence(false, !grounded ? 'jump' : isMoving ? 'walk' : 'idle');
+        publishPresence(false, currentLocalMotion);
       }
 
       renderer.render(scene, camera);
@@ -3328,7 +3890,7 @@ const VirtualClassroom: React.FC = () => {
       pixelTextures.forEach((texture) => texture.dispose());
       mount.removeChild(renderer.domElement);
     };
-  }, [activeClassroom, avatarColor, boards, displayName, gameStations, graphicsQuality, isTeacher, openLessonBoard, playerId, recordActivity, roomClassroom, roomId]);
+  }, [activeClassroom, boards, displayName, gameStations, graphicsQuality, isTeacher, openLessonBoard, playerId, recordActivity, roomClassroom, roomId]);
 
   useEffect(() => {
     if (!status) return;
@@ -3584,25 +4146,208 @@ const VirtualClassroom: React.FC = () => {
 
 
       <button className="world-avatar-badge" onClick={() => setAvatarPanelOpen((open) => !open)} aria-label="ปรับตัวละครและดูผู้เล่นในห้อง">
-        <span className="world-avatar-face" style={{ '--avatar': avatarColor } as React.CSSProperties}><ScanFace size={22} /></span>
+        <span className="world-avatar-face" style={{ '--avatar': avatarColor, fontSize: '1.15rem' } as React.CSSProperties}>
+          {TECH_CLASSES.find((c) => c.id === avatarTechClass)?.icon || <ScanFace size={22} />}
+        </span>
         <span>
-          <strong>{isTeacher ? 'ครูอนันตชัย' : displayName}</strong>
-          <small>{activeClassroom} · {syncMode === 'firebase' ? 'ออนไลน์หลายเครื่อง' : syncMode === 'local' ? 'เฉพาะเครื่องนี้' : 'กำลังเชื่อมต่อ'}</small>
+          <strong>
+            {FACE_STYLES.find((f) => f.id === avatarFaceStyle)?.icon}{' '}
+            {isTeacher ? 'ครูอนันตชัย' : displayName}
+          </strong>
+          <small>
+            {TECH_CLASSES.find((c) => c.id === avatarTechClass)?.title} · {activeClassroom} · {syncMode === 'firebase' ? 'ออนไลน์หลายเครื่อง' : syncMode === 'local' ? 'เฉพาะเครื่องนี้' : 'กำลังเชื่อมต่อ'}
+          </small>
         </span>
       </button>
 
       {avatarPanelOpen && (
-        <aside className="world-avatar-panel">
+        <aside
+          className="world-avatar-panel"
+          style={{
+            width: 'min(360px, calc(100vw - 36px))',
+            maxHeight: 'calc(100dvh - 148px)',
+            overflowY: 'auto',
+          }}
+        >
           <button className="world-panel-close" onClick={() => setAvatarPanelOpen(false)} aria-label="ปิดแผงตัวละคร"><X size={18} /></button>
-          <h2><Palette size={19} /> ตัวละครของฉัน</h2>
-          <p>{isTeacher ? 'ครูอนันตชัย' : displayName}</p>
-          <div className="world-avatar-colors" aria-label="เลือกสีเสื้อตัวละคร">
+          <h2><Palette size={19} /> แต่งตัวละคร & ท่าทาง</h2>
+          <p style={{ marginBottom: 8 }}>
+            {isTeacher ? 'ครูอนันตชัย' : displayName} ·{' '}
+            <strong style={{ color: '#2563eb' }}>
+              {TECH_CLASSES.find((c) => c.id === avatarTechClass)?.icon}{' '}
+              {TECH_CLASSES.find((c) => c.id === avatarTechClass)?.title}
+            </strong>
+          </p>
+
+          <h3 style={{ marginTop: 10 }}>🧑‍💻 สายอาชีพนักคอมพิวเตอร์ (6 รูปแบบ)</h3>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gap: 6,
+              marginTop: 7,
+            }}
+            role="group"
+            aria-label="เลือกชุดสายอาชีพนักคอมพิวเตอร์"
+          >
+            {TECH_CLASSES.map((tc) => {
+              const active = avatarTechClass === tc.id;
+              return (
+                <button
+                  key={tc.id}
+                  type="button"
+                  onClick={() => {
+                    setAvatarTechClass(tc.id);
+                    setThirdPerson(true);
+                    triggerEmoteRef.current('cheer', 1_800);
+                    setStatus(`🧑‍💻 เปลี่ยนชุดเป็น "${tc.title}" (${tc.gearDesc})`);
+                  }}
+                  title={tc.gearDesc}
+                  style={{
+                    textAlign: 'left',
+                    padding: '7px 9px',
+                    borderRadius: 8,
+                    border: active ? `2px solid ${tc.accent}` : '1px solid #cbd5e1',
+                    background: active ? '#0f172a' : '#f8fafc',
+                    color: active ? '#ffffff' : '#1e293b',
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span>{tc.icon}</span>
+                    <span>{tc.title}</span>
+                  </div>
+                  <small
+                    style={{
+                      display: 'block',
+                      fontSize: '0.66rem',
+                      color: active ? '#93c5fd' : '#64748b',
+                      marginTop: 2,
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {tc.gearDesc}
+                  </small>
+                </button>
+              );
+            })}
+          </div>
+
+          <h3 style={{ marginTop: 13 }}>😊 ปรับหน้าตา & อารมณ์</h3>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+              gap: 5,
+              marginTop: 7,
+            }}
+            role="group"
+            aria-label="เลือกหน้าตาตัวละคร"
+          >
+            {FACE_STYLES.map((face) => {
+              const active = avatarFaceStyle === face.id;
+              return (
+                <button
+                  key={face.id}
+                  type="button"
+                  onClick={() => {
+                    setAvatarFaceStyle(face.id);
+                    setThirdPerson(true);
+                    setStatus(`${face.icon} เปลี่ยนหน้าตาเป็น "${face.label}"`);
+                  }}
+                  title={face.label}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 2,
+                    padding: '6px 4px',
+                    borderRadius: 7,
+                    border: active ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                    background: active ? '#eff6ff' : '#ffffff',
+                    color: '#1e293b',
+                    fontSize: '0.66rem',
+                    fontWeight: 800,
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ fontSize: '1.15rem' }}>{face.icon}</span>
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                    {face.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <h3 style={{ marginTop: 13 }}>🕺 ท่าทางแอ็กชัน (Move Actions)</h3>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gap: 6,
+              marginTop: 7,
+            }}
+            role="group"
+            aria-label="แสดงท่าทางตัวละคร"
+          >
+            {AVATAR_ACTIONS.map((act) => {
+              const active = activeEmote === act.id;
+              return (
+                <button
+                  key={act.id}
+                  type="button"
+                  onClick={() => {
+                    setThirdPerson(true);
+                    triggerEmoteRef.current(act.id, act.id === 'dance' ? 3_800 : 2_800);
+                    setStatus(`${act.icon} แสดงท่า "${act.label}" ให้เพื่อนในห้องเห็น!`);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '7px 10px',
+                    borderRadius: 7,
+                    border: active ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                    background: active ? '#dcfce7' : '#ffffff',
+                    color: '#1e293b',
+                    fontSize: '0.76rem',
+                    fontWeight: 800,
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span>{act.icon} {act.label}</span>
+                  <kbd
+                    style={{
+                      padding: '1px 5px',
+                      borderRadius: 4,
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.66rem',
+                      color: '#475569',
+                    }}
+                  >
+                    {act.keyHint}
+                  </kbd>
+                </button>
+              );
+            })}
+          </div>
+
+          <h3 style={{ marginTop: 13 }}>🎨 สีเสื้อตัวละคร</h3>
+          <div className="world-avatar-colors" aria-label="เลือกสีเสื้อตัวละคร" style={{ marginTop: 7, flexWrap: 'wrap' }}>
             {AVATAR_COLORS.map((color) => (
               <button
                 key={color}
                 className={avatarColor === color ? 'active' : ''}
                 style={{ '--avatar': color } as React.CSSProperties}
-                onClick={() => setAvatarColor(color)}
+                onClick={() => {
+                  setAvatarColor(color);
+                  setThirdPerson(true);
+                }}
                 aria-label={`เลือกสี ${color}`}
               />
             ))}
@@ -3631,24 +4376,28 @@ const VirtualClassroom: React.FC = () => {
           )}
           <h3><Users size={17} /> ผู้เล่นในห้อง ({Math.max(1, onlinePlayers.length)})</h3>
           <div className="world-player-list">
-            {onlinePlayers.length > 0 ? onlinePlayers.map((player) => (
-              <span
-                key={player.id}
-                onClick={() => {
-                  if (player.id !== playerId) {
-                    teleportToPlayerRef.current(player);
-                    setAvatarPanelOpen(false);
-                  }
-                }}
-                style={{ cursor: player.id !== playerId ? 'pointer' : 'default' }}
-                title={player.id !== playerId ? `คลิกเพื่อเดินไปหา ${player.name}` : 'ตัวละครของคุณ'}
-              >
-                <i style={{ background: player.color }} />
-                {player.role === 'teacher' ? 'ครู ' : ''}{player.name}
-                {player.id !== playerId && <small style={{ marginLeft: 'auto', opacity: 0.78 }}>เดินไปหา →</small>}
-                {player.joinStatus === 'waiting' && <small>รออนุมัติ</small>}
-              </span>
-            )) : <span><i style={{ background: avatarColor }} />{displayName}</span>}
+            {onlinePlayers.length > 0 ? onlinePlayers.map((player) => {
+              const pClass = TECH_CLASSES.find((c) => c.id === (player.techClass || 'coder')) || TECH_CLASSES[0];
+              return (
+                <span
+                  key={player.id}
+                  onClick={() => {
+                    if (player.id !== playerId) {
+                      teleportToPlayerRef.current(player);
+                      setAvatarPanelOpen(false);
+                    }
+                  }}
+                  style={{ cursor: player.id !== playerId ? 'pointer' : 'default' }}
+                  title={player.id !== playerId ? `คลิกเพื่อเดินไปหา ${player.name} (${pClass.title})` : 'ตัวละครของคุณ'}
+                >
+                  <i style={{ background: player.color }} />
+                  <span>{pClass.icon}</span>
+                  {player.role === 'teacher' ? 'ครู ' : ''}{player.name}
+                  {player.id !== playerId && <small style={{ marginLeft: 'auto', opacity: 0.78 }}>เดินไปหา →</small>}
+                  {player.joinStatus === 'waiting' && <small>รออนุมัติ</small>}
+                </span>
+              );
+            }) : <span><i style={{ background: avatarColor }} />{displayName}</span>}
           </div>
         </aside>
       )}
@@ -3865,8 +4614,25 @@ const VirtualClassroom: React.FC = () => {
         <button onClick={() => lockRef.current()} title="ควบคุมมุมมอง" aria-label="ควบคุมมุมมอง" disabled={!canParticipate}>
           <Maximize2 size={20} />
         </button>
-        <button onClick={() => setThirdPerson((active) => !active)} title="สลับมุมมองตัวละคร" aria-label="สลับมุมมองตัวละคร" className={thirdPerson ? 'active' : ''}>
+        <button onClick={() => setThirdPerson((active) => !active)} title="สลับมุมมองตัวละคร (ดูชุดและท่าทางของฉัน)" aria-label="สลับมุมมองตัวละคร" className={thirdPerson ? 'active' : ''}>
           <ScanFace size={20} />
+        </button>
+        <button
+          onClick={() => {
+            const cycle: WorldMotion[] = ['wave', 'cheer', 'dance'];
+            const nextIdx = activeEmote ? (cycle.indexOf(activeEmote) + 1) % cycle.length : 0;
+            const nextEmote = cycle[nextIdx] || 'wave';
+            setThirdPerson(true);
+            triggerEmoteRef.current(nextEmote, nextEmote === 'dance' ? 3_600 : 2_800);
+            const info = AVATAR_ACTIONS.find((a) => a.id === nextEmote);
+            setStatus(`${info?.icon || '👋'} แสดงท่า "${info?.label || 'ทักทาย'}" (กด Z/X/C/V เพื่อเปลี่ยนท่า)`);
+          }}
+          title="แสดงท่าทางทักทายเพื่อน (โบกมือ Z / ดีใจ X / เต้น C)"
+          aria-label="แสดงท่าทางทักทายเพื่อน"
+          className={activeEmote ? 'active' : ''}
+          disabled={!canParticipate}
+        >
+          <span style={{ fontSize: '1.05rem', lineHeight: 1 }} aria-hidden="true">👋</span>
         </button>
         <button onClick={() => jumpRef.current()} title="กระโดด (กด Space 2 ครั้งติดกันเพื่อบินสร้างแบบมายคราฟ)" aria-label="กระโดด" disabled={!canParticipate || (!isTeacher && roomState.movementLocked)}>
           <ChevronsUp size={20} />
