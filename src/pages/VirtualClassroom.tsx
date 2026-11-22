@@ -78,6 +78,7 @@ import {
   subscribeWorldBlocks,
   subscribeWorldPlayers,
   updateVirtualRoomState,
+  updateWorldBlock,
   updateWorldPlayer,
   verifyVirtualRoomAccessCode,
 } from '../services/virtualClassroomService';
@@ -186,7 +187,7 @@ const gamesForClassroom = (classroom: string) => {
   return [CIRCUIT_GAME_STATION, RUNNER_GAME_STATION, FILE_GAME_STATION];
 };
 
-const MATERIALS: Array<{ id: BlockMaterial; color: string; label: string }> = [
+const MATERIALS: Array<{ id: BlockMaterial; color: string; label: string; icon?: string; hint?: string }> = [
   { id: 'grass', color: '#65a30d', label: 'หญ้า' },
   { id: 'brick', color: '#dc5f45', label: 'อิฐ' },
   { id: 'wood', color: '#a16207', label: 'ไม้' },
@@ -196,10 +197,23 @@ const MATERIALS: Array<{ id: BlockMaterial; color: string; label: string }> = [
   { id: 'sand', color: '#e0c896', label: 'ทราย' },
   { id: 'ice', color: '#a5d8f0', label: 'น้ำแข็ง' },
   { id: 'ruby', color: '#e11d48', label: 'อัญมณี' },
+  { id: 'jumppad', color: '#10b981', label: 'สปริงเด้งสูง', icon: '🚀', hint: 'เหยียบแล้วกระโดดสูง 2 เท่า ใช้สร้างด่าน Parkour' },
+  { id: 'speedpad', color: '#06b6d4', label: 'บล็อกเร่งสปีด', icon: '⚡', hint: 'เหยียบแล้ววิ่งเร็วพิเศษ 2 วินาที' },
+  { id: 'lamp', color: '#fde047', label: 'ไฟนีออนลอจิก', icon: '💡', hint: 'สว่างเรืองแสง เชื่อมกับสวิตช์ 0/1 ในระยะ 6 ช่อง' },
+  { id: 'switch', color: '#f97316', label: 'สวิตช์ 0/1', icon: '🎛️', hint: 'กดปุ่มโต้ตอบ (E) เพื่อสลับเปิด/ปิดไฟนีออนรอบข้าง' },
+  { id: 'sign', color: '#8b5cf6', label: 'ป้ายชื่อผลงาน', icon: '🪧', hint: 'วางป้ายลอย 3D ตั้งชื่อผลงานหรือจุดเส้นชัย 🏁' },
 ];
 
 // ภารกิจสร้าง — เปลี่ยน "การวางบล็อก" ให้เป็น "การเรียนรู้" (มีเป้าหมาย ตรวจได้ ได้ดาว+คะแนน P)
-interface BuildStats { count: number; maxHeight: number; materials: number; ruby: number; }
+interface BuildStats {
+  count: number;
+  maxHeight: number;
+  materials: number;
+  ruby: number;
+  logicCount: number;
+  parkourCount: number;
+  signCount: number;
+}
 interface BuildMission {
   id: string; icon: string; title: string; concept: string; goal: string; stars: number;
   check: (s: BuildStats) => boolean; progress: (s: BuildStats) => string;
@@ -209,6 +223,8 @@ const BUILD_MISSIONS: BuildMission[] = [
   { id: 'palette5', icon: '🌈', title: 'จานสีข้อมูล', concept: 'คอมพิวเตอร์เก็บภาพเป็นข้อมูลสี', goal: 'ใช้บล็อกให้ครบ 5 สีต่างกัน', stars: 2, check: (s) => s.materials >= 5, progress: (s) => `ใช้แล้ว ${s.materials}/5 สี` },
   { id: 'tower8', icon: '🔢', title: 'หอคอย 8 บิต', concept: 'เลขฐานสอง 1 ไบต์ = 8 บิต', goal: 'สร้างหอสูง 8 ชั้น', stars: 3, check: (s) => s.maxHeight >= 8, progress: (s) => `สูง ${s.maxHeight}/8 ชั้น` },
   { id: 'gems5', icon: '💎', title: 'ล่าอัญมณี', concept: 'เงื่อนไข: เลือกเฉพาะบล็อกอัญมณี', goal: 'วางบล็อกอัญมณี 5 ก้อน', stars: 3, check: (s) => s.ruby >= 5, progress: (s) => `อัญมณี ${s.ruby}/5 ก้อน` },
+  { id: 'circuit01', icon: '💡', title: 'วงจรไฟลอจิก 0/1', concept: 'สวิตช์ควบคุมสถานะบูลีน 1 (เปิด) และ 0 (ปิด)', goal: 'วางสวิตช์ 0/1 และไฟนีออนรวม 2 ชิ้น', stars: 3, check: (s) => s.logicCount >= 2, progress: (s) => `บล็อกไฟ/สวิตช์ ${s.logicCount}/2 ชิ้น` },
+  { id: 'parkour1', icon: '🚀', title: 'นักออกแบบด่าน Parkour', concept: 'ออกแบบลำดับขั้นและจุดหมายให้เพื่อนร่วมชั้นทดลองเล่น', goal: 'วางสปริงหรือสปีด 2 ชิ้น และป้ายผลงาน 1 ป้าย', stars: 4, check: (s) => s.parkourCount >= 2 && s.signCount >= 1, progress: (s) => `สปริง/สปีด ${s.parkourCount}/2 · ป้าย ${s.signCount}/1` },
 ];
 
 const WORLD_SIZE = 96;
@@ -350,6 +366,35 @@ const createNameSprite = (name: string, isTeacher = false) => {
   return sprite;
 };
 
+const createSignSprite = (label: string, ownerName?: string) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 160;
+  const ctx = canvas.getContext('2d')!;
+  const isFinish = label.includes('เส้นชัย') || label.includes('🏁');
+  ctx.fillStyle = isFinish ? 'rgba(180, 83, 9, 0.94)' : 'rgba(88, 28, 135, 0.92)';
+  ctx.fillRect(8, 12, 496, 136);
+  ctx.strokeStyle = isFinish ? '#fde047' : '#d8b4fe';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(11, 15, 490, 130);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '800 36px Sarabun, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label.slice(0, 26), 256, ownerName ? 62 : 80);
+  if (ownerName) {
+    ctx.fillStyle = '#fde047';
+    ctx.font = '600 24px Sarabun, sans-serif';
+    ctx.fillText(`โดย ${ownerName}`.slice(0, 30), 256, 112);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
+  sprite.scale.set(2.8, 0.88, 1);
+  sprite.position.set(0, 1.18, 0);
+  return sprite;
+};
+
 /**
  * ขอล็อกเมาส์แบบไม่ทำให้เกิด unhandled rejection
  * เบราว์เซอร์ใหม่คืน Promise และจะ reject ถ้าเพิ่งปลดล็อกไปหมาด ๆ
@@ -410,7 +455,17 @@ const VirtualClassroom: React.FC = () => {
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
   const [worldStars, setWorldStars] = useState(0);
   const [worldBlockCount, setWorldBlockCount] = useState(0);
-  const [buildStats, setBuildStats] = useState<BuildStats>({ count: 0, maxHeight: 0, materials: 0, ruby: 0 });
+  const [buildStats, setBuildStats] = useState<BuildStats>({
+    count: 0,
+    maxHeight: 0,
+    materials: 0,
+    ruby: 0,
+    logicCount: 0,
+    parkourCount: 0,
+    signCount: 0,
+  });
+  const [editingSignBlock, setEditingSignBlock] = useState<WorldBlock | null>(null);
+  const [signDraftText, setSignDraftText] = useState('');
   const [buildMissionIdx, setBuildMissionIdx] = useState(() => {
     const v = parseInt(localStorage.getItem('kj_world_build_mission') || '0', 10);
     return Number.isFinite(v) ? Math.min(Math.max(v, 0), BUILD_MISSIONS.length) : 0;
@@ -1390,7 +1445,49 @@ const VirtualClassroom: React.FC = () => {
       return star;
     });
 
+    const makeMagicBlockTexture = (
+      bgHex: string,
+      borderHex: string,
+      symbol: string,
+      subText?: string,
+    ) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 64;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = bgHex;
+      ctx.fillRect(0, 0, 64, 64);
+      ctx.strokeStyle = borderHex;
+      ctx.lineWidth = 6;
+      ctx.strokeRect(3, 3, 58, 58);
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '800 26px "Segoe UI Emoji", Sarabun, sans-serif';
+      ctx.fillText(symbol, 32, subText ? 25 : 33);
+      if (subText) {
+        ctx.fillStyle = borderHex;
+        ctx.font = '800 13px Sarabun, sans-serif';
+        ctx.fillText(subText, 32, 48);
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.magFilter = THREE.NearestFilter;
+      texture.minFilter = THREE.NearestFilter;
+      pixelTextures.push(texture);
+      return texture;
+    };
+
     const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const lampOffMaterial = new THREE.MeshStandardMaterial({
+      map: makeMagicBlockTexture('#334155', '#94a3b8', '💡', 'OFF 0'),
+      roughness: 0.7,
+    });
+    const switchOffMaterial = new THREE.MeshStandardMaterial({
+      map: makeMagicBlockTexture('#7f1d1d', '#f87171', '🎛️', 'OFF 0'),
+      emissive: new THREE.Color(0xef4444),
+      emissiveIntensity: 0.22,
+      roughness: 0.55,
+    });
     const blockMaterials: Record<BlockMaterial, THREE.MeshStandardMaterial> = {
       grass: new THREE.MeshStandardMaterial({ map: makePixelTexture(0x65a30d), roughness: 0.92 }),
       brick: new THREE.MeshStandardMaterial({ map: makePixelTexture(0xd85d45), roughness: 0.86 }),
@@ -1401,6 +1498,36 @@ const VirtualClassroom: React.FC = () => {
       sand: new THREE.MeshStandardMaterial({ map: makePixelTexture(0xe0c896, 20), roughness: 0.98 }),
       ice: new THREE.MeshStandardMaterial({ color: 0xa5d8f0, transparent: true, opacity: 0.6, roughness: 0.08, metalness: 0.2 }),
       ruby: new THREE.MeshStandardMaterial({ map: makePixelTexture(0xe11d48, 14), metalness: 0.4, roughness: 0.22 }),
+      jumppad: new THREE.MeshStandardMaterial({
+        map: makeMagicBlockTexture('#059669', '#6ee7b7', '🚀', 'JUMP'),
+        emissive: new THREE.Color(0x10b981),
+        emissiveIntensity: 0.28,
+        roughness: 0.45,
+      }),
+      speedpad: new THREE.MeshStandardMaterial({
+        map: makeMagicBlockTexture('#0891b2', '#67e8f9', '⚡', 'SPEED'),
+        emissive: new THREE.Color(0x06b6d4),
+        emissiveIntensity: 0.32,
+        roughness: 0.4,
+      }),
+      lamp: new THREE.MeshStandardMaterial({
+        map: makeMagicBlockTexture('#ca8a04', '#fef08a', '💡', 'ON 1'),
+        emissive: new THREE.Color(0xfacc15),
+        emissiveIntensity: 0.82,
+        roughness: 0.25,
+      }),
+      switch: new THREE.MeshStandardMaterial({
+        map: makeMagicBlockTexture('#15803d', '#86efac', '🎛️', 'ON 1'),
+        emissive: new THREE.Color(0x22c55e),
+        emissiveIntensity: 0.42,
+        roughness: 0.45,
+      }),
+      sign: new THREE.MeshStandardMaterial({
+        map: makeMagicBlockTexture('#6d28d9', '#fde047', '🪧', 'SIGN'),
+        emissive: new THREE.Color(0x7c3aed),
+        emissiveIntensity: 0.24,
+        roughness: 0.5,
+      }),
     };
     const blockMeshes = new Map<string, THREE.Mesh>();
     const blockData = new Map<string, WorldBlock>();
@@ -1412,15 +1539,39 @@ const VirtualClassroom: React.FC = () => {
       const columns = new Map<string, number>();
       const mats = new Set<string>();
       let ruby = 0;
+      let logicCount = 0;
+      let parkourCount = 0;
+      let signCount = 0;
       mine.forEach((b) => {
         const key = `${b.x},${b.z}`;
         columns.set(key, Math.max(columns.get(key) || 0, b.y + 0.5));
         mats.add(b.material);
         if (b.material === 'ruby') ruby += 1;
+        if (b.material === 'lamp' || b.material === 'switch') logicCount += 1;
+        if (b.material === 'jumppad' || b.material === 'speedpad') parkourCount += 1;
+        if (b.material === 'sign') signCount += 1;
       });
       let maxHeight = 0;
       columns.forEach((h) => { if (h > maxHeight) maxHeight = h; });
-      setBuildStats({ count: mine.length, maxHeight: Math.round(maxHeight), materials: mats.size, ruby });
+      setBuildStats({
+        count: mine.length,
+        maxHeight: Math.round(maxHeight),
+        materials: mats.size,
+        ruby,
+        logicCount,
+        parkourCount,
+        signCount,
+      });
+
+      const switches = blocks.filter((b) => b.material === 'switch');
+      const isLampPowered = (lamp: WorldBlock): boolean => {
+        const nearbySwitches = switches.filter(
+          (sw) => Math.hypot(sw.x - lamp.x, sw.y - lamp.y, sw.z - lamp.z) <= 6.5,
+        );
+        if (nearbySwitches.length === 0) return true;
+        return nearbySwitches.some((sw) => sw.powered !== false);
+      };
+
       const nextIds = new Set(blocks.map((block) => block.id));
       blockMeshes.forEach((mesh, id) => {
         if (nextIds.has(id)) return;
@@ -1431,15 +1582,35 @@ const VirtualClassroom: React.FC = () => {
       blocks.forEach((block) => {
         blockData.set(block.id, block);
         let mesh = blockMeshes.get(block.id);
+        const targetMaterial = block.material === 'lamp'
+          ? (isLampPowered(block) ? blockMaterials.lamp : lampOffMaterial)
+          : block.material === 'switch'
+            ? (block.powered !== false ? blockMaterials.switch : switchOffMaterial)
+            : (blockMaterials[block.material] || blockMaterials.grass);
         if (!mesh) {
-          mesh = new THREE.Mesh(blockGeometry, blockMaterials[block.material]);
+          mesh = new THREE.Mesh(blockGeometry, targetMaterial);
           mesh.castShadow = true;
           mesh.receiveShadow = true;
           mesh.userData = { kind: 'block', blockId: block.id };
           blockMeshes.set(block.id, mesh);
           scene.add(mesh);
+        } else if (mesh.material !== targetMaterial) {
+          mesh.material = targetMaterial;
         }
         mesh.position.set(block.x, block.y, block.z);
+        if (block.material === 'sign') {
+          const signText = block.label || `⭐ ผลงานของ ${block.ownerName || 'นักเรียน'}`;
+          const signKey = `${signText}__${block.ownerName || ''}`;
+          if (mesh.userData.signKey !== signKey) {
+            if (mesh.userData.signSprite) {
+              mesh.remove(mesh.userData.signSprite as THREE.Object3D);
+            }
+            const sprite = createSignSprite(signText, block.ownerName);
+            mesh.add(sprite);
+            mesh.userData.signSprite = sprite;
+            mesh.userData.signKey = signKey;
+          }
+        }
       });
     };
     const unsubscribeBlocks = subscribeWorldBlocks(roomId, syncBlocks);
@@ -1651,17 +1822,27 @@ const VirtualClassroom: React.FC = () => {
         setStatus('ไม่สามารถวางบล็อกทับตัวเราได้ ถอยหลังออกมานิดนึงนะ');
         return;
       }
+      const isSign = materialRef.current === 'sign';
+      const isSwitch = materialRef.current === 'switch';
       const block: WorldBlock = {
         id: `${playerId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         x, y, z,
         material: materialRef.current,
         ownerId: playerId,
+        ownerName: displayName,
+        ...(isSign ? { label: `⭐ ผลงานของ ${displayName}` } : {}),
+        ...(isSwitch ? { powered: true } : {}),
         createdAt: Date.now(),
       };
       void addWorldBlock(roomId, block).then((added) => {
         if (!added) {
           setStatus('ช่องนี้มีบล็อกอยู่แล้ว ลองเล็งช่องข้าง ๆ');
           return;
+        }
+        if (isSign) {
+          if (document.pointerLockElement) document.exitPointerLock();
+          setEditingSignBlock(block);
+          setSignDraftText(block.label || `⭐ ผลงานของ ${displayName}`);
         }
         setStatus(`วางบล็อก${MATERIALS.find((item) => item.id === block.material)?.label || ''}แล้ว`);
         const unitNo = boards[0]?.unitNo || 1;
@@ -1689,13 +1870,32 @@ const VirtualClassroom: React.FC = () => {
     interactRef.current = () => {
       if (!canParticipateRef.current) return;
       const hit = getHit();
+      if (hit && hit.object.userData.kind === 'block' && hit.distance <= BUILD_REACH) {
+        const targetBlock = blockData.get(hit.object.userData.blockId as string);
+        if (targetBlock?.material === 'switch') {
+          const nextPowered = !(targetBlock.powered !== false);
+          void updateWorldBlock(roomId, targetBlock.id, { powered: nextPowered });
+          setStatus(nextPowered ? '🎛️ สวิตช์ ON (1) — เปิดไฟนีออนรอบข้างแล้ว!' : '🎛️ สวิตช์ OFF (0) — ปิดไฟนีออนรอบข้างแล้ว!');
+          return;
+        }
+        if (targetBlock?.material === 'sign') {
+          if (targetBlock.ownerId === playerId || isTeacher) {
+            if (document.pointerLockElement) document.exitPointerLock();
+            setEditingSignBlock(targetBlock);
+            setSignDraftText(targetBlock.label || `⭐ ผลงานของ ${targetBlock.ownerName || displayName}`);
+          } else {
+            setStatus(`🪧 ป้ายของ ${targetBlock.ownerName || 'เพื่อน'}: "${targetBlock.label || 'ผลงานสร้างสรรค์'}"`);
+          }
+          return;
+        }
+      }
       if (hit && hit.object.userData.kind === 'portal' && hit.distance <= 24) {
         if (document.pointerLockElement) document.exitPointerLock();
         setGamesPanelOpen(true);
         return;
       }
       if (!hit || hit.distance > 24 || !['board', 'game'].includes(hit.object.userData.kind)) {
-        setStatus('หันไปที่สไลด์ สถานีเกม หรือพอร์ทัลเกมก่อน');
+        setStatus('หันไปที่สไลด์ สถานีเกม สวิตช์ 0/1 หรือป้ายชื่อผลงานก่อน');
         return;
       }
       if (document.pointerLockElement) document.exitPointerLock();
@@ -1816,8 +2016,10 @@ const VirtualClassroom: React.FC = () => {
       if (event.button === 0) {
         const hit = getHit();
         const kind = hit?.object.userData.kind;
+        const targetBlock = kind === 'block' ? blockData.get(hit?.object.userData.blockId as string) : undefined;
         if (kind === 'portal') { if (document.pointerLockElement) document.exitPointerLock(); setGamesPanelOpen(true); }
         else if (kind === 'board' || kind === 'game') interactRef.current();
+        else if (modeRef.current === 'explore' && (targetBlock?.material === 'switch' || targetBlock?.material === 'sign')) interactRef.current();
         else removeRef.current();
       } else if (event.button === 2) {
         placeRef.current();
@@ -1850,6 +2052,10 @@ const VirtualClassroom: React.FC = () => {
     renderer.domElement.addEventListener('pointermove', onTouchMove);
     renderer.domElement.addEventListener('pointerup', onTouchEnd);
 
+    let speedBoostUntil = 0;
+    let lastPadTriggerAt = 0;
+    let lastFinishSignId = '';
+
     const animate = (now: number) => {
       if (graphicsQuality === 'low' && now - lastRenderedAt < 32) {
         frame = requestAnimationFrame(animate);
@@ -1869,7 +2075,8 @@ const VirtualClassroom: React.FC = () => {
         ? (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0)
           - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0)
         : 0;
-      const speed = keys.has('ShiftLeft') ? 8.5 : 5.2;
+      const baseSpeed = keys.has('ShiftLeft') ? 8.5 : 5.2;
+      const speed = (now < speedBoostUntil ? 1.65 : 1) * baseSpeed;
       const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
       const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
       const PLAYER_RADIUS = 0.34;
@@ -2006,21 +2213,57 @@ const VirtualClassroom: React.FC = () => {
       // ยืนบนพื้น (0) หรือบนบล็อกที่วางไว้ในช่องนี้ — Minecraft: กระโดดขึ้นไปเหยียบบล็อกได้
       const feetY = playerPosition.y - 1.7;
       let floorTop = 0;
+      let standingBlock: WorldBlock | null = null;
       blockData.forEach((b) => {
         if (Math.abs(b.x - playerPosition.x) >= 0.72 || Math.abs(b.z - playerPosition.z) >= 0.72) return;
         const top = b.y + 0.5;
-        if (top > floorTop && top <= feetY + 0.35) floorTop = top;
+        if (top > floorTop && top <= feetY + 0.35) {
+          floorTop = top;
+          standingBlock = b;
+        }
       });
       // ยืน/กระโดดขึ้นเหยียบผิวโต๊ะ (และแพลตฟอร์มอื่น) ได้
       platforms.forEach((pf) => {
         if (playerPosition.x < pf.minX || playerPosition.x > pf.maxX || playerPosition.z < pf.minZ || playerPosition.z > pf.maxZ) return;
-        if (pf.top > floorTop && pf.top <= feetY + 0.35) floorTop = pf.top;
+        if (pf.top > floorTop && pf.top <= feetY + 0.35) {
+          floorTop = pf.top;
+          standingBlock = null;
+        }
       });
       const floorCamera = floorTop + 1.7;
       if (playerPosition.y <= floorCamera) {
-        playerPosition.y = floorCamera;
-        verticalVelocity = 0;
-        grounded = true;
+        const landedBlock = standingBlock as WorldBlock | null;
+        if (landedBlock?.material === 'jumppad' && movementAllowed) {
+          playerPosition.y = floorCamera;
+          verticalVelocity = 14.2;
+          grounded = false;
+          if (now - lastPadTriggerAt > 800) {
+            lastPadTriggerAt = now;
+            setStatus('🚀 เด้งสปริงกระโดดสูง!');
+          }
+        } else {
+          playerPosition.y = floorCamera;
+          verticalVelocity = 0;
+          grounded = true;
+          if (landedBlock?.material === 'speedpad' && movementAllowed) {
+            speedBoostUntil = now + 2_200;
+            if (now - lastPadTriggerAt > 800) {
+              lastPadTriggerAt = now;
+              setStatus('⚡ เทอร์โบเร่งความเร็ว!');
+            }
+          } else if (
+            landedBlock?.material === 'sign'
+            && (landedBlock.label?.includes('เส้นชัย') || landedBlock.label?.includes('🏁'))
+          ) {
+            if (lastFinishSignId !== landedBlock.id) {
+              lastFinishSignId = landedBlock.id;
+              celebrate();
+              setStatus(`🏁 พิชิตเส้นชัย: ${landedBlock.label}!`);
+            }
+          } else if (!landedBlock) {
+            lastFinishSignId = '';
+          }
+        }
       }
 
       // ป้องกันการตกแมพลงเหว/Void Fall Guard
@@ -2139,6 +2382,8 @@ const VirtualClassroom: React.FC = () => {
       cloudMaterial.dispose();
       starGeometry.dispose();
       starMaterial.dispose();
+      lampOffMaterial.dispose();
+      switchOffMaterial.dispose();
       Object.values(blockMaterials).forEach((item) => item.dispose());
       pixelTextures.forEach((texture) => texture.dispose());
       mount.removeChild(renderer.domElement);
@@ -2499,7 +2744,11 @@ const VirtualClassroom: React.FC = () => {
         <div className="world-build-capacity" aria-label={`ใช้บล็อก ${worldBlockCount} จาก ${MAX_WORLD_BLOCKS} ชิ้น`}>
           <BrickWall size={17} />
           <strong>{worldBlockCount.toLocaleString('th-TH')}/{MAX_WORLD_BLOCKS.toLocaleString('th-TH')}</strong>
-          <span>ระยะ {BUILD_REACH} ช่อง • สูง {BUILD_MAX_HEIGHT} ชั้น</span>
+          <span>
+            {MATERIALS.find((m) => m.id === material)?.hint
+              ? `${MATERIALS.find((m) => m.id === material)?.icon || ''} ${MATERIALS.find((m) => m.id === material)?.label}: ${MATERIALS.find((m) => m.id === material)?.hint}`
+              : `บล็อก${MATERIALS.find((m) => m.id === material)?.label || ''} • ระยะ ${BUILD_REACH} ช่อง • สูง ${BUILD_MAX_HEIGHT} ชั้น`}
+          </span>
         </div>
       )}
 
@@ -2550,17 +2799,29 @@ const VirtualClassroom: React.FC = () => {
         </button>
       </div>
 
-      <div className="world-materials" aria-label="แถบเลือกบล็อก (กดเลข 1-9)">
+      <div className="world-materials" aria-label="แถบเลือกบล็อกและบล็อกวิเศษ" style={{ maxWidth: 'calc(100vw - 24px)', overflowX: 'auto' }}>
         {MATERIALS.map((item, index) => (
           <button
             key={item.id}
             className={material === item.id ? 'active' : ''}
-            style={{ '--swatch': item.color } as React.CSSProperties}
+            style={{ '--swatch': item.color, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 42px', width: 42, height: 42 } as React.CSSProperties}
             onClick={() => { setMaterial(item.id); if (mode !== 'build') setMode('build'); }}
-            title={`${item.label} (กด ${index + 1})`}
+            title={item.hint ? `${item.icon || ''} ${item.label} — ${item.hint}` : `${item.label}${index < 9 ? ` (กด ${index + 1})` : ''}`}
             aria-label={item.label}
           >
-            <span className="slot-num">{index + 1}</span>
+            {index < 9 && <span className="slot-num">{index + 1}</span>}
+            {item.icon && (
+              <span
+                style={{
+                  fontSize: '1.18rem',
+                  lineHeight: 1,
+                  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.65))',
+                }}
+                aria-hidden="true"
+              >
+                {item.icon}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -2575,7 +2836,7 @@ const VirtualClassroom: React.FC = () => {
         <button onClick={() => jumpRef.current()} title="กระโดด" aria-label="กระโดด" disabled={!canParticipate || (!isTeacher && roomState.movementLocked)}>
           <ChevronsUp size={20} />
         </button>
-        <button onClick={() => interactRef.current()} title="โต้ตอบกับสไลด์หรือเกม" aria-label="โต้ตอบกับสไลด์หรือเกม" disabled={!canParticipate}>
+        <button onClick={() => interactRef.current()} title="โต้ตอบกับสไลด์ สถานีเกม สวิตช์ 0/1 หรือป้ายชื่อผลงาน (กด E)" aria-label="โต้ตอบกับสไลด์หรือเกม" disabled={!canParticipate}>
           <Hand size={20} />
         </button>
         <button onClick={() => setGamesPanelOpen(true)} title="เปิดแผงเกมทั้งหมด" aria-label="เปิดแผงเกมทั้งหมด" className={gamesPanelOpen ? 'active' : ''}>
@@ -3122,6 +3383,124 @@ const VirtualClassroom: React.FC = () => {
                 onClick={() => setConfirmRemapOpen(false)}
               >
                 ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* หน้าต่างตั้งชื่อป้ายผลงาน 3D และจุดเส้นชัย Parkour */}
+      {editingSignBlock && (
+        <div
+          className="world-modal-backdrop"
+          onClick={() => setEditingSignBlock(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="world-sign-title"
+        >
+          <div className="world-modal-card" onClick={(event) => event.stopPropagation()}>
+            <div className="world-modal-header">
+              <div className="world-modal-title" style={{ color: '#7c3aed' }}>
+                <span style={{ fontSize: '1.35rem' }}>🪧</span>
+                <h3 id="world-sign-title">ตั้งข้อความบนป้าย 3D</h3>
+              </div>
+              <button
+                className="world-modal-close-btn"
+                onClick={() => setEditingSignBlock(null)}
+                aria-label="ปิด"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <p className="world-modal-desc">
+              ข้อความนี้จะลอยอยู่เหนือป้ายในห้อง 3D ให้เพื่อนทุกคนมองเห็น (หากมีคำว่า <strong>เส้นชัย</strong> หรือ <strong>🏁</strong> เพื่อนที่กระโดดมาเหยียบป้ายจะได้พลุฉลอง!)
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+              <input
+                type="text"
+                maxLength={40}
+                value={signDraftText}
+                onChange={(event) => setSignDraftText(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    const nextLabel = signDraftText.trim() || `⭐ ผลงานของ ${displayName}`;
+                    void updateWorldBlock(roomId, editingSignBlock.id, { label: nextLabel, ownerName: displayName });
+                    setEditingSignBlock(null);
+                    setStatus(`บันทึกป้าย "${nextLabel}" แล้ว`);
+                  }
+                }}
+                placeholder={`เช่น 🏠 บ้านของ ${displayName}`}
+                aria-label="ข้อความบนป้าย 3D"
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: '2px solid #c4b5fd',
+                  fontSize: '0.96rem',
+                  fontWeight: 700,
+                  fontFamily: 'inherit',
+                  color: '#172033',
+                }}
+              />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {[
+                  `🏠 บ้านของ ${displayName}`,
+                  '🚀 จุดเริ่มต้นด่าน Parkour',
+                  '🏁 เส้นชัย Parkour! พิชิตสำเร็จ',
+                  '💡 ห้องทดลองวงจรลอจิก 0/1',
+                  `🎨 แกลเลอรีของ ${displayName}`,
+                ].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setSignDraftText(preset)}
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: 999,
+                      border: '1px solid #ddd6fe',
+                      background: signDraftText === preset ? '#7c3aed' : '#f5f3ff',
+                      color: signDraftText === preset ? '#ffffff' : '#5b21b6',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      fontFamily: 'inherit',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="world-modal-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  const nextLabel = signDraftText.trim() || `⭐ ผลงานของ ${displayName}`;
+                  void updateWorldBlock(roomId, editingSignBlock.id, { label: nextLabel, ownerName: displayName });
+                  setEditingSignBlock(null);
+                  setStatus(`บันทึกป้าย "${nextLabel}" แล้ว`);
+                }}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: 8,
+                  border: 0,
+                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  fontSize: '0.9rem',
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                }}
+              >
+                ✓ บันทึกข้อความบนป้าย
+              </button>
+              <button
+                type="button"
+                className="world-btn-cancel"
+                onClick={() => setEditingSignBlock(null)}
+              >
+                ปิด
               </button>
             </div>
           </div>

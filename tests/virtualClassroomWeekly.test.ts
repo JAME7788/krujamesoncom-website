@@ -3,6 +3,7 @@ import {
   clearWorldBlocks,
   addWorldBlock,
   removeWorldBlock,
+  updateWorldBlock,
   createPlayerPresenceTracker,
   getLocalWorldBlocks,
   getWeekDisplayLabel,
@@ -62,11 +63,8 @@ describe('Virtual Classroom Weekly Remap & Partitioning', () => {
 
     it('สัปดาห์ใหม่จะเริ่มต้นด้วยแมพที่สะอาด (ไม่มีบล็อกค้าง)', () => {
       const roomId = 'test-room-p1';
-      // บันทึกบล็อกในสัปดาห์ 36
       localStorage.setItem(`kj_virtual_world_${roomId}_2026-W36`, JSON.stringify([dummyBlock]));
       expect(getLocalWorldBlocks(roomId, '2026-W36')).toHaveLength(1);
-
-      // เมื่อเปิดดูสัปดาห์ 37 ต้องว่างเปล่า (รีแมพใหม่สะอาด)
       expect(getLocalWorldBlocks(roomId, '2026-W37')).toHaveLength(0);
     });
 
@@ -86,6 +84,46 @@ describe('Virtual Classroom Weekly Remap & Partitioning', () => {
 
     it('มีขีดจำกัดจำนวนบล็อกสูงสุดไม่เกิน 1,200 ก้อนเพื่อประสิทธิภาพ', () => {
       expect(MAX_WORLD_BLOCKS).toBe(1200);
+    });
+
+    it('รองรับบล็อกวิเศษ/กลไก (switch สลับ ON/OFF และ sign แก้ไขข้อความบนป้าย 3D)', async () => {
+      const roomId = 'test-room-magic';
+      const weekKey = '2026-W36';
+      const switchBlock: WorldBlock = {
+        id: 'sw_1',
+        x: 1.5,
+        y: 0.5,
+        z: 1.5,
+        material: 'switch',
+        ownerId: 'student_1',
+        ownerName: 'ด.ช.ก้อง',
+        powered: true,
+        createdAt: Date.now(),
+      };
+      const signBlock: WorldBlock = {
+        id: 'sign_1',
+        x: 2.5,
+        y: 0.5,
+        z: 1.5,
+        material: 'sign',
+        ownerId: 'student_1',
+        ownerName: 'ด.ช.ก้อง',
+        label: '⭐ ผลงานของ ด.ช.ก้อง',
+        createdAt: Date.now(),
+      };
+
+      await addWorldBlock(roomId, switchBlock, weekKey);
+      await addWorldBlock(roomId, signBlock, weekKey);
+
+      const toggled = await updateWorldBlock(roomId, 'sw_1', { powered: false }, weekKey);
+      expect(toggled?.powered).toBe(false);
+
+      const renamed = await updateWorldBlock(roomId, 'sign_1', { label: '🏁 เส้นชัย Parkour!' }, weekKey);
+      expect(renamed?.label).toBe('🏁 เส้นชัย Parkour!');
+
+      const blocks = getLocalWorldBlocks(roomId, weekKey);
+      expect(blocks.find((b) => b.id === 'sw_1')?.powered).toBe(false);
+      expect(blocks.find((b) => b.id === 'sign_1')?.label).toBe('🏁 เส้นชัย Parkour!');
     });
   });
 

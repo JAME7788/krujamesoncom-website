@@ -1,5 +1,4 @@
 import {
-  arrayRemove,
   arrayUnion,
   collection,
   deleteDoc,
@@ -9,12 +8,25 @@ import {
   query,
   serverTimestamp,
   setDoc,
-  updateDoc,
   where,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-export type BlockMaterial = 'grass' | 'brick' | 'wood' | 'glass' | 'gold' | 'stone' | 'sand' | 'ice' | 'ruby';
+export type BlockMaterial =
+  | 'grass'
+  | 'brick'
+  | 'wood'
+  | 'glass'
+  | 'gold'
+  | 'stone'
+  | 'sand'
+  | 'ice'
+  | 'ruby'
+  | 'jumppad'
+  | 'speedpad'
+  | 'lamp'
+  | 'switch'
+  | 'sign';
 export type WorldSyncMode = 'connecting' | 'firebase' | 'local';
 export type WorldJoinStatus = 'active' | 'waiting' | 'blocked';
 export type WorldActivityKind = 'slide' | 'question' | 'game' | 'artifact';
@@ -38,6 +50,9 @@ export interface WorldBlock {
   z: number;
   material: BlockMaterial;
   ownerId: string;
+  ownerName?: string;
+  label?: string;
+  powered?: boolean;
   createdAt: number;
 }
 
@@ -425,10 +440,12 @@ export const removeWorldBlock = async (
   emitWorldBlocks(roomId, weekKey);
   if (!firebaseAvailable()) return;
   try {
-    const writePromise = updateDoc(doc(db, WORLD_COLLECTION, docId), {
-      blocks: arrayRemove(block),
+    const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
+      roomId,
+      weekKey,
+      blocks: next,
       updatedAt: Date.now(),
-    });
+    }, { merge: true });
     await Promise.race([
       writePromise,
       new Promise((resolve) => setTimeout(resolve, 1500)),
@@ -436,6 +453,42 @@ export const removeWorldBlock = async (
   } catch (error) {
     console.warn('block removed locally only', error);
   }
+};
+
+export const updateWorldBlock = async (
+  roomId: string,
+  blockId: string,
+  patch: Partial<Pick<WorldBlock, 'label' | 'powered' | 'ownerName'>>,
+  weekKey = getWorldWeekKey(),
+): Promise<WorldBlock | null> => {
+  const docId = getWorldDocId(roomId, weekKey);
+  const current = getLocalWorldBlocks(roomId, weekKey);
+  const target = current.find((item) => item.id === blockId);
+  if (!target) return null;
+  const updated: WorldBlock = {
+    ...target,
+    ...patch,
+    ...(typeof patch.label === 'string' ? { label: patch.label.trim().slice(0, 48) } : {}),
+  };
+  const next = current.map((item) => (item.id === blockId ? updated : item));
+  writeLocal(blockKey(roomId, weekKey), next);
+  emitWorldBlocks(roomId, weekKey);
+  if (!firebaseAvailable()) return updated;
+  try {
+    const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
+      roomId,
+      weekKey,
+      blocks: next,
+      updatedAt: Date.now(),
+    }, { merge: true });
+    await Promise.race([
+      writePromise,
+      new Promise((resolve) => setTimeout(resolve, 1500)),
+    ]);
+  } catch (error) {
+    console.warn('block updated locally only', error);
+  }
+  return updated;
 };
 
 /** ล้างบล็อกทั้งหมดในแผนที่สำหรับสัปดาห์นี้ (รีแมพ / Reset Map) */
