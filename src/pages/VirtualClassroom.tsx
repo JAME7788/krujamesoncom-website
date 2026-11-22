@@ -590,7 +590,7 @@ const VirtualClassroom: React.FC = () => {
   const emoteUntilRef = useRef(0);
   const rebuildLocalAvatarRef = useRef<() => void>(() => undefined);
   const triggerEmoteRef = useRef<(emote: WorldMotion, durationMs?: number) => void>(() => undefined);
-  const thirdPersonRef = useRef(false);
+  const thirdPersonRef = useRef(true);
   const roomStateRef = useRef<VirtualRoomState | null>(null);
   const canParticipateRef = useRef(true);
   const joinStatusRef = useRef<'active' | 'waiting' | 'blocked'>('active');
@@ -640,7 +640,7 @@ const VirtualClassroom: React.FC = () => {
     (localStorage.getItem(`kj_world_face_${playerId}`) as AvatarFaceStyle) || 'happy'
   ));
   const [activeEmote, setActiveEmote] = useState<WorldMotion | null>(null);
-  const [thirdPerson, setThirdPerson] = useState(false);
+  const [thirdPerson, setThirdPerson] = useState(true);
   const [graphicsQuality, setGraphicsQuality] = useState<GraphicsQuality>(initialGraphicsQuality);
   const [avatarPanelOpen, setAvatarPanelOpen] = useState(false);
   const [teacherPanelOpen, setTeacherPanelOpen] = useState(false);
@@ -1056,9 +1056,9 @@ const VirtualClassroom: React.FC = () => {
     if (!mount) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x9bd9ff);
-    scene.fog = new THREE.Fog(0x9bd9ff, 24, graphicsQuality === 'low' ? 48 : 65);
-    const camera = new THREE.PerspectiveCamera(70, mount.clientWidth / mount.clientHeight, 0.1, 120);
+    scene.background = new THREE.Color(0x0c192c);
+    scene.fog = new THREE.Fog(0x0c192c, 28, graphicsQuality === 'low' ? 54 : 76);
+    const camera = new THREE.PerspectiveCamera(70, mount.clientWidth / mount.clientHeight, 0.1, 130);
     const spawn = playerSpawn(playerId);
     const playerPosition = new THREE.Vector3(spawn.x, 1.7, spawn.z);
     camera.position.copy(playerPosition);
@@ -1066,6 +1066,14 @@ const VirtualClassroom: React.FC = () => {
     const targetBoardX = [-6.7, -2.2, 2.2, 6.7]
       .reduce((closest, x) => (Math.abs(x - spawn.x) < Math.abs(closest - spawn.x) ? x : closest));
     let yaw = boards.length > 0 ? Math.atan2(-(targetBoardX - spawn.x), 8.2 + spawn.z) : 0;
+    let avatarYaw = yaw;
+    let velX = 0;
+    let velZ = 0;
+    const smoothCamPos = new THREE.Vector3(
+      spawn.x + Math.sin(yaw) * 4.4,
+      3.4,
+      spawn.z + Math.cos(yaw) * 4.4,
+    );
     let pitch = 0;
     let frame = 0;
     let lastTime = performance.now();
@@ -1092,14 +1100,14 @@ const VirtualClassroom: React.FC = () => {
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 1.12;
     renderer.domElement.setAttribute('aria-label', 'ห้องเรียนออนไลน์สามมิติ');
     mount.appendChild(renderer.domElement);
 
-    const hemiLight = new THREE.HemisphereLight(0xdff4ff, 0x4d6b3c, 2.1);
+    const hemiLight = new THREE.HemisphereLight(0xbae6fd, 0x0f172a, 2.15);
     scene.add(hemiLight);
-    const sun = new THREE.DirectionalLight(0xffffff, 2.2);
-    sun.position.set(14, 24, 10);
+    const sun = new THREE.DirectionalLight(0xf8fafc, 2.25);
+    sun.position.set(16, 28, 14);
     sun.castShadow = graphicsQuality !== 'low';
     const shadowSize = graphicsQuality === 'high' ? 2048 : 1024;
     sun.shadow.mapSize.set(shadowSize, shadowSize);
@@ -1109,7 +1117,7 @@ const VirtualClassroom: React.FC = () => {
     sun.shadow.camera.bottom = -48;
     scene.add(sun);
 
-    // พื้นผิวแบบพิกเซล (Minecraft) — noise เล็กๆ ต่อพิกเซล + ขอบคมด้วย NearestFilter
+    // พื้นผิวแบบพิกเซล (Minecraft Cyber Voxel) — noise เล็กๆ ต่อพิกเซล + ขอบคมด้วย NearestFilter
     const pixelTextures: THREE.Texture[] = [];
     const makePixelTexture = (hex: number, variance = 24, px = 16) => {
       const canvas = document.createElement('canvas');
@@ -1144,7 +1152,7 @@ const VirtualClassroom: React.FC = () => {
       texture.repeat.set(repeatX, repeatY);
       return texture;
     };
-    // พื้นหญ้าแบบตารางบล็อก 1x1 พร้อมเส้นขอบช่อง
+    // พื้นโลกเทคโนโลยี (Cyber Motherboard Voxel Grid 1x1) เห็นช่องตารางวางบล็อกชัดเจนและล้ำสมัย
     const makeGroundTexture = () => {
       const cells = 8, cell = 16, size = cells * cell;
       const canvas = document.createElement('canvas');
@@ -1152,18 +1160,23 @@ const VirtualClassroom: React.FC = () => {
       const ctx = canvas.getContext('2d')!;
       for (let cy = 0; cy < cells; cy++) {
         for (let cx = 0; cx < cells; cx++) {
-          const shade = 0.85 + Math.random() * 0.15;
-          const r = (0x6c * shade) | 0, g = (0xa8 * shade) | 0, b = (0x3c * shade) | 0;
+          const isAlt = (cx + cy) % 2 === 0;
+          const r = isAlt ? 15 : 19;
+          const g = isAlt ? 29 : 37;
+          const b = isAlt ? 52 : 66;
           ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
           ctx.fillRect(cx * cell, cy * cell, cell, cell);
-          for (let i = 0; i < 26; i++) {
-            const dd = ((Math.random() - 0.5) * 46) | 0;
-            ctx.fillStyle = `rgba(${Math.max(0, r + dd)}, ${Math.max(0, g + dd)}, ${Math.max(0, b + dd)}, 0.55)`;
-            ctx.fillRect(cx * cell + ((Math.random() * cell) | 0), cy * cell + ((Math.random() * cell) | 0), 1, 1);
+          // จุดไมโครชิปในแต่ละช่องตาราง 1x1
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.14)';
+          ctx.fillRect(cx * cell + 3, cy * cell + 3, 2, 2);
+          ctx.fillRect(cx * cell + cell - 5, cy * cell + cell - 5, 2, 2);
+          if ((cx * 3 + cy * 5) % 4 === 0) {
+            ctx.fillStyle = 'rgba(34, 211, 238, 0.22)';
+            ctx.fillRect(cx * cell + 7, cy * cell + 7, 2, 2);
           }
         }
       }
-      ctx.strokeStyle = 'rgba(26, 56, 18, 0.4)';
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.34)';
       ctx.lineWidth = 1;
       for (let i = 0; i <= cells; i++) {
         ctx.beginPath(); ctx.moveTo(i * cell + 0.5, 0); ctx.lineTo(i * cell + 0.5, size); ctx.stroke();
@@ -1181,54 +1194,56 @@ const VirtualClassroom: React.FC = () => {
 
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE),
-      new THREE.MeshStandardMaterial({ map: makeGroundTexture(), roughness: 0.97 }),
+      new THREE.MeshStandardMaterial({ map: makeGroundTexture(), roughness: 0.78, metalness: 0.15 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
-    ground.userData = { kind: 'ground', sampleColor: '#6ca83c' };
+    ground.userData = { kind: 'ground', sampleColor: '#132542' };
     scene.add(ground);
 
-    // ทางเดินพิกเซลจากจุดเกิดเข้าสู่ห้องเรียน ช่วยบอกทิศทางโดยไม่ต้องเพิ่มแผง UI
+    // ทางเดินไฟเบอร์ออปติกเรืองแสงจากจุดเกิดเข้าสู่โดมเทคโนโลยีกลาง
     const entryPath = new THREE.Mesh(
-      new THREE.BoxGeometry(4, 0.08, 28),
+      new THREE.BoxGeometry(4.4, 0.08, 28),
       new THREE.MeshStandardMaterial({
-        map: makeRepeatedPixelTexture(0xb6a279, 30, 2, 14),
-        roughness: 0.96,
+        map: makeRepeatedPixelTexture(0x0f172a, 16, 2, 14),
+        emissive: new THREE.Color(0x0284c7),
+        emissiveIntensity: 0.18,
+        roughness: 0.45,
+        metalness: 0.35,
       }),
     );
     entryPath.position.set(0, 0.025, 20.5);
     entryPath.receiveShadow = true;
     scene.add(entryPath);
+    [-2.25, 2.25].forEach((railX) => {
+      const rail = new THREE.Mesh(
+        new THREE.BoxGeometry(0.14, 0.1, 28),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
+      );
+      rail.position.set(railX, 0.04, 20.5);
+      scene.add(rail);
+    });
 
-    // พื้นไม้โอ๊กแบบแผ่น (พิกเซล) — แต่ละแผ่นสีต่างกันเล็กน้อย มีร่องระหว่างแผ่น
-    const makePlankTexture = () => {
-      const w = 64, h = 64, plankH = 8;
+    // พื้นลานโดมไซเบอร์กลาง (Cyber Tech Hub Floor) ลายแผงวงจรดิจิทัล
+    const makeCyberHubFloorTexture = () => {
+      const w = 64, h = 64;
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext('2d')!;
-      for (let row = 0; row < h / plankH; row += 1) {
-        const offset = (row % 2) * 24;
-        for (let seg = -1; seg < 3; seg += 1) {
-          const x0 = seg * 32 + offset;
-          const shade = 0.9 + (Math.abs(row * 7 + seg * 13) % 5) * 0.03;
-          const r = (0xd8 * shade) | 0, g = (0xa8 * shade) | 0, b = (0x6c * shade) | 0;
-          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-          ctx.fillRect(x0, row * plankH, 32, plankH);
-          for (let i = 0; i < 18; i += 1) {
-            const d = ((Math.random() - 0.5) * 26) | 0;
-            ctx.fillStyle = `rgba(${r + d}, ${g + d}, ${b + d}, 0.6)`;
-            ctx.fillRect(x0 + ((Math.random() * 32) | 0), row * plankH + ((Math.random() * plankH) | 0), 2, 1);
-          }
-          ctx.fillStyle = 'rgba(92, 58, 26, 0.55)';
-          ctx.fillRect(x0, row * plankH, 1, plankH);
-        }
-        ctx.fillStyle = 'rgba(92, 58, 26, 0.6)';
-        ctx.fillRect(0, row * plankH + plankH - 1, w, 1);
-      }
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(2, 2, w - 4, h - 4);
+      ctx.strokeStyle = 'rgba(250, 204, 21, 0.28)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(10, 10, w - 20, h - 20);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.22)';
+      ctx.fillRect(28, 28, 8, 8);
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(5, 4.25);
+      texture.repeat.set(10, 8.5);
       texture.magFilter = THREE.NearestFilter;
       texture.minFilter = THREE.NearestFilter;
       pixelTextures.push(texture);
@@ -1237,8 +1252,9 @@ const VirtualClassroom: React.FC = () => {
     const classroomFloor = new THREE.Mesh(
       new THREE.BoxGeometry(20, 0.25, 17),
       new THREE.MeshStandardMaterial({
-        map: makePlankTexture(),
-        roughness: 0.82,
+        map: makeCyberHubFloorTexture(),
+        roughness: 0.45,
+        metalness: 0.25,
       }),
     );
     classroomFloor.position.set(0, 0.08, 0);
@@ -1255,57 +1271,133 @@ const VirtualClassroom: React.FC = () => {
     }
     const staticColliders: StaticCollider[] = [];
 
+    // 🏛️ โดมเทคโนโลยีเปิดโล่ง 360 องศา (Open 360° Cyber Tech Dome Pavilion)
+    // มีฉากหลัง Command Wall สำหรับกระดานบทเรียนทั้ง 4 หน่วย และเสาพลังงานไซเบอร์ 6 ต้น + วงแหวนโฮโลแกรมลอยฟ้าโดยไม่มีกำแพงทึบข้างซ้าย-ขวามาบังวิวโลกเทคโนโลยี!
     const wallMaterial = new THREE.MeshStandardMaterial({
-      map: makeRepeatedPixelTexture(0xf1ece0, 14, 12, 4),
-      roughness: 0.95,
+      map: makeRepeatedPixelTexture(0x0f172a, 14, 12, 4),
+      roughness: 0.45,
+      metalness: 0.35,
     });
-    const addWall = (x: number, y: number, z: number, w: number, h: number, d: number) => {
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMaterial);
-      wall.position.set(x, y, z);
-      wall.castShadow = true;
-      wall.receiveShadow = true;
-      scene.add(wall);
+    const backCommandWall = new THREE.Mesh(new THREE.BoxGeometry(20, 5.5, 0.38), wallMaterial);
+    backCommandWall.position.set(0, 2.75, -8.4);
+    backCommandWall.castShadow = true;
+    backCommandWall.receiveShadow = true;
+    scene.add(backCommandWall);
+    staticColliders.push({
+      minX: -10,
+      maxX: 10,
+      minZ: -8.6,
+      maxZ: -8.2,
+      minY: 0,
+      maxY: 5.5,
+    });
+
+    const neonCyanTrimMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: new THREE.Color(0x0284c7),
+      emissiveIntensity: 0.9,
+      roughness: 0.2,
+    });
+    const neonGoldTrimMat = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      emissive: new THREE.Color(0xd97706),
+      emissiveIntensity: 0.85,
+      roughness: 0.25,
+    });
+    const pillarBodyMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.65,
+      roughness: 0.3,
+    });
+
+    // ขอบเรืองแสงบนและล่างของ Command Wall
+    const wallTopGlow = new THREE.Mesh(new THREE.BoxGeometry(20.4, 0.18, 0.48), neonCyanTrimMat);
+    wallTopGlow.position.set(0, 5.52, -8.4);
+    const wallBottomGlow = new THREE.Mesh(new THREE.BoxGeometry(20.2, 0.22, 0.46), neonGoldTrimMat);
+    wallBottomGlow.position.set(0, 0.32, -8.4);
+    scene.add(wallTopGlow, wallBottomGlow);
+
+    // เสาไซเบอร์ 6 ต้นรอบโดม + คานโค้งพลังงานด้านบน เปิดมุมมอง 360° ไปยัง 5 โซนพิพิธภัณฑ์เทคโนโลยี
+    const cyberDomeGroup = new THREE.Group();
+    const pillarCoords: Array<[number, number]> = [
+      [-10, -8.4], [10, -8.4],
+      [-10, 0], [10, 0],
+      [-10, 8.4], [10, 8.4],
+    ];
+    pillarCoords.forEach(([px, pz]) => {
+      const col = new THREE.Mesh(new THREE.BoxGeometry(0.68, 6.2, 0.68), pillarBodyMat);
+      col.position.set(px, 3.1, pz);
+      col.castShadow = true;
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.22, 5.6, 0.74), neonCyanTrimMat);
+      strip.position.set(px, 3.1, pz);
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.28, 0.92), neonGoldTrimMat);
+      cap.position.set(px, 6.25, pz);
+      cyberDomeGroup.add(col, strip, cap);
       staticColliders.push({
-        minX: x - w / 2,
-        maxX: x + w / 2,
-        minZ: z - d / 2,
-        maxZ: z + d / 2,
-        minY: y - h / 2,
-        maxY: y + h / 2,
+        minX: px - 0.42,
+        maxX: px + 0.42,
+        minZ: pz - 0.42,
+        maxZ: pz + 0.42,
+        minY: 0,
+        maxY: 6.2,
       });
-    };
-    addWall(0, 2.75, -8.4, 20, 5.5, 0.35);
-    addWall(-10, 2.75, 0, 0.35, 5.5, 17);
-    addWall(10, 2.75, 0, 0.35, 5.5, 17);
+    });
 
-    // แถบผนังล่างสีเหลือง (ธีมเว็บ) + บัวไม้ บนด้านในของผนังทั้ง 3 ด้าน
-    const wainscotMaterial = new THREE.MeshStandardMaterial({ map: makePixelTexture(0xf4c542, 16), roughness: 0.85 });
-    const trimMaterial = new THREE.MeshStandardMaterial({ map: makePixelTexture(0x8a5a2e, 14), roughness: 0.8 });
-    const wallTrim = new THREE.Group();
-    const addTrim = (x: number, z: number, w: number, d: number) => {
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(w, 1.1, d), wainscotMaterial);
-      panel.position.set(x, 0.75, z);
-      panel.receiveShadow = true;
-      const rail = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, d + 0.06), trimMaterial);
-      rail.position.set(x, 1.32, z);
-      const base = new THREE.Mesh(new THREE.BoxGeometry(w, 0.22, d + 0.06), trimMaterial);
-      base.position.set(x, 0.32, z);
-      wallTrim.add(panel, rail, base);
-    };
-    addTrim(0, -8.2, 19.6, 0.06);
-    addTrim(-9.8, 0, 0.06, 16.6);
-    addTrim(9.8, 0, 0.06, 16.6);
-    scene.add(wallTrim);
+    // คานพลังงานเชื่อมซ้าย-ขวาและหน้า-หลังเหนือศีรษะ
+    [-8.4, 0, 8.4].forEach((bz) => {
+      const archBeam = new THREE.Mesh(new THREE.BoxGeometry(20.6, 0.28, 0.42), pillarBodyMat);
+      archBeam.position.set(0, 6.35, bz);
+      const archGlow = new THREE.Mesh(new THREE.BoxGeometry(20.4, 0.12, 0.48), neonCyanTrimMat);
+      archGlow.position.set(0, 6.18, bz);
+      cyberDomeGroup.add(archBeam, archGlow);
+    });
+    [-10, 10].forEach((bx) => {
+      const sideBeam = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.28, 17.4), pillarBodyMat);
+      sideBeam.position.set(bx, 6.35, 0);
+      const sideGlow = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.12, 17.2), neonCyanTrimMat);
+      sideGlow.position.set(bx, 6.18, 0);
+      cyberDomeGroup.add(sideBeam, sideGlow);
+    });
 
-    // ภูมิประเทศแบบว็อกเซลรอบพื้นที่เล่น ใช้ InstancedMesh เพื่อลด draw call
+    // วงแหวน Skylight Hologram กลางเพดานโดม + ลูกโลกแกนพลังงานหมุนได้
+    const skylightRing = new THREE.Mesh(
+      new THREE.TorusGeometry(4.8, 0.14, 10, 48),
+      neonCyanTrimMat,
+    );
+    skylightRing.rotation.x = Math.PI / 2;
+    skylightRing.position.set(0, 6.45, 0);
+    const skylightInnerRing = new THREE.Mesh(
+      new THREE.TorusGeometry(2.6, 0.1, 10, 36),
+      neonGoldTrimMat,
+    );
+    skylightInnerRing.rotation.x = Math.PI / 2;
+    skylightInnerRing.position.set(0, 6.65, 0);
+    const domeCoreOrb = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.85, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        emissive: new THREE.Color(0x0ea5e9),
+        emissiveIntensity: 0.95,
+        wireframe: false,
+        roughness: 0.15,
+      }),
+    );
+    domeCoreOrb.position.set(0, 7.1, 0);
+    cyberDomeGroup.add(skylightRing, skylightInnerRing, domeCoreOrb);
+    scene.add(cyberDomeGroup);
+
+    // ภูเขาคริสตัลข้อมูลว็อกเซล (Cyber Data Crystal Hills) รอบขอบแผนที่ ใช้ InstancedMesh เพื่อลด draw call
     const terrainGeometry = new THREE.BoxGeometry(1, 1, 1);
     const dirtMaterial = new THREE.MeshStandardMaterial({
-      map: makePixelTexture(0x8b5a2b, 28),
-      roughness: 1,
+      map: makePixelTexture(0x1e293b, 22),
+      roughness: 0.75,
+      metalness: 0.3,
     });
     const grassMaterial = new THREE.MeshStandardMaterial({
-      map: makePixelTexture(0x5d9f35, 26),
-      roughness: 1,
+      map: makePixelTexture(0x0ea5e9, 26),
+      emissive: new THREE.Color(0x0369a1),
+      emissiveIntensity: 0.35,
+      roughness: 0.35,
     });
     const hillCenters = [[-28, -24], [28, -23], [-30, 23], [30, 24]] as const;
     const hillRadius = graphicsQuality === 'low' ? 4 : 7;
@@ -1350,19 +1442,27 @@ const VirtualClassroom: React.FC = () => {
     addTerrainInstances(dirtPositions, dirtMaterial);
     addTerrainInstances(grassPositions, grassMaterial);
 
-    // ดวงอาทิตย์และเมฆทรงบล็อก ให้บรรยากาศเป็นโลกว็อกเซลโดยใช้เรขาคณิตเบา ๆ
+    // ท้องฟ้าโลกไซเบอร์: ดวงอาทิตย์ควอนตัม + วงแหวนดาวเทียมโคจร (Orbital Cyber Ring)
     const skyDecor = new THREE.Group();
     const cubeSun = new THREE.Mesh(
       new THREE.BoxGeometry(4.5, 4.5, 1),
-      new THREE.MeshBasicMaterial({ color: 0xffee77, fog: false }),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, fog: false }),
     );
     cubeSun.position.set(-28, 27, -42);
     skyDecor.add(cubeSun);
-    const cloudMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
-    [[-18, 18, -28], [20, 22, -35], [6, 16, 32]].forEach(([x, y, z], cloudIndex) => {
+    const orbitalSkyRing = new THREE.Mesh(
+      new THREE.TorusGeometry(32, 0.22, 8, 64),
+      new THREE.MeshBasicMaterial({ color: 0x0ea5e9, fog: false }),
+    );
+    orbitalSkyRing.rotation.x = Math.PI / 2.25;
+    orbitalSkyRing.rotation.y = 0.28;
+    orbitalSkyRing.position.set(0, 24, 0);
+    skyDecor.add(orbitalSkyRing);
+    const cloudMaterial = new THREE.MeshBasicMaterial({ color: 0x38bdf8, fog: false });
+    [[-18, 19, -28], [20, 22, -35], [6, 18, 32]].forEach(([x, y, z], cloudIndex) => {
       const cloud = new THREE.Group();
-      [[0, 0, 0, 5], [3, 0, 0, 4], [-3, 0, 0, 3], [0, 1.2, 0, 3]].forEach(([cx, cy, cz, width]) => {
-        const part = new THREE.Mesh(new THREE.BoxGeometry(width, 1.5, 2.2), cloudMaterial);
+      [[0, 0, 0, 4.5], [2.8, 0, 0, 3], [-2.8, 0, 0, 2.5]].forEach(([cx, cy, cz, width]) => {
+        const part = new THREE.Mesh(new THREE.BoxGeometry(width, 0.9, 1.4), cloudMaterial);
         part.position.set(cx, cy, cz);
         cloud.add(part);
       });
@@ -1373,54 +1473,58 @@ const VirtualClassroom: React.FC = () => {
 
     applyWorldTimeRef.current = (timeMode: 'day' | 'sunset' | 'night') => {
       if (timeMode === 'night') {
-        scene.background = new THREE.Color(0x0f172a);
-        scene.fog = new THREE.Fog(0x0f172a, 24, graphicsQuality === 'low' ? 50 : 68);
+        scene.background = new THREE.Color(0x050b14);
+        scene.fog = new THREE.Fog(0x050b14, 28, graphicsQuality === 'low' ? 54 : 76);
         hemiLight.color.setHex(0x38bdf8);
-        hemiLight.groundColor.setHex(0x1e293b);
-        hemiLight.intensity = 0.85;
-        sun.color.setHex(0x93c5fd);
-        sun.intensity = 0.75;
+        hemiLight.groundColor.setHex(0x090d16);
+        hemiLight.intensity = 1.1;
+        sun.color.setHex(0x7dd3fc);
+        sun.intensity = 1.05;
         (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0xe2e8f0);
       } else if (timeMode === 'sunset') {
-        scene.background = new THREE.Color(0xfd9869);
-        scene.fog = new THREE.Fog(0xfd9869, 24, graphicsQuality === 'low' ? 50 : 68);
-        hemiLight.color.setHex(0xfef08a);
-        hemiLight.groundColor.setHex(0x5c4033);
-        hemiLight.intensity = 1.6;
+        scene.background = new THREE.Color(0x2e1065);
+        scene.fog = new THREE.Fog(0x2e1065, 28, graphicsQuality === 'low' ? 54 : 76);
+        hemiLight.color.setHex(0xf472b6);
+        hemiLight.groundColor.setHex(0x1e1b4b);
+        hemiLight.intensity = 1.75;
         sun.color.setHex(0xfb923c);
-        sun.intensity = 1.85;
+        sun.intensity = 1.9;
         (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0xf97316);
       } else {
-        scene.background = new THREE.Color(0x9bd9ff);
-        scene.fog = new THREE.Fog(0x9bd9ff, 24, graphicsQuality === 'low' ? 48 : 65);
-        hemiLight.color.setHex(0xdff4ff);
-        hemiLight.groundColor.setHex(0x4d6b3c);
-        hemiLight.intensity = 2.1;
-        sun.color.setHex(0xffffff);
-        sun.intensity = 2.2;
-        (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0xffee77);
+        scene.background = new THREE.Color(0x0c192c);
+        scene.fog = new THREE.Fog(0x0c192c, 28, graphicsQuality === 'low' ? 54 : 76);
+        hemiLight.color.setHex(0xbae6fd);
+        hemiLight.groundColor.setHex(0x0f172a);
+        hemiLight.intensity = 2.15;
+        sun.color.setHex(0xf8fafc);
+        sun.intensity = 2.25;
+        (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0x38bdf8);
       }
     };
 
-    // ป้ายแลนด์มาร์กหน้าอาคารเรียน "KRUJAMES CRAFT · ห้องเรียนวิทยาการคำนวณ 3D" + เสาธงโรงเรียนพิกเซล
+    // ป้ายแลนด์มาร์กหน้าโดมเทคโนโลยี "KRUJAMES DIGITAL PLAYGROUND · CYBER TECH WORLD 3D"
     const makeSchoolBannerTexture = () => {
       const canvas = document.createElement('canvas');
       canvas.width = 1024;
       canvas.height = 192;
       const ctx = canvas.getContext('2d')!;
-      ctx.fillStyle = '#0f172a';
+      const grad = ctx.createLinearGradient(0, 0, 1024, 192);
+      grad.addColorStop(0, '#090d16');
+      grad.addColorStop(0.5, '#0f172a');
+      grad.addColorStop(1, '#1e1b4b');
+      ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 1024, 192);
-      ctx.strokeStyle = '#facc15';
+      ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 10;
       ctx.strokeRect(8, 8, 1008, 176);
-      ctx.fillStyle = '#facc15';
-      ctx.font = '800 50px Sarabun, sans-serif';
+      ctx.fillStyle = '#fde047';
+      ctx.font = '800 46px Sarabun, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('⚡ KRUJAMES CRAFT · ห้องเรียนวิทยาการคำนวณ 3D', 512, 74);
-      ctx.fillStyle = '#7dd3fc';
-      ctx.font = '700 32px Sarabun, sans-serif';
-      ctx.fillText('สร้างสรรค์บล็อก · วงจรลอจิก 0/1 · โค้ดดิ้งอัลกอริทึม · เรียนรู้ร่วมกับเพื่อน', 512, 138);
+      ctx.fillText('🚀 KRUJAMES DIGITAL PLAYGROUND · โลกเทคโนโลยี 3D', 512, 72);
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = '700 30px Sarabun, sans-serif';
+      ctx.fillText('5 โซนนิทรรศการไอที · สร้างบล็อกและวงจร 0/1 · โค้ดดิ้งอัลกอริทึม · สวมบทบาทนักคอม 6 สายอาชีพ', 512, 138);
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       pixelTextures.push(texture);
@@ -1428,15 +1532,15 @@ const VirtualClassroom: React.FC = () => {
     };
     const bannerTex = makeSchoolBannerTexture();
     const schoolBanner = new THREE.Mesh(
-      new THREE.BoxGeometry(13.5, 1.9, 0.28),
+      new THREE.BoxGeometry(14.5, 1.95, 0.32),
       new THREE.MeshStandardMaterial({
         map: bannerTex,
-        emissive: new THREE.Color(0x1e293b),
-        emissiveIntensity: 0.45,
-        roughness: 0.4,
+        emissive: new THREE.Color(0x0284c7),
+        emissiveIntensity: 0.38,
+        roughness: 0.3,
       }),
     );
-    schoolBanner.position.set(0, 6.25, 8.2);
+    schoolBanner.position.set(0, 7.45, 8.4);
     scene.add(schoolBanner);
 
     // เสาธงชาติไทยพิกเซลหน้าลานกิจกรรม
@@ -2205,20 +2309,46 @@ const VirtualClassroom: React.FC = () => {
       maxY: 0.6,
     });
 
-    const tableMaterial = new THREE.MeshStandardMaterial({ color: 0xc58b4c, roughness: 0.75 });
-    // แพลตฟอร์มที่ยืน/กระโดดขึ้นไปเหยียบได้ (เช่น ผิวโต๊ะ) — AABB + ความสูงผิวด้านบน
+    const tableMaterial = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.45, roughness: 0.25 });
+    const tableLegMaterial = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.65, roughness: 0.3 });
+    const tableGlowMaterial = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: new THREE.Color(0x0284c7),
+      emissiveIntensity: 0.85,
+      roughness: 0.2,
+    });
+    // แพลตฟอร์มที่ยืน/กระโดดขึ้นไปเหยียบได้ (เช่น ผิวโต๊ะ Cyber Workstation) — AABB + ความสูงผิวด้านบน
     const platforms: { minX: number; maxX: number; minZ: number; maxZ: number; top: number }[] = [];
     // ผิวพื้นห้องเรียนสูง 0.205m จากระดับลานดิน
     platforms.push({ minX: -10, maxX: 10, minZ: -8.5, maxZ: 8.5, top: 0.205 });
     [-5.2, 0, 5.2].forEach((x) => {
       [0, 4.3].forEach((z) => {
         const table = new THREE.Group();
-        const top = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.18, 1.45), tableMaterial);
+        const top = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.16, 1.45), tableMaterial);
         top.position.y = 1.05;
         top.castShadow = true;
-        table.add(top);
+        const edgeGlow = new THREE.Mesh(new THREE.BoxGeometry(3.64, 0.05, 1.49), tableGlowMaterial);
+        edgeGlow.position.y = 1.05;
+        table.add(top, edgeGlow);
+        // จอโฮโลแกรมจำลอง 2 เครื่องบนโต๊ะแล็บไซเบอร์
+        [-0.95, 0.95].forEach((mx) => {
+          const holoPad = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.36), tableLegMaterial);
+          holoPad.position.set(mx, 1.145, 0);
+          const holoScreen = new THREE.Mesh(
+            new THREE.BoxGeometry(0.54, 0.32, 0.03),
+            new THREE.MeshStandardMaterial({
+              color: 0x38bdf8,
+              emissive: new THREE.Color(0x0ea5e9),
+              emissiveIntensity: 0.75,
+              transparent: true,
+              opacity: 0.72,
+            }),
+          );
+          holoScreen.position.set(mx, 1.31, -0.14);
+          table.add(holoPad, holoScreen);
+        });
         [-1.5, 1.5].forEach((legX) => [-0.52, 0.52].forEach((legZ) => {
-          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1, 0.16), tableMaterial);
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1, 0.16), tableLegMaterial);
           leg.position.set(legX, 0.5, legZ);
           leg.castShadow = true;
           table.add(leg);
@@ -2233,20 +2363,24 @@ const VirtualClassroom: React.FC = () => {
     const makeTree = (x: number, z: number) => {
       const tree = new THREE.Group();
       const trunk = new THREE.Mesh(
-        new THREE.BoxGeometry(0.7, 2.8, 0.7),
-        new THREE.MeshStandardMaterial({ map: makePixelTexture(0x8b5a2b, 24), roughness: 1 }),
+        new THREE.BoxGeometry(0.68, 2.9, 0.68),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.25 }),
       );
-      trunk.position.y = 1.4;
+      trunk.position.y = 1.45;
       trunk.castShadow = true;
       const leafMaterial = new THREE.MeshStandardMaterial({
-        map: makePixelTexture(0x2f8f46, 30),
-        roughness: 1,
+        map: makePixelTexture(0x06b6d4, 24),
+        emissive: new THREE.Color(0x0284c7),
+        emissiveIntensity: 0.55,
+        transparent: true,
+        opacity: 0.88,
+        roughness: 0.25,
       });
       const crowns = [
-        [0, 3.65, 0, 3.4, 1.7, 3.4],
-        [0, 4.9, 0, 2.5, 1.3, 2.5],
-        [0.9, 4.1, 0, 1.7, 1.7, 1.7],
-        [-0.9, 4.1, 0, 1.7, 1.7, 1.7],
+        [0, 3.65, 0, 3.2, 1.5, 3.2],
+        [0, 4.85, 0, 2.2, 1.2, 2.2],
+        [0.9, 4.1, 0, 1.5, 1.5, 1.5],
+        [-0.9, 4.1, 0, 1.5, 1.5, 1.5],
       ].map(([cx, cy, cz, w, h, d]) => {
         const crown = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), leafMaterial);
         crown.position.set(cx, cy, cz);
@@ -2468,6 +2602,9 @@ const VirtualClassroom: React.FC = () => {
       now: number,
       delta: number,
       speedScale = 1,
+      headLookYaw = 0,
+      turnRoll = 0,
+      holdingBlock = false,
     ) => {
       const parts = group.userData.parts as {
         headGroup: THREE.Group;
@@ -2476,39 +2613,44 @@ const VirtualClassroom: React.FC = () => {
         rightArmPivot: THREE.Group;
         leftLegPivot: THREE.Group;
         rightLegPivot: THREE.Group;
+        heldBlockMesh?: THREE.Mesh;
       };
       if (!parts) return;
-      const damp = Math.min(1, delta * 14);
-      const t = now * 0.011 * speedScale;
-      const walkSwing = moving ? Math.sin(t) * 0.68 : 0;
+      const damp = Math.min(1, delta * 15);
+      const t = now * 0.0115 * speedScale;
+      const walkSwing = moving ? Math.sin(t) * 0.72 : 0;
       const breath = Math.sin(now * 0.0028) * 0.035;
 
       let targetLX = walkSwing;
-      let targetLZ = -0.05 - Math.abs(breath);
-      let targetRX = -walkSwing;
-      let targetRZ = 0.05 + Math.abs(breath);
-      let targetLegLX = -walkSwing * 0.78;
-      let targetLegRX = walkSwing * 0.78;
-      let targetHeadX = moving ? 0.04 : breath * 0.6;
-      let targetHeadY = 0;
-      let targetHeadZ = 0;
-      let targetBodyY = moving ? Math.abs(Math.sin(t)) * 0.04 : 0;
+      let targetLZ = -0.06 - Math.abs(breath);
+      let targetRX = holdingBlock ? (-0.42 - walkSwing * 0.35) : -walkSwing;
+      let targetRZ = 0.06 + Math.abs(breath);
+      let targetLegLX = -walkSwing * 0.82;
+      let targetLegRX = walkSwing * 0.82;
+      let targetHeadX = moving ? 0.05 : breath * 0.6;
+      let targetHeadY = THREE.MathUtils.clamp(headLookYaw, -0.58, 0.58);
+      let targetHeadZ = -turnRoll * 0.35;
+      let targetBodyY = moving ? Math.abs(Math.sin(t)) * 0.048 : 0;
+      let targetBodyRotX = moving ? -0.075 * speedScale : 0;
+      let targetBodyRotZ = turnRoll;
 
       if (flying || motion === 'fly') {
-        targetLX = 0.25;
-        targetLZ = -0.28;
-        targetRX = 0.25;
-        targetRZ = 0.28;
-        targetLegLX = 0.34 + Math.sin(now * 0.006) * 0.08;
-        targetLegRX = 0.34 - Math.sin(now * 0.006) * 0.08;
-        targetBodyY = Math.sin(now * 0.005) * 0.07;
+        targetLX = 0.28;
+        targetLZ = -0.32;
+        targetRX = holdingBlock ? -0.35 : 0.28;
+        targetRZ = 0.32;
+        targetLegLX = 0.36 + Math.sin(now * 0.006) * 0.08;
+        targetLegRX = 0.36 - Math.sin(now * 0.006) * 0.08;
+        targetBodyY = Math.sin(now * 0.005) * 0.08;
+        targetBodyRotX = moving ? -0.18 : -0.05;
       } else if (jumping || motion === 'jump') {
-        targetLX = -0.55;
-        targetLZ = -0.22;
-        targetRX = -0.55;
-        targetRZ = 0.22;
-        targetLegLX = -0.28;
-        targetLegRX = 0.22;
+        targetLX = -0.62;
+        targetLZ = -0.24;
+        targetRX = -0.62;
+        targetRZ = 0.24;
+        targetLegLX = -0.32;
+        targetLegRX = 0.24;
+        targetBodyRotX = -0.06;
       }
 
       if (motion === 'wave') {
@@ -2533,10 +2675,12 @@ const VirtualClassroom: React.FC = () => {
         targetLegRX = -Math.sin(beat) * 0.55;
         targetHeadZ = Math.cos(beat) * 0.16;
         targetBodyY = Math.abs(Math.sin(beat * 2)) * 0.11;
+        targetBodyRotZ = Math.sin(beat) * 0.08;
       } else if (motion === 'build') {
-        targetRX = -1.05 + Math.sin(now * 0.026) * 0.78;
+        targetRX = -1.12 + Math.sin(now * 0.028) * 0.82;
         targetRZ = 0.1;
         targetHeadX = 0.12;
+        targetBodyRotX = -0.08;
       }
 
       parts.leftArmPivot.rotation.x = THREE.MathUtils.lerp(parts.leftArmPivot.rotation.x, targetLX, damp);
@@ -2549,6 +2693,8 @@ const VirtualClassroom: React.FC = () => {
       parts.headGroup.rotation.y = THREE.MathUtils.lerp(parts.headGroup.rotation.y, targetHeadY, damp);
       parts.headGroup.rotation.z = THREE.MathUtils.lerp(parts.headGroup.rotation.z, targetHeadZ, damp);
       parts.bodyGroup.position.y = THREE.MathUtils.lerp(parts.bodyGroup.position.y, targetBodyY, damp);
+      parts.bodyGroup.rotation.x = THREE.MathUtils.lerp(parts.bodyGroup.rotation.x, targetBodyRotX, damp);
+      parts.bodyGroup.rotation.z = THREE.MathUtils.lerp(parts.bodyGroup.rotation.z, targetBodyRotZ, damp);
     };
 
     const createAvatar = (player: WorldPlayer) => {
@@ -2557,61 +2703,90 @@ const VirtualClassroom: React.FC = () => {
       group.add(bodyGroup);
       const techClass: AvatarTechClass = player.techClass || 'coder';
       const faceStyle: AvatarFaceStyle = player.faceStyle || 'happy';
-      const shirtMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(player.color), roughness: 0.65 });
+      const primaryColor = new THREE.Color(player.color);
+      const shirtMaterial = new THREE.MeshStandardMaterial({ color: primaryColor, roughness: 0.55 });
+      const darkTrimMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.65 });
+      const glowAccentMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        emissive: new THREE.Color(0x0284c7),
+        emissiveIntensity: 0.65,
+        roughness: 0.25,
+      });
       const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xf4c7a1, roughness: 0.7 });
       group.userData.profile = `${player.name}_${player.classroom}_${player.color}_${player.role || 'student'}_${techClass}_${faceStyle}`;
 
-      // ลำตัว + ลายเสื้อนักคอม
+      // ลำตัว + เสื้อฮู้ดแจ็กเก็ตนักคอมพิวเตอร์ไซเบอร์
       const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.96, 0.46), shirtMaterial);
       body.position.y = 1.24;
       const collar = new THREE.Mesh(
-        new THREE.BoxGeometry(0.42, 0.14, 0.48),
-        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.7 }),
+        new THREE.BoxGeometry(0.46, 0.14, 0.5),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 }),
       );
       collar.position.set(0, 1.66, 0);
-      bodyGroup.add(body, collar);
+      const hoodBack = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.22, 0.18), shirtMaterial);
+      hoodBack.position.set(0, 1.64, 0.24);
+      const jacketPocket = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.24, 0.48), darkTrimMat);
+      jacketPocket.position.set(0, 0.96, 0);
+      const cyberBelt = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.08, 0.48), glowAccentMat);
+      cyberBelt.position.set(0, 0.8, 0);
+      bodyGroup.add(body, collar, hoodBack, jacketPocket, cyberBelt);
 
-      // ขาซ้าย-ขวา หมุนจากข้อสะโพก (y = 0.78) + รองเท้าผ้าใบ
+      // ขาซ้าย-ขวา หมุนจากข้อสะโพก (y = 0.78) + รองเท้าผ้าใบไซเบอร์ทูโทน
       const legGeometry = new THREE.BoxGeometry(0.28, 0.66, 0.36);
       const legMaterial = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
-      const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 });
+      const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
       const leftLegPivot = new THREE.Group();
       leftLegPivot.position.set(-0.19, 0.78, 0);
       const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
       leftLeg.position.set(0, -0.33, 0);
-      const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.16, 0.44), shoeMaterial);
-      leftShoe.position.set(0, -0.7, -0.04);
-      leftLegPivot.add(leftLeg, leftShoe);
+      const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.15, 0.45), shoeMaterial);
+      leftShoe.position.set(0, -0.69, -0.04);
+      const leftSole = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.05, 0.46), shirtMaterial);
+      leftSole.position.set(0, -0.755, -0.04);
+      leftLegPivot.add(leftLeg, leftShoe, leftSole);
 
       const rightLegPivot = new THREE.Group();
       rightLegPivot.position.set(0.19, 0.78, 0);
       const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
       rightLeg.position.set(0, -0.33, 0);
       const rightShoe = leftShoe.clone();
-      rightLegPivot.add(rightLeg, rightShoe);
+      const rightSole = leftSole.clone();
+      rightLegPivot.add(rightLeg, rightShoe, rightSole);
       bodyGroup.add(leftLegPivot, rightLegPivot);
 
-      // แขนซ้าย-ขวา หมุนจากหัวไหล่ (y = 1.64) + มือ
+      // แขนซ้าย-ขวา หมุนจากหัวไหล่ (y = 1.64) + ขอบแขนเสื้อ + มือ + บล็อกที่ถือในมือขวา
       const armGeometry = new THREE.BoxGeometry(0.23, 0.74, 0.28);
+      const cuffGeometry = new THREE.BoxGeometry(0.25, 0.09, 0.3);
       const handGeometry = new THREE.BoxGeometry(0.21, 0.2, 0.24);
       const leftArmPivot = new THREE.Group();
       leftArmPivot.position.set(-0.53, 1.64, 0);
       const leftArm = new THREE.Mesh(armGeometry, shirtMaterial);
       leftArm.position.set(0, -0.34, 0);
+      const leftCuff = new THREE.Mesh(cuffGeometry, darkTrimMat);
+      leftCuff.position.set(0, -0.66, 0);
       const leftHand = new THREE.Mesh(handGeometry, skinMaterial);
       leftHand.position.set(0, -0.78, 0);
-      leftArmPivot.add(leftArm, leftHand);
+      leftArmPivot.add(leftArm, leftCuff, leftHand);
 
       const rightArmPivot = new THREE.Group();
       rightArmPivot.position.set(0.53, 1.64, 0);
       const rightArm = new THREE.Mesh(armGeometry, shirtMaterial);
       rightArm.position.set(0, -0.34, 0);
+      const rightCuff = new THREE.Mesh(cuffGeometry, darkTrimMat);
+      rightCuff.position.set(0, -0.66, 0);
       const rightHand = new THREE.Mesh(handGeometry, skinMaterial);
       rightHand.position.set(0, -0.78, 0);
-      rightArmPivot.add(rightArm, rightHand);
+      const heldBlockMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.27, 0.27, 0.27),
+        blockMaterials[materialRef.current] || blockMaterials.grass,
+      );
+      heldBlockMesh.position.set(0, -0.82, -0.24);
+      heldBlockMesh.rotation.set(0.25, 0.45, 0);
+      heldBlockMesh.visible = player.id === playerId && modeRef.current === 'build';
+      rightArmPivot.add(rightArm, rightCuff, rightHand, heldBlockMesh);
       bodyGroup.add(leftArmPivot, rightArmPivot);
 
-      // ศีรษะ หมุนจากคอ (y = 1.74)
+      // ศีรษะ หมุนจากคอ (y = 1.74) พร้อมทรงผมหน้าม้า จอนผม และใบหู 3 มิติ
       const headGroup = new THREE.Group();
       headGroup.position.set(0, 1.74, 0);
       const head = new THREE.Mesh(
@@ -2621,12 +2796,23 @@ const VirtualClassroom: React.FC = () => {
           : skinMaterial,
       );
       head.position.y = 0.32;
-      const hairMat = new THREE.MeshStandardMaterial({ color: 0x2c1d14, roughness: 0.85 });
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x241710, roughness: 0.85 });
       const hairTop = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.18, 0.68), hairMat);
       hairTop.position.set(0, 0.64, 0);
-      const hairBack = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.42, 0.14), hairMat);
+      const hairFront = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.13, 0.12), hairMat);
+      hairFront.position.set(0, 0.56, -0.29);
+      const hairBack = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.44, 0.14), hairMat);
       hairBack.position.set(0, 0.42, 0.29);
-      headGroup.add(head, hairTop, hairBack);
+      const hairSideL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.26, 0.52), hairMat);
+      hairSideL.position.set(-0.31, 0.48, 0.04);
+      const hairSideR = hairSideL.clone();
+      hairSideR.position.x = 0.31;
+      const earMat = faceStyle === 'robo' ? darkTrimMat : skinMaterial;
+      const headEarL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.12), earMat);
+      headEarL.position.set(-0.34, 0.32, -0.02);
+      const headEarR = headEarL.clone();
+      headEarR.position.x = 0.34;
+      headGroup.add(head, hairTop, hairFront, hairBack, hairSideL, hairSideR, headEarL, headEarR);
 
       // ปรับหน้าตา 5 รูปแบบ (faceStyle)
       if (faceStyle === 'robo') {
@@ -2887,6 +3073,7 @@ const VirtualClassroom: React.FC = () => {
         rightArmPivot,
         leftLegPivot,
         rightLegPivot,
+        heldBlockMesh,
       };
       group.userData.nameSprite = nameSprite;
       group.userData.playerId = player.id;
@@ -2982,10 +3169,28 @@ const VirtualClassroom: React.FC = () => {
     const center = new THREE.Vector2(0, 0);
     const selection = new THREE.LineSegments(
       new THREE.EdgesGeometry(new THREE.BoxGeometry(1.04, 1.04, 1.04)),
-      new THREE.LineBasicMaterial({ color: 0xffffff }),
+      new THREE.LineBasicMaterial({ color: 0xfacc15 }),
     );
     selection.visible = false;
     scene.add(selection);
+
+    // โฮโลแกรมแสดงตำแหน่งช่องตารางที่จะวางบล็อกล่วงหน้า (ช่วยให้เล็งในมุมมองบุคคลที่ 3 แม่นยำ 100%)
+    const placementPreview = new THREE.Mesh(
+      new THREE.BoxGeometry(0.98, 0.98, 0.98),
+      new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.26,
+        depthWrite: false,
+      }),
+    );
+    const placementEdges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(1.0, 1.0, 1.0)),
+      new THREE.LineBasicMaterial({ color: 0x38bdf8 }),
+    );
+    placementPreview.add(placementEdges);
+    placementPreview.visible = false;
+    scene.add(placementPreview);
 
     const getHit = () => {
       raycaster.setFromCamera(center, camera);
@@ -3019,6 +3224,7 @@ const VirtualClassroom: React.FC = () => {
         setStatus(`เข้าใกล้พื้นที่ก่อสร้างอีกนิด วางได้ไกลสูงสุด ${BUILD_REACH} ช่อง`);
         return;
       }
+      avatarYaw = yaw;
       const point = hit.point.clone();
       if (hit.object.userData.kind === 'block' && hit.face) {
         point.add(hit.face.normal.clone().multiplyScalar(0.55));
@@ -3315,7 +3521,7 @@ const VirtualClassroom: React.FC = () => {
         x: playerPosition.x,
         y: playerPosition.y - 1.7,
         z: playerPosition.z,
-        rotation: yaw,
+        rotation: thirdPersonRef.current ? avatarYaw : yaw,
         color: avatarColorRef.current,
         techClass: techClassRef.current,
         faceStyle: faceStyleRef.current,
@@ -3337,7 +3543,10 @@ const VirtualClassroom: React.FC = () => {
       const state = roomStateRef.current;
       playerPosition.set(state?.summonX || 0, 1.7, state?.summonZ || 10);
       verticalVelocity = 0;
+      velX = 0;
+      velZ = 0;
       yaw = Math.PI;
+      avatarYaw = yaw;
       publishPresence(true, 'idle');
     };
     teleportToPlayerRef.current = (target: WorldPlayer) => {
@@ -3349,10 +3558,13 @@ const VirtualClassroom: React.FC = () => {
       const destY = Math.max(1.7, (target.y || 0) + 1.7);
       playerPosition.set(destX, destY, destZ);
       verticalVelocity = 0;
+      velX = 0;
+      velZ = 0;
       grounded = true;
       const dx = target.x - destX;
       const dz = target.z - destZ;
       yaw = Math.atan2(-dx, -dz);
+      avatarYaw = yaw;
       pitch = 0;
       publishPresence(true, 'idle');
       setStatus(`เดินไปหา ${target.role === 'teacher' ? 'ครู ' : ''}${target.name} แล้ว`);
@@ -3361,12 +3573,15 @@ const VirtualClassroom: React.FC = () => {
       if (!zone) return;
       playerPosition.set(zone.x, 1.7, zone.z);
       verticalVelocity = 0;
+      velX = 0;
+      velZ = 0;
       grounded = true;
       flyingRef.current = false;
       setIsFlying(false);
       const dx = zone.lookX - zone.x;
       const dz = zone.lookZ - zone.z;
       yaw = Math.atan2(-dx, -dz);
+      avatarYaw = yaw;
       pitch = 0;
       publishPresence(true, 'idle');
       setStatus(`🏛️ วาร์ปมายังโซน "${zone.shortTitle}" แล้ว — คลิกที่นิทรรศการเพื่อทดลองเล่น!`);
@@ -3523,7 +3738,7 @@ const VirtualClassroom: React.FC = () => {
         ? (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0)
           - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0)
         : 0;
-      const baseSpeed = keys.has('ShiftLeft') ? 8.5 : 5.2;
+      const baseSpeed = keys.has('ShiftLeft') ? 8.5 : 5.4;
       const speed = (now < speedBoostUntil ? 1.65 : 1) * baseSpeed;
       const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
       const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
@@ -3575,9 +3790,32 @@ const VirtualClassroom: React.FC = () => {
         return false;
       };
 
-      // คำนวณระยะการขยับตามทิศทาง
-      const dispX = forward.x * forwardAmount * speed * delta + right.x * sideAmount * speed * delta;
-      const dispZ = forward.z * forwardAmount * speed * delta + right.z * sideAmount * speed * delta;
+      // คำนวณทิศทางการเคลื่อนที่จริง + ระบบความเฉื่อย (Smooth Velocity Acceleration & Deceleration)
+      const inputMag = Math.hypot(forwardAmount, sideAmount);
+      const normF = inputMag > 0 ? forwardAmount / inputMag : 0;
+      const normS = inputMag > 0 ? sideAmount / inputMag : 0;
+      const moveDirX = forward.x * normF + right.x * normS;
+      const moveDirZ = forward.z * normF + right.z * normS;
+      const targetVelX = moveDirX * speed;
+      const targetVelZ = moveDirZ * speed;
+      const accelLerp = Math.min(1, delta * (inputMag > 0 ? 16 : 13));
+      velX = THREE.MathUtils.lerp(velX, targetVelX, accelLerp);
+      velZ = THREE.MathUtils.lerp(velZ, targetVelZ, accelLerp);
+      if (Math.abs(velX) < 0.015) velX = 0;
+      if (Math.abs(velZ) < 0.015) velZ = 0;
+
+      // หมุนตัวละครไปตามทิศทางที่กำลังวิ่งจริง (True 3rd-Person Directional Facing)
+      let turnRoll = 0;
+      if (inputMag > 0) {
+        const desiredAvatarYaw = Math.atan2(-moveDirX, -moveDirZ);
+        let yawDiff = ((desiredAvatarYaw - avatarYaw + Math.PI) % (Math.PI * 2)) - Math.PI;
+        if (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
+        avatarYaw += yawDiff * Math.min(1, delta * 15);
+        turnRoll = THREE.MathUtils.clamp(-yawDiff * 0.14, -0.14, 0.14);
+      }
+
+      const dispX = velX * delta;
+      const dispZ = velZ * delta;
 
       // เลื่อนไถลตามแนวกำแพงแบบแยกแกน (Axis-Separated Sliding)
       if (dispX !== 0) {
@@ -3662,12 +3900,6 @@ const VirtualClassroom: React.FC = () => {
             break;
           }
         }
-        if (playerPosition.x >= -10 && playerPosition.x <= 10 && playerPosition.z >= -8.5 && playerPosition.z <= 8.5) {
-          if (headY >= 5.4) {
-            playerPosition.y = 5.4 - 0.1;
-            verticalVelocity = 0;
-          }
-        }
       }
 
       // ยืนบนพื้น (0) หรือบนบล็อกที่วางไว้ในช่องนี้ — Minecraft: กระโดดขึ้นไปเหยียบบล็อกได้
@@ -3731,12 +3963,14 @@ const VirtualClassroom: React.FC = () => {
         const state = roomStateRef.current;
         playerPosition.set(state?.summonX || 0, 1.7, state?.summonZ || 10);
         verticalVelocity = 0;
+        velX = 0;
+        velZ = 0;
         grounded = true;
         setStatus('รีเซ็ตตำแหน่งกลับสู่ลานกิจกรรม');
       }
       playerPosition.x = THREE.MathUtils.clamp(playerPosition.x, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
       playerPosition.z = THREE.MathUtils.clamp(playerPosition.z, -PLAYER_BOUNDARY, PLAYER_BOUNDARY);
-      const isMoving = Math.abs(forwardAmount) + Math.abs(sideAmount) > 0;
+      const isMoving = inputMag > 0 || Math.hypot(velX, velZ) > 0.35;
       if (activeEmoteRef.current && now >= emoteUntilRef.current) {
         activeEmoteRef.current = null;
         setActiveEmote(null);
@@ -3752,7 +3986,23 @@ const VirtualClassroom: React.FC = () => {
               : 'idle';
       localAvatar.visible = thirdPersonRef.current;
       localAvatar.position.set(playerPosition.x, playerPosition.y - 1.7, playerPosition.z);
-      localAvatar.rotation.y = yaw;
+      localAvatar.rotation.y = thirdPersonRef.current ? avatarYaw : yaw;
+
+      // อัปเดตบล็อกที่ถือในมือขวาของตัวละครให้ตรงกับวัสดุที่เลือกอยู่
+      const localParts = localAvatar.userData.parts as { heldBlockMesh?: THREE.Mesh } | undefined;
+      const isHoldingBlock = modeRef.current === 'build';
+      if (localParts?.heldBlockMesh) {
+        localParts.heldBlockMesh.visible = isHoldingBlock;
+        const targetMat = blockMaterials[materialRef.current] || blockMaterials.grass;
+        if (localParts.heldBlockMesh.material !== targetMat) {
+          localParts.heldBlockMesh.material = targetMat;
+        }
+      }
+
+      let headLookDiff = ((yaw - avatarYaw + Math.PI) % (Math.PI * 2)) - Math.PI;
+      if (headLookDiff < -Math.PI) headLookDiff += Math.PI * 2;
+      const headLookYaw = Math.abs(headLookDiff) > 2.2 ? 0 : headLookDiff * 0.65;
+
       animateAvatar(
         localAvatar,
         isMoving,
@@ -3761,7 +4011,10 @@ const VirtualClassroom: React.FC = () => {
         currentLocalMotion,
         now,
         delta,
-        keys.has('ShiftLeft') ? 1.35 : 1,
+        keys.has('ShiftLeft') ? 1.38 : 1,
+        headLookYaw,
+        turnRoll,
+        isHoldingBlock,
       );
       remoteAvatars.forEach((avatar) => {
         const target = avatar.userData.targetPosition as THREE.Vector3;
@@ -3787,18 +4040,44 @@ const VirtualClassroom: React.FC = () => {
           now,
           delta,
           0.95,
+          0,
+          THREE.MathUtils.clamp(-rotDiff * 0.12, -0.12, 0.12),
+          false,
         );
       });
+
+      // กล้อง Spring-Arm มุมมองบุคคลที่ 3 นุ่มนวลตามหลังตัวละครและปรับระดับตามมุมก้ม-เงย (pitch)
       if (thirdPersonRef.current) {
-        camera.position.copy(playerPosition).addScaledVector(forward, -4.8);
-        camera.position.y += 2.2;
-        const lookTarget = playerPosition.clone().addScaledVector(forward, 3.5);
-        lookTarget.y += pitch * 1.8;
+        const camDist = flyingRef.current ? 5.1 : 4.35;
+        const camHeight = 1.65 - pitch * 1.55;
+        const desiredCamPos = new THREE.Vector3(
+          playerPosition.x - forward.x * camDist + right.x * 0.35,
+          Math.max(floorTop + 0.6, playerPosition.y - 0.35 + camHeight),
+          playerPosition.z - forward.z * camDist + right.z * 0.35,
+        );
+        if (smoothCamPos.distanceTo(desiredCamPos) > 14) {
+          smoothCamPos.copy(desiredCamPos);
+        } else {
+          smoothCamPos.lerp(desiredCamPos, Math.min(1, delta * 16));
+        }
+        camera.position.copy(smoothCamPos);
+        const lookTarget = new THREE.Vector3(
+          playerPosition.x + forward.x * 6.5,
+          playerPosition.y + 0.15 + Math.sin(pitch) * 4.5,
+          playerPosition.z + forward.z * 6.5,
+        );
         camera.lookAt(lookTarget);
       } else {
         camera.position.copy(playerPosition);
         camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
       }
+
+      // หมุนวงแหวนโฮโลแกรมบนเพดานโดมเทคโนโลยีและวงแหวนดาวเทียมบนท้องฟ้า
+      skylightRing.rotation.z += delta * 0.32;
+      skylightInnerRing.rotation.z -= delta * 0.55;
+      domeCoreOrb.rotation.y += delta * 1.15;
+      domeCoreOrb.position.y = 7.1 + Math.sin(now * 0.0024) * 0.16;
+      orbitalSkyRing.rotation.z += delta * 0.08;
 
       lessonProps.forEach((prop, index) => {
         prop.rotation.y += delta * (0.65 + index * 0.08);
@@ -3834,7 +4113,32 @@ const VirtualClassroom: React.FC = () => {
       if (hit?.object.userData.kind === 'block' && hit.distance <= BUILD_REACH) {
         selection.position.copy(hit.object.position);
         selection.visible = true;
-      } else selection.visible = false;
+      } else {
+        selection.visible = false;
+      }
+
+      if (
+        modeRef.current === 'build'
+        && hit
+        && hit.distance <= BUILD_REACH
+        && ['ground', 'block'].includes(hit.object.userData.kind)
+      ) {
+        const pt = hit.point.clone();
+        if (hit.object.userData.kind === 'block' && hit.face) {
+          pt.add(hit.face.normal.clone().multiplyScalar(0.55));
+        }
+        const px = Math.floor(pt.x) + 0.5;
+        const pz = Math.floor(pt.z) + 0.5;
+        const py = hit.object.userData.kind === 'ground' ? 0.5 : Math.max(0.5, Math.floor(pt.y) + 0.5);
+        if (Math.abs(px) <= BUILD_BOUNDARY && Math.abs(pz) <= BUILD_BOUNDARY && py <= BUILD_MAX_HEIGHT - 0.5) {
+          placementPreview.position.set(px, py, pz);
+          placementPreview.visible = true;
+        } else {
+          placementPreview.visible = false;
+        }
+      } else {
+        placementPreview.visible = false;
+      }
 
       if (now - lastPresence > 1_200) {
         lastPresence = now;
