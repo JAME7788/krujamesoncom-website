@@ -304,7 +304,17 @@ const BUILD_MISSIONS: BuildMission[] = [
   { id: 'parkour1', icon: '🚀', title: 'นักออกแบบด่าน Parkour', concept: 'ออกแบบลำดับขั้นและจุดหมายให้เพื่อนร่วมชั้นทดลองเล่น', goal: 'วางสปริงหรือสปีด 2 ชิ้น และป้ายผลงาน 1 ป้าย', stars: 4, check: (s) => s.parkourCount >= 2 && s.signCount >= 1, progress: (s) => `สปริง/สปีด ${s.parkourCount}/2 · ป้าย ${s.signCount}/1` },
 ];
 
-type TechZoneId = 'zero_to_one' | 'matrix_cube' | 'how_computer_works' | 'wireless_5g' | 'green_studio';
+type TechZoneId =
+  | 'zero_to_one'
+  | 'matrix_cube'
+  | 'how_computer_works'
+  | 'wireless_5g'
+  | 'green_studio'
+  | 'logic_secret_code'
+  | 'program_software_robodog'
+  | 'quantum_computer'
+  | 'ai_revolution_agentic'
+  | 'retro_console_esports';
 
 interface TechZoneInfo {
   id: TechZoneId;
@@ -323,7 +333,7 @@ const TECH_ZONES: TechZoneInfo[] = [
   {
     id: 'zero_to_one',
     icon: '0️⃣',
-    shortTitle: 'Zero to One 0/1',
+    shortTitle: '1. Zero to One 0/1',
     title: 'DIGITAL PLAYGROUND · FROM ZERO TO ONE',
     subtitle: '0 และ 1 สร้างความเป็นไปได้ไม่สิ้นสุด · แท่นโฮโลแกรม BINARY & ไทม์ไลน์คอมพิวเตอร์ 1936–ปัจจุบัน',
     accent: '#06b6d4',
@@ -335,7 +345,7 @@ const TECH_ZONES: TechZoneInfo[] = [
   {
     id: 'matrix_cube',
     icon: '🟢',
-    shortTitle: 'ห้องเมทริกซ์ 0/1',
+    shortTitle: '2. ห้องเมทริกซ์ 0/1',
     title: 'Matrix Binary Room & อุโมงค์ไฟอินฟินิตี้ LED',
     subtitle: 'เบื้องหลังภาพ เสียง AI และโลก Metaverse ล้วนเกิดจากสายธารข้อมูลรหัสฐานสอง 0 และ 1',
     accent: '#10b981',
@@ -347,9 +357,9 @@ const TECH_ZONES: TechZoneInfo[] = [
   {
     id: 'how_computer_works',
     icon: '🧠',
-    shortTitle: 'คอมทำงานอย่างไร',
-    title: 'HOW COMPUTER WORKS? · คอมพิวเตอร์กับร่างกายมนุษย์',
-    subtitle: 'เปรียบเทียบอุปกรณ์คอมพิวเตอร์กับอวัยวะในร่างกาย และระบบ Input → Memory/CPU → Output',
+    shortTitle: '3. คอม 5 ยุค & IBM 1620',
+    title: 'HOW COMPUTER WORKS? · คอมพิวเตอร์ 5 ยุค & IBM 1620 เครื่องแรกของไทย',
+    subtitle: 'เปรียบเทียบคอมพิวเตอร์กับอวัยวะมนุษย์ · วิวัฒนาการ 5 ยุค (หลอดสุญญากาศ–AI) · ห้องเครื่อง IBM 1620 พ.ศ. 2506',
     accent: '#f59e0b',
     x: 15.2,
     z: -1,
@@ -357,9 +367,45 @@ const TECH_ZONES: TechZoneInfo[] = [
     lookZ: -1,
   },
   {
+    id: 'logic_secret_code',
+    icon: '🔐',
+    shortTitle: '4. ตรรกศาสตร์ & รหัสลับ',
+    title: 'LOGIC & ALGORITHM · ตรรกศาสตร์ อัลกอริทึม & การสร้างรหัสลับ',
+    subtitle: 'บอร์ดปุ่มไฟสร้างรหัสลับ (A=1..Z=26) · ฝึกคิดเชิงตรรกะและลำดับขั้นตอนอัลกอริทึมในชีวิตประจำวัน',
+    accent: '#2563eb',
+    x: -15.2,
+    z: -14.5,
+    lookX: -19.5,
+    lookZ: -14.5,
+  },
+  {
+    id: 'program_software_robodog',
+    icon: '🐕',
+    shortTitle: '5. ภาษาคอม & หุ่นสุนัข',
+    title: 'PROGRAM & COMPUTER LANGUAGE · คอมไพเลอร์ ซอฟต์แวร์ & หุ่นยนต์สุนัข 4 ขา',
+    subtitle: 'ภาษาคอมพิวเตอร์ 3 ระดับ (Machine / Assembly / High-Level) · Compiler vs Interpreter · ซอฟต์แวร์ระบบ/ประยุกต์',
+    accent: '#e11d48',
+    x: 15.2,
+    z: -14.5,
+    lookX: 19.5,
+    lookZ: -14.5,
+  },
+  {
+    id: 'quantum_computer',
+    icon: '⚛️',
+    shortTitle: '6. คอมควอนตัม 0K',
+    title: 'QUANTUM COMPUTER · คอมพิวเตอร์เชิงควอนตัม (-273.15°C)',
+    subtitle: 'กลศาสตร์ควอนตัมระดับอะตอม · Qubit ซ้อนทับสถานะ 0 และ 1 พร้อมกัน ภายใต้อุณหภูมิ 0 องศาเคลวิน',
+    accent: '#059669',
+    x: 0,
+    z: -15.5,
+    lookX: 0,
+    lookZ: -20.5,
+  },
+  {
     id: 'wireless_5g',
     icon: '📡',
-    shortTitle: 'ไร้สาย 1G–5G',
+    shortTitle: '7. ไร้สาย 1G–5G',
     title: 'Evolution of Wireless Networks · วิวัฒนาการ 1G สู่ 5G',
     subtitle: 'จากมือถืออนาล็อกยุค 1980s สู่เครือข่ายอัจฉริยะ 5G ความเร็วสูงเชื่อมต่อ IoT และ Smart City',
     accent: '#8b5cf6',
@@ -371,14 +417,38 @@ const TECH_ZONES: TechZoneInfo[] = [
   {
     id: 'green_studio',
     icon: '🎬',
-    shortTitle: 'สตูดิโอ Green Screen',
-    title: 'KruJames Studio · สตูดิโอถ่ายทอดสด & ฉาก Green Screen',
-    subtitle: 'เรียนรู้เทคนิค Chroma Key ตัดพื้นหลังสีเขียวเปลี่ยนเป็นฉากโลกอนาคต อวกาศ และห้องข่าวดิจิทัล',
+    shortTitle: '8. สตูดิโอ Green Screen',
+    title: 'KruJames Studio · สตูดิโอถ่ายทอดสด & ห้องควบคุม Chroma Key',
+    subtitle: 'เรียนรู้เทคนิค Chroma Key ตัดพื้นหลังสีเขียว และห้องควบคุมผู้กำกับรายการโทรทัศน์ดิจิทัล',
     accent: '#16a34a',
     x: 15.2,
     z: 12.5,
     lookX: 19.5,
     lookZ: 12.5,
+  },
+  {
+    id: 'ai_revolution_agentic',
+    icon: '🤖',
+    shortTitle: '9. AI Revolution & Deepfake',
+    title: 'AI REVOLUTION : THE NEW HUMAN · Agentic AI, Cloud, 3D Print & Deepfake',
+    subtitle: 'หุ่นยนต์ฮิวแมนนอยด์ · Agentic AI วางแผนอัตโนมัติ · Cloud & IoE · รู้เท่าทัน Deepfake และทักษะดิจิทัล',
+    accent: '#0284c7',
+    x: -18.5,
+    z: 25.5,
+    lookX: -23.5,
+    lookZ: 25.5,
+  },
+  {
+    id: 'retro_console_esports',
+    icon: '🎮',
+    shortTitle: '10. ตู้เกม Famicom–N64',
+    title: 'RETRO CONSOLE & E-SPORTS · วิวัฒนาการเกม 8-Bit สู่ 3D และสายอาชีพวงการเกม',
+    subtitle: 'Famicom (1983) → Super Famicom (1990) → Nintendo 64 (1996) และเส้นทางอาชีพสู่วงการเกม & E-Sports',
+    accent: '#db2777',
+    x: 18.5,
+    z: 25.5,
+    lookX: 23.5,
+    lookZ: 25.5,
   },
 ];
 
@@ -615,8 +685,14 @@ const VirtualClassroom: React.FC = () => {
   const [activeTechZone, setActiveTechZone] = useState<TechZoneInfo | null>(null);
   const [binaryBits, setBinaryBits] = useState<[number, number, number, number]>([0, 1, 0, 1]);
   const [selectedOrganIdx, setSelectedOrganIdx] = useState(0);
+  const [selectedComputerGen, setSelectedComputerGen] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [selectedGenG, setSelectedGenG] = useState<'1G' | '2G' | '3G' | '4G' | '5G'>('5G');
   const [studioBackdropIdx, setStudioBackdropIdx] = useState(0);
+  const [secretWordIdx, setSecretWordIdx] = useState(0);
+  const [roboDogAction, setRoboDogAction] = useState<'scan' | 'patrol' | 'wave' | 'rescue'>('scan');
+  const [quantumQubits, setQuantumQubits] = useState(4);
+  const [agentGoalIdx, setAgentGoalIdx] = useState(0);
+  const [selectedConsoleEra, setSelectedConsoleEra] = useState<'fc' | 'sfc' | 'n64'>('fc');
   const [visitedTechZones, setVisitedTechZones] = useState<string[]>(() => {
     try {
       const raw = localStorage.getItem(`kj_world_techpassport_${playerId}`);
@@ -1640,14 +1716,18 @@ const VirtualClassroom: React.FC = () => {
       });
     };
 
-    // เส้นลายวงจรดิจิทัลเรืองแสงเชื่อมลานกลางไปสู่ทั้ง 5 โซนเทคโนโลยี
+    // เส้นลายวงจรดิจิทัลเรืองแสงเชื่อมลานกลางไปสู่ทั้ง 10 โซนพิพิธภัณฑ์เทคโนโลยีสารสนเทศ
     const circuitTraceMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
     [
       [0, 12.5, 0.45, 7],
       [-9.5, 12.5, 16, 0.35],
       [9.5, 12.5, 16, 0.35],
-      [-14.5, 5.5, 0.35, 14],
-      [14.5, 5.5, 0.35, 14],
+      [-14.5, 5.5, 0.35, 42],
+      [14.5, 5.5, 0.35, 42],
+      [0, -14.5, 32, 0.35],
+      [0, -17.5, 0.45, 7],
+      [-19, 25.5, 10, 0.35],
+      [19, 25.5, 10, 0.35],
     ].forEach(([cx, cz, cw, cd]) => {
       const trace = new THREE.Mesh(new THREE.BoxGeometry(cw, 0.05, cd), circuitTraceMat);
       trace.position.set(cx, 0.03, cz);
@@ -1950,7 +2030,34 @@ const VirtualClassroom: React.FC = () => {
     vrPod.add(ped3, vrVisor, vrStrap);
     vrPod.position.set(0.6, 0, 1.85);
 
-    zone3Group.add(hcwWall, chipMascot, case1, case2, vrPod);
+    // 4) โมเดล IBM 1620 เครื่องคอมพิวเตอร์เครื่องแรกของประเทศไทย (พ.ศ. 2506) + ตู้เทปแม่เหล็กหมุนคู่ IBM 729 (จากภาพ IMG_111650!)
+    const ibm1620Group = new THREE.Group();
+    const ibmDesk = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 0.78, 0.85),
+      new THREE.MeshStandardMaterial({ color: 0xd6d3c4, roughness: 0.6 }),
+    );
+    ibmDesk.position.set(0, 0.39, 0);
+    const ibmConsole = new THREE.Mesh(
+      new THREE.BoxGeometry(1.42, 0.36, 0.42),
+      new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.4 }),
+    );
+    ibmConsole.position.set(0, 0.96, -0.15);
+    const ibmTapeCabinet = new THREE.Mesh(
+      new THREE.BoxGeometry(0.85, 1.95, 0.62),
+      new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.4, roughness: 0.45 }),
+    );
+    ibmTapeCabinet.position.set(-1.25, 0.975, -0.1);
+    const tapeReelMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.3, roughness: 0.3 });
+    const tapeReel1 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 16), tapeReelMat);
+    tapeReel1.rotation.x = Math.PI / 2;
+    tapeReel1.position.set(-1.45, 1.52, 0.23);
+    const tapeReel2 = tapeReel1.clone();
+    tapeReel2.position.set(-1.05, 1.52, 0.23);
+    ibm1620Group.add(ibmDesk, ibmConsole, ibmTapeCabinet, tapeReel1, tapeReel2);
+    ibm1620Group.rotation.y = -Math.PI / 2;
+    ibm1620Group.position.set(0.55, 0, 3.35);
+
+    zone3Group.add(hcwWall, chipMascot, case1, case2, vrPod, ibm1620Group);
     zone3Group.position.set(19.5, 0, -1);
     tagExhibitGroup(zone3Group, zone3Info);
     scene.add(zone3Group);
@@ -1958,10 +2065,12 @@ const VirtualClassroom: React.FC = () => {
       chipMascot.position.y = Math.abs(Math.sin(now * 0.003)) * 0.18;
       vrVisor.rotation.y += delta * 1.1;
       vrStrap.rotation.y = vrVisor.rotation.y;
+      tapeReel1.rotation.z += delta * 2.4;
+      tapeReel2.rotation.z -= delta * 2.4;
     });
 
-    // --- ZONE 4: วิวัฒนาการเครือข่ายไร้สาย 1G → 2G → 3G → 4G → 5G (x = -19.5, z = 12.5) ---
-    const zone4Info = TECH_ZONES[3];
+    // --- ZONE 4 (wireless_5g): วิวัฒนาการเครือข่ายไร้สาย 1G → 2G → 3G → 4G → 5G (x = -19.5, z = 12.5) ---
+    const zone4Info = TECH_ZONES.find((z) => z.id === 'wireless_5g')!;
     const zone4Group = new THREE.Group();
     const wirelessWall = new THREE.Mesh(
       new THREE.BoxGeometry(0.32, 4.1, 6.6),
@@ -2014,8 +2123,8 @@ const VirtualClassroom: React.FC = () => {
       signalRing.scale.set(pulse, 1, pulse);
     });
 
-    // --- ZONE 5: KRUJAMES STUDIO · สตูดิโอถ่ายทอดสด & เวที GREEN SCREEN (x = 19.5, z = 12.5) ---
-    const zone5Info = TECH_ZONES[4];
+    // --- ZONE 5 (green_studio): KRUJAMES STUDIO · สตูดิโอถ่ายทอดสด & เวที GREEN SCREEN (x = 19.5, z = 12.5) ---
+    const zone5Info = TECH_ZONES.find((z) => z.id === 'green_studio')!;
     const zone5Group = new THREE.Group();
     const chromaGreenMat = new THREE.MeshStandardMaterial({
       color: 0x16a34a,
@@ -2027,13 +2136,11 @@ const VirtualClassroom: React.FC = () => {
     studioStage.position.set(1.2, 0.13, 0);
     const greenBackdrop = new THREE.Mesh(new THREE.BoxGeometry(0.28, 3.9, 5.6), chromaGreenMat);
     greenBackdrop.position.set(3.4, 2.0, 0);
-    // โต๊ะเรียนไม้บนเวที Green Screen (เหมือนภาพที่ 8 ใน NSM Studio!)
     const studioDesk = new THREE.Mesh(
       new THREE.BoxGeometry(1.1, 0.82, 1.4),
       new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7 }),
     );
     studioDesk.position.set(1.3, 0.65, 0);
-    // กล้องถ่ายทอดสดโทรทัศน์บนขาตั้ง (NSM / KruJames Studio Camera)
     const camGroup = new THREE.Group();
     const tripod = new THREE.Mesh(
       new THREE.CylinderGeometry(0.12, 0.55, 1.45, 6),
@@ -2057,7 +2164,6 @@ const VirtualClassroom: React.FC = () => {
     camGroup.add(tripod, camBody, camMonitor);
     camGroup.position.set(-1.6, 0, 0);
 
-    // ประติมากรรมฉากหลังสตูดิโอ STEM (อะตอม + ไม้ฉากสามเหลี่ยมสีเหลือง + หลอดไฟไอเดีย จากภาพที่ 10!)
     const stemDecor = new THREE.Group();
     const atomCore = new THREE.Mesh(
       new THREE.BoxGeometry(0.55, 0.55, 0.55),
@@ -2104,6 +2210,324 @@ const VirtualClassroom: React.FC = () => {
     techAnimatedObjects.push((_now, delta) => {
       atomRing1.rotation.z += delta * 1.4;
     });
+
+    // --- ZONE 6 (logic_secret_code): 2. ตรรกศาสตร์และอัลกอริทึม & สร้างรหัสลับ CREATING A SECRET CODE (x = -19.5, z = -14.5) ---
+    const zoneLogicInfo = TECH_ZONES.find((z) => z.id === 'logic_secret_code')!;
+    const zoneLogicGroup = new THREE.Group();
+    const logicWall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 4.3, 6.8),
+      new THREE.MeshStandardMaterial({
+        map: makeExhibitPosterTexture(
+          '#1e3a8a',
+          '#0f172a',
+          '#60a5fa',
+          'ZONE 2 · LOGIC & ALGORITHM',
+          'ตรรกศาสตร์ อัลกอริทึม & สร้างรหัสลับ',
+          'CREATING A SECRET CODE · เปิด/ปิดป้ายไฟแทนค่าตัวอักษร A=1..Z=26',
+          [
+            '• ตรรกศาสตร์ (Logic): ศาสตร์แห่งเหตุผลและการพิสูจน์ความจริง (True / False)',
+            '• อัลกอริทึม (Algorithm): ลำดับขั้นตอนการแก้ปัญหาอย่างเป็นระบบทีละขั้น',
+            '• สร้างรหัสลับ: แปลงภาษาของมนุษย์เป็นรหัสตัวเลข (DRESS · WATER · APPLE)',
+          ],
+        ),
+        roughness: 0.4,
+      }),
+    );
+    logicWall.position.set(-2.2, 2.2, 0);
+    // แผงปุ่มไฟสี่เหลี่ยม 4x4 เรืองแสงบนบอร์ดสร้างรหัสลับ (เหมือนภาพ IMG_111928!)
+    const secretTiles: THREE.Mesh[] = [];
+    for (let r = 0; r < 4; r += 1) {
+      for (let c = 0; c < 4; c += 1) {
+        const isLit = (r + c) % 2 === 0;
+        const tile = new THREE.Mesh(
+          new THREE.BoxGeometry(0.14, 0.42, 0.42),
+          new THREE.MeshStandardMaterial({
+            color: isLit ? 0xfef08a : 0xe2e8f0,
+            emissive: new THREE.Color(isLit ? 0x38bdf8 : 0x1e293b),
+            emissiveIntensity: isLit ? 0.85 : 0.15,
+          }),
+        );
+        tile.position.set(-1.95, 1.1 + r * 0.62, -1.05 + c * 0.68);
+        secretTiles.push(tile);
+        zoneLogicGroup.add(tile);
+      }
+    }
+    // แผ่นเกมเส้นทางอัลกอริทึมบนพื้น (Algorithm Decision Tree Floor Mat จากภาพ IMG_111928!)
+    const algoFloorMat = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 0.06, 5.2),
+      new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7 }),
+    );
+    algoFloorMat.position.set(0.2, 0.03, 0);
+    zoneLogicGroup.add(logicWall, algoFloorMat);
+    zoneLogicGroup.position.set(-19.5, 0, -14.5);
+    tagExhibitGroup(zoneLogicGroup, zoneLogicInfo);
+    scene.add(zoneLogicGroup);
+    techAnimatedObjects.push((now) => {
+      const step = Math.floor(now * 0.0025);
+      secretTiles.forEach((tile, idx) => {
+        const active = (idx + step) % 5 === 0;
+        const mat = tile.material as THREE.MeshStandardMaterial;
+        mat.emissiveIntensity = active ? 0.95 : 0.18;
+      });
+    });
+
+    // --- ZONE 7 (program_software_robodog): 4. โปรแกรม ภาษาคอมพิวเตอร์ ซอฟต์แวร์ & หุ่นยนต์สุนัข 4 ขา (x = 19.5, z = -14.5) ---
+    const zoneProgInfo = TECH_ZONES.find((z) => z.id === 'program_software_robodog')!;
+    const zoneProgGroup = new THREE.Group();
+    const progWall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 4.3, 7.0),
+      new THREE.MeshStandardMaterial({
+        map: makeExhibitPosterTexture(
+          '#ca8a04',
+          '#be123c',
+          '#fde047',
+          'ZONE 4 · PROGRAM & COMPUTER LANGUAGE',
+          'ภาษาคอมพิวเตอร์ ซอฟต์แวร์ & หุ่นยนต์สุนัข',
+          'Compiler vs Interpreter · ภาษา 3 ระดับ · System & Application Software',
+          [
+            '• 1. คอมไพเลอร์ (แปลทั้งโปรแกรมรวดเดียว) vs 2. อินเทอร์พรีเตอร์ (แปลทีละบรรทัด)',
+            '• 3 ระดับภาษา: ภาษาเครื่อง (0/1) → ภาษาระดับต่ำ (Assembly) → ภาษาระดับสูง (Python #1)',
+            '• ซอฟต์แวร์ระบบ (Windows, macOS, Linux, iOS) & ซอฟต์แวร์ประยุกต์ + เกม SPACE RESCUE',
+          ],
+        ),
+        roughness: 0.45,
+      }),
+    );
+    progWall.position.set(2.2, 2.2, 0);
+    // โมเดล 3D หุ่นยนต์สุนัข 4 ขา (Quadruped Robot Dog สีดำบนแท่นจัดแสดง จากภาพ IMG_112026!)
+    const roboDogPedestal = new THREE.Mesh(
+      new THREE.BoxGeometry(1.7, 0.78, 1.35),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6 }),
+    );
+    roboDogPedestal.position.set(0.2, 0.39, 0);
+    const roboDog = new THREE.Group();
+    const dogBlackMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.65, roughness: 0.28 });
+    const dogBody = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.26, 0.38), dogBlackMat);
+    dogBody.position.set(0, 0.58, 0);
+    const dogHead = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.24, 0.34), dogBlackMat);
+    dogHead.position.set(-0.52, 0.66, 0);
+    const dogCamLens = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.1, 0.22),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: new THREE.Color(0x0284c7), emissiveIntensity: 0.9 }),
+    );
+    dogCamLens.position.set(-0.69, 0.66, 0);
+    const dogLegs: THREE.Mesh[] = [];
+    [[-0.32, -0.17], [-0.32, 0.17], [0.32, -0.17], [0.32, 0.17]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.52, 0.11), dogBlackMat);
+      leg.position.set(lx, 0.26, lz);
+      dogLegs.push(leg);
+      roboDog.add(leg);
+    });
+    roboDog.add(dogBody, dogHead, dogCamLens);
+    roboDog.position.set(0.2, 0.78, 0);
+    zoneProgGroup.add(progWall, roboDogPedestal, roboDog);
+    zoneProgGroup.position.set(19.5, 0, -14.5);
+    tagExhibitGroup(zoneProgGroup, zoneProgInfo);
+    scene.add(zoneProgGroup);
+    techAnimatedObjects.push((now) => {
+      const t = now * 0.005;
+      roboDog.position.y = 0.78 + Math.abs(Math.sin(t)) * 0.05;
+      dogHead.rotation.z = Math.sin(t * 0.7) * 0.12;
+      dogLegs.forEach((leg, idx) => {
+        leg.rotation.z = Math.sin(t + (idx % 2 === 0 ? 0 : Math.PI)) * 0.22;
+      });
+    });
+
+    // --- ZONE 8 (quantum_computer): 5. คอมพิวเตอร์เชิงควอนตัม QUANTUM COMPUTER 0 KELVIN (x = 0, z = -20.5) ---
+    const zoneQuantumInfo = TECH_ZONES.find((z) => z.id === 'quantum_computer')!;
+    const zoneQuantumGroup = new THREE.Group();
+    const quantumWall = new THREE.Mesh(
+      new THREE.BoxGeometry(7.4, 4.3, 0.32),
+      new THREE.MeshStandardMaterial({
+        map: makeExhibitPosterTexture(
+          '#064e3b',
+          '#881337',
+          '#34d399',
+          'ZONE 5 · QUANTUM COMPUTER (-273.15 °C)',
+          'คอมพิวเตอร์เชิงควอนตัม · เหมือนหรือต่าง?',
+          'ประมวลผลด้วยกลศาสตร์ควอนตัม (Qubit) ภายใต้อุณหภูมิ 0 องศาเคลวิน',
+          [
+            '• คอมพิวเตอร์ทั่วไปใช้ Bit (0 หรือ 1) เน้นลดขนาดให้พกพาสะดวกในชีวิตประจำวัน',
+            '• คอมพิวเตอร์ควอนตัมใช้ Qubit ซ้อนทับสถานะ แก้โจทย์ข้อมูลซับซ้อนมหาศาลได้รวดเร็ว',
+            '• ต้องควบคุมอนุภาคที่ 0 เคลวิน (-273.15°C) และใช้พื้นที่ติดตั้ง 30–50 ตร.ม. กันสั่นสะเทือน',
+          ],
+        ),
+        roughness: 0.4,
+      }),
+    );
+    quantumWall.position.set(0, 2.2, -2.2);
+    // โมเดล 3D เครื่องควอนตัมทรงแชนเดอเลียร์สีทองหลายชั้นในตู้กระจกไครโอเจนิก (จากภาพ IMG_112042!)
+    const quantumChandelier = new THREE.Group();
+    const goldQuantumMat = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      emissive: new THREE.Color(0xd97706),
+      emissiveIntensity: 0.55,
+      metalness: 0.85,
+      roughness: 0.18,
+    });
+    [
+      [1.1, 3.55, 0.14],
+      [0.92, 3.0, 0.12],
+      [0.74, 2.45, 0.12],
+      [0.54, 1.9, 0.1],
+      [0.32, 1.38, 0.18],
+    ].forEach(([radius, yLevel, thickness]) => {
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, thickness, 20), goldQuantumMat);
+      disc.position.y = yLevel;
+      quantumChandelier.add(disc);
+    });
+    const centralRod = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.08, 2.5, 12), goldQuantumMat);
+    centralRod.position.y = 2.45;
+    const cryoGlass = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.32, 1.32, 3.4, 24),
+      new THREE.MeshStandardMaterial({ color: 0x6ee7b7, transparent: true, opacity: 0.25, roughness: 0.1 }),
+    );
+    cryoGlass.position.y = 2.3;
+    const quantumBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.45, 1.55, 0.6, 24),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.6, roughness: 0.3 }),
+    );
+    quantumBase.position.y = 0.3;
+    quantumChandelier.add(centralRod, cryoGlass, quantumBase);
+    quantumChandelier.position.set(0, 0, 0.4);
+    zoneQuantumGroup.add(quantumWall, quantumChandelier);
+    zoneQuantumGroup.position.set(0, 0, -20.5);
+    tagExhibitGroup(zoneQuantumGroup, zoneQuantumInfo);
+    scene.add(zoneQuantumGroup);
+    techAnimatedObjects.push((_now, delta) => {
+      quantumChandelier.rotation.y += delta * 0.55;
+    });
+
+    // --- ZONE 9 (ai_revolution_agentic): AI REVOLUTION : THE NEW HUMAN · Agentic AI, Cloud, 3D Print & Deepfake (x = -23.5, z = 25.5) ---
+    const zoneAiInfo = TECH_ZONES.find((z) => z.id === 'ai_revolution_agentic')!;
+    const zoneAiGroup = new THREE.Group();
+    const aiWall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 4.5, 7.6),
+      new THREE.MeshStandardMaterial({
+        map: makeExhibitPosterTexture(
+          '#090d16',
+          '#1e3a8a',
+          '#38bdf8',
+          'AI REVOLUTION : THE NEW HUMAN',
+          'ปฏิวัติปัญญาประดิษฐ์ · Agentic AI & Deepfake',
+          'หุ่นยนต์ฮิวแมนนอยด์ · Cloud Computing · 3D Printing · IoE · ทักษะดิจิทัล',
+          [
+            '• Agentic AI: เอไอที่คิดวางแผน แตกงานย่อย และใช้เครื่องมือทำงานแทนมนุษย์ได้อัตโนมัติ',
+            '• Cloud Computing & IoE: ก้อนเมฆแห่งมหาเครือข่ายข้อมูล และทุกสิ่งเชื่อมผ่านอินเทอร์เน็ต',
+            '• รู้เท่าทัน Deepfake & โซเชียล: ค้นหาต้นฉบับ · เทียบหลายแหล่ง · คิดก่อนแชร์',
+          ],
+        ),
+        roughness: 0.35,
+      }),
+    );
+    aiWall.position.set(-2.6, 2.25, 0);
+    // เวทีกระจกกลม + หุ่นยนต์ฮิวแมนนอยด์สีขาว (Humanoid Robot) + ก้อนเมฆ Cloud Computing ลอยเหนือหัว (จากภาพ IMG_112407!)
+    const humanoidStage = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.75, 1.85, 0.28, 24),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.6, roughness: 0.25 }),
+    );
+    humanoidStage.position.set(0.2, 0.14, 0);
+    const humanoidRing = new THREE.Mesh(
+      new THREE.TorusGeometry(1.72, 0.06, 8, 32),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
+    );
+    humanoidRing.rotation.x = Math.PI / 2;
+    humanoidRing.position.set(0.2, 0.29, 0);
+    const humanoidRobot = new THREE.Group();
+    const whiteBotMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.35, roughness: 0.25 });
+    const botJointMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 });
+    const hTorso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.88, 0.36), whiteBotMat);
+    hTorso.position.y = 1.45;
+    const hHead = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 16), whiteBotMat);
+    hHead.position.y = 2.15;
+    const hVisor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.34, 0.12, 0.16),
+      new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: new THREE.Color(0xe11d48), emissiveIntensity: 0.9 }),
+    );
+    hVisor.position.set(0.18, 2.15, 0);
+    const hLegL = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.09, 0.95, 10), botJointMat);
+    hLegL.position.set(0, 0.5, -0.16);
+    const hLegR = hLegL.clone();
+    hLegR.position.z = 0.16;
+    humanoidRobot.add(hTorso, hHead, hVisor, hLegL, hLegR);
+    humanoidRobot.position.set(0.2, 0.28, 0);
+    // ก้อนเมฆ Cloud Computing ลอยเหนือเวที
+    const cloudSculpture = new THREE.Group();
+    const cloudMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.85 });
+    [[0, 0, 0, 0.75], [0, 0.2, 0.55, 0.58], [0, -0.1, -0.55, 0.58]].forEach(([cx, cy, cz, r]) => {
+      const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 1), cloudMat);
+      puff.position.set(cx, cy, cz);
+      cloudSculpture.add(puff);
+    });
+    cloudSculpture.position.set(0.2, 4.15, -1.6);
+    zoneAiGroup.add(aiWall, humanoidStage, humanoidRing, humanoidRobot, cloudSculpture);
+    zoneAiGroup.position.set(-23.5, 0, 25.5);
+    tagExhibitGroup(zoneAiGroup, zoneAiInfo);
+    scene.add(zoneAiGroup);
+    techAnimatedObjects.push((now) => {
+      humanoidRobot.rotation.y = Math.sin(now * 0.0015) * 0.45;
+      cloudSculpture.position.y = 4.15 + Math.sin(now * 0.002) * 0.14;
+    });
+
+    // --- ZONE 10 (retro_console_esports): วิวัฒนาการเครื่องเกมคอนโซล Famicom → Super Famicom → N64 & อาชีพวงการเกม (x = 23.5, z = 25.5) ---
+    const zoneRetroInfo = TECH_ZONES.find((z) => z.id === 'retro_console_esports')!;
+    const zoneRetroGroup = new THREE.Group();
+    const retroWall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 4.5, 7.6),
+      new THREE.MeshStandardMaterial({
+        map: makeExhibitPosterTexture(
+          '#be185d',
+          '#4c1d95',
+          '#facc15',
+          'RETRO CONSOLE ARCHIVE & E-SPORTS CAREER',
+          'วิวัฒนาการเกมคอนโซล & สายอาชีพวงการเกม',
+          'Famicom (1983) → Super Famicom (1990) → Nintendo 64 (1996)',
+          [
+            '• 1983 Famicom (8-Bit): จุดเริ่มต้นตำนาน Super Mario Bros. & Mega Man บนทีวี CRT',
+            '• 1990 Super Famicom (16-Bit): ยกระดับสีสันกราฟิกและเสียงดนตรี Super Mario World',
+            '• 1996 Nintendo 64 (64-Bit 3D): ก้าวสู่โลกโพลิกอน 3 มิติ & สายอาชีพ E-Sports ยุคใหม่',
+          ],
+        ),
+        roughness: 0.4,
+      }),
+    );
+    retroWall.position.set(2.6, 2.25, 0);
+    // แท่นทีวี CRT 3 เครื่องพร้อมเครื่องเกม Famicom (ขาว-แดง), Super Famicom (เทา), Nintendo 64 (ดำ) (จากภาพ IMG_112552!)
+    [
+      [-2.1, 0xdc2626, 0x38bdf8],
+      [0, 0x94a3b8, 0x4ade80],
+      [2.1, 0x1e293b, 0xfacc15],
+    ].forEach(([zOffset, consoleHex, screenHex]) => {
+      const stand = new THREE.Mesh(
+        new THREE.BoxGeometry(1.05, 0.92, 1.15),
+        new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.5 }),
+      );
+      stand.position.set(0.5, 0.46, zOffset);
+      const crtTv = new THREE.Mesh(
+        new THREE.BoxGeometry(0.76, 0.68, 0.82),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 }),
+      );
+      crtTv.position.set(0.62, 1.26, zOffset);
+      const crtScreen = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 0.52, 0.66),
+        new THREE.MeshStandardMaterial({
+          color: screenHex,
+          emissive: new THREE.Color(screenHex),
+          emissiveIntensity: 0.75,
+        }),
+      );
+      crtScreen.position.set(0.22, 1.26, zOffset);
+      const consoleBox = new THREE.Mesh(
+        new THREE.BoxGeometry(0.36, 0.14, 0.44),
+        new THREE.MeshStandardMaterial({ color: consoleHex, roughness: 0.35 }),
+      );
+      consoleBox.position.set(0.12, 0.99, zOffset);
+      zoneRetroGroup.add(stand, crtTv, crtScreen, consoleBox);
+    });
+    zoneRetroGroup.add(retroWall);
+    zoneRetroGroup.position.set(23.5, 0, 25.5);
+    tagExhibitGroup(zoneRetroGroup, zoneRetroInfo);
+    scene.add(zoneRetroGroup);
 
     // โครงเพดานไซเบอร์โปร่งแสง (Cyber Skylight Grid) + แถบไฟนีออน LED เติมแสงในโดม
     const roofBeams = new THREE.Group();
@@ -4460,7 +4884,10 @@ const VirtualClassroom: React.FC = () => {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 5,
-            flexWrap: 'wrap',
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+            maxWidth: 'calc(100vw - 36px)',
+            whiteSpace: 'nowrap',
             padding: '4px 9px',
             borderRadius: 999,
             background: 'rgba(15, 23, 42, 0.88)',
@@ -4470,7 +4897,7 @@ const VirtualClassroom: React.FC = () => {
             fontSize: '0.75rem',
           }}
         >
-          <span style={{ fontWeight: 800, color: '#38bdf8' }}>
+          <span style={{ fontWeight: 800, color: '#38bdf8', flexShrink: 0 }}>
             🏛️ โลกเทคโนโลยี ({visitedTechZones.length}/{TECH_ZONES.length}):
           </span>
           {TECH_ZONES.map((zone) => {
@@ -4485,6 +4912,7 @@ const VirtualClassroom: React.FC = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 4,
+                  flexShrink: 0,
                   padding: '2px 8px',
                   borderRadius: 999,
                   border: `1px solid ${visited ? '#4ade80' : zone.accent}`,
@@ -6203,23 +6631,442 @@ const VirtualClassroom: React.FC = () => {
                   ))}
                 </div>
                 <div style={{ padding: 12, borderRadius: 10, background: '#fff7ed', border: '1px solid #fed7aa' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#9a3412', marginBottom: 8 }}>
-                    🏛️ 3 ตู้จัดแสดงพิเศษหน้าบอร์ด (จากยุคหลอดสุญญากาศ สู่โลกเสมือนจริง VR)
+                  <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#9a3412', marginBottom: 8 }}>
+                    🏛️ วิวัฒนาการคอมพิวเตอร์ครบทั้ง 5 ยุค (1st–5th Generation) & IBM 1620 เครื่องแรกของไทย
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))', gap: 8 }}>
-                    <div style={{ padding: 9, borderRadius: 8, background: '#ffffff', border: '1px solid #ffedd5' }}>
-                      <strong style={{ fontSize: '0.8rem', color: '#c2410c' }}>💡 รุ่นที่ 1 หลอดสุญญากาศ (1940–1956)</strong>
-                      <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#475569' }}>ใช้หลอดสุญญากาศและบัตรเจาะรู (เช่น UNIVAC) เครื่องใหญ่เท่าห้องเรียนและเกิดความร้อนสูง</p>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                    {([
+                      [1, '1️⃣ หลอดสุญญากาศ (1940–1956)'],
+                      [2, '2️⃣ ทรานซิสเตอร์ (1956–1963)'],
+                      [3, '3️⃣ วงจรรวม IC (1964–1971)'],
+                      [4, '4️⃣ ไมโครโพรเซสเซอร์ (1972–2010)'],
+                      [5, '5️⃣ ปัญญาประดิษฐ์ AI (2010–ปัจจุบัน)'],
+                    ] as const).map(([genNo, label]) => (
+                      <button
+                        key={genNo}
+                        type="button"
+                        onClick={() => setSelectedComputerGen(genNo)}
+                        style={{
+                          padding: '6px 10px',
+                          borderRadius: 8,
+                          border: selectedComputerGen === genNo ? '2px solid #ea580c' : '1px solid #fed7aa',
+                          background: selectedComputerGen === genNo ? '#ea580c' : '#ffffff',
+                          color: selectedComputerGen === genNo ? '#ffffff' : '#9a3412',
+                          fontWeight: 800,
+                          fontSize: '0.76rem',
+                          fontFamily: 'inherit',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {(() => {
+                    const genInfo: Record<1 | 2 | 3 | 4 | 5, { title: string; hw: string; desc: string }> = {
+                      1: {
+                        title: 'รุ่นที่ 1 หลอดสุญญากาศ (First Generation · ค.ศ. 1940–1956)',
+                        hw: 'หลอดสุญญากาศ (Vacuum Tube) + บัตรเจาะรู (Punched Card) เช่น ENIAC, UNIVAC',
+                        desc: 'มนุษย์เริ่มสื่อสารกับคอมพิวเตอร์ผ่านบัตรเจาะรู ใช้หลอดสุญญากาศนับหมื่นหลอดขับเคลื่อนเครื่องจักรขนาดใหญ่เท่าห้องเรียน ใช้พลังงานไฟฟ้าและเกิดความร้อนสูงมาก',
+                      },
+                      2: {
+                        title: 'รุ่นที่ 2 ทรานซิสเตอร์ (Second Generation · ค.ศ. 1956–1963)',
+                        hw: 'ทรานซิสเตอร์ (Transistor) + วงแหวนแม่เหล็ก (Magnetic Core) + เทปแม่เหล็ก',
+                        desc: 'จุดเปลี่ยนสำคัญที่ทำให้คอมพิวเตอร์มีขนาดเล็กลง เร็วขึ้น ประหยัดไฟ และเชื่อถือได้มากขึ้น รวมถึงเครื่อง IBM 1620 เครื่องคอมพิวเตอร์เครื่องแรกของประเทศไทย (พ.ศ. 2506 ที่จุฬาลงกรณ์มหาวิทยาลัย)!',
+                      },
+                      3: {
+                        title: 'รุ่นที่ 3 แผงวงจรรวม (Third Generation · ค.ศ. 1964–1971)',
+                        hw: 'แผงวงจรรวม (Integrated Circuit : IC) บนแผ่นซิลิคอน',
+                        desc: 'รวมทรานซิสเตอร์ ตัวต้านทาน และตัวเก็บประจุหลายร้อยตัวลงบนชิปซิลิคอนขนาดเล็ก เริ่มมีคีย์บอร์ด จอภาพ และระบบปฏิบัติการที่ทำงานหลายโปรแกรมพร้อมกันได้',
+                      },
+                      4: {
+                        title: 'รุ่นที่ 4 ไมโครโพรเซสเซอร์ (Fourth Generation · ค.ศ. 1972–2010)',
+                        hw: 'ไมโครโพรเซสเซอร์ (Microprocessor / CPU ชิปเดียว) + ชิป BIOS + เครือข่ายอินเทอร์เน็ต',
+                        desc: 'ย่อทรานซิสเตอร์นับล้านชิ้นลงบนชิป CPU แผ่นเดียว (เช่น Intel 4004, Apple II, IBM PC) เกิดภาษา BASIC, ระบบปฏิบัติการ Windows/macOS และการเชื่อมต่อเครือข่ายทั่วโลก',
+                      },
+                      5: {
+                        title: 'รุ่นที่ 5 ระบบปัญญาประดิษฐ์ (Fifth Generation · ค.ศ. 2010–ปัจจุบัน)',
+                        hw: 'ชิปประมวลผล AI / GPU ความเร็วสูง + Cloud + VR Headset + Quantum',
+                        desc: 'คอมพิวเตอร์สามารถเรียนรู้ด้วยตนเอง (Machine Learning & Deep Learning) เข้าใจภาษามนุษย์ สร้างภาพ/เสียง และเชื่อมชุมชนโลกเสมือนจริง (Virtual Community)',
+                      },
+                    };
+                    const curGen = genInfo[selectedComputerGen];
+                    return (
+                      <div style={{ padding: 11, borderRadius: 8, background: '#ffffff', border: '1px solid #fdba74' }}>
+                        <strong style={{ fontSize: '0.86rem', color: '#c2410c' }}>{curGen.title}</strong>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1d4ed8', margin: '3px 0' }}>🔧 หัวใจเทคโนโลยี: {curGen.hw}</div>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#334155', lineHeight: 1.45 }}>{curGen.desc}</p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {activeTechZone.id === 'logic_secret_code' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {(() => {
+                  const secretWords = [
+                    { word: 'DRESS', clue: 'โจทย์ NSM ที่ 1: เครื่องแต่งกาย (D=4, R=18, E=5, S=19, S=19)', meaning: 'ชุดเครื่องแต่งกาย' },
+                    { word: 'WATER', clue: 'โจทย์ NSM ที่ 2:ทรัพยากรสำคัญของชีวิต (W=23, A=1, T=20, E=5, R=18)', meaning: 'น้ำสะอาด' },
+                    { word: 'APPLE', clue: 'โจทย์ NSM ที่ 3: ผลไม้และชื่อบริษัทคอมพิวเตอร์ระดับโลก (A=1, P=16, P=16, L=12, E=5)', meaning: 'แอปเปิล' },
+                    { word: 'LOGIC', clue: 'โจทย์ที่ 4: ศาสตร์แห่งเหตุผลและการพิสูจน์ความจริง (L=12, O=15, G=7, I=9, C=3)', meaning: 'ตรรกศาสตร์' },
+                  ];
+                  const cur = secretWords[secretWordIdx] || secretWords[0];
+                  const charCodes = Array.from(cur.word).map((ch) => ({
+                    ch,
+                    num: ch.charCodeAt(0) - 64,
+                    bin: (ch.charCodeAt(0) - 64).toString(2).padStart(5, '0'),
+                  }));
+                  return (
+                    <>
+                      <div style={{ padding: 14, borderRadius: 12, background: '#0f172a', color: '#ffffff', border: '2px solid #3b82f6' }}>
+                        <div style={{ fontWeight: 800, color: '#60a5fa', marginBottom: 6 }}>
+                          🔐 บอร์ดปุ่มไฟ "สร้างรหัสลับ (CREATING A SECRET CODE)" · ตารางแทนค่า A=1 ถึง Z=26
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                          {secretWords.map((sw, idx) => (
+                            <button
+                              key={sw.word}
+                              type="button"
+                              onClick={() => setSecretWordIdx(idx)}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: 8,
+                                border: secretWordIdx === idx ? '2px solid #facc15' : '1px solid #475569',
+                                background: secretWordIdx === idx ? '#1d4ed8' : '#1e293b',
+                                color: '#ffffff',
+                                fontWeight: 800,
+                                fontSize: '0.8rem',
+                                fontFamily: 'inherit',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              โจทย์: {sw.word}
+                            </button>
+                          ))}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginBottom: 8 }}>{cur.clue}</div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                          {charCodes.map((item, i) => (
+                            <div
+                              key={`${item.ch}-${i}`}
+                              style={{
+                                minWidth: 86,
+                                padding: '10px 8px',
+                                borderRadius: 10,
+                                background: '#1e3a8a',
+                                border: '2px solid #93c5fd',
+                                textAlign: 'center',
+                              }}
+                            >
+                              <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#fde047' }}>{item.ch}</div>
+                              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff' }}>รหัสเลข: {item.num}</div>
+                              <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#7dd3fc' }}>ฐานสอง: {item.bin}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+                        <div style={{ padding: 11, borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                          <strong style={{ fontSize: '0.85rem', color: '#1e40af' }}>🧩 ตรรกศาสตร์ (Logic) คืออะไร?</strong>
+                          <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#334155', lineHeight: 1.45 }}>
+                            ศาสตร์ที่ว่าด้วยเหตุผลและการพิสูจน์ความจริง (จริง True / เท็จ False) เช่น เงื่อนไข <code>IF-ELSE</code> และวงจรลอจิกเกต <code>AND, OR, NOT</code> ในซีพียู
+                          </p>
+                        </div>
+                        <div style={{ padding: 11, borderRadius: 10, background: '#fef3c7', border: '1px solid #fde68a' }}>
+                          <strong style={{ fontSize: '0.85rem', color: '#92400e' }}>👣 อัลกอริทึม (Algorithm) คืออะไร?</strong>
+                          <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#334155', lineHeight: 1.45 }}>
+                            กระบวนการทำงานหรือลำดับขั้นตอนการแก้ปัญหาทีละขั้นอย่างชัดเจน เหมือนเส้นทางบนพื้นในพิพิธภัณฑ์และคำสั่งที่เราใช้สั่งคอมพิวเตอร์ทำงาน
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            {activeTechZone.id === 'program_software_robodog' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ padding: 13, borderRadius: 12, background: '#0f172a', color: '#ffffff', border: '2px solid #f43f5e' }}>
+                  <div style={{ fontWeight: 800, color: '#fda4af', marginBottom: 8 }}>
+                    🐕 ห้องควบคุมหุ่นยนต์สุนัข 4 ขา (Quadruped Robot Dog) & เกมโค้ดดิ้ง SPACE RESCUE
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                    {([
+                      ['scan', '🔍 scan_environment()', 'สแกนพื้นที่ 3 มิติด้วยกล้องสเตอริโอและเซนเซอร์ LiDAR ด้านหน้า'],
+                      ['patrol', '🐾 walk_patrol(steps=4)', 'ควบคุมมอเตอร์เซอร์โว 12 ข้อต่อให้ก้าวเดินทรงตัวข้ามสิ่งกีดขวาง'],
+                      ['wave', '👋 greet_student()', 'ย่อขาหน้าและพยักหน้าทักทายผู้เข้าชมนิทรรศการ'],
+                      ['rescue', '🚀 run_space_rescue()', 'จำลองภารกิจกู้ภัยอวกาศอัตโนมัติตามชุดคำสั่งโปรแกรม'],
+                    ] as const).map(([actId, cmdLabel]) => (
+                      <button
+                        key={actId}
+                        type="button"
+                        onClick={() => setRoboDogAction(actId)}
+                        style={{
+                          padding: '7px 11px',
+                          borderRadius: 8,
+                          border: roboDogAction === actId ? '2px solid #fde047' : '1px solid #475569',
+                          background: roboDogAction === actId ? '#e11d48' : '#1e293b',
+                          color: '#ffffff',
+                          fontWeight: 800,
+                          fontSize: '0.76rem',
+                          fontFamily: 'monospace',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {cmdLabel}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: '#1e293b', fontSize: '0.8rem', color: '#38bdf8', fontFamily: 'monospace' }}>
+                    {roboDogAction === 'scan' && '>> [High-Level Python]: robot.scan_environment()  -->  [Machine Code]: 10110010 01001101 (สแกนสิ่งกีดขวางรอบตัวสำเร็จ!)'}
+                    {roboDogAction === 'patrol' && '>> [High-Level Python]: for step in range(4): robot.step_forward()  -->  [Machine Code]: 11001010 (ก้าวเดิน 4 จังหวะเสถียร!)'}
+                    {roboDogAction === 'wave' && '>> [High-Level Python]: robot.pose("bow_greeting")  -->  [Machine Code]: 01110101 (หุ่นยนต์สุนัขทักทายผู้เรียน!)'}
+                    {roboDogAction === 'rescue' && '>> [SPACE RESCUE MISSION]: if oxygen_low: deploy_rescue_pod()  -->  [Machine Code]: 11110001 (ภารกิจช่วยเหลือสำเร็จ!)'}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8 }}>
+                  <div style={{ padding: 10, borderRadius: 8, background: '#fffbeb', border: '1px solid #fde68a' }}>
+                    <strong style={{ fontSize: '0.83rem', color: '#b45309' }}>1️⃣ คอมไพเลอร์ vs อินเทอร์พรีเตอร์</strong>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#475569', lineHeight: 1.4 }}>
+                      <strong>Compiler:</strong> แปลภาษามนุษย์ทั้งโปรแกรมรวดเดียวให้เป็นภาษาเครื่องก่อนรัน (เช่น C, C++)<br />
+                      <strong>Interpreter:</strong> แปลและประมวลผลทีละคำสั่ง/ทีละบรรทัด (เช่น Python, JavaScript)
+                    </p>
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
+                    <strong style={{ fontSize: '0.83rem', color: '#be185d' }}>2️⃣ ภาษาคอมพิวเตอร์ 3 ระดับ</strong>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#475569', lineHeight: 1.4 }}>
+                      • <strong>ภาษาเครื่อง:</strong> รหัสตัวเลข 0 กับ 1 ล้วน<br />
+                      • <strong>ภาษาระดับต่ำ:</strong> ภาษา Assembly ใช้รหัสย่อ<br />
+                      • <strong>ภาษาระดับสูง:</strong> ใกล้เคียงภาษาอังกฤษ เช่น Python (นิยมอันดับ 1 ที่ 30.21%), JS, Java, C#
+                    </p>
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+                    <strong style={{ fontSize: '0.83rem', color: '#0369a1' }}>3️⃣ ซอฟต์แวร์ระบบ vs ซอฟต์แวร์ประยุกต์</strong>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#475569', lineHeight: 1.4 }}>
+                      • <strong>ซอฟต์แวร์ระบบ (OS):</strong> ควบคุมฮาร์ดแวร์ เช่น Windows, macOS, Linux, Ubuntu, iOS<br />
+                      • <strong>ซอฟต์แวร์ประยุกต์:</strong> แอปใช้งานเฉพาะด้าน เช่น Canva, เกม, โปรแกรมพิมพ์งาน
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTechZone.id === 'quantum_computer' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ padding: 14, borderRadius: 12, background: 'linear-gradient(135deg, #064e3b, #0f172a)', color: '#ffffff', border: '2px solid #34d399' }}>
+                  <div style={{ fontWeight: 800, color: '#6ee7b7', marginBottom: 8 }}>
+                    ⚛️ ห้องทดลอง Qubit Superposition · คอมพิวเตอร์ทั่วไป vs คอมพิวเตอร์เชิงควอนตัม
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>เลือกจำนวนบิต / คิวบิต (Qubits):</span>
+                    {[2, 4, 8, 10].map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => setQuantumQubits(q)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          border: quantumQubits === q ? '2px solid #facc15' : '1px solid #34d399',
+                          background: quantumQubits === q ? '#facc15' : '#065f46',
+                          color: quantumQubits === q ? '#0f172a' : '#ffffff',
+                          fontWeight: 900,
+                          fontSize: '0.82rem',
+                          fontFamily: 'inherit',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {q} Qubits
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+                    <div style={{ padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: '1px solid #94a3b8' }}>
+                      <strong style={{ color: '#93c5fd', fontSize: '0.84rem' }}>💻 คอมพิวเตอร์ทั่วไป ({quantumQubits} Bits)</strong>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', margin: '4px 0' }}>
+                        ประมวลผลได้ทีละ 1 สถานะ
+                      </div>
+                      <small style={{ color: '#cbd5e1', fontSize: '0.74rem' }}>
+                        จากทั้งหมด {(2 ** quantumQubits).toLocaleString()} รูปแบบ (ต้องเรียงทำทีละรอบ)
+                      </small>
                     </div>
-                    <div style={{ padding: 9, borderRadius: 8, background: '#ffffff', border: '1px solid #ffedd5' }}>
-                      <strong style={{ fontSize: '0.8rem', color: '#c2410c' }}>🔲 รุ่นที่ 4 ไมโครโพรเซสเซอร์ (1972–2010)</strong>
-                      <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#475569' }}>ย่อทรานซิสเตอร์นับล้านชิ้นลงบนชิป CPU แผ่นเดียว เกิดเป็นคอมพิวเตอร์ส่วนบุคคล (PC) และระบบเครือข่าย</p>
-                    </div>
-                    <div style={{ padding: 9, borderRadius: 8, background: '#ffffff', border: '1px solid #ffedd5' }}>
-                      <strong style={{ fontSize: '0.8rem', color: '#c2410c' }}>🥽 เร็ว แรง ทะลุอนาคต (VR & AI)</strong>
-                      <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#475569' }}>แว่น VR และความเร็วการประมวลผลยุคใหม่สร้างชุมชนโลกเสมือนจริง (Virtual Community) ที่เราเรียนร่วมกันได้</p>
+                    <div style={{ padding: 10, borderRadius: 8, background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #34d399' }}>
+                      <strong style={{ color: '#fde047', fontSize: '0.84rem' }}>⚛️ คอมพิวเตอร์ควอนตัม ({quantumQubits} Qubits)</strong>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#6ee7b7', margin: '4px 0' }}>
+                        ซ้อนทับได้ {(2 ** quantumQubits).toLocaleString()} สถานะพร้อมกัน!
+                      </div>
+                      <small style={{ color: '#d1fae5', fontSize: '0.74rem' }}>
+                        ด้วยปรากฏการณ์ Superposition (เป็นทั้ง 0 และ 1 ในเวลาเดียวกัน)
+                      </small>
                     </div>
                   </div>
+                </div>
+                <div style={{ padding: 11, borderRadius: 10, background: '#ecfdf5', border: '1px solid #a7f3d0', fontSize: '0.8rem', color: '#065f46', lineHeight: 1.5 }}>
+                  ❄️ <strong>ทำไมเครื่องควอนตัมต้องเย็นถึง 0 องศาเคลวิน (-273.15°C) และใหญ่เท่าสนามฟุตบอล?</strong><br />
+                  เพราะอนุภาคควอนตัมระดับอะตอมไวต่อความร้อนและแรงสั่นสะเทือนมาก จึงต้องมีท่อทำความเย็นหลายชั้น (ทรงแชนเดอเลียร์สีทอง) ควบคุมอุณหภูมิให้ใกล้ศูนย์สัมบูรณ์ และใช้พื้นที่ 30–50 ตร.ม. เหมาะกับงานจำลองโมเลกุลยา พยากรณ์อากาศโลก และเข้ารหัสขั้นสูง ส่วนคอมพิวเตอร์ทั่วไปยังจำเป็นและพกพาสะดวกสำหรับชีวิตประจำวัน!
+                </div>
+              </div>
+            )}
+
+            {activeTechZone.id === 'ai_revolution_agentic' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {(() => {
+                  const goals = [
+                    {
+                      title: '🚌 เป้าหมายที่ 1: จัดทริปทัศนศึกษาพิพิธภัณฑ์ไอที อพวช.',
+                      step1: 'รับโจทย์กว้าง ๆ: พานักเรียนไปทัศนศึกษาพิพิธภัณฑ์เทคโนโลยีสารสนเทศ 1 วัน',
+                      step2: 'AI แตกงานย่อย (Task Decomposition): 1) เช็กรอบเข้าชม 2) คำนวณงบรถบัส 3) จัดกลุ่มทำภารกิจ 10 โซน',
+                      step3: 'ใช้เครื่องมืออัตโนมัติ (Tools): จองตั๋วออนไลน์ + สร้างตารางกำหนดการและใบงานพาสปอร์ตสำเร็จ!',
+                    },
+                    {
+                      title: '🌱 เป้าหมายที่ 2: สร้างโครงงานสมาร์ตฟาร์มโรงเรียน',
+                      step1: 'รับโจทย์กว้าง ๆ: ดูแลแปลงผักโรงเรียนให้อัตโนมัติช่วงวันหยุด',
+                      step2: 'AI แตกงานย่อย: 1) อ่านค่าความชื้นดิน 2) เช็กพยากรณ์อากาศ 3) คำนวณเวลาเปิดปั๊มน้ำ',
+                      step3: 'ใช้เครื่องมืออัตโนมัติ: สั่งบอร์ด IoT เปิดน้ำเมื่อดินแห้ง < 40% และส่งรายงานเข้าแชทครู!',
+                    },
+                    {
+                      title: '🕵️ เป้าหมายที่ 3: ตรวจสอบคลิปต้องสงสัยว่าเป็น Deepfake หรือไม่',
+                      step1: 'รับโจทย์กว้าง ๆ: พบคลิปคนดังพูดชวนลงทุนในโซเชียลมีเดีย',
+                      step2: 'AI & มนุษย์ช่วยกันตรวจ 3 ขั้น: 1) ค้นหาต้นฉบับ 2) เทียบข่าวจากหลายแหล่ง 3) ตรวจวันเวลาและแสงเงาใบหน้า',
+                      step3: 'สรุปผลลัพธ์: พบเป็นคลิป Deepfake ดัดแปลงใบหน้าและเสียง! แจ้งเตือนเพื่อนไม่ให้หลงเชื่อและไม่แชร์ต่อ',
+                    },
+                  ];
+                  const curGoal = goals[agentGoalIdx] || goals[0];
+                  return (
+                    <>
+                      <div style={{ padding: 13, borderRadius: 12, background: '#0f172a', color: '#ffffff', border: '2px solid #38bdf8' }}>
+                        <div style={{ fontWeight: 800, color: '#38bdf8', marginBottom: 8 }}>
+                          🤖 ทดลองสั่งงาน "ปัญญาประดิษฐ์แบบเอเจนต์ (AGENTIC AI)" · กลไก 3 ขั้นตอนอัตโนมัติ
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                          {goals.map((g, idx) => (
+                            <button
+                              key={g.title}
+                              type="button"
+                              onClick={() => setAgentGoalIdx(idx)}
+                              style={{
+                                padding: '6px 10px',
+                                borderRadius: 8,
+                                border: agentGoalIdx === idx ? '2px solid #facc15' : '1px solid #475569',
+                                background: agentGoalIdx === idx ? '#0284c7' : '#1e293b',
+                                color: '#ffffff',
+                                fontWeight: 800,
+                                fontSize: '0.76rem',
+                                fontFamily: 'inherit',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {g.title}
+                            </button>
+                          ))}
+                        </div>
+                        <div style={{ display: 'grid', gap: 6, fontSize: '0.78rem' }}>
+                          <div style={{ padding: 8, borderRadius: 7, background: '#1e293b' }}>
+                            <strong style={{ color: '#fde047' }}>ขั้นที่ 1 บอกเป้าหมายกว้าง ๆ (Broad Goal):</strong> {curGoal.step1}
+                          </div>
+                          <div style={{ padding: 8, borderRadius: 7, background: '#1e293b' }}>
+                            <strong style={{ color: '#38bdf8' }}>ขั้นที่ 2 คิดเหตุผลและแตกงานย่อย (Reasoning & Decomposition):</strong> {curGoal.step2}
+                          </div>
+                          <div style={{ padding: 8, borderRadius: 7, background: '#1e293b' }}>
+                            <strong style={{ color: '#4ade80' }}>ขั้นที่ 3 เลือกใช้เครื่องมือและปฏิบัติการได้เอง (Using Tools Autonomously):</strong> {curGoal.step3}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
+                        <div style={{ padding: 10, borderRadius: 8, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+                          <strong style={{ fontSize: '0.8rem', color: '#0369a1' }}>☁️ Cloud · 🖨️ 3D Print · 🌐 IoE</strong>
+                          <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#334155', lineHeight: 1.4 }}>
+                            <strong>Cloud:</strong> ก้อนเมฆเครือข่ายข้อมูลขนาดใหญ่<br />
+                            <strong>3D Printing:</strong> เปลี่ยนไฟล์ CAD 3 มิติเป็นชิ้นงานจริง<br />
+                            <strong>IoE:</strong> ทุกสิ่งเชื่อมถึงกันผ่านอินเทอร์เน็ต
+                          </p>
+                        </div>
+                        <div style={{ padding: 10, borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca' }}>
+                          <strong style={{ fontSize: '0.8rem', color: '#b91c1c' }}>🎭 รู้เท่าทัน ดีปเฟก (DEEPFAKE)</strong>
+                          <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#334155', lineHeight: 1.4 }}>
+                            AI สามารถสลับใบหน้าและเลียนแบบเสียงบุคคลได้แนบเนียน ต้องตรวจให้ลึก: <strong>ค้นหาต้นฉบับ • เทียบหลายแหล่ง • ตรวจวันเวลาและบริบท</strong>
+                          </p>
+                        </div>
+                        <div style={{ padding: 10, borderRadius: 8, background: '#f8fafc', border: '1px solid #cbd5e1' }}>
+                          <strong style={{ fontSize: '0.8rem', color: '#0f172a' }}>💬 คำคมผู้บุกเบิกโลกดิจิทัล</strong>
+                          <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#334155', lineHeight: 1.4 }}>
+                            <strong>Tim Berners-Lee (ผู้สร้าง WWW):</strong> <em>&ldquo;คุณสร้างผลกระทบให้เกิดขึ้นกับโลก จากสิ่งที่คุณเรียกดูบนอินเทอร์เน็ต&rdquo;</em>
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            {activeTechZone.id === 'retro_console_esports' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {([
+                    ['fc', '🕹️ 1983 · Famicom / NES (8-Bit)'],
+                    ['sfc', '🎮 1990 · Super Famicom / SNES (16-Bit)'],
+                    ['n64', '🌟 1996 · Nintendo 64 (64-Bit 3D)'],
+                  ] as const).map(([eraId, label]) => (
+                    <button
+                      key={eraId}
+                      type="button"
+                      onClick={() => setSelectedConsoleEra(eraId)}
+                      style={{
+                        flex: 1,
+                        minWidth: 150,
+                        padding: '10px 10px',
+                        borderRadius: 10,
+                        border: selectedConsoleEra === eraId ? '2px solid #db2777' : '1px solid #cbd5e1',
+                        background: selectedConsoleEra === eraId ? 'linear-gradient(135deg, #be185d, #6d28d9)' : '#f8fafc',
+                        color: selectedConsoleEra === eraId ? '#ffffff' : '#1e293b',
+                        fontWeight: 900,
+                        fontSize: '0.82rem',
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {(() => {
+                  const consoles = {
+                    fc: {
+                      title: 'Famicom (FC) / Nintendo Entertainment System (NES) · ค.ศ. 1983',
+                      spec: 'ซีพียู 8-Bit · กราฟิกพิกเซล 2 มิติ · ตลับเกม ROM',
+                      games: 'Super Mario Bros., Mega Man, Metroid',
+                      desc: 'วางจำหน่ายครั้งแรกในญี่ปุ่นปี 1983 จุดประกายอุตสาหกรรมวิดีโอเกมในบ้านด้วยกราฟิกพิกเซล 8 บิต และเสียงดนตรี Chiptune อันเป็นเอกลักษณ์',
+                    },
+                    sfc: {
+                      title: 'Super Famicom (SFC) / Super Nintendo (SNES) · ค.ศ. 1990',
+                      spec: 'ซีพียู 16-Bit · สีสันและฉากหลังหลายเลเยอร์ (Mode 7) · เสียงดนตรีสเตอริโอละเอียดขึ้น',
+                      games: 'Super Mario World, Donkey Kong Country, Super Mario Kart',
+                      desc: 'พัฒนาทั้งกราฟิกและดนตรีประกอบให้มีความละเอียดอ่อนและสีสันสดใสขึ้นมาก กลายเป็นเครื่องเกมที่ขายดีที่สุดของยุค 90s',
+                    },
+                    n64: {
+                      title: 'Nintendo 64 (N64) · ค.ศ. 1996',
+                      spec: 'ซีพียู 64-Bit · กราฟิกโพลิกอน 3 มิติเต็มรูปแบบ · ตลับเกมความจุ 4–64 MB',
+                      games: 'Super Mario 64, The Legend of Zelda: Ocarina of Time, GoldenEye 007',
+                      desc: 'ปฏิวัติวงการเกมจากภาพ 2 มิติสู่โลก 3 มิติ 360 องศา พร้อมคันโยก Analog Stick บนจอยเกมที่เป็นต้นแบบของเกม 3D ในปัจจุบัน!',
+                    },
+                  };
+                  const cur = consoles[selectedConsoleEra];
+                  return (
+                    <div style={{ padding: 13, borderRadius: 12, background: '#fdf2f8', border: '2px solid #f472b6' }}>
+                      <strong style={{ fontSize: '0.95rem', color: '#831843' }}>{cur.title}</strong>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#6d28d9', margin: '4px 0' }}>⚡ สเปกเทคโนโลยี: {cur.spec}</div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#be185d' }}>🏆 เกมระดับตำนาน: {cur.games}</div>
+                      <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: '#4c1d95', lineHeight: 1.45 }}>{cur.desc}</p>
+                    </div>
+                  );
+                })()}
+                <div style={{ padding: 11, borderRadius: 10, background: '#f5f3ff', border: '1px solid #ddd6fe', fontSize: '0.79rem', color: '#4c1d95', lineHeight: 1.48 }}>
+                  🎯 <strong>สายอาชีพของวงการเกมและ E-Sports (E-Sports Career):</strong> วงการเกมไม่ได้มีแค่ผู้เล่น แต่รวมความรู้หลายศาสตร์เข้าด้วยกัน ทั้ง <strong>สายวิทยาศาสตร์และคอมพิวเตอร์</strong> (Game Programmer, AI & Physics Developer, Game Designer) และ <strong>สายศิลปะ/นิเทศศาสตร์</strong> (3D Modeler, Animator, Sound Designer, นักพากย์และผู้จัดการแข่งขัน E-Sports)!
                 </div>
               </div>
             )}
@@ -6377,7 +7224,7 @@ const VirtualClassroom: React.FC = () => {
                     ? visitedTechZones
                     : [...visitedTechZones, activeTechZone.id];
                   const completedAllNow = !alreadyVisited && nextVisited.length === TECH_ZONES.length;
-                  const earnedStars = completedAllNow ? 12 : 2;
+                  const earnedStars = completedAllNow ? 20 : 2;
                   setVisitedTechZones(nextVisited);
                   try {
                     localStorage.setItem(`kj_world_techpassport_${playerId}`, JSON.stringify(nextVisited));
@@ -6387,7 +7234,7 @@ const VirtualClassroom: React.FC = () => {
                   void recordActivity('question', `u${unitNo}-techzone-${activeTechZone.id}`, unitNo, `เรียนรู้โซนโลกเทคโนโลยี: ${activeTechZone.title}`);
                   setStatus(
                     completedAllNow
-                      ? '🏆 ยินดีด้วย! สำรวจพาสปอร์ตโลกเทคโนโลยีครบทั้ง 5 โซน รับโบนัสใหญ่ +12⭐!'
+                      ? `🏆 ยินดีด้วย! สำรวจพาสปอร์ตโลกเทคโนโลยีครบทั้ง ${TECH_ZONES.length} โซน รับโบนัสใหญ่ +20⭐!`
                       : `🌟 สำรวจโซน "${activeTechZone.shortTitle}" สำเร็จ (${nextVisited.length}/${TECH_ZONES.length}) รับ +2⭐!`,
                   );
                   setActiveTechZone(null);
