@@ -1,4 +1,5 @@
 import {
+  arrayRemove,
   arrayUnion,
   collection,
   deleteDoc,
@@ -6,8 +7,10 @@ import {
   getDocs,
   onSnapshot,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -372,13 +375,57 @@ export const getLocalWorldBlocks = (roomId: string, weekKey = getWorldWeekKey())
 };
 
 export const MAX_WORLD_BLOCKS = 1_200;
+/** โควตาต่อคน: ห้องหนึ่งมี 10–30 คน ถ้าไม่จำกัด คนเดียวอาจใช้บล็อกของทั้งห้องหมด */
+export const MAX_BLOCKS_PER_PLAYER = 150;
+
+/*
+ * เก็บบล็อกแยกเอกสารตามเจ้าของ (shard) แทนการรวมทุกบล็อกไว้ในเอกสารเดียว
+ * Firestore รับการเขียนเอกสารเดียวกันได้ราว 1 ครั้งต่อวินาที เมื่อเด็ก 10 คนขึ้นไปวางบล็อกพร้อมกัน
+ * เอกสารเดียวจะชนกันจนบล็อกบางส่วนไม่ถูกบันทึก แยกเอกสารต่อคนทำให้แต่ละคนเขียนเอกสารของตัวเอง
+ * เอกสารเดิม `${roomId}_${weekKey}` ยังอ่านอยู่ บล็อกที่สร้างก่อนหน้านี้จึงไม่หาย
+ */
+const shardOwnerKey = (ownerId: string) => ownerId.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 80) || 'anon';
+export const getWorldShardDocId = (roomId: string, ownerId: string, weekKey = getWorldWeekKey()): string => (
+  `${getWorldDocId(roomId, weekKey)}__${shardOwnerKey(ownerId)}`
+);
+
+/** บล็อกแต่ละก้อนมาจากเอกสารไหน ใช้ตอนลบหรือแก้ให้ไปแก้ที่เอกสารถูกตัว */
+const blockSourceDoc = new Map<string, string>();
+const sourceDocOf = (roomId: string, block: WorldBlock, weekKey: string) => (
+  blockSourceDoc.get(block.id) ?? getWorldShardDocId(roomId, block.ownerId, weekKey)
+);
+
+/** รวมบล็อกจากทุก shard: ถ้าสองก้อนอยู่ตำแหน่งเดียวกัน (วางพร้อมกันพอดี) ก้อนที่วางก่อนชนะ */
+export const mergeWorldBlockShards = (shards: Array<{ docId: string; blocks: WorldBlock[] }>): WorldBlock[] => {
+  const all = shards.flatMap(({ docId, blocks }) => blocks.map((block) => ({ docId, block })));
+  all.sort((a, b) => (a.block.createdAt || 0) - (b.block.createdAt || 0));
+  const byPosition = new Map<string, WorldBlock>();
+  all.forEach(({ docId, block }) => {
+    const key = `${block.x},${block.y},${block.z}`;
+    if (byPosition.has(key)) return;
+    byPosition.set(key, block);
+    blockSourceDoc.set(block.id, docId);
+  });
+  return [...byPosition.values()];
+};
+
+export const countBlocksByOwner = (blocks: WorldBlock[], ownerId: string) => (
+  blocks.filter((block) => block.ownerId === ownerId).length
+);
+
+const writeWithTimeout = async (write: Promise<unknown>, ms: number, label: string) => {
+  try {
+    await Promise.race([write, new Promise((resolve) => setTimeout(resolve, ms))]);
+  } catch (error) {
+    console.warn(label, error);
+  }
+};
 
 export const subscribeWorldBlocks = (
   roomId: string,
   onChange: (blocks: WorldBlock[]) => void,
   weekKey = getWorldWeekKey(),
 ): (() => void) => {
-  const docId = getWorldDocId(roomId, weekKey);
   const localKey = blockKey(roomId, weekKey);
   const channelKey = `${channelName(roomId)}-${weekKey}`;
 
@@ -389,12 +436,18 @@ export const subscribeWorldBlocks = (
     return () => channel.close();
   }
 
+  const shardsQuery = query(
+    collection(db, WORLD_COLLECTION),
+    where('roomId', '==', roomId),
+    where('weekKey', '==', weekKey),
+  );
   const unsubscribe = onSnapshot(
-    doc(db, WORLD_COLLECTION, docId),
+    shardsQuery,
     (snapshot) => {
-      const blocks = snapshot.exists()
-        ? ((snapshot.data().blocks as WorldBlock[] | undefined) || [])
-        : [];
+      const blocks = mergeWorldBlockShards(snapshot.docs.map((item) => ({
+        docId: item.id,
+        blocks: (item.data().blocks as WorldBlock[] | undefined) || [],
+      })));
       writeLocal(localKey, blocks);
       onChange(blocks);
     },
@@ -407,35 +460,37 @@ export const subscribeWorldBlocks = (
   };
 };
 
+const quotaError = (current: WorldBlock[], ownerId: string, adding: number) => {
+  if (current.length + adding > MAX_WORLD_BLOCKS) {
+    return `โลกนี้มีบล็อกครบ ${MAX_WORLD_BLOCKS.toLocaleString('th-TH')} ชิ้นแล้ว`;
+  }
+  if (countBlocksByOwner(current, ownerId) + adding > MAX_BLOCKS_PER_PLAYER) {
+    return `วางได้คนละ ${MAX_BLOCKS_PER_PLAYER} ก้อน เพื่อให้เพื่อนทุกคนมีบล็อกสร้าง ลองลบก้อนเก่าก่อนนะ`;
+  }
+  return null;
+};
+
 export const addWorldBlock = async (
   roomId: string,
   block: WorldBlock,
   weekKey = getWorldWeekKey(),
 ): Promise<boolean> => {
-  const docId = getWorldDocId(roomId, weekKey);
   const current = getLocalWorldBlocks(roomId, weekKey);
   if (current.some((item) => item.x === block.x && item.y === block.y && item.z === block.z)) return false;
-  if (current.length >= MAX_WORLD_BLOCKS) {
-    throw new Error(`โลกนี้มีบล็อกครบ ${MAX_WORLD_BLOCKS.toLocaleString('th-TH')} ชิ้นแล้ว`);
-  }
-  const next = [...current, block];
-  writeLocal(blockKey(roomId, weekKey), next);
+  const blocked = quotaError(current, block.ownerId, 1);
+  if (blocked) throw new Error(blocked);
+  writeLocal(blockKey(roomId, weekKey), [...current, block]);
   emitWorldBlocks(roomId, weekKey);
   if (!firebaseAvailable()) return true;
-  try {
-    const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
-      roomId,
-      weekKey,
-      blocks: arrayUnion(block),
-      updatedAt: Date.now(),
-    }, { merge: true });
-    await Promise.race([
-      writePromise,
-      new Promise((resolve) => setTimeout(resolve, 1500)),
-    ]);
-  } catch (error) {
-    console.warn('block saved locally only', error);
-  }
+  const shardId = getWorldShardDocId(roomId, block.ownerId, weekKey);
+  blockSourceDoc.set(block.id, shardId);
+  await writeWithTimeout(setDoc(doc(db, WORLD_COLLECTION, shardId), {
+    roomId,
+    weekKey,
+    ownerId: block.ownerId,
+    blocks: arrayUnion(block),
+    updatedAt: Date.now(),
+  }, { merge: true }), 1500, 'block saved locally only');
   return true;
 };
 
@@ -444,36 +499,37 @@ export const addWorldBlocksBatch = async (
   candidateBlocks: WorldBlock[],
   weekKey = getWorldWeekKey(),
 ): Promise<number> => {
-  const docId = getWorldDocId(roomId, weekKey);
   const current = getLocalWorldBlocks(roomId, weekKey);
   const occupied = new Set(current.map((item) => `${item.x},${item.y},${item.z}`));
+  const ownedCount = new Map<string, number>();
   const added: WorldBlock[] = [];
   for (const block of candidateBlocks) {
     if (current.length + added.length >= MAX_WORLD_BLOCKS) break;
+    const owned = ownedCount.get(block.ownerId) ?? countBlocksByOwner(current, block.ownerId);
+    if (owned >= MAX_BLOCKS_PER_PLAYER) continue;
     const key = `${block.x},${block.y},${block.z}`;
     if (occupied.has(key)) continue;
     occupied.add(key);
+    ownedCount.set(block.ownerId, owned + 1);
     added.push(block);
   }
   if (added.length === 0) return 0;
-  const next = [...current, ...added];
-  writeLocal(blockKey(roomId, weekKey), next);
+  writeLocal(blockKey(roomId, weekKey), [...current, ...added]);
   emitWorldBlocks(roomId, weekKey);
   if (!firebaseAvailable()) return added.length;
-  try {
-    const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
+  const byOwner = new Map<string, WorldBlock[]>();
+  added.forEach((block) => byOwner.set(block.ownerId, [...(byOwner.get(block.ownerId) ?? []), block]));
+  await writeWithTimeout(Promise.all([...byOwner.entries()].map(([ownerId, blocks]) => {
+    const shardId = getWorldShardDocId(roomId, ownerId, weekKey);
+    blocks.forEach((block) => blockSourceDoc.set(block.id, shardId));
+    return setDoc(doc(db, WORLD_COLLECTION, shardId), {
       roomId,
       weekKey,
-      blocks: arrayUnion(...added),
+      ownerId,
+      blocks: arrayUnion(...blocks),
       updatedAt: Date.now(),
     }, { merge: true });
-    await Promise.race([
-      writePromise,
-      new Promise((resolve) => setTimeout(resolve, 1800)),
-    ]);
-  } catch (error) {
-    console.warn('batch blocks saved locally only', error);
-  }
+  })), 1800, 'batch blocks saved locally only');
   return added.length;
 };
 
@@ -482,25 +538,19 @@ export const removeWorldBlock = async (
   block: WorldBlock,
   weekKey = getWorldWeekKey(),
 ): Promise<void> => {
-  const docId = getWorldDocId(roomId, weekKey);
-  const next = getLocalWorldBlocks(roomId, weekKey).filter((item) => item.id !== block.id);
-  writeLocal(blockKey(roomId, weekKey), next);
+  const current = getLocalWorldBlocks(roomId, weekKey);
+  const stored = current.find((item) => item.id === block.id) ?? block;
+  writeLocal(blockKey(roomId, weekKey), current.filter((item) => item.id !== block.id));
   emitWorldBlocks(roomId, weekKey);
   if (!firebaseAvailable()) return;
-  try {
-    const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
-      roomId,
-      weekKey,
-      blocks: next,
-      updatedAt: Date.now(),
-    }, { merge: true });
-    await Promise.race([
-      writePromise,
-      new Promise((resolve) => setTimeout(resolve, 1500)),
-    ]);
-  } catch (error) {
-    console.warn('block removed locally only', error);
-  }
+  // ลบเฉพาะก้อนนี้ด้วย arrayRemove เดิมเขียนทับทั้งรายการจากข้อมูลในเครื่อง จึงอาจลบบล็อกที่เพื่อนเพิ่งวาง
+  const sourceId = sourceDocOf(roomId, stored, weekKey);
+  await writeWithTimeout(
+    updateDoc(doc(db, WORLD_COLLECTION, sourceId), { blocks: arrayRemove(stored), updatedAt: Date.now() }),
+    1500,
+    'block removed locally only',
+  );
+  blockSourceDoc.delete(block.id);
 };
 
 export const updateWorldBlock = async (
@@ -509,7 +559,6 @@ export const updateWorldBlock = async (
   patch: Partial<Pick<WorldBlock, 'label' | 'powered' | 'ownerName'>>,
   weekKey = getWorldWeekKey(),
 ): Promise<WorldBlock | null> => {
-  const docId = getWorldDocId(roomId, weekKey);
   const current = getLocalWorldBlocks(roomId, weekKey);
   const target = current.find((item) => item.id === blockId);
   if (!target) return null;
@@ -518,47 +567,39 @@ export const updateWorldBlock = async (
     ...patch,
     ...(typeof patch.label === 'string' ? { label: patch.label.trim().slice(0, 48) } : {}),
   };
-  const next = current.map((item) => (item.id === blockId ? updated : item));
-  writeLocal(blockKey(roomId, weekKey), next);
+  writeLocal(blockKey(roomId, weekKey), current.map((item) => (item.id === blockId ? updated : item)));
   emitWorldBlocks(roomId, weekKey);
   if (!firebaseAvailable()) return updated;
-  try {
-    const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
-      roomId,
-      weekKey,
-      blocks: next,
-      updatedAt: Date.now(),
-    }, { merge: true });
-    await Promise.race([
-      writePromise,
-      new Promise((resolve) => setTimeout(resolve, 1500)),
-    ]);
-  } catch (error) {
-    console.warn('block updated locally only', error);
-  }
+  // แก้เฉพาะก้อนนี้ในเอกสารต้นทางผ่าน transaction จะได้ไม่ทับบล็อกอื่นในเอกสารเดียวกัน
+  const ref = doc(db, WORLD_COLLECTION, sourceDocOf(roomId, target, weekKey));
+  await writeWithTimeout(runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) return;
+    const blocks = ((snap.data().blocks as WorldBlock[] | undefined) || [])
+      .map((item) => (item.id === blockId ? { ...item, ...updated } : item));
+    tx.update(ref, { blocks, updatedAt: Date.now() });
+  }), 1500, 'block updated locally only');
   return updated;
 };
 
-/** ล้างบล็อกทั้งหมดในแผนที่สำหรับสัปดาห์นี้ (รีแมพ / Reset Map) */
+/** ล้างบล็อกทั้งหมดในแผนที่สำหรับสัปดาห์นี้ (รีแมพ / Reset Map) ทุก shard */
 export const clearWorldBlocks = async (
   roomId: string,
   weekKey = getWorldWeekKey(),
 ): Promise<void> => {
-  const docId = getWorldDocId(roomId, weekKey);
   writeLocal(blockKey(roomId, weekKey), []);
   emitWorldBlocks(roomId, weekKey);
   if (!firebaseAvailable()) return;
   try {
-    const writePromise = setDoc(doc(db, WORLD_COLLECTION, docId), {
-      roomId,
-      weekKey,
+    const shards = await getDocs(query(
+      collection(db, WORLD_COLLECTION),
+      where('roomId', '==', roomId),
+      where('weekKey', '==', weekKey),
+    ));
+    await writeWithTimeout(Promise.all(shards.docs.map((item) => setDoc(item.ref, {
       blocks: [],
       updatedAt: Date.now(),
-    }, { merge: true });
-    await Promise.race([
-      writePromise,
-      new Promise((resolve) => setTimeout(resolve, 1000)),
-    ]);
+    }, { merge: true }))), 2500, 'world cleared locally only');
   } catch (error) {
     console.warn('world cleared locally only', error);
   }
@@ -859,9 +900,11 @@ export const cleanupVirtualQaRoom = async (roomId: string): Promise<void> => {
   const playersQuery = query(collection(db, PLAYER_COLLECTION), where('roomId', '==', roomId));
   const eventsQuery = query(collection(db, EVENT_COLLECTION), where('roomId', '==', roomId));
   try {
-    const [players, events] = await Promise.all([getDocs(playersQuery), getDocs(eventsQuery)]);
+    const shardsQuery = query(collection(db, WORLD_COLLECTION), where('roomId', '==', roomId));
+    const [players, events, shards] = await Promise.all([getDocs(playersQuery), getDocs(eventsQuery), getDocs(shardsQuery)]);
     await Promise.all([
       deleteDoc(doc(db, WORLD_COLLECTION, getWorldDocId(roomId))),
+      ...shards.docs.map((item) => deleteDoc(item.ref)),
       deleteDoc(doc(db, WORLD_COLLECTION, roomId)),
       deleteDoc(doc(db, ROOM_COLLECTION, roomId)),
       ...players.docs.map((item) => deleteDoc(item.ref)),

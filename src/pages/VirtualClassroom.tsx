@@ -69,7 +69,9 @@ import {
   defaultVirtualRoomState,
   getWeekDisplayLabel,
   getWorldWeekKey,
+  MAX_BLOCKS_PER_PLAYER,
   MAX_WORLD_BLOCKS,
+  countBlocksByOwner,
   recordWorldActivityEvent,
   removeWorldBlock,
   removeWorldPlayer,
@@ -466,6 +468,8 @@ interface BuilderPlotInfo {
   z: number;
   color: number;
   hex: string;
+  /** ขนาดแปลง (ช่อง) ค่าเริ่มต้น 10×10 */
+  size?: number;
 }
 
 const BUILDER_PLOTS: BuilderPlotInfo[] = [
@@ -477,6 +481,12 @@ const BUILDER_PLOTS: BuilderPlotInfo[] = [
   { id: 'plot_e2', label: '🏗️ แปลงสร้าง E2 (Computer Lab)', theme: 'ลานสร้างคอมพิวเตอร์ยักษ์ Input-Process-Output', x: 40, z: -2, color: 0x06b6d4, hex: '#06b6d4' },
   { id: 'plot_e3', label: '🏗️ แปลงสร้าง E3 (Quantum Core)', theme: 'ลานสร้างเตาปฏิกรณ์ควอนตัม & ยานอวกาศ', x: 40, z: 14, color: 0x22c55e, hex: '#22c55e' },
   { id: 'plot_e4', label: '🏗️ แปลงสร้าง E4 (Free Sandbox)', theme: 'ลานสร้างสรรค์อิสระร่วมกับเพื่อนในห้อง', x: 40, z: 30, color: 0xf97316, hex: '#f97316' },
+  // ลานใต้ (z = 46–62): เพิ่มให้เด็ก 10 คนขึ้นไปมีที่สร้างพร้อมกันโดยไม่ต้องแย่งแปลง
+  { id: 'plot_w5', label: '🏗️ แปลงสร้าง W5 (Space Station)', theme: 'ลานสร้างสถานีอวกาศ & ดาวเทียมสื่อสาร', x: -40, z: 46, color: 0x818cf8, hex: '#818cf8' },
+  { id: 'plot_e5', label: '🏗️ แปลงสร้าง E5 (Smart Farm)', theme: 'ลานสร้างฟาร์มอัจฉริยะ เซนเซอร์ความชื้น & ระบบรดน้ำ', x: 40, z: 46, color: 0x84cc16, hex: '#84cc16' },
+  { id: 'plot_w6', label: '🏗️ แปลงสร้าง W6 (My Museum Booth)', theme: 'ลานจัดบูธนิทรรศการของตัวเอง เล่าเรื่องเทคโนโลยีที่ชอบ', x: -24, z: 64, color: 0xf472b6, hex: '#f472b6' },
+  { id: 'plot_e6', label: '🏗️ แปลงสร้าง E6 (Robot Arena)', theme: 'ลานสร้างสนามแข่งหุ่นยนต์ & ด่านอุปสรรค', x: 24, z: 64, color: 0xfb923c, hex: '#fb923c' },
+  { id: 'plot_team', label: '🤝 ลานสร้างสรรค์รวม (Team Yard 20×20)', theme: 'ลานใหญ่ให้ทั้งห้องช่วยกันสร้างเมืองแห่งอนาคต แบ่งหน้าที่กันทำ', x: 0, z: 50, color: 0x22d3ee, hex: '#22d3ee', size: 20 },
 ];
 
 const BINARY_HACK_QUESTIONS = [
@@ -801,6 +811,7 @@ const VirtualClassroom: React.FC = () => {
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
   const [worldStars, setWorldStars] = useState(0);
   const [worldBlockCount, setWorldBlockCount] = useState(0);
+  const [myBlockCount, setMyBlockCount] = useState(0);
   const [buildStats, setBuildStats] = useState<BuildStats>({
     count: 0,
     maxHeight: 0,
@@ -1672,7 +1683,7 @@ const VirtualClassroom: React.FC = () => {
       ctx.fillText('🚀 KRUJAMES DIGITAL PLAYGROUND · โลกเทคโนโลยี 3D', 512, 72);
       ctx.fillStyle = '#38bdf8';
       ctx.font = '700 28px Sarabun, sans-serif';
-      ctx.fillText('10 โซนพิพิธภัณฑ์ไอที อพวช. · ลานสร้างบล็อก 8 แปลง · หอคอย Sky Obby & 4 มินิเกมโค้ดดิ้ง', 512, 138);
+      ctx.fillText('10 โซนพิพิธภัณฑ์ไอที อพวช. · ลานสร้างบล็อก 13 แปลง · หอคอย Sky Obby & 4 มินิเกมโค้ดดิ้ง', 512, 138);
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       pixelTextures.push(texture);
@@ -2891,14 +2902,19 @@ const VirtualClassroom: React.FC = () => {
     [[-15, -9], [15, -9], [-15, 8], [15, 8]].forEach(([x, z]) => makeTree(x, z));
 
     // =========================================================================
-    // 🏗️ 8 แปลงลานสร้างสรรค์ของนักเรียน (STUDENT BUILDER PLOTS · W1–W4 & E1–E4)
+    // 🏗️ 13 แปลงลานสร้างสรรค์ของนักเรียน (W1–W6, E1–E6 และลานรวม 20×20)
     // ขยายเขตแดนออกไปวงนอก (x = ±40) พร้อมกรอบนีออน 10×10 ช่อง และเสาป้ายประจำแปลง
     // =========================================================================
     [
       [-27, 0, 22, 0.35],
       [27, 0, 22, 0.35],
-      [-40, 3, 0.4, 52],
-      [40, 3, 0.4, 52],
+      [-40, 12, 0.4, 70],
+      [40, 12, 0.4, 70],
+      // ทางเดินจากโดมลงไปลานสร้างสรรค์รวมและแปลงฝั่งใต้
+      [0, 33, 0.4, 14],
+      [0, 64, 48, 0.35],
+      [-24, 57, 0.4, 14],
+      [24, 57, 0.4, 14],
     ].forEach(([tx, tz, tw, td]) => {
       const road = new THREE.Mesh(
         new THREE.BoxGeometry(tw, 0.05, td),
@@ -2918,17 +2934,19 @@ const VirtualClassroom: React.FC = () => {
         emissiveIntensity: 0.12,
         roughness: 0.55,
       });
-      const padFloor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.05, 10), padMat);
+      const size = plot.size ?? 10;
+      const half = size / 2;
+      const padFloor = new THREE.Mesh(new THREE.BoxGeometry(size, 0.05, size), padMat);
       padFloor.position.set(0, 0.02, 0);
       padFloor.userData = { kind: 'ground', sampleColor: plot.hex };
       plotGroup.add(padFloor);
 
-      // กรอบนีออนรอบแปลง 10×10
+      // กรอบนีออนรอบแปลง
       [
-        [0, -5, 10.2, 0.18],
-        [0, 5, 10.2, 0.18],
-        [-5, 0, 0.18, 10.2],
-        [5, 0, 0.18, 10.2],
+        [0, -half, size + 0.2, 0.18],
+        [0, half, size + 0.2, 0.18],
+        [-half, 0, 0.18, size + 0.2],
+        [half, 0, 0.18, size + 0.2],
       ].forEach(([bx, bz, bw, bd]) => {
         const edge = new THREE.Mesh(new THREE.BoxGeometry(bw, 0.1, bd), borderMat);
         edge.position.set(bx, 0.06, bz);
@@ -2943,11 +2961,11 @@ const VirtualClassroom: React.FC = () => {
             '#0f172a',
             '#1e293b',
             plot.hex,
-            `BUILDER PLOT ${plot.id.toUpperCase()} (10×10)`,
+            `BUILDER PLOT ${plot.id.toUpperCase()} (${size}×${size})`,
             plot.label,
             `หัวข้อแนะนำ: ${plot.theme}`,
             [
-              '• พื้นที่ส่วนตัว 10×10 ช่อง สูงสุด 36 ชั้น สำหรับสร้างผลงาน 3D',
+              size > 10 ? `• ลานรวม ${size}×${size} ช่อง ให้ทั้งห้องช่วยกันสร้าง แบ่งหน้าที่กันทำ` : '• พื้นที่ 10×10 ช่อง สูงสุด 36 ชั้น สำหรับสร้างผลงาน 3D',
               '• กด [2 โหมดสร้าง] หรือปุ่ม [🤖 โค้ดสร้างบล็อก] เพื่อเสกสิ่งปลูกสร้าง',
               '• วางบล็อกป้ายชื่อ 🪧 เพื่อเขียนชื่อเจ้าของผลงานได้เลย!',
             ],
@@ -2955,9 +2973,14 @@ const VirtualClassroom: React.FC = () => {
           roughness: 0.3,
         }),
       );
-      const signSideX = plot.x < 0 ? 5.2 : -5.2;
-      signPost.position.set(signSideX, 1.3, 0);
-      signPost.rotation.y = plot.x < 0 ? Math.PI / 2 : -Math.PI / 2;
+      // แปลงกลาง (x = 0) ตั้งป้ายด้านหน้าหันเข้าหาทางเดินจากโดม แปลงริมซ้าย/ขวาตั้งป้ายฝั่งทางเดินกลาง
+      if (plot.x === 0) {
+        signPost.position.set(0, 1.3, -half - 0.2);
+        signPost.rotation.y = Math.PI;
+      } else {
+        signPost.position.set(plot.x < 0 ? half + 0.2 : -half - 0.2, 1.3, 0);
+        signPost.rotation.y = plot.x < 0 ? Math.PI / 2 : -Math.PI / 2;
+      }
       signPost.userData = { kind: 'builder_plot', plot };
       techExhibitMeshes.push(signPost);
       plotGroup.add(signPost);
@@ -3158,6 +3181,7 @@ const VirtualClassroom: React.FC = () => {
 
     const syncBlocks = (blocks: WorldBlock[]) => {
       setWorldBlockCount(blocks.length);
+      setMyBlockCount(countBlocksByOwner(blocks, playerId));
       // สถิติบล็อกของผู้เล่นคนนี้ — ใช้ตรวจภารกิจสร้าง
       const mine = blocks.filter((b) => b.ownerId === playerId);
       const columns = new Map<string, number>();
@@ -5186,7 +5210,7 @@ const VirtualClassroom: React.FC = () => {
               setMiniGameTab('obby');
               setMiniGameOpen(true);
             }}
-            title="เปิดศูนย์กิจกรรม หอคอย 3D Sky Obby, ลานสร้างบล็อก 8 แปลง และ 4 มินิเกมโค้ดดิ้ง"
+            title="เปิดศูนย์กิจกรรม หอคอย 3D Sky Obby, ลานสร้างบล็อก 13 แปลง และ 4 มินิเกมโค้ดดิ้ง"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -5212,7 +5236,7 @@ const VirtualClassroom: React.FC = () => {
               setMiniGameTab('obby');
               setMiniGameOpen(true);
             }}
-            title="เลือกวาร์ปไปแปลงก่อสร้างส่วนตัว 8 แปลง (W1–W4, E1–E4)"
+            title="เลือกวาร์ปไปแปลงก่อสร้าง 13 แปลง (W1–W6, E1–E6 และลานรวม)"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -5229,7 +5253,7 @@ const VirtualClassroom: React.FC = () => {
               cursor: 'pointer',
             }}
           >
-            🏗️ ลานสร้าง 8 แปลง
+            🏗️ ลานสร้าง 13 แปลง
           </button>
           <span style={{ fontWeight: 800, color: '#38bdf8', flexShrink: 0 }}>
             🏛️ โลกเทคโนโลยี ({visitedTechZones.length}/{TECH_ZONES.length}):
@@ -5644,7 +5668,8 @@ const VirtualClassroom: React.FC = () => {
       {mode === 'build' && (
         <div className="world-build-capacity" aria-label={`ใช้บล็อก ${worldBlockCount} จาก ${MAX_WORLD_BLOCKS} ชิ้น`}>
           <BrickWall size={17} />
-          <strong>{worldBlockCount.toLocaleString('th-TH')}/{MAX_WORLD_BLOCKS.toLocaleString('th-TH')}</strong>
+          <strong title="บล็อกของฉัน / โควตาต่อคน">ของฉัน {myBlockCount}/{MAX_BLOCKS_PER_PLAYER}</strong>
+          <small title="บล็อกทั้งห้อง">ทั้งห้อง {worldBlockCount.toLocaleString('th-TH')}/{MAX_WORLD_BLOCKS.toLocaleString('th-TH')}</small>
           <span>
             {MATERIALS.find((m) => m.id === material)?.hint
               ? `${MATERIALS.find((m) => m.id === material)?.icon || ''} ${MATERIALS.find((m) => m.id === material)?.label}: ${MATERIALS.find((m) => m.id === material)?.hint}`
@@ -7604,7 +7629,7 @@ const VirtualClassroom: React.FC = () => {
           className="world-modal-backdrop"
           role="dialog"
           aria-modal="true"
-          aria-label="ศูนย์กิจกรรม 3D ลานสร้างบล็อก 8 แปลง และ 4 มินิเกมโลกเทคโนโลยี"
+          aria-label="ศูนย์กิจกรรม 3D ลานสร้างบล็อก 13 แปลง และ 4 มินิเกมโลกเทคโนโลยี"
           onClick={() => setMiniGameOpen(false)}
         >
           <div
@@ -7618,7 +7643,7 @@ const VirtualClassroom: React.FC = () => {
                   🎯 KRUJAMES 3D METAVERSE · ACTIVITIES & BUILDER PLOTS
                 </span>
                 <h2 style={{ margin: '4px 0 6px', fontSize: '1.25rem' }}>
-                  ศูนย์กิจกรรม 3D · ลานสร้างบล็อก 8 แปลง & 4 มินิเกมเทคโนโลยี
+                  ศูนย์กิจกรรม 3D · ลานสร้างบล็อก 13 แปลง & 4 มินิเกมเทคโนโลยี
                 </h2>
                 <p style={{ margin: 0, fontSize: '0.84rem', color: '#475569' }}>
                   เลือกวาร์ปไปกระโดดหอคอย 3D Cyber Sky Obby, จองแปลงสร้างผลงาน 3D ส่วนตัว หรือเล่นมินิเกมสะสมดาว!
@@ -7635,7 +7660,7 @@ const VirtualClassroom: React.FC = () => {
 
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '12px 0' }}>
               {[
-                { id: 'obby' as const, label: '🏃 Sky Obby & 🏗️ ลานสร้าง 8 แปลง' },
+                { id: 'obby' as const, label: '🏃 Sky Obby & 🏗️ ลานสร้าง 13 แปลง' },
                 { id: 'hack' as const, label: '⚡ ถอดรหัสไว 0/1 & รหัสลับ (+10⭐)' },
                 { id: 'detective' as const, label: '🕵️ นักสืบจับผิด Deepfake (+10⭐)' },
                 { id: 'rescue' as const, label: '🐕 โค้ดดิ้งหุ่นสุนัขกู้ภัย (+12⭐)' },
@@ -7708,7 +7733,7 @@ const VirtualClassroom: React.FC = () => {
 
                 <div>
                   <div style={{ fontWeight: 900, fontSize: '0.95rem', color: '#0f172a', marginBottom: 8 }}>
-                    🏗️ ลานสร้างสรรค์ของนักเรียน 8 แปลง (Student Builder Plots · ขนาดแปลงละ 10×10 ช่อง สูง 36 ชั้น)
+                    🏗️ ลานสร้างสรรค์ของนักเรียน 13 แปลง (แปลงละ 10×10 ช่อง และลานรวม 20×20 สูง 36 ชั้น)
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))', gap: 8 }}>
                     {BUILDER_PLOTS.map((plot) => (
