@@ -85,6 +85,7 @@ import {
   updateWorldPlayer,
   verifyVirtualRoomAccessCode,
 } from '../services/virtualClassroomService';
+import { WORLD_EXHIBIT_POSTERS, exhibitPosterUrl } from '../data/worldExhibitPosters';
 import type {
   AvatarFaceStyle,
   AvatarTechClass,
@@ -2988,6 +2989,61 @@ const VirtualClassroom: React.FC = () => {
       plotGroup.position.set(plot.x, 0, plot.z);
       scene.add(plotGroup);
     });
+
+    // =========================================================================
+    // 🖼️ ป้ายโปสเตอร์นิทรรศการแขวนเหนือทางเข้าแต่ละโซน (ภาพจาก /สร้างภาพ เก็บใน Google Drive)
+    // แขวนสูง 4.4–7.4 ม. ห่างจุดยืนชมโซน 3.2 ม. เดินลอดได้และไม่บังป้ายข้อมูลของโซน
+    // =========================================================================
+    const posterLoader = new THREE.TextureLoader();
+    posterLoader.setCrossOrigin('anonymous');
+    const hangPoster = (spot: string, x: number, z: number, rotY: number) => {
+      const poster = WORLD_EXHIBIT_POSTERS[spot];
+      if (!poster) return;
+      const banner = new THREE.Group();
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(5.6, 3.3, 0.12),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 }),
+      );
+      const faceMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(5.33, 3.0), faceMat);
+      face.position.z = 0.07;
+      // สองหน้า: โซนเปิดโล่ง เดินมาจากทางไหนก็เห็นภาพ ไม่เจอหลังป้ายสีดำ
+      const backFace = new THREE.Mesh(face.geometry, faceMat);
+      backFace.position.z = -0.07;
+      backFace.rotation.y = Math.PI;
+      banner.add(backFace);
+      posterLoader.load(
+        exhibitPosterUrl(poster),
+        (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.anisotropy = 4;
+          faceMat.map = texture;
+          faceMat.color.set(0xffffff);
+          faceMat.needsUpdate = true;
+        },
+        undefined,
+        () => console.warn('exhibit poster unavailable', spot),
+      );
+      const cableMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
+      [-2.4, 2.4].forEach((cx) => {
+        const cable = new THREE.Mesh(new THREE.BoxGeometry(0.03, 2.2, 0.03), cableMat);
+        cable.position.set(cx, 2.75, 0);
+        banner.add(cable);
+      });
+      banner.add(frame, face);
+      banner.position.set(x, 5.9, z);
+      banner.rotation.y = rotY;
+      scene.add(banner);
+    };
+    TECH_ZONES.forEach((zone) => {
+      const dx = zone.lookX - zone.x;
+      const dz = zone.lookZ - zone.z;
+      const len = Math.hypot(dx, dz) || 1;
+      // หน้าป้ายหันกลับมาทางคนที่ยืนชม (ทิศตรงข้ามกับทิศที่มอง)
+      hangPoster(zone.id, zone.x + (dx / len) * 3.2, zone.z + (dz / len) * 3.2, Math.atan2(-dx, -dz));
+    });
+    const teamYard = BUILDER_PLOTS.find((plot) => plot.id === 'plot_team');
+    if (teamYard) hangPoster('team_yard', teamYard.x, teamYard.z - (teamYard.size ?? 10) / 2 - 0.6, Math.PI);
 
     // =========================================================================
     // 🏃‍♂️ หอคอยกระโดดลอยฟ้า 3D CYBER SKY OBBY (10 ด่านลอยฟ้า + ถ้วยรางวัลยอดหอคอย +15⭐)
