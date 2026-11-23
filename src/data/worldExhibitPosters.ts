@@ -1,10 +1,11 @@
 // โปสเตอร์นิทรรศการประจำโซนในห้องเรียน 3D (สร้างด้วยสกิล /สร้างภาพ เก็บใน Google Drive)
 // ไฟล์ต้นฉบับ: G:\My Drive\02_สื่อการสอนและนวัตกรรมการเรียนรู้\สไลด์สอน\ห้องเรียน 3D นิทรรศการ
-// ลิงก์ lh3.googleusercontent.com ส่ง Access-Control-Allow-Origin: * จึงใช้เป็น texture ใน three.js ได้
-// ไฟล์ใน Drive ต้องแชร์ "ทุกคนที่มีลิงก์" ถ้าโหลดไม่ได้ ป้ายจะเหลือแค่กรอบ ฉากไม่พัง
+// ในห้อง 3D ใช้สำเนา JPEG 1280×720 (~200 KB) ใน public/media/expo/ ที่เว็บเสิร์ฟเอง
+// เดิมโหลดตรงจาก Drive (ไฟล์ละ ~2 MB) แล้วโดน Google ตอบ 429 เมื่อโหลดหลายภาพพร้อมกัน
+// และทั้งห้องเรียนออกเน็ตผ่าน IP เดียวของโรงเรียน ถ้าโหลดไม่ได้ ป้ายจะเหลือแค่กรอบ ฉากไม่พัง
 
 export interface ExhibitPoster {
-  /** id ของไฟล์ใน Google Drive */
+  /** id ของไฟล์ต้นฉบับขนาดเต็มใน Google Drive */
   fileId: string;
   alt: string;
 }
@@ -24,4 +25,5 @@ export const WORLD_EXHIBIT_POSTERS: Record<string, ExhibitPoster> = {
   team_yard: { fileId: '1VUzcZsQI_2VoNv9o8N5qHPTQPHEUl1Fd', alt: 'โปสเตอร์ ลานสร้างสรรค์รวม: ช่วยกันคิด ช่วยกันสร้าง เมืองแห่งอนาคต' },
 };
 
-export const exhibitPosterUrl = (poster: ExhibitPoster) => `https://lh3.googleusercontent.com/d/${poster.fileId}`;
+export const exhibitPosterUrl = (spot: string) => `/media/expo/${spot.replace(/_/g, '-')}.jpg`;
+export const exhibitPosterOriginalUrl = (poster: ExhibitPoster) => `https://lh3.googleusercontent.com/d/${poster.fileId}`;

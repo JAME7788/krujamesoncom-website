@@ -1430,6 +1430,7 @@ const VirtualClassroom: React.FC = () => {
       maxY: number;
     }
     const staticColliders: StaticCollider[] = [];
+    const zoneAnchors = new Map<string, { x: number; z: number; lookX: number; lookZ: number; halfSpan: number }>();
 
     // 🏛️ โดมเทคโนโลยีเปิดโล่ง 360 องศา (Open 360° Cyber Tech Dome Pavilion)
     // มีฉากหลัง Command Wall สำหรับกระดานบทเรียนทั้ง 4 หน่วย และเสาพลังงานไซเบอร์ 6 ต้น + วงแหวนโฮโลแกรมลอยฟ้าโดยไม่มีกำแพงทึบข้างซ้าย-ขวามาบังวิวโลกเทคโนโลยี!
@@ -2994,6 +2995,37 @@ const VirtualClassroom: React.FC = () => {
     // 🖼️ ป้ายโปสเตอร์นิทรรศการแขวนเหนือทางเข้าแต่ละโซน (ภาพจาก /สร้างภาพ เก็บใน Google Drive)
     // แขวนสูง 4.4–7.4 ม. ห่างจุดยืนชมโซน 3.2 ม. เดินลอดได้และไม่บังป้ายข้อมูลของโซน
     // =========================================================================
+    // ตำแหน่งจริงของแต่ละโซน: คำนวณจากกรอบของโมเดลนิทรรศการที่สร้างไว้จริง
+    // (พิกัดใน TECH_ZONES ไม่ตรงกับตำแหน่งที่วางโมเดล ปุ่มวาร์ปเลยพาไปผิดโซน)
+    scene.updateMatrixWorld(true);
+    TECH_ZONES.forEach((zone) => {
+      const box = new THREE.Box3();
+      let found = false;
+      techExhibitMeshes.forEach((mesh) => {
+        if ((mesh.userData?.techZone as TechZoneInfo | undefined)?.id !== zone.id) return;
+        box.expandByObject(mesh);
+        found = true;
+      });
+      if (!found || box.isEmpty()) return;
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const halfSpan = Math.max(size.x, size.z) / 2;
+      // ยืนชมจากฝั่งที่หันเข้าหาลานกลาง (0, 0) ห่างขอบโมเดล 2.8 ม.
+      let ux = -center.x;
+      let uz = -center.z;
+      const ulen = Math.hypot(ux, uz) || 1;
+      ux /= ulen;
+      uz /= ulen;
+      const reach = Math.min(9, halfSpan + 2.8);
+      zoneAnchors.set(zone.id, {
+        x: center.x + ux * reach,
+        z: center.z + uz * reach,
+        lookX: center.x,
+        lookZ: center.z,
+        halfSpan: Math.min(halfSpan, 6),
+      });
+    });
+
     const posterLoader = new THREE.TextureLoader();
     posterLoader.setCrossOrigin('anonymous');
     const hangPoster = (spot: string, x: number, z: number, rotY: number) => {
@@ -3013,7 +3045,7 @@ const VirtualClassroom: React.FC = () => {
       backFace.rotation.y = Math.PI;
       banner.add(backFace);
       posterLoader.load(
-        exhibitPosterUrl(poster),
+        exhibitPosterUrl(spot),
         (texture) => {
           texture.colorSpace = THREE.SRGBColorSpace;
           texture.anisotropy = 4;
@@ -3035,12 +3067,110 @@ const VirtualClassroom: React.FC = () => {
       banner.rotation.y = rotY;
       scene.add(banner);
     };
-    TECH_ZONES.forEach((zone) => {
-      const dx = zone.lookX - zone.x;
-      const dz = zone.lookZ - zone.z;
+
+    // ป้ายเลขโซนแบบเสาตั้งพื้น (เหมือนป้ายนำชมในพิพิธภัณฑ์) วาดด้วย canvas
+    const makeTotemTexture = (index: number, zone: TechZoneInfo) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, 256, 512);
+      ctx.fillStyle = zone.accent;
+      ctx.fillRect(0, 0, 256, 18);
+      ctx.fillRect(0, 494, 256, 18);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 150px "Sarabun", "Noto Sans Thai", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(index + 1), 128, 200);
+      ctx.fillStyle = zone.accent;
+      ctx.font = '800 26px "Sarabun", "Noto Sans Thai", sans-serif';
+      ctx.fillText('โซนที่', 128, 60);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '700 30px "Sarabun", "Noto Sans Thai", sans-serif';
+      const label = zone.shortTitle.replace(/^\d+\.\s*/, '');
+      wrapCanvasText(ctx, label, 220, 5).forEach((line, i) => ctx.fillText(line, 128, 270 + i * 38));
+      ctx.fillStyle = '#facc15';
+      ctx.font = '700 22px "Sarabun", "Noto Sans Thai", sans-serif';
+      ctx.fillText('คลิกนิทรรศการเพื่อทดลอง', 128, 470);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    };
+
+    const routeArrowGeo = new THREE.ConeGeometry(0.32, 0.7, 3);
+    TECH_ZONES.forEach((zone, index) => {
+      const anchor = zoneAnchors.get(zone.id);
+      if (!anchor) return;
+      const dx = anchor.lookX - anchor.x;
+      const dz = anchor.lookZ - anchor.z;
       const len = Math.hypot(dx, dz) || 1;
-      // หน้าป้ายหันกลับมาทางคนที่ยืนชม (ทิศตรงข้ามกับทิศที่มอง)
-      hangPoster(zone.id, zone.x + (dx / len) * 3.2, zone.z + (dz / len) * 3.2, Math.atan2(-dx, -dz));
+      const accent = new THREE.Color(zone.accent);
+
+      // พื้นวงกลมสีประจำโซน + แสงสปอตไลต์จากเพดาน (ทรงกรวยโปร่งแสง ไม่ใช้ไฟจริงให้เครื่องเก่าไหว)
+      const floorRing = new THREE.Mesh(
+        new THREE.CircleGeometry(anchor.halfSpan + 2.2, 40),
+        new THREE.MeshBasicMaterial({ color: accent, transparent: true, opacity: 0.16, depthWrite: false }),
+      );
+      floorRing.rotation.x = -Math.PI / 2;
+      floorRing.position.set(anchor.lookX, 0.035, anchor.lookZ);
+      scene.add(floorRing);
+      const beam = new THREE.Mesh(
+        new THREE.ConeGeometry(anchor.halfSpan + 1.6, 7.6, 28, 1, true),
+        new THREE.MeshBasicMaterial({
+          color: accent,
+          transparent: true,
+          opacity: 0.07,
+          depthWrite: false,
+          // ด้านนอกอย่างเดียว: ยืนอยู่ใต้แสงแล้วจอไม่ขาวฟ้าไปทั้งจอ
+          side: THREE.FrontSide,
+          blending: THREE.AdditiveBlending,
+        }),
+      );
+      beam.position.set(anchor.lookX, 3.8, anchor.lookZ);
+      scene.add(beam);
+
+      // เสาป้ายเลขโซน ตั้งข้างจุดยืนชม (ไม่บังทาง) และกันเดินทะลุ
+      const sideX = -dz / len;
+      const sideZ = dx / len;
+      const totemX = anchor.x + sideX * 2.2;
+      const totemZ = anchor.z + sideZ * 2.2;
+      const totemMat = new THREE.MeshStandardMaterial({ map: makeTotemTexture(index, zone), roughness: 0.4 });
+      const totem = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.8, 0.12), totemMat);
+      totem.position.set(totemX, 1.15, totemZ);
+      totem.rotation.y = Math.atan2(-dx, -dz);
+      totem.userData = { kind: 'tech_exhibit', techZone: zone };
+      techExhibitMeshes.push(totem);
+      const totemBase = new THREE.Mesh(
+        new THREE.BoxGeometry(1.1, 0.25, 0.5),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b }),
+      );
+      totemBase.position.set(totemX, 0.125, totemZ);
+      totemBase.rotation.y = totem.rotation.y;
+      scene.add(totem, totemBase);
+      staticColliders.push({ minX: totemX - 0.55, maxX: totemX + 0.55, minZ: totemZ - 0.55, maxZ: totemZ + 0.55, minY: 0, maxY: 2.1 });
+
+      // โปสเตอร์แขวนเหนือขอบหน้าของนิทรรศการ หันหาคนที่ยืนชม
+      const posterDist = Math.min(anchor.halfSpan + 0.8, len - 1);
+      hangPoster(zone.id, anchor.lookX - (dx / len) * posterDist, anchor.lookZ - (dz / len) * posterDist, Math.atan2(-dx, -dz));
+
+      // ลูกศรนำชมบนพื้น ชี้จากโซนนี้ไปโซนถัดไป ตามลำดับ 1 → 10
+      const next = TECH_ZONES[index + 1] ? zoneAnchors.get(TECH_ZONES[index + 1].id) : undefined;
+      if (!next) return;
+      const rx = next.x - anchor.x;
+      const rz = next.z - anchor.z;
+      const routeLen = Math.hypot(rx, rz);
+      const steps = Math.floor(routeLen / 2.2);
+      const arrowMat = new THREE.MeshBasicMaterial({ color: accent });
+      for (let step = 1; step < steps; step += 1) {
+        const t = step / steps;
+        const arrow = new THREE.Mesh(routeArrowGeo, arrowMat);
+        arrow.rotation.x = -Math.PI / 2;
+        arrow.rotation.z = -Math.atan2(rx, -rz);
+        arrow.scale.set(1, 1, 0.12);
+        arrow.position.set(anchor.x + rx * t, 0.05, anchor.z + rz * t);
+        scene.add(arrow);
+      }
     });
     const teamYard = BUILDER_PLOTS.find((plot) => plot.id === 'plot_team');
     if (teamYard) hangPoster('team_yard', teamYard.x, teamYard.z - (teamYard.size ?? 10) / 2 - 0.6, Math.PI);
@@ -4357,15 +4487,16 @@ const VirtualClassroom: React.FC = () => {
     };
     teleportToTechZoneRef.current = (zone: TechZoneInfo, openModal = false) => {
       if (!zone) return;
-      playerPosition.set(zone.x, 1.7, zone.z);
+      const spot = zoneAnchors.get(zone.id) ?? zone;
+      playerPosition.set(spot.x, 1.7, spot.z);
       verticalVelocity = 0;
       velX = 0;
       velZ = 0;
       grounded = true;
       flyingRef.current = false;
       setIsFlying(false);
-      const dx = zone.lookX - zone.x;
-      const dz = zone.lookZ - zone.z;
+      const dx = spot.lookX - spot.x;
+      const dz = spot.lookZ - spot.z;
       yaw = Math.atan2(-dx, -dz);
       avatarYaw = yaw;
       pitch = 0;
