@@ -13,6 +13,7 @@ export interface ExhibitPoster {
 export const WORLD_EXHIBIT_POSTERS: Record<string, ExhibitPoster> = {
   zero_to_one: { fileId: '19j_x2NyPx20enwlnpQ6QgQ-y7S7C_1Pv', alt: 'โปสเตอร์ จาก 0 สู่ 1: ทุกภาพ เสียง และเกม คือเลข 0 กับ 1' },
   matrix_cube: { fileId: '1JgfAICPX9mNx53kwL4pZ0Q6R0VUxFEQ2', alt: 'โปสเตอร์ อุโมงค์ไฟ 0 กับ 1: ข้อมูลทุกอย่างไหลเป็นสายเลขฐานสอง' },
+  how_computer_works: { fileId: '1iYC74knO7_VuiszSS0ysZVfduDGUlm0U', alt: 'โปสเตอร์ คอมพิวเตอร์ทำงานอย่างไร: รับข้อมูล ประมวลผล จำ และแสดงผล' },
   logic_secret_code: { fileId: '1Li5MXMk4wEfWm0_N74e-ayVSbN5WtTqW', alt: 'โปสเตอร์ ไขรหัสลับด้วยตรรกะ: A=1 B=2 C=3 คิดทีละขั้นแบบอัลกอริทึม' },
   program_software_robodog: { fileId: '1SGxihaoovBtlV_rCD4c9a7pkCRRZx2UI', alt: 'โปสเตอร์ สั่งหุ่นยนต์ด้วยโปรแกรม: คำสั่งชัด ลำดับถูก หุ่นยนต์ก็ทำได้' },
   quantum_computer: { fileId: '1C--Sz02lz40KPzLkQMs_vzAowlhiIhQo', alt: 'โปสเตอร์ คอมพิวเตอร์ควอนตัม: คิวบิตเป็น 0 และ 1 ได้พร้อมกัน' },
