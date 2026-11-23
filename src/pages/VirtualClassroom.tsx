@@ -52,14 +52,21 @@ import { getRichSlides } from '../data/richSlides';
 import type { RichSlide } from '../data/richSlides';
 import { unitExtras } from '../data/unitExtras';
 import type { UnitExtras } from '../data/unitExtras';
+import { isInClassTime, loadSchedule } from '../data/schedule';
 import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
 import {
+  computeGamification,
   fetchStudentProgress,
   getUnitProgress,
-  trackWorldMissionEvidence,
 } from '../services/progressService';
 import type { MissionEvidenceKind, UnitProgress } from '../services/progressService';
-import { syncStudentGradesFromProgress } from '../services/gameProgressService';
+import {
+  getWorldPillarForBuildMission,
+  getWorldPillarForTechZone,
+  recordWorldScoreActivity,
+  type RecordWorldScoreResult,
+  type WorldCurriculumPillar,
+} from '../services/worldScoringService';
 import { fetchCustomSlides } from '../services/slideService';
 import {
   addWorldBlock,
@@ -72,7 +79,6 @@ import {
   MAX_BLOCKS_PER_PLAYER,
   MAX_WORLD_BLOCKS,
   countBlocksByOwner,
-  recordWorldActivityEvent,
   removeWorldBlock,
   removeWorldPlayer,
   setVirtualRoomAccessCode,
@@ -1010,46 +1016,57 @@ const VirtualClassroom: React.FC = () => {
     void fetchStudentProgress(user.id).then(() => setMissionVersion((value) => value + 1));
   }, [user]);
 
+  const gamificationStats = useMemo(() => (
+    user && !isTeacher ? computeGamification(user.id) : null
+    // missionVersion triggers recompute whenever real progress/XP updates
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [isTeacher, missionVersion, user]);
+
+  const inClassNow = useMemo(() => (
+    user && !isTeacher ? isInClassTime(Date.now(), user.classroom, loadSchedule()) : false
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [isTeacher, missionVersion, user]);
+
   const recordActivity = useCallback(async (
     kind: MissionEvidenceKind,
     eventId: string,
     unitNo: number,
     detail: string,
-    options?: { slideIndex?: number; totalSlides?: number },
-  ) => {
-    if (!user || !gradeId || user.id === 'admin_teacher_account' || qaMode) return;
-    const result = await trackWorldMissionEvidence({
-      studentId: user.id,
-      gradeId,
-      unitNo,
-      eventId,
+    options?: {
+      slideIndex?: number;
+      totalSlides?: number;
+      pillar?: WorldCurriculumPillar;
+      score?: number;
+      maxScore?: number;
+    },
+  ): Promise<RecordWorldScoreResult | null> => {
+    if (!user || user.id === 'admin_teacher_account' || qaMode) return null;
+    const result = await recordWorldScoreActivity({
+      user: {
+        id: user.id,
+        name: user.name,
+        classroom: user.classroom,
+        studentNumber: user.studentNumber,
+        accountType: user.accountType,
+      },
+      roomId,
       kind,
+      eventId,
       detail,
+      gradeId: gradeId || undefined,
+      unitNo,
+      pillar: options?.pillar,
       slideIndex: options?.slideIndex,
       totalSlides: options?.totalSlides,
+      score: options?.score,
+      maxScore: options?.maxScore,
+      qaMode,
     });
     setMissionVersion((value) => value + 1);
-    if (!result.saved) {
+    if (!result.saved && result.reason !== 'ineligible' && result.reason !== 'duplicate' && result.reason !== 'limit') {
       setStatus('บันทึกผลการเรียนไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ต');
-      return;
     }
-    if (!result.awarded) return;
-    await recordWorldActivityEvent({
-      eventId,
-      roomId,
-      playerId: user.id,
-      playerName: user.name,
-      classroom: user.classroom,
-      kind,
-      unitNo,
-      detail,
-    });
-    await syncStudentGradesFromProgress({
-      id: user.id,
-      name: user.name,
-      classroom: user.classroom,
-      studentNumber: user.studentNumber,
-    });
+    return result;
   }, [gradeId, qaMode, roomId, setMissionVersion, setStatus, user]);
 
   const broadcastPresentation = useCallback((board: LessonBoard, index: number) => {
@@ -3176,8 +3193,8 @@ const VirtualClassroom: React.FC = () => {
     if (teamYard) hangPoster('team_yard', teamYard.x, teamYard.z - (teamYard.size ?? 10) / 2 - 0.6, Math.PI);
 
     // =========================================================================
-    // 🏃‍♂️ หอคอยกระโดดลอยฟ้า 3D CYBER SKY OBBY (10 ด่านลอยฟ้า + ถ้วยรางวัลยอดหอคอย +15⭐)
-    // และตู้ Kiosk ศูนย์รวม 4 กิจกรรม & มินิเกมโค้ดดิ้ง (x = 0, z = -25.2..-45.5)
+    // 🏃‍♂️ หอคอยกระโดดลอยฟ้า 3D CYBER SKY OBBY (10 ด่านลอยฟ้า · บันทึกหลักฐาน P +5 XP)
+    // และตู้ Kiosk ศูนย์รวม 4 กิจกรรม & มินิเกมเชื่อมระบบ K / P / A จริง (x = 0, z = -25.2..-47.5)
     // =========================================================================
     const obbyKiosk = new THREE.Mesh(
       new THREE.BoxGeometry(5.6, 2.3, 0.28),
@@ -3186,13 +3203,13 @@ const VirtualClassroom: React.FC = () => {
           '#1e1b4b',
           '#090d16',
           '#facc15',
-          'CYBER SKY OBBY & MINI-GAMES',
-          '🎯 ลานกิจกรรม & 4 มินิเกมโลกเทคโนโลยี',
-          'กระโดดพิชิตยอดหอคอย Sky Obby 10 ขั้น หรือคลิกเปิดศูนย์มินิเกม!',
+          'CYBER SKY OBBY & K/P/A MINI-GAMES',
+          '🎯 ลานกิจกรรม & 4 มินิเกมเชื่อมคะแนนจริง',
+          'ทุกกิจกรรมส่งหลักฐานเข้าสมุดคะแนน K / P / A และ XP จริงของระบบ!',
           [
-            '1) 🏃 Cyber Sky Obby: กระโดดขึ้นแท่นนีออนลอยฟ้า 10 ขั้นไปแตะถ้วยทอง (+15⭐)',
-            '2) ⚡ Speed Hack 0/1 & รหัสลับ A=1..Z=26 (+10⭐)',
-            '3) 🕵️ นักสืบจับผิด Deepfake & ข่าวปลอม (+10⭐) | 4) 🐕 โค้ดดิ้งหุ่นสุนัขกู้ภัย (+12⭐)',
+            '1) 🏃 Cyber Sky Obby 10 ขั้น: เก็บหลักฐาน P ทักษะ (หน่วยอัลกอริทึม · +5 XP)',
+            '2) ⚡ ถอดรหัส 0/1 & รหัสลับ: เก็บหลักฐาน K ความรู้ (หน่วยข้อมูล/คอมพิวเตอร์)',
+            '3) 🕵️ จับผิด Deepfake: เก็บหลักฐาน K (ความปลอดภัย) | 4) 🐕 หุ่นสุนัขกู้ภัย: P ปฏิบัติ (+5 XP)',
           ],
         ),
         roughness: 0.25,
@@ -4181,14 +4198,7 @@ const VirtualClassroom: React.FC = () => {
           setSignDraftText(block.label || `⭐ ผลงานของ ${displayName}`);
         }
         triggerEmoteRef.current('build', 650);
-        setStatus(`วางบล็อก${MATERIALS.find((item) => item.id === block.material)?.label || ''}แล้ว`);
-        const unitNo = boards[0]?.unitNo || 1;
-        void recordActivity(
-          'artifact',
-          `u${unitNo}-artifact-${block.material}`,
-          unitNo,
-          `สร้างผลงานด้วยบล็อก${MATERIALS.find((item) => item.id === block.material)?.label || block.material}`,
-        );
+        setStatus(`วางบล็อก${MATERIALS.find((item) => item.id === block.material)?.label || ''}แล้ว (ทำภารกิจสร้างให้ครบเพื่อบันทึกคะแนน P ปฏิบัติ)`);
       }).catch((error) => setStatus(error instanceof Error ? error.message : 'วางบล็อกไม่สำเร็จ'));
     };
 
@@ -4231,8 +4241,6 @@ const VirtualClassroom: React.FC = () => {
         if (document.pointerLockElement) document.exitPointerLock();
         const zone = hit.object.userData.techZone as TechZoneInfo;
         setActiveTechZone(zone);
-        const unitNo = boards[0]?.unitNo || 1;
-        void recordActivity('slide', `u${unitNo}-techexhibit-${zone.id}`, unitNo, `สำรวจนิทรรศการโลกเทคโนโลยี: ${zone.title}`);
         return;
       }
       if (hit && hit.object.userData.kind === 'minigame_kiosk' && hit.distance <= 26) {
@@ -4415,14 +4423,20 @@ const VirtualClassroom: React.FC = () => {
         }
         celebrate();
         setCodeBuilderOpen(false);
-        setStatus(`🤖 ${labelSummary} (+${addedCount} บล็อก)`);
         const unitNo = boards[0]?.unitNo || 1;
         void recordActivity(
           'artifact',
-          `u${unitNo}-codebuilder-${kind}`,
+          `codebuilder-${kind}`,
           unitNo,
           `เขียนโค้ดสร้างบล็อก 3D: ${labelSummary}`,
-        );
+          { pillar: 'coding', score: addedCount, maxScore: candidates.length },
+        ).then((res) => {
+          if (res?.awarded) {
+            setStatus(`🤖 ${labelSummary} (+${addedCount} บล็อก) · บันทึก ${res.rewardText} (${res.indicatorCode || `หน่วย ${res.targetUnit?.unitNo}`})`);
+          } else {
+            setStatus(`🤖 ${labelSummary} (+${addedCount} บล็อก)`);
+          }
+        });
       }).catch((err) => setStatus(err instanceof Error ? err.message : 'รันโค้ดสร้างไม่สำเร็จ'));
     };
     const publishPresence = (force = false, motionState: WorldMotion = 'idle') => {
@@ -5030,11 +5044,11 @@ const VirtualClassroom: React.FC = () => {
         star.visible = false;
         star.userData.collected = true;
         setWorldStars((current) => current + 1);
-        setStatus('เก็บดาวสำเร็จ +1');
+        setStatus('⭐ เก็บดาวในฉาก +1');
         if (!worldGameRecorded) {
           worldGameRecorded = true;
           const unitNo = boards[0]?.unitNo || 1;
-          void recordActivity('game', `u${unitNo}-game-star-hunt`, unitNo, 'เกมเก็บดาวในห้อง 3D');
+          void recordActivity('game', 'game-star-hunt', unitNo, 'เกมเก็บดาวสำรวจห้อง 3D', { pillar: 'algo' });
         }
         const timer = window.setTimeout(() => {
           star.visible = true;
@@ -5058,10 +5072,18 @@ const VirtualClassroom: React.FC = () => {
               if (stageNum <= prev) return prev;
               if (stageNum === 10) {
                 celebrate();
-                setWorldStars((s) => s + 15);
                 const unitNo = boards[0]?.unitNo || 1;
-                void recordActivity('game', `u${unitNo}-sky-obby-clear`, unitNo, 'พิชิตยอดหอคอย 3D Cyber Sky Obby 10 ชั้น');
-                setStatus('🏆 สุดยอด! กระโดดพิชิตยอดหอคอย 3D Cyber Sky Obby ชั้นที่ 10 สำเร็จ รับโบนัส +15⭐!');
+                void recordActivity('game', 'sky-obby-10-clear', unitNo, 'พิชิตยอดหอคอย 3D Cyber Sky Obby 10 ชั้น', {
+                  pillar: 'algo',
+                  score: 10,
+                  maxScore: 10,
+                }).then((res) => {
+                  setStatus(
+                    res?.awarded
+                      ? `🏆 พิชิตยอดหอคอย 3D Cyber Sky Obby 10 ชั้นสำเร็จ! บันทึก ${res.rewardText} (${res.indicatorCode || `หน่วย ${res.targetUnit?.unitNo}`})`
+                      : '🏆 พิชิตยอดหอคอย 3D Cyber Sky Obby 10 ชั้นสำเร็จ! (บันทึกหลักฐานในระบบแล้ว)',
+                  );
+                });
               } else {
                 setStatus(`🏃‍♂️ Cyber Sky Obby: ผ่านด่านลอยฟ้าขั้นที่ ${stageNum}/10 แล้ว! กระโดดต่อไปให้ถึงยอดหอคอย!`);
               }
@@ -5196,10 +5218,19 @@ const VirtualClassroom: React.FC = () => {
       return;
     }
     celebrate();
-    setWorldStars((s) => s + m.stars);
-    setStatus(`สำเร็จภารกิจ "${m.title}" +${m.stars}⭐`);
     const unitNo = boards[0]?.unitNo || 1;
-    void recordActivity('artifact', `u${unitNo}-build-${m.id}`, unitNo, `ภารกิจสร้าง: ${m.title} — ${m.concept}`);
+    const pillar = getWorldPillarForBuildMission(m.id);
+    void recordActivity('artifact', `build-mission-${m.id}`, unitNo, `ภารกิจสร้าง: ${m.title} — ${m.concept}`, {
+      pillar,
+      score: 1,
+      maxScore: 1,
+    }).then((res) => {
+      setStatus(
+        res?.awarded
+          ? `✅ สำเร็จภารกิจ "${m.title}" · บันทึก ${res.rewardText} (${res.indicatorCode || `หน่วย ${res.targetUnit?.unitNo}`})`
+          : `✅ สำเร็จภารกิจ "${m.title}" แล้ว!`,
+      );
+    });
     const nextIdx = buildMissionIdx + 1;
     setBuildMissionIdx(nextIdx);
     localStorage.setItem('kj_world_build_mission', String(nextIdx));
@@ -5414,7 +5445,7 @@ const VirtualClassroom: React.FC = () => {
               cursor: 'pointer',
             }}
           >
-            🎯 กิจกรรม & 4 มินิเกม (+47⭐)
+            🎯 กิจกรรม & 4 มินิเกม (เก็บ K/P/XP)
           </button>
           <button
             type="button"
@@ -5850,7 +5881,19 @@ const VirtualClassroom: React.FC = () => {
         </aside>
       )}
 
-      <div className="world-star-score" title="ดาวจากเกมเก็บดาว"><Star size={18} fill="currentColor" /> {worldStars}</div>
+      <div
+        className="world-star-score"
+        title={
+          gamificationStats
+            ? `คะแนน XP จริงของระบบ: ${gamificationStats.xp} XP (${gamificationStats.title.name}) · ${inClassNow ? 'กำลังอยู่ในคาบเรียน (P 100% + นับวันเข้าเรียน A)' : 'นอกเวลาเรียน (P 40%)'}`
+            : 'ดาวที่เก็บได้ในฉาก 3D'
+        }
+      >
+        <Star size={18} fill="currentColor" />{' '}
+        {gamificationStats
+          ? `Lv.${gamificationStats.level} · ${gamificationStats.xp} XP · ${inClassNow ? 'ในคาบ 100%' : 'นอกคาบ 40%'}${worldStars > 0 ? ` · ⭐${worldStars}` : ''}`
+          : worldStars}
+      </div>
 
       {mode === 'build' && (
         <div className="world-build-capacity" aria-label={`ใช้บล็อก ${worldBlockCount} จาก ${MAX_WORLD_BLOCKS} ชิ้น`}>
@@ -5887,7 +5930,7 @@ const VirtualClassroom: React.FC = () => {
                 className={`world-build-mission-check ${currentBuildMission.check(buildStats) ? 'is-ready' : ''}`}
                 onClick={checkBuildMission}
               >
-                ✓ ตรวจภารกิจ (+{currentBuildMission.stars}⭐)
+                ✓ ส่งตรวจภารกิจ (บันทึก P ปฏิบัติ +5 XP)
               </button>
             </>
           )}
@@ -7770,19 +7813,33 @@ const VirtualClassroom: React.FC = () => {
                     ? visitedTechZones
                     : [...visitedTechZones, activeTechZone.id];
                   const completedAllNow = !alreadyVisited && nextVisited.length === TECH_ZONES.length;
-                  const earnedStars = completedAllNow ? 20 : 2;
                   setVisitedTechZones(nextVisited);
                   try {
                     localStorage.setItem(`kj_world_techpassport_${playerId}`, JSON.stringify(nextVisited));
                   } catch { /* ignore */ }
-                  setWorldStars((s) => s + earnedStars);
                   const unitNo = boards[0]?.unitNo || 1;
-                  void recordActivity('question', `u${unitNo}-techzone-${activeTechZone.id}`, unitNo, `เรียนรู้โซนโลกเทคโนโลยี: ${activeTechZone.title}`);
-                  setStatus(
-                    completedAllNow
-                      ? `🏆 ยินดีด้วย! สำรวจพาสปอร์ตโลกเทคโนโลยีครบทั้ง ${TECH_ZONES.length} โซน รับโบนัสใหญ่ +20⭐!`
-                      : `🌟 สำรวจโซน "${activeTechZone.shortTitle}" สำเร็จ (${nextVisited.length}/${TECH_ZONES.length}) รับ +2⭐!`,
-                  );
+                  const pillar = getWorldPillarForTechZone(activeTechZone.id);
+                  void recordActivity(
+                    'game',
+                    `techzone-explore-${activeTechZone.id}`,
+                    unitNo,
+                    `สำรวจนิทรรศการโลกเทคโนโลยี: ${activeTechZone.title}`,
+                    { pillar, score: 1, maxScore: 1 },
+                  ).then((res) => {
+                    if (completedAllNow) {
+                      setStatus(
+                        `🏆 ยินดีด้วย! สำรวจพาสปอร์ตนิทรรศการครบทั้ง ${TECH_ZONES.length} โซนแล้ว${res?.awarded ? ` · บันทึก ${res.rewardText}` : ''}`,
+                      );
+                    } else if (res?.awarded) {
+                      setStatus(
+                        `🌟 บันทึกพาสปอร์ต "${activeTechZone.shortTitle}" (${nextVisited.length}/${TECH_ZONES.length}) · ${res.rewardText} (${res.indicatorCode || `หน่วย ${res.targetUnit?.unitNo}`})`,
+                      );
+                    } else {
+                      setStatus(
+                        `🌟 เช็กอินโซน "${activeTechZone.shortTitle}" (${nextVisited.length}/${TECH_ZONES.length}) แล้ว (หลักฐาน P หน่วยนี้ครบเพดานหรือบันทึกไปแล้ว)`,
+                      );
+                    }
+                  });
                   setActiveTechZone(null);
                 }}
                 style={{
@@ -7797,7 +7854,7 @@ const VirtualClassroom: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                🌟 บันทึกพาสปอร์ตนักสำรวจ ({visitedTechZones.includes(activeTechZone.id) ? 'สำรวจแล้ว ✓' : '+2⭐'})
+                🌟 บันทึกพาสปอร์ตนิทรรศการ ({visitedTechZones.includes(activeTechZone.id) ? 'สำรวจแล้ว ✓' : 'บันทึก P +5 XP'})
               </button>
               <button
                 type="button"
@@ -7827,13 +7884,15 @@ const VirtualClassroom: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
               <div>
                 <span className="world-kicker" style={{ color: '#0284c7' }}>
-                  🎯 KRUJAMES 3D METAVERSE · ACTIVITIES & BUILDER PLOTS
+                  🎯 KRUJAMES 3D METAVERSE · REAL K / P / A & XP SCORING
                 </span>
                 <h2 style={{ margin: '4px 0 6px', fontSize: '1.25rem' }}>
-                  ศูนย์กิจกรรม 3D · ลานสร้างบล็อก 13 แปลง & 4 มินิเกมเทคโนโลยี
+                  ศูนย์กิจกรรม 3D · ลานสร้างบล็อก 13 แปลง & 4 มินิเกมเชื่อมคะแนนจริง
                 </h2>
-                <p style={{ margin: 0, fontSize: '0.84rem', color: '#475569' }}>
-                  เลือกวาร์ปไปกระโดดหอคอย 3D Cyber Sky Obby, จองแปลงสร้างผลงาน 3D ส่วนตัว หรือเล่นมินิเกมสะสมดาว!
+                <p style={{ margin: 0, fontSize: '0.82rem', color: '#475569' }}>
+                  📊 ระบบส่งหลักฐานเข้าสมุดคะแนน <strong>K / P / A</strong> และ <strong>XP จริง</strong> อัตโนมัติ (
+                  {inClassNow ? '🟢 ขณะนี้อยู่ในคาบเรียน: คะแนน P 100% + นับวันเข้าเรียน A' : '🕒 ขณะนี้นอกเวลาเรียน: คะแนน P 40% ตามเกณฑ์ระบบ'}
+                  )
                 </p>
               </div>
               <button
@@ -7847,10 +7906,10 @@ const VirtualClassroom: React.FC = () => {
 
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '12px 0' }}>
               {[
-                { id: 'obby' as const, label: '🏃 Sky Obby & 🏗️ ลานสร้าง 13 แปลง' },
-                { id: 'hack' as const, label: '⚡ ถอดรหัสไว 0/1 & รหัสลับ (+10⭐)' },
-                { id: 'detective' as const, label: '🕵️ นักสืบจับผิด Deepfake (+10⭐)' },
-                { id: 'rescue' as const, label: '🐕 โค้ดดิ้งหุ่นสุนัขกู้ภัย (+12⭐)' },
+                { id: 'obby' as const, label: '🏃 Sky Obby (P) & 🏗️ ลานสร้าง 13 แปลง' },
+                { id: 'hack' as const, label: '⚡ ถอดรหัสไว 0/1 & รหัสลับ (K ข้อมูล)' },
+                { id: 'detective' as const, label: '🕵️ นักสืบจับผิด Deepfake (K ปลอดภัย)' },
+                { id: 'rescue' as const, label: '🐕 โค้ดดิ้งหุ่นสุนัขกู้ภัย (P ปฏิบัติ +5)' },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -7865,7 +7924,7 @@ const VirtualClassroom: React.FC = () => {
                     background: miniGameTab === t.id ? '#e0f2fe' : '#f8fafc',
                     color: '#0f172a',
                     fontWeight: 800,
-                    fontSize: '0.8rem',
+                    fontSize: '0.78rem',
                     fontFamily: 'inherit',
                     cursor: 'pointer',
                   }}
@@ -7887,7 +7946,7 @@ const VirtualClassroom: React.FC = () => {
                         สถิติสูงสุดของคุณ: ด่านที่ {obbyBestStage} / 10 {obbyBestStage >= 10 ? '🏆 (พิชิตยอดหอคอยแล้ว!)' : ''}
                       </div>
                       <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#cbd5e1' }}>
-                        กดปุ่มวาร์ปไปจุดเริ่มต้นด้านหลังโดม แล้วใช้ปุ่ม W A S D + Spacebar กระโดดไต่แท่นนีออนลอยฟ้า 10 ชั้นขึ้นไปแตะถ้วยทองคำบนยอดหอคอย รับทันที +15⭐!
+                        กระโดดไต่แท่นนีออนลอยฟ้า 10 ชั้นขึ้นไปแตะถ้วยทองคำบนยอดหอคอย เพื่อรับหลักฐาน <strong>P ทักษะ (+3 ในคาบ / +1.2 นอกคาบ · +5 XP)</strong> เข้าหน่วยอัลกอริทึม!
                       </p>
                     </div>
                     <button
@@ -7913,7 +7972,7 @@ const VirtualClassroom: React.FC = () => {
                         cursor: 'pointer',
                       }}
                     >
-                      🚀 วาร์ปไปจุดเริ่ม Sky Obby (+15⭐)
+                      🚀 วาร์ปไปจุดเริ่ม Sky Obby (เก็บ P +5 XP)
                     </button>
                   </div>
                 </div>
@@ -7987,7 +8046,7 @@ const VirtualClassroom: React.FC = () => {
                     <div style={{ padding: 14, borderRadius: 12, background: '#0f172a', color: '#fff', border: '2px solid #38bdf8' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                         <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38bdf8' }}>
-                          ⚡ BINARY & SECRET CODE SPEED HACK · ข้อที่ {hackQIdx + 1} / {BINARY_HACK_QUESTIONS.length}
+                          ⚡ BINARY & SECRET CODE SPEED HACK (เก็บหลักฐาน K หน่วยข้อมูล/คอมฯ) · ข้อที่ {hackQIdx + 1} / {BINARY_HACK_QUESTIONS.length}
                         </span>
                         <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#4ade80' }}>
                           ตอบถูกสะสม: {hackCorrectCount} ข้อ
@@ -8018,9 +8077,16 @@ const VirtualClassroom: React.FC = () => {
                                   const nextCount = hackCorrectCount + 1;
                                   setHackCorrectCount(nextCount);
                                   celebrate();
-                                  setWorldStars((s) => s + 2);
                                   const unitNo = boards[0]?.unitNo || 1;
-                                  void recordActivity('game', `u${unitNo}-binary-hack-q${hackQIdx + 1}`, unitNo, `ถอดรหัส Binary/Secret Code ข้อที่ ${hackQIdx + 1}`);
+                                  void recordActivity('question', `binary-hack-q${hackQIdx + 1}`, unitNo, `ถอดรหัส Binary/Secret Code ข้อที่ ${hackQIdx + 1}`, {
+                                    pillar: 'data_tech',
+                                    score: 1,
+                                    maxScore: 1,
+                                  }).then((res) => {
+                                    if (res?.awarded) {
+                                      setStatus(`✅ ตอบถูก! บันทึก${res.rewardText} (${res.indicatorCode || `หน่วย ${res.targetUnit?.unitNo}`})`);
+                                    }
+                                  });
                                 }
                               }}
                               style={{
@@ -8042,7 +8108,7 @@ const VirtualClassroom: React.FC = () => {
                       </div>
                       {hackPicked !== null && (
                         <div style={{ marginTop: 12, padding: 10, borderRadius: 8, background: 'rgba(56, 189, 248, 0.16)', border: '1px solid #38bdf8', fontSize: '0.82rem' }}>
-                          <strong>{hackPicked === q.ans ? '✅ ถูกต้อง! (+2⭐) ' : '💡 เฉลย: '}</strong>
+                          <strong>{hackPicked === q.ans ? '✅ ถูกต้อง! (บันทึกหลักฐาน K เข้าสมุดคะแนนแล้ว) ' : '💡 เฉลย: '}</strong>
                           {q.explain}
                           <div style={{ marginTop: 8 }}>
                             <button
@@ -8082,7 +8148,7 @@ const VirtualClassroom: React.FC = () => {
                     <div style={{ padding: 14, borderRadius: 12, background: '#1e1b4b', color: '#fff', border: '2px solid #f472b6' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                         <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f472b6' }}>
-                          🕵️ แฟ้มคดีนักสืบไซเบอร์ · คดีที่ {detectiveIdx + 1} / {DEEPFAKE_DETECTIVE_CASES.length}
+                          🕵️ แฟ้มคดีนักสืบไซเบอร์ (เก็บหลักฐาน K ความปลอดภัยดิจิทัล) · คดีที่ {detectiveIdx + 1} / {DEEPFAKE_DETECTIVE_CASES.length}
                         </span>
                         <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#4ade80' }}>
                           ไขคดีสำเร็จ: {detectiveCorrectCount} คดี
@@ -8115,9 +8181,16 @@ const VirtualClassroom: React.FC = () => {
                                 if (idx === item.ans) {
                                   setDetectiveCorrectCount((c) => c + 1);
                                   celebrate();
-                                  setWorldStars((s) => s + 3);
                                   const unitNo = boards[0]?.unitNo || 1;
-                                  void recordActivity('game', `u${unitNo}-deepfake-detective-${detectiveIdx + 1}`, unitNo, `ไขคดีนักสืบไซเบอร์: ${item.title}`);
+                                  void recordActivity('question', `deepfake-detective-${detectiveIdx + 1}`, unitNo, `ไขคดีนักสืบไซเบอร์: ${item.title}`, {
+                                    pillar: 'safety',
+                                    score: 1,
+                                    maxScore: 1,
+                                  }).then((res) => {
+                                    if (res?.awarded) {
+                                      setStatus(`✅ ไขคดีสำเร็จ! บันทึก${res.rewardText} (${res.indicatorCode || `หน่วย ${res.targetUnit?.unitNo}`})`);
+                                    }
+                                  });
                                 }
                               }}
                               style={{
@@ -8140,7 +8213,7 @@ const VirtualClassroom: React.FC = () => {
                       </div>
                       {detectivePicked !== null && (
                         <div style={{ marginTop: 12, padding: 10, borderRadius: 8, background: 'rgba(244, 114, 182, 0.16)', border: '1px solid #f472b6', fontSize: '0.82rem' }}>
-                          <strong>{detectivePicked === item.ans ? '✅ วินิจฉัยถูกต้อง! (+3⭐) ' : '💡 คำแนะนำนักสืบไซเบอร์: '}</strong>
+                          <strong>{detectivePicked === item.ans ? '✅ วินิจฉัยถูกต้อง! (บันทึกหลักฐาน K เข้าสมุดคะแนนแล้ว) ' : '💡 คำแนะนำนักสืบไซเบอร์: '}</strong>
                           {item.explain}
                           <div style={{ marginTop: 8 }}>
                             <button
@@ -8176,10 +8249,10 @@ const VirtualClassroom: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ padding: 14, borderRadius: 12, background: '#0f172a', color: '#fff', border: '2px solid #34d399' }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#34d399' }}>
-                    🐕 SPACE RESCUE · โค้ดดิ้งสั่งการหุ่นยนต์สุนัข 4 ขากู้ภัยอวกาศ (NSM Zone 4)
+                    🐕 SPACE RESCUE · โค้ดดิ้งสั่งการหุ่นยนต์สุนัข 4 ขากู้ภัยอวกาศ (เก็บ P ปฏิบัติ หน่วยเขียนโปรแกรม)
                   </div>
                   <p style={{ margin: '4px 0 10px', fontSize: '0.82rem', color: '#cbd5e1' }}>
-                    ภารกิจ: หุ่นสุนัขเริ่มต้นที่ช่อง <strong>(0,0) หันหน้าไปทางขวา (➡️ ทิศตะวันออก)</strong> ต้องเดินไปเก็บถังออกซิเจน <strong>⛽ ที่ช่อง (2,2)</strong> โดยห้ามชนหลุมอุกกาบาต <strong>☄️ ที่ (1,0) และ (2,1)</strong>! (คำใบ้: หันลง ➡️ เดินหน้า 2 ครั้ง ➡️ หันซ้าย ➡️ เดินหน้า 2 ครั้ง)
+                    ภารกิจ: หุ่นสุนัขเริ่มต้นที่ช่อง <strong>(0,0) หันหน้าไปทางขวา (➡️ ทิศตะวันออก)</strong> ต้องเดินไปเก็บถังออกซิเจน <strong>⛽ ที่ช่อง (2,2)</strong> โดยห้ามชนหลุมอุกกาบาต <strong>☄️ ที่ (1,0) และ (2,1)</strong>! (คำใบ้: หันขวาลง ➡️ เดินหน้า 2 ครั้ง ➡️ หันซ้าย ➡️ เดินหน้า 2 ครั้ง)
                   </p>
 
                   {/* ตารางดาวอังคาร 3x3 */}
@@ -8276,7 +8349,6 @@ const VirtualClassroom: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        // จำลองการทำงานของหุ่นสุนัข: เริ่มที่ (col=0, row=0), dir=0 (0:ขวา, 1:ลง, 2:ซ้าย, 3:ขึ้น)
                         let col = 0;
                         let row = 0;
                         let dir = 0;
@@ -8301,10 +8373,18 @@ const VirtualClassroom: React.FC = () => {
                         }
                         if (col === 2 && row === 2) {
                           celebrate();
-                          setWorldStars((s) => s + 12);
                           const unitNo = boards[0]?.unitNo || 1;
-                          void recordActivity('game', `u${unitNo}-robodog-space-rescue`, unitNo, 'เขียนโปรแกรมหุ่นสุนัขกู้ภัย SPACE RESCUE สำเร็จ');
-                          setRescueStatusMsg('🏆 ภารกิจสำเร็จ! หุ่นยนต์สุนัข 4 ขาเดินทางถึงช่อง (2,2) และเก็บถังออกซิเจนกู้ภัยสำเร็จ รับโบนัส +12⭐!');
+                          void recordActivity('artifact', 'robodog-space-rescue-clear', unitNo, 'เขียนโปรแกรมหุ่นสุนัขกู้ภัย SPACE RESCUE สำเร็จ', {
+                            pillar: 'coding',
+                            score: 1,
+                            maxScore: 1,
+                          }).then((res) => {
+                            setRescueStatusMsg(
+                              res?.awarded
+                                ? `🏆 ภารกิจสำเร็จ! บันทึก ${res.rewardText} (${res.indicatorCode || `หน่วย ${res.targetUnit?.unitNo}`})`
+                                : '🏆 ภารกิจสำเร็จ! หุ่นยนต์สุนัข 4 ขาเก็บถังออกซิเจนที่ (2,2) เรียบร้อยแล้ว (บันทึกหลักฐานในระบบแล้ว)',
+                            );
+                          });
                         } else {
                           setRescueStatusMsg(`🤖 หุ่นสุนัขหยุดอยู่ที่ช่อง (${col},${row}) ยังไม่ถึงถังออกซิเจน (2,2) — ลองเพิ่มคำสั่งอีกนิด!`);
                         }
@@ -8321,7 +8401,7 @@ const VirtualClassroom: React.FC = () => {
                         cursor: 'pointer',
                       }}
                     >
-                      ▶ รันโปรแกรมหุ่นสุนัขกู้ภัย (+12⭐)
+                      ▶ รันโปรแกรมหุ่นสุนัขกู้ภัย (บันทึก P ปฏิบัติ +5 XP)
                     </button>
                     <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fde047' }}>
                       {rescueStatusMsg}

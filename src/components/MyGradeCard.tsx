@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Award } from 'lucide-react';
 import {
   loadGrades, getSubjectsForClassroom, computeBreakdown, computeGrade,
-  fetchClassroomFromFirebase, cacheGradesLocally,
+  fetchClassroomFromFirebase, cacheGradesLocally, getGradingPolicy,
 } from '../services/gradeService';
 import type { Subject, StudentGrade } from '../services/gradeService';
 
@@ -83,6 +83,11 @@ const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name }) => {
     );
   }
 
+  const policy = useMemo(() => getGradingPolicy(classroom), [classroom]);
+  const maxK = Math.round(policy.COLLECTED * policy.K_RATIO * 100) / 100;
+  const maxP = Math.round(policy.COLLECTED * policy.P_RATIO * 100) / 100;
+  const maxA = Math.round(policy.COLLECTED * policy.A_RATIO * 100) / 100;
+
   return (
     <div className="my-grade-card glass" style={{
       padding: 20, borderRadius: 16, marginBottom: 20,
@@ -91,7 +96,9 @@ const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name }) => {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <Award size={20} color="#B45309" />
-        <h3 style={{ margin: 0, fontSize: '1.05rem' }}>คะแนนของฉัน — ปีการศึกษา 2569</h3>
+        <h3 style={{ margin: 0, fontSize: '1.05rem' }}>
+          คะแนนของฉัน — ภาคเรียนที่ {policy.term}/{policy.academicYear} (เต็ม {policy.TOTAL} คะแนน)
+        </h3>
       </div>
 
       <div style={{
@@ -117,17 +124,17 @@ const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name }) => {
               </div>
             </div>
 
-            <Bar label="K ความรู้" value={c.k} max={42} color="#3b82f6" />
-            <Bar label="P ทักษะ" value={c.p} max={17.5} color="#A16207" />
-            <Bar label="A คุณลักษณะ" value={c.a} max={10.5} color="#22c55e" />
+            <Bar label="K ความรู้" value={c.k} max={maxK} color="#3b82f6" />
+            <Bar label="P ทักษะ" value={c.p} max={maxP} color="#A16207" />
+            <Bar label="A คุณลักษณะ" value={c.a} max={maxA} color="#22c55e" />
 
             <div style={{
               display: 'flex', justifyContent: 'space-between',
               marginTop: 10, paddingTop: 10,
               borderTop: '1px dashed #e5e7eb', fontSize: '0.85rem',
             }}>
-              <span>เก็บ <strong>{c.collected.toFixed(1)}</strong>/70 + สอบ <strong>{c.exam.toFixed(1)}</strong>/30</span>
-              <strong style={{ color: '#1f2937' }}>รวม {c.total.toFixed(1)}</strong>
+              <span>เก็บ <strong>{c.collected.toFixed(1)}</strong>/{policy.COLLECTED} + สอบ <strong>{c.exam.toFixed(1)}</strong>/{policy.EXAM}</span>
+              <strong style={{ color: '#1f2937' }}>รวม {c.total.toFixed(1)}/{policy.TOTAL}</strong>
             </div>
           </div>
         ))}
