@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import {
   BookOpen,
   Box,
@@ -1384,6 +1386,15 @@ const VirtualClassroom: React.FC = () => {
     renderer.domElement.setAttribute('aria-label', 'ห้องเรียนออนไลน์สามมิติ');
     mount.appendChild(renderer.domElement);
 
+    let sceneDisposed = false;
+    let envRenderTarget: THREE.WebGLRenderTarget | null = null;
+    if (graphicsQuality !== 'low') {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      envRenderTarget = pmrem.fromScene(new RoomEnvironment(), 0.04);
+      scene.environment = envRenderTarget.texture;
+      pmrem.dispose();
+    }
+
     const hemiLight = new THREE.HemisphereLight(0xbae6fd, 0x0f172a, 2.15);
     scene.add(hemiLight);
     const sun = new THREE.DirectionalLight(0xf8fafc, 2.25);
@@ -2147,6 +2158,71 @@ const VirtualClassroom: React.FC = () => {
       });
     };
 
+    // 🎨 ตัวโหลดโมเดล 3D สมจริงที่ปั้นและส่งออกด้วย Blender 5.2 LTS (public/models/world/*.glb)
+    // ใช้โมเดลเรขาคณิตเดิมเป็น placeholder ชั่วคราวเพื่อให้จุดวาร์ป/ขอบเขตคงที่ แล้วสลับเป็นโมเดล Blender ทันทีเมื่อโหลดเสร็จ
+    const gltfLoader = new GLTFLoader();
+    const attachBlenderModel = (
+      fileName: string,
+      targetGroup: THREE.Group,
+      options?: {
+        hideChildren?: THREE.Object3D[];
+        tagZone?: TechZoneInfo;
+        userData?: Record<string, unknown>;
+        scale?: number;
+        position?: [number, number, number];
+        rotationY?: number;
+        screenTintHex?: number;
+        consoleTintHex?: number;
+      },
+    ) => {
+      gltfLoader.load(
+        `/models/world/${fileName}`,
+        (gltf) => {
+          if (sceneDisposed) return;
+          const model = gltf.scene;
+          if (options?.scale) model.scale.setScalar(options.scale);
+          if (options?.position) model.position.set(...options.position);
+          if (options?.rotationY) model.rotation.y = options.rotationY;
+          model.traverse((node) => {
+            if (!(node as THREE.Mesh).isMesh) return;
+            const mesh = node as THREE.Mesh;
+            mesh.castShadow = graphicsQuality === 'high';
+            mesh.receiveShadow = true;
+            if (options?.tagZone) {
+              mesh.userData = { kind: 'tech_exhibit', techZone: options.tagZone };
+              techExhibitMeshes.push(mesh);
+            } else if (options?.userData) {
+              mesh.userData = { ...options.userData };
+              techExhibitMeshes.push(mesh);
+            }
+            if (options?.screenTintHex !== undefined && mesh.name === 'CrtCurvedGlass') {
+              const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
+              mat.color.setHex(options.screenTintHex);
+              mat.emissive.setHex(options.screenTintHex);
+              mat.emissiveIntensity = 0.9;
+              mesh.material = mat;
+            }
+            if (
+              options?.consoleTintHex !== undefined
+              && (mesh.name === 'ConsoleAccent' || mesh.name === 'GamepadFace')
+            ) {
+              const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
+              mat.color.setHex(options.consoleTintHex);
+              mesh.material = mat;
+            }
+          });
+          options?.hideChildren?.forEach((child) => {
+            child.visible = false;
+          });
+          targetGroup.add(model);
+        },
+        undefined,
+        (err) => {
+          console.warn('blender glb unavailable, keeping procedural mesh:', fileName, err);
+        },
+      );
+    };
+
     // เส้นลายวงจรดิจิทัลเรืองแสงเชื่อมลานกลางไปสู่ทั้ง 10 โซนพิพิธภัณฑ์เทคโนโลยีสารสนเทศ
     const circuitTraceMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
     [
@@ -2492,6 +2568,14 @@ const VirtualClassroom: React.FC = () => {
     zone3Group.position.set(19.5, 0, -1);
     tagExhibitGroup(zone3Group, zone3Info);
     scene.add(zone3Group);
+    attachBlenderModel('chip_mascot.glb', chipMascot, {
+      hideChildren: [chipBody, chipHatBrim, chipHatTop, leftGlass, rightGlass],
+      tagZone: zone3Info,
+    });
+    attachBlenderModel('ibm1620_mainframe.glb', ibm1620Group, {
+      hideChildren: [ibmDesk, ibmConsole, ibmTapeCabinet, tapeReel1, tapeReel2],
+      tagZone: zone3Info,
+    });
     techAnimatedObjects.push((now, delta) => {
       chipMascot.position.y = Math.abs(Math.sin(now * 0.003)) * 0.18;
       vrVisor.rotation.y += delta * 1.1;
@@ -2548,6 +2632,16 @@ const VirtualClassroom: React.FC = () => {
     zone4Group.position.set(-19.5, 0, 12.5);
     tagExhibitGroup(zone4Group, zone4Info);
     scene.add(zone4Group);
+    attachBlenderModel('brick_phone_1g.glb', zone4Group, {
+      hideChildren: [brickPhone1G],
+      tagZone: zone4Info,
+      position: [-0.6, 1.0, -1.6],
+    });
+    attachBlenderModel('tower_5g_cell.glb', zone4Group, {
+      hideChildren: [tower5G],
+      tagZone: zone4Info,
+      position: [-0.6, 0, 2.1],
+    });
     techAnimatedObjects.push((now, delta) => {
       signalRing.rotation.y += delta * 2.2;
       const pulse = 1 + Math.sin(now * 0.004) * 0.35;
@@ -2638,6 +2732,10 @@ const VirtualClassroom: React.FC = () => {
     zone5Group.position.set(19.5, 0, 12.5);
     tagExhibitGroup(zone5Group, zone5Info);
     scene.add(zone5Group);
+    attachBlenderModel('studio_camera.glb', camGroup, {
+      hideChildren: [tripod, camBody, camMonitor],
+      tagZone: zone5Info,
+    });
     techAnimatedObjects.push((_now, delta) => {
       atomRing1.rotation.z += delta * 1.4;
     });
@@ -2755,6 +2853,11 @@ const VirtualClassroom: React.FC = () => {
     zoneProgGroup.position.set(19.5, 0, -14.5);
     tagExhibitGroup(zoneProgGroup, zoneProgInfo);
     scene.add(zoneProgGroup);
+    attachBlenderModel('robo_dog.glb', roboDog, {
+      hideChildren: [dogBody, dogHead, dogCamLens, ...dogLegs],
+      tagZone: zoneProgInfo,
+      scale: 1.15,
+    });
     techAnimatedObjects.push((now) => {
       const t = now * 0.005;
       roboDog.position.y = 0.78 + Math.abs(Math.sin(t)) * 0.05;
@@ -2825,6 +2928,10 @@ const VirtualClassroom: React.FC = () => {
     zoneQuantumGroup.position.set(0, 0, -20.5);
     tagExhibitGroup(zoneQuantumGroup, zoneQuantumInfo);
     scene.add(zoneQuantumGroup);
+    attachBlenderModel('quantum_chandelier.glb', quantumChandelier, {
+      hideChildren: quantumChandelier.children.filter((c) => c !== cryoGlass),
+      tagZone: zoneQuantumInfo,
+    });
     techAnimatedObjects.push((_now, delta) => {
       quantumChandelier.rotation.y += delta * 0.55;
     });
@@ -2895,6 +3002,11 @@ const VirtualClassroom: React.FC = () => {
     zoneAiGroup.position.set(-23.5, 0, 25.5);
     tagExhibitGroup(zoneAiGroup, zoneAiInfo);
     scene.add(zoneAiGroup);
+    attachBlenderModel('humanoid_robot.glb', humanoidRobot, {
+      hideChildren: [hTorso, hHead, hVisor, hLegL, hLegR],
+      tagZone: zoneAiInfo,
+      scale: 1.05,
+    });
     techAnimatedObjects.push((now) => {
       humanoidRobot.rotation.y = Math.sin(now * 0.0015) * 0.45;
       cloudSculpture.position.y = 4.15 + Math.sin(now * 0.002) * 0.14;
@@ -2923,10 +3035,11 @@ const VirtualClassroom: React.FC = () => {
       }),
     );
     retroWall.position.set(2.6, 2.25, 0);
-    // แท่นทีวี CRT 3 เครื่องพร้อมเครื่องเกม Famicom (ขาว-แดง), Super Famicom (เทา), Nintendo 64 (ดำ) (จากภาพ IMG_112552!)
+    // แท่นทีวี CRT 3 เครื่องพร้อมเครื่องเกม Famicom (ขาว-แดง), Super Famicom (เทา-ม่วง), Nintendo 64 (ดำ-ทอง)
+    const retroFallbackRefs: Array<{ zOffset: number; consoleHex: number; screenHex: number; nodes: THREE.Object3D[] }> = [];
     [
       [-2.1, 0xdc2626, 0x38bdf8],
-      [0, 0x94a3b8, 0x4ade80],
+      [0, 0x6366f1, 0x4ade80],
       [2.1, 0x1e293b, 0xfacc15],
     ].forEach(([zOffset, consoleHex, screenHex]) => {
       const stand = new THREE.Mesh(
@@ -2954,11 +3067,21 @@ const VirtualClassroom: React.FC = () => {
       );
       consoleBox.position.set(0.12, 0.99, zOffset);
       zoneRetroGroup.add(stand, crtTv, crtScreen, consoleBox);
+      retroFallbackRefs.push({ zOffset, consoleHex, screenHex, nodes: [stand, crtTv, crtScreen, consoleBox] });
     });
     zoneRetroGroup.add(retroWall);
     zoneRetroGroup.position.set(23.5, 0, 25.5);
     tagExhibitGroup(zoneRetroGroup, zoneRetroInfo);
     scene.add(zoneRetroGroup);
+    retroFallbackRefs.forEach(({ zOffset, consoleHex, screenHex, nodes }) => {
+      attachBlenderModel('retro_arcade_station.glb', zoneRetroGroup, {
+        hideChildren: nodes,
+        tagZone: zoneRetroInfo,
+        position: [0.5, 0, zOffset],
+        consoleTintHex: consoleHex,
+        screenTintHex: screenHex,
+      });
+    });
 
     // โครงเพดานไซเบอร์โปร่งแสง (Cyber Skylight Grid) + แถบไฟนีออน LED เติมแสงในโดม
     const roofBeams = new THREE.Group();
@@ -3901,6 +4024,8 @@ const VirtualClassroom: React.FC = () => {
     trophyPavilion.position.set(0, 9.5, -47.5);
     scene.add(trophyPavilion);
 
+    const skyObbyTrophyPivot = new THREE.Group();
+    skyObbyTrophyPivot.position.set(0, 9.55, -47.5);
     const skyObbyTrophy = new THREE.Mesh(
       new THREE.OctahedronGeometry(0.75, 0),
       new THREE.MeshStandardMaterial({
@@ -3911,13 +4036,19 @@ const VirtualClassroom: React.FC = () => {
         roughness: 0.15,
       }),
     );
-    skyObbyTrophy.position.set(0, 10.9, -47.5);
+    skyObbyTrophy.position.set(0, 1.35, 0);
     skyObbyTrophy.userData = { kind: 'minigame_kiosk' };
     techExhibitMeshes.push(skyObbyTrophy);
-    scene.add(skyObbyTrophy);
+    skyObbyTrophyPivot.add(skyObbyTrophy);
+    scene.add(skyObbyTrophyPivot);
+    attachBlenderModel('trophy_chalice.glb', skyObbyTrophyPivot, {
+      hideChildren: [skyObbyTrophy],
+      userData: { kind: 'minigame_kiosk' },
+      scale: 1.25,
+    });
     techAnimatedObjects.push((now, delta) => {
-      skyObbyTrophy.rotation.y += delta * 1.6;
-      skyObbyTrophy.position.y = 10.9 + Math.sin(now * 0.003) * 0.18;
+      skyObbyTrophyPivot.rotation.y += delta * 1.1;
+      skyObbyTrophyPivot.position.y = 9.58 + Math.sin(now * 0.0028) * 0.14;
       victoryCrownRing.rotation.z += delta * 0.75;
       obbyLaunchRing.rotation.z -= delta * 0.9;
     });
@@ -5848,6 +5979,8 @@ const VirtualClassroom: React.FC = () => {
       renderer.domElement.removeEventListener('pointermove', onTouchMove);
       renderer.domElement.removeEventListener('pointerup', onTouchEnd);
       if (document.pointerLockElement === renderer.domElement) document.exitPointerLock();
+      sceneDisposed = true;
+      envRenderTarget?.dispose();
       // คืนหน่วยความจำ GPU ของทุก mesh ในฉาก (dispose ซ้ำได้อย่างปลอดภัย)
       scene.traverse((object) => {
         const mesh = object as THREE.Mesh;
