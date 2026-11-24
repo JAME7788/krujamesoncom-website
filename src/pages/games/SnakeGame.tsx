@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Play, Trophy, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import { canTurnSnake, chooseSnakeFood, stepSnake } from '../../utils/snakeEngine';
 import './GameStyles.css';
 import './SnakeGame.css';
@@ -20,7 +21,7 @@ const SnakeGame: React.FC = () => {
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [speed, setSpeed] = useState<keyof typeof SPEEDS>('medium');
-  const [bestScore, setBestScore] = useState(() => parseInt(localStorage.getItem('kj_snake_best') || '0'));
+  const [bestScore, setBestScore] = useState(() => readGameRecord('kj_snake_best'));
   const dirRef = useRef(dir);
   const turnQueued = useRef(false);
   const recordGame = useGameProgress('snake', 'งูกินผลไม้');
@@ -56,7 +57,7 @@ const SnakeGame: React.FC = () => {
         setScore(nextScore);
         if (nextScore > bestScore) {
           setBestScore(nextScore);
-          try { localStorage.setItem('kj_snake_best', String(nextScore)); } catch { /* Storage may be unavailable. */ }
+          writeGameRecord('kj_snake_best', nextScore);
         }
         const nextFood = chooseSnakeFood(next.body, SIZE);
         setFood(nextFood);

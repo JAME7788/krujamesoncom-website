@@ -40,9 +40,12 @@ const ColorCodePixelGame: React.FC = () => {
   const [drawing, setDrawing] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [hints, setHints] = useState(0);
-  const [score, setScore] = useState(0);
+  const [levelScores, setLevelScores] = useState<number[]>(() => COLOR_CODE_LEVELS.map(() => 0));
   const [result, setResult] = useState<'idle' | 'wrong' | 'correct' | 'finished'>('idle');
   const recordGame = useGameProgress('color-code-pixel', 'ภารกิจระบายสีตามรหัสพิกเซล');
+
+  const score = useMemo(() => levelScores.reduce((sum, v) => sum + v, 0), [levelScores]);
+  const solvedCount = useMemo(() => levelScores.filter((v) => v > 0).length, [levelScores]);
 
   const level = COLOR_CODE_LEVELS[levelIndex];
   const target = useMemo(() => parseRows(level.rows), [level]);
@@ -67,6 +70,7 @@ const ColorCodePixelGame: React.FC = () => {
   };
 
   const resetCanvas = () => {
+    if (result === 'correct' || result === 'finished') return;
     setGrid(blankGrid(10));
     setAttempts(0);
     setHints(0);
@@ -90,23 +94,30 @@ const ColorCodePixelGame: React.FC = () => {
   };
 
   const checkAnswer = () => {
+    if (result === 'correct' || result === 'finished') return;
     if (wrongCount > 0) {
       setAttempts((value) => value + 1);
       setResult('wrong');
       return;
     }
     const earned = Math.max(8, 20 - hints * 2 - attempts);
-    setScore((value) => value + earned);
+    const nextScores = levelScores.map((val, idx) => (idx === levelIndex ? Math.max(val, earned) : val));
+    setLevelScores(nextScores);
     setResult('correct');
+    const nextTotal = nextScores.reduce((sum, v) => sum + v, 0);
+    void recordGame(nextTotal, `level-${levelIndex + 1}`, COLOR_CODE_LEVELS.length * 20);
   };
 
   const nextLevel = () => {
-    if (levelIndex + 1 >= COLOR_CODE_LEVELS.length) {
+    const nextUnsolved = levelScores.findIndex((val, idx) => idx > levelIndex && val === 0);
+    const firstUnsolved = levelScores.findIndex((val) => val === 0);
+    const targetIdx = nextUnsolved !== -1 ? nextUnsolved : firstUnsolved;
+    if (targetIdx === -1) {
       setResult('finished');
-      void recordGame(score);
+      void recordGame(score, 'complete', COLOR_CODE_LEVELS.length * 20);
       return;
     }
-    setLevelIndex((value) => value + 1);
+    setLevelIndex(targetIdx);
     setGrid(blankGrid(10));
     setAttempts(0);
     setHints(0);
@@ -127,7 +138,7 @@ const ColorCodePixelGame: React.FC = () => {
     setGrid(blankGrid(10));
     setAttempts(0);
     setHints(0);
-    setScore(0);
+    setLevelScores(COLOR_CODE_LEVELS.map(() => 0));
     setResult('idle');
   };
 
@@ -179,7 +190,7 @@ const ColorCodePixelGame: React.FC = () => {
             }}
             title={`${lvl.name} (${lvl.difficulty})`}
           >
-            <span>{lvl.icon}</span> <span>{idx + 1}</span>
+            <span>{levelScores[idx] > 0 ? '✓' : lvl.icon}</span> <span>{idx + 1}</span>
           </button>
         ))}
       </div>
@@ -239,17 +250,17 @@ const ColorCodePixelGame: React.FC = () => {
           </div>
 
           <div className="ccp-tools">
-            <button type="button" onClick={() => setSelectedColor(0)}><Eraser size={18} /> ยางลบ</button>
-            <button type="button" onClick={resetCanvas}><RotateCcw size={18} /> เริ่มภาพใหม่</button>
-            <button type="button" onClick={revealHint} disabled={wrongCount === 0}><Lightbulb size={18} /> เติมคำใบ้ 1 ช่อง</button>
-            <button type="button" className="primary" onClick={checkAnswer}><Paintbrush size={18} /> ตรวจภาพ</button>
+            <button type="button" onClick={() => setSelectedColor(0)} disabled={result === 'correct' || result === 'finished'}><Eraser size={18} /> ยางลบ</button>
+            <button type="button" onClick={resetCanvas} disabled={result === 'correct' || result === 'finished'}><RotateCcw size={18} /> เริ่มภาพใหม่</button>
+            <button type="button" onClick={revealHint} disabled={wrongCount === 0 || result === 'correct' || result === 'finished'}><Lightbulb size={18} /> เติมคำใบ้ 1 ช่อง</button>
+            <button type="button" className="primary" onClick={checkAnswer} disabled={result === 'correct' || result === 'finished'}><Paintbrush size={18} /> ตรวจภาพ</button>
           </div>
 
           {result === 'wrong' && <div className="ccp-message wrong">ยังต่างจากรหัส {wrongCount} ช่อง ลองตรวจทีละแถวอีกครั้ง</div>}
           {result === 'correct' && (
             <div className="ccp-message correct">
               <CheckCircle2 size={22} /> สำเร็จ ภาพตรงกับรหัสทุกช่อง
-              <button type="button" onClick={nextLevel}>{levelIndex + 1 === COLOR_CODE_LEVELS.length ? 'สรุปผล' : 'ด่านต่อไป'}</button>
+              <button type="button" onClick={nextLevel}>{solvedCount === COLOR_CODE_LEVELS.length ? 'สรุปผล' : 'ด่านต่อไป'}</button>
             </div>
           )}
           {result === 'finished' && (

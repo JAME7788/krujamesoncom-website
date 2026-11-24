@@ -472,6 +472,24 @@ const DigitalCityQuestGame: React.FC = () => {
   const applyingRemoteRef = useRef(false);
   const lastSignatureRef = useRef('');
   const revealedOnlineGameRef = useRef(0);
+  const actionTimersRef = useRef<number[]>([]);
+  const playersRef = useRef<Player[]>(players);
+  playersRef.current = players;
+
+  const clearActionTimers = () => {
+    actionTimersRef.current.forEach((id) => window.clearTimeout(id));
+    actionTimersRef.current = [];
+  };
+
+  const scheduleAction = (fn: () => void, ms: number) => {
+    const id = window.setTimeout(() => {
+      actionTimersRef.current = actionTimersRef.current.filter((item) => item !== id);
+      fn();
+    }, ms);
+    actionTimersRef.current.push(id);
+  };
+
+  useEffect(() => clearActionTimers, []);
 
   const activePlayer = players[turn];
   const onlineMembers = onlineRoom ? orderedTycoonRoomPlayers(onlineRoom) : [];
@@ -543,6 +561,8 @@ const DigitalCityQuestGame: React.FC = () => {
   };
 
   const finish = (list: Player[], reason = 'หมดเวลาแข่งขัน') => {
+    clearActionTimers();
+    setIsRolling(false);
     setPlayers(list);
     setFinishReason(reason);
     setPhase('over');
@@ -565,6 +585,8 @@ const DigitalCityQuestGame: React.FC = () => {
   };
 
   const startShared = () => {
+    clearActionTimers();
+    setIsRolling(false);
     const list = Array.from({ length: count }, (_, index) => createPlayer(
       index,
       teamNames[index].trim() || TYCOON_TOKENS[index].name,
@@ -682,6 +704,7 @@ const DigitalCityQuestGame: React.FC = () => {
 
   const roll = () => {
     if (!activePlayer || isRolling || !canTakeTurn) return;
+    clearActionTimers();
     const value = rollDice();
     setDice(value);
     setIsRolling(true);
@@ -694,7 +717,7 @@ const DigitalCityQuestGame: React.FC = () => {
       moving = moving.map((player) => player.idx === activePlayer.idx ? { ...player, pos: position } : player);
       setPlayers(moving);
       if (step < value) {
-        window.setTimeout(() => move(step + 1), MOVE_STEP_DELAY_MS);
+        scheduleAction(() => move(step + 1), MOVE_STEP_DELAY_MS);
         return;
       }
       const funded = moving.map((player) => (
@@ -704,13 +727,15 @@ const DigitalCityQuestGame: React.FC = () => {
       ));
       setPlayers(funded);
       setMessage(`${activePlayer.name} เดินครบ ${value} ช่องแล้ว กำลังหยุดที่จุดหมาย`);
-      window.setTimeout(() => {
+      const settleTimerId = window.setTimeout(() => {
+        actionTimersRef.current = actionTimersRef.current.filter((item) => item !== settleTimerId);
         setIsRolling(false);
         if (passed) queueImpact('earn', '🏙️', 'ผ่านรอบมหานคร', `${activePlayer.name} รับทุนพัฒนารอบใหม่`, ROUND_GRANT);
         land(funded, position);
       }, LANDING_SETTLE_MS);
+      actionTimersRef.current.push(settleTimerId);
     };
-    window.setTimeout(() => move(1), ROLL_START_DELAY_MS);
+    scheduleAction(() => move(1), ROLL_START_DELAY_MS);
   };
 
   const answerQuestion = (choice: number) => {
@@ -764,8 +789,9 @@ const DigitalCityQuestGame: React.FC = () => {
       return;
     }
     if (!project || activePlayer.money < project.price) {
+      setBuyTile(null);
       setMessage('งบยังไม่พอเปิดโครงการนี้ ระบบจะพาไปตาถัดไป');
-      window.setTimeout(() => nextTurn(players), 700);
+      scheduleAction(() => nextTurn(playersRef.current), 700);
       return;
     }
     const after = players.map((player) => player.idx === activePlayer.idx ? {
@@ -864,10 +890,14 @@ const DigitalCityQuestGame: React.FC = () => {
   };
 
   const leaveRoom = () => {
+    clearActionTimers();
+    setIsRolling(false);
     if (onlineRoomCode) void leaveTycoonRoom(onlineRoomCode, multiplayerPlayerId);
     setSession(ACTIVE_ROOM_KEY, '');
     setOnlineRoomCode('');
     setOnlineRoom(null);
+    appliedRemoteVersionRef.current = 0;
+    lastSignatureRef.current = '';
     revealedOnlineGameRef.current = 0;
     setPhase('setup');
   };
@@ -879,6 +909,8 @@ const DigitalCityQuestGame: React.FC = () => {
       return;
     }
     if (!window.confirm('ยกเลิกการแข่งขันสำหรับผู้เล่นทุกคนใช่หรือไม่?')) return;
+    clearActionTimers();
+    setIsRolling(false);
     setRoomBusy(true);
     setRoomError('');
     const result = await cancelTycoonRoom(onlineRoomCode, multiplayerPlayerId);
@@ -1007,6 +1039,8 @@ const DigitalCityQuestGame: React.FC = () => {
   };
 
   const restart = () => {
+    clearActionTimers();
+    setIsRolling(false);
     if (onlineRoomCode) leaveRoom();
     setPhase('setup');
     setPlayers([]);
@@ -1151,7 +1185,7 @@ const DigitalCityQuestGame: React.FC = () => {
   }, [multiplayerPlayerId, onlineRoom, phase, picked, players.length]);
 
   useEffect(() => {
-    if (!isOnlineGame || !onlineRoomCode || !canPublishTurn || phase === 'setup' || players.length === 0) return undefined;
+    if (!isOnlineGame || !onlineRoomCode || (!canPublishTurn && !(isRoomHost && phase === 'over')) || phase === 'setup' || players.length === 0) return undefined;
     const base: Omit<TycoonGameSnapshot, 'version' | 'updatedBy'> = {
       variant: 'digital-city',
       turnSerial,
@@ -1204,28 +1238,30 @@ const DigitalCityQuestGame: React.FC = () => {
       window.clearTimeout(timer);
       if (retryTimer !== undefined) window.clearTimeout(retryTimer);
     };
-  }, [authoritativeGameEndsAt, buyTile, canPublishTurn, dice, eventCard, finishReason, isOnlineGame, isRolling, message, multiplayerPlayerId, onlineRoomCode, phase, picked, players, question, questionEndsAt, supportMessage, turn, turnSerial, upgradeTile, usedQuestionIds]);
+  }, [authoritativeGameEndsAt, buyTile, canPublishTurn, dice, eventCard, finishReason, isOnlineGame, isRolling, isRoomHost, message, multiplayerPlayerId, onlineRoomCode, phase, picked, players, question, questionEndsAt, supportMessage, turn, turnSerial, upgradeTile, usedQuestionIds]);
 
   useEffect(() => {
     if (phase === 'setup' || phase === 'over') return undefined;
-    const timer = window.setTimeout(() => {
+    const tick = () => {
       const remaining = Math.max(0, Math.ceil((authoritativeGameEndsAt - Date.now()) / 1000));
       setTimeLeft(remaining);
       if (remaining === 0 && (!isOnlineGame || isRoomHost)) {
-        finishActionRef.current(players, 'หมดเวลา ภารกิจกู้เมืองเสร็จสิ้น');
+        finishActionRef.current(playersRef.current, 'หมดเวลา ภารกิจกู้เมืองเสร็จสิ้น');
       }
-    }, 1000);
-    return () => window.clearTimeout(timer);
-  }, [authoritativeGameEndsAt, isOnlineGame, isRoomHost, phase, players]);
+    };
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [authoritativeGameEndsAt, isOnlineGame, isRoomHost, phase]);
 
   useEffect(() => {
     if (phase !== 'question' || picked !== null || !question) return undefined;
-    const timer = window.setTimeout(() => {
+    const tick = () => {
       const remaining = Math.max(0, Math.ceil((questionEndsAt - Date.now()) / 1000));
       setQuestionTime(remaining);
       if (remaining === 0 && canTakeTurn) answerActionRef.current(-1);
-    }, 500);
-    return () => window.clearTimeout(timer);
+    };
+    const timer = window.setInterval(tick, 500);
+    return () => window.clearInterval(timer);
   }, [canTakeTurn, phase, picked, question, questionEndsAt]);
 
   useEffect(() => {
@@ -1317,7 +1353,7 @@ const DigitalCityQuestGame: React.FC = () => {
           {playMode === 'shared' ? (
             <div className="dcq-shared-setup">
               <div className="dcq-inline-controls">
-                <label>จำนวนทีม <span>{[2, 3, 4].map((value) => <button key={value} type="button" className={count === value ? 'active' : ''} onClick={() => setCount(value)}>{value}</button>)}</span></label>
+                <label>จำนวนทีม <span>{[2, 3, 4].map((value) => <button key={value} type="button" className={count === value ? 'active' : ''} onClick={() => { setCount(value); setEditingTeam((prev) => Math.min(prev, value - 1)); }}>{value}</button>)}</span></label>
                 <label>เวลา <span>{([5, 10, 15] as const).map((value) => <button key={value} type="button" className={minutes === value ? 'active' : ''} onClick={() => setMinutes(value)}>{value} นาที</button>)}</span></label>
               </div>
               <div className="dcq-team-editor">

@@ -186,7 +186,7 @@ const LEVEL_CONFIGS = [
       { x: 1500, y: 340, w: 160, h: 22, type: 'solid' as const },
       { x: 1720, y: 270, w: 140, h: 22, type: 'solid' as const },
       { x: 1940, y: 200, w: 130, h: 22, type: 'cloud' as const },
-      { x: 2000, y: 120, w: 40, h: 40, type: 'terminal' as const }, // Quiz terminal
+      { x: 2000, y: 100, w: 40, h: 40, type: 'terminal' as const }, // Quiz terminal (14px head clearance above cloud)
       { x: 2150, y: 320, w: 150, h: 22, type: 'solid' as const },
       { x: 2360, y: 380, w: 50, h: 20, type: 'spring' as const }, // Bounce pad
       { x: 2460, y: 330, w: 140, h: 30, type: 'solid' as const }, // Exit platform
@@ -326,6 +326,27 @@ const ClawPlatformerGame: React.FC = () => {
   const cameraXRef = useRef(0);
   const starPowerFramesRef = useRef(0);
   const speedMultRef = useRef(1);
+  const lastFrameTimeRef = useRef(0);
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
+  const maxLivesRef = useRef(3);
+  const shieldRef = useRef(false);
+  const runEndedRef = useRef(false);
+  const quizTimerRef = useRef<number | null>(null);
+  const isSoundMutedRef = useRef(false);
+
+  useEffect(() => {
+    isSoundMutedRef.current = isSoundMuted;
+  }, [isSoundMuted]);
+
+  useEffect(() => {
+    return () => {
+      if (quizTimerRef.current !== null) {
+        window.clearTimeout(quizTimerRef.current);
+        quizTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Preload hero images
   useEffect(() => {
@@ -338,9 +359,9 @@ const ClawPlatformerGame: React.FC = () => {
 
   // Singleton Sound synthesizer (zero AudioContext leak)
   const playBeep = useCallback((freq: number, duration: number, type: OscillatorType = 'sine', gain = 0.09) => {
-    if (isSoundMuted) return;
+    if (isSoundMutedRef.current) return;
     playGameTone(freq, duration, type, gain);
-  }, [isSoundMuted]);
+  }, []);
 
   // Load level data into mutable refs
   const loadLevel = useCallback((lvlIndex: number) => {
@@ -354,6 +375,7 @@ const ClawPlatformerGame: React.FC = () => {
     enemiesRef.current = lvl.enemies.map((e) => ({ ...e, vx: e.vx * mult, alive: true }));
     attacksRef.current = [];
     popupsRef.current = [];
+    keysRef.current = { left: false, right: false, jump: false, attack: false };
 
     // Reset player position
     playerRef.current = {
@@ -375,9 +397,19 @@ const ClawPlatformerGame: React.FC = () => {
 
   // Start game session
   const startGame = useCallback((hero = selectedHero) => {
+    if (quizTimerRef.current !== null) {
+      window.clearTimeout(quizTimerRef.current);
+      quizTimerRef.current = null;
+    }
+    const startingLives = hero.id === 'ceo-lobster' ? 4 : 3;
+    runEndedRef.current = false;
+    scoreRef.current = 0;
+    livesRef.current = startingLives;
+    maxLivesRef.current = startingLives;
+    shieldRef.current = hero.id === 'agent-nova';
     setSelectedHero(hero);
     setScore(0);
-    setLives(3);
+    setLives(startingLives);
     setChipsCollected(0);
     starPowerFramesRef.current = 0;
     setStarPowerDuration(0);
@@ -391,26 +423,39 @@ const ClawPlatformerGame: React.FC = () => {
   const triggerAttack = useCallback(() => {
     if (gameState !== 'playing' || activeQuiz) return;
     const p = playerRef.current;
-    const attackX = p.facingRight ? p.x + p.w : p.x - 38;
+    const atkWidth = selectedHero.id === 'ceo-lobster' ? 58 : 42;
+    const attackX = p.facingRight ? p.x + p.w : p.x - (atkWidth - 4);
     attacksRef.current.push({
       x: attackX,
       y: p.y + 8,
-      w: 42,
+      w: atkWidth,
       h: p.h - 16,
-      life: 10, // Frames duration
+      life: 10, // Frames duration at 60fps
     });
     playBeep(320, 0.08, 'sawtooth', 0.12);
-  }, [activeQuiz, gameState, playBeep]);
+  }, [activeQuiz, gameState, playBeep, selectedHero.id]);
 
   // Keyboard Event Listeners
   useEffect(() => {
+    const clearKeys = () => {
+      keysRef.current = { left: false, right: false, jump: false, attack: false };
+    };
+    if (activeQuiz || gameState !== 'playing') {
+      clearKeys();
+    }
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (gameState !== 'playing' || activeQuiz) return;
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        if (e.key === 'ArrowLeft') e.preventDefault();
         keysRef.current.left = true;
       }
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        if (e.key === 'ArrowRight') e.preventDefault();
         keysRef.current.right = true;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
       }
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') {
         e.preventDefault();
@@ -418,6 +463,7 @@ const ClawPlatformerGame: React.FC = () => {
         playerRef.current.jumpBuffer = 8; // Buffer jump
       }
       if (e.key === 'j' || e.key === 'J' || e.key === 'x' || e.key === 'X' || e.key === 'Enter') {
+        if (e.key === 'Enter') e.preventDefault();
         triggerAttack();
       }
     };
@@ -440,52 +486,56 @@ const ClawPlatformerGame: React.FC = () => {
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', clearKeys);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', clearKeys);
     };
   }, [activeQuiz, gameState, triggerAttack]);
 
-  // Handle Game Over
+  // Handle Game Over (pure side effects outside React state updaters)
   const handleGameOver = useCallback(() => {
+    if (runEndedRef.current) return;
+    runEndedRef.current = true;
+    const currScore = scoreRef.current;
     setGameState('gameover');
-    setScore((currScore) => {
-      if (currScore > highScore) {
-        setHighScore(currScore);
-        try {
-          localStorage.setItem('kj_claw_platformer_best', currScore.toString());
-        } catch {
-          // Ignored
-        }
+    if (currScore > highScore) {
+      setHighScore(currScore);
+      try {
+        localStorage.setItem('kj_claw_platformer_best', currScore.toString());
+      } catch {
+        // Ignored
       }
-      void recordGame(currScore);
-      return currScore;
-    });
+    }
+    void recordGame(currScore);
   }, [highScore, recordGame]);
 
   // Handle Level Clear / Victory
   const handleLevelClear = useCallback(() => {
+    if (runEndedRef.current) return;
     if (currentLevelIdx + 1 < LEVEL_CONFIGS.length) {
       // Advance to next level
       playBeep(620, 0.25, 'triangle', 0.15);
-      setScore((s) => s + 500); // Stage clear bonus
+      scoreRef.current += 500;
+      setScore(scoreRef.current);
       loadLevel(currentLevelIdx + 1);
     } else {
       // Final Victory!
+      runEndedRef.current = true;
+      const finalScore = scoreRef.current + 1000;
+      scoreRef.current = finalScore;
+      setScore(finalScore);
       setGameState('victory');
-      setScore((currScore) => {
-        const finalScore = currScore + 1000;
-        if (finalScore > highScore) {
-          setHighScore(finalScore);
-          try {
-            localStorage.setItem('kj_claw_platformer_best', finalScore.toString());
-          } catch {
-            // Ignored
-          }
+      if (finalScore > highScore) {
+        setHighScore(finalScore);
+        try {
+          localStorage.setItem('kj_claw_platformer_best', finalScore.toString());
+        } catch {
+          // Ignored
         }
-        void recordGame(finalScore);
-        return finalScore;
-      });
+      }
+      void recordGame(finalScore);
     }
   }, [currentLevelIdx, highScore, loadLevel, playBeep, recordGame]);
 
@@ -496,8 +546,10 @@ const ClawPlatformerGame: React.FC = () => {
     if (gameState !== 'playing' || activeQuiz) return;
 
     let animId: number;
+    lastFrameTimeRef.current = performance.now();
 
     const gameLoop = () => {
+      if (runEndedRef.current) return;
       const canvas = canvasRef.current;
       if (!canvas) {
         animId = requestAnimationFrame(gameLoop);
@@ -510,24 +562,29 @@ const ClawPlatformerGame: React.FC = () => {
       }
 
       const now = performance.now();
+      const dtMs = Math.max(0, Math.min(now - lastFrameTimeRef.current, 50));
+      lastFrameTimeRef.current = now;
+      const dtScale = dtMs / 16.6667;
       const p = playerRef.current;
       const keys = keysRef.current;
       const lvl = LEVEL_CONFIGS[currentLevelIdx];
 
       // Update Star Power Duration in ref (prevents 60fps React re-renders)
       if (starPowerFramesRef.current > 0) {
-        starPowerFramesRef.current -= 1;
+        starPowerFramesRef.current = Math.max(0, starPowerFramesRef.current - dtScale);
         if (starPowerFramesRef.current === 0) {
           setStarPowerDuration(0);
         }
       }
 
       // Invincibility cooldown
-      if (p.invincibleTimer > 0) p.invincibleTimer--;
+      if (p.invincibleTimer > 0) {
+        p.invincibleTimer = Math.max(0, p.invincibleTimer - dtScale);
+      }
 
-      // 1. Horizontal Movement Physics
-      const accel = p.isGrounded ? 0.8 : 0.45;
-      const friction = p.isGrounded ? 0.78 : 0.92;
+      // 1. Horizontal Movement Physics (frame-rate independent)
+      const accel = (p.isGrounded ? 0.8 : 0.45) * dtScale;
+      const friction = Math.pow(p.isGrounded ? 0.78 : 0.92, dtScale);
       const maxSpeed = selectedHero.id === 'agent-codey' ? 5.2 : 4.4;
 
       if (keys.left) {
@@ -543,7 +600,7 @@ const ClawPlatformerGame: React.FC = () => {
       if (Math.abs(p.vx) < 0.05) p.vx = 0;
 
       // 2. Vertical Movement & Gravity
-      const gravity = 0.52;
+      const gravity = 0.52 * dtScale;
       p.vy = Math.min(11, p.vy + gravity);
 
       // Coyote Time counter
@@ -551,7 +608,7 @@ const ClawPlatformerGame: React.FC = () => {
         p.coyoteTime = 8;
         p.canDoubleJump = true;
       } else if (p.coyoteTime > 0) {
-        p.coyoteTime--;
+        p.coyoteTime = Math.max(0, p.coyoteTime - dtScale);
       }
 
       // Jump Execution
@@ -571,11 +628,12 @@ const ClawPlatformerGame: React.FC = () => {
           p.jumpBuffer = 0;
           playBeep(560, 0.12, 'triangle', 0.12);
         }
-        p.jumpBuffer = Math.max(0, p.jumpBuffer - 1);
+        p.jumpBuffer = Math.max(0, p.jumpBuffer - dtScale);
       }
 
-      // 3. Horizontal Collision Detection
-      p.x += p.vx;
+      // 3. Horizontal Collision Detection + World Bounds
+      p.x += p.vx * dtScale;
+      p.x = Math.max(0, Math.min(lvl.worldWidth - p.w, p.x));
       for (const plat of platformsRef.current) {
         if (
           p.x < plat.x + plat.w &&
@@ -592,7 +650,7 @@ const ClawPlatformerGame: React.FC = () => {
       }
 
       // 4. Vertical Collision Detection
-      p.y += p.vy;
+      p.y += p.vy * dtScale;
       p.isGrounded = false;
 
       for (const plat of platformsRef.current) {
@@ -616,8 +674,9 @@ const ClawPlatformerGame: React.FC = () => {
           }
         }
 
-        // Head hit ceiling / Quiz Terminal Box from below
+        // Head hit ceiling / Quiz Terminal Box from below (one-way cloud/spring pass through)
         if (
+          (plat.type === 'solid' || plat.type === 'terminal') &&
           p.x + p.w > plat.x &&
           p.x < plat.x + plat.w &&
           p.y <= plat.y + plat.h &&
@@ -650,11 +709,9 @@ const ClawPlatformerGame: React.FC = () => {
       // Abyss check (falling into pit)
       if (p.y > 600) {
         // Lost a life and respawn at start
-        setLives((l) => {
-          const nextL = l - 1;
-          if (nextL <= 0) handleGameOver();
-          return nextL;
-        });
+        const nextL = livesRef.current - 1;
+        livesRef.current = nextL;
+        setLives(nextL);
         popupsRef.current.push({
           id: nextPopupIdRef.current++,
           x: p.x,
@@ -664,21 +721,26 @@ const ClawPlatformerGame: React.FC = () => {
           life: 40,
           maxLife: 40,
         });
+        playBeep(220, 0.2, 'sawtooth', 0.15);
+        if (nextL <= 0) {
+          handleGameOver();
+          return;
+        }
         p.x = 80;
         p.y = 300;
         p.vx = 0;
         p.vy = 0;
         p.invincibleTimer = 60;
-        playBeep(220, 0.2, 'sawtooth', 0.15);
       }
 
       // 5. Coins & Collectibles Pickup
       for (const coin of coinsRef.current) {
         if (!coin.collected && Math.hypot(p.x + p.w / 2 - coin.x, p.y + p.h / 2 - coin.y) < 28) {
           coin.collected = true;
-          sfxCoin();
+          if (!isSoundMutedRef.current) sfxCoin();
           if (coin.type === 'coin') {
-            setScore((s) => s + 20);
+            scoreRef.current += 20;
+            setScore(scoreRef.current);
             setChipsCollected((c) => c + 1);
             popupsRef.current.push({
               id: nextPopupIdRef.current++,
@@ -690,7 +752,8 @@ const ClawPlatformerGame: React.FC = () => {
               maxLife: 30,
             });
           } else if (coin.type === 'disk') {
-            setScore((s) => s + 50);
+            scoreRef.current += 50;
+            setScore(scoreRef.current);
             setChipsCollected((c) => c + 1);
             popupsRef.current.push({
               id: nextPopupIdRef.current++,
@@ -702,8 +765,10 @@ const ClawPlatformerGame: React.FC = () => {
               maxLife: 30,
             });
           } else if (coin.type === 'coffee') {
-            setScore((s) => s + 30);
-            setLives((l) => Math.min(3, l + 1)); // Heal heart
+            scoreRef.current += 30;
+            setScore(scoreRef.current);
+            livesRef.current = Math.min(maxLivesRef.current, livesRef.current + 1);
+            setLives(livesRef.current);
             popupsRef.current.push({
               id: nextPopupIdRef.current++,
               x: coin.x,
@@ -720,7 +785,7 @@ const ClawPlatformerGame: React.FC = () => {
       // 6. Update Attacks & Hitboxes
       const activeAttacks: AttackEffect[] = [];
       for (const atk of attacksRef.current) {
-        atk.life--;
+        atk.life -= dtScale;
         // Check hit against enemies
         for (const enemy of enemiesRef.current) {
           if (
@@ -731,7 +796,8 @@ const ClawPlatformerGame: React.FC = () => {
             atk.y + atk.h > enemy.y
           ) {
             enemy.alive = false;
-            setScore((s) => s + 100);
+            scoreRef.current += 100;
+            setScore(scoreRef.current);
             playBeep(440, 0.1, 'square', 0.15);
             popupsRef.current.push({
               id: nextPopupIdRef.current++,
@@ -751,9 +817,10 @@ const ClawPlatformerGame: React.FC = () => {
       // 7. Enemies Patrol & Collision
       for (const enemy of enemiesRef.current) {
         if (!enemy.alive) continue;
-        enemy.x += enemy.vx;
+        enemy.x += enemy.vx * dtScale;
         if (enemy.x <= enemy.minX || enemy.x + enemy.w >= enemy.maxX) {
           enemy.vx *= -1; // Bounce back
+          enemy.x = Math.max(enemy.minX, Math.min(enemy.maxX - enemy.w, enemy.x));
         }
 
         // Collision with Player
@@ -770,7 +837,8 @@ const ClawPlatformerGame: React.FC = () => {
             // Stomp kill!
             enemy.alive = false;
             p.vy = -8.5; // Bounce off enemy
-            setScore((s) => s + 100);
+            scoreRef.current += 100;
+            setScore(scoreRef.current);
             playBeep(420, 0.12, 'square', 0.15);
             popupsRef.current.push({
               id: nextPopupIdRef.current++,
@@ -782,37 +850,57 @@ const ClawPlatformerGame: React.FC = () => {
               maxLife: 35,
             });
           } else if (p.invincibleTimer <= 0) {
-            // Player takes damage
-            p.invincibleTimer = 60;
-            p.vy = -6;
-            p.vx = p.facingRight ? -4 : 4;
-            setLives((l) => {
-              const nextL = l - 1;
-              if (nextL <= 0) handleGameOver();
-              return nextL;
-            });
-            sfxWrong();
-            popupsRef.current.push({
-              id: nextPopupIdRef.current++,
-              x: p.x + p.w / 2,
-              y: p.y - 14,
-              text: '-1 ❤️ บาดเจ็บ!',
-              color: '#ef4444',
-              life: 35,
-              maxLife: 35,
-            });
+            if (shieldRef.current) {
+              // Agent Nova starting shield absorbs 1 hit!
+              shieldRef.current = false;
+              p.invincibleTimer = 60;
+              p.vy = -5;
+              playBeep(520, 0.12, 'triangle', 0.12);
+              popupsRef.current.push({
+                id: nextPopupIdRef.current++,
+                x: p.x + p.w / 2,
+                y: p.y - 14,
+                text: '🛡️ เกราะป้องกันรับดาเมจ!',
+                color: '#38bdf8',
+                life: 40,
+                maxLife: 40,
+              });
+            } else {
+              // Player takes damage
+              p.invincibleTimer = 60;
+              p.vy = -6;
+              p.vx = p.facingRight ? -4 : 4;
+              const nextL = livesRef.current - 1;
+              livesRef.current = nextL;
+              setLives(nextL);
+              if (!isSoundMutedRef.current) sfxWrong();
+              popupsRef.current.push({
+                id: nextPopupIdRef.current++,
+                x: p.x + p.w / 2,
+                y: p.y - 14,
+                text: '-1 ❤️ บาดเจ็บ!',
+                color: '#ef4444',
+                life: 35,
+                maxLife: 35,
+              });
+              if (nextL <= 0) {
+                handleGameOver();
+                return;
+              }
+            }
           }
         }
       }
 
-      // 8. Level Exit Check
-      if (Math.hypot(p.x - lvl.exitX, p.y - lvl.exitY) < 45) {
+      // 8. Level Exit Check (player center vs portal center)
+      if (Math.hypot(p.x + p.w / 2 - lvl.exitX, p.y + p.h / 2 - (lvl.exitY - 32)) < 48) {
         handleLevelClear();
+        return;
       }
 
       // 9. Camera Following Player
       const targetCamX = p.x - canvas.width * 0.38;
-      cameraXRef.current += (targetCamX - cameraXRef.current) * 0.12;
+      cameraXRef.current += (targetCamX - cameraXRef.current) * Math.min(1, 0.12 * dtScale);
       cameraXRef.current = Math.max(0, Math.min(lvl.worldWidth - canvas.width, cameraXRef.current));
       const camX = cameraXRef.current;
 
@@ -1271,19 +1359,26 @@ const ClawPlatformerGame: React.FC = () => {
   const handleAnswerQuiz = (choiceIdx: number) => {
     if (!activeQuiz || quizAnswered !== null) return;
     setQuizAnswered(choiceIdx);
+    if (quizTimerRef.current !== null) {
+      window.clearTimeout(quizTimerRef.current);
+      quizTimerRef.current = null;
+    }
 
     if (choiceIdx === activeQuiz.correctIndex) {
-      sfxCorrect();
-      setScore((s) => s + 150);
+      if (!isSoundMutedRef.current) sfxCorrect();
+      scoreRef.current += 150;
+      setScore(scoreRef.current);
       starPowerFramesRef.current = 280; // Invincible Star Power in ref!
       setStarPowerDuration(280);
-      setTimeout(() => {
+      quizTimerRef.current = window.setTimeout(() => {
+        quizTimerRef.current = null;
         setActiveQuiz(null);
         setQuizAnswered(null);
       }, 1500);
     } else {
-      sfxWrong();
-      setTimeout(() => {
+      if (!isSoundMutedRef.current) sfxWrong();
+      quizTimerRef.current = window.setTimeout(() => {
+        quizTimerRef.current = null;
         setActiveQuiz(null);
         setQuizAnswered(null);
       }, 2000);
@@ -1560,6 +1655,12 @@ const ClawPlatformerGame: React.FC = () => {
             onPointerUp={() => {
               keysRef.current.jump = false;
               if (playerRef.current.vy < -3) playerRef.current.vy *= 0.45;
+            }}
+            onPointerLeave={() => {
+              keysRef.current.jump = false;
+            }}
+            onPointerCancel={() => {
+              keysRef.current.jump = false;
             }}
             aria-label="กระโดด"
           >

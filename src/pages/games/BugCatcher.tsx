@@ -79,46 +79,61 @@ const BugCatcher: React.FC = () => {
   }, [endGame]);
 
   // Time + game over check
+  const timeRef = useRef(0);
   useEffect(() => {
-    if (!running) return;
-    const t = setInterval(() => setTime((s) => s + 1), 1000);
+    if (!running) {
+      timeRef.current = 0;
+      return;
+    }
+    const t = setInterval(() => {
+      timeRef.current += 1;
+      setTime((s) => s + 1);
+    }, 1000);
     return () => clearInterval(t);
   }, [running]);
 
-  // Spawn bugs
+  // Spawn bugs (recursive schedule so changing `time` never resets the spawn timer every 1s)
   useEffect(() => {
     if (!running) return;
-    const spawnInterval = Math.max(400, 900 - time * 15); // เร็วขึ้นเรื่อยๆ
-    const spawn = setInterval(() => {
-      if (!arenaRef.current) return;
-      const rect = arenaRef.current.getBoundingClientRect();
-      const r = Math.random();
-      let type: Bug['type'] = 'normal';
-      if (r < 0.1) type = 'good';        // 🦋 ห้ามตี!
-      else if (r < 0.3) type = 'fast';    // เร็ว หาย 0.8s
-      else if (r < 0.45) type = 'big';    // ใหญ่ หาย 1.2s
-      // เหลือ normal
-
-      const bug: Bug = {
-        id: Date.now() + Math.random(),
-        x: Math.random() * (rect.width - 80) + 10,
-        y: Math.random() * (rect.height - 80) + 10,
-        type,
-        born: Date.now(),
-      };
-      activeBugs.current.add(bug.id);
-      setBugs((prev) => [...prev, bug]);
-
-      // Auto remove
-      const lifetime = type === 'fast' ? 800 : type === 'big' ? 1200 : type === 'good' ? 1500 : 1500;
+    let cancelled = false;
+    const scheduleNext = () => {
+      const delay = Math.max(400, 900 - timeRef.current * 15);
       timers.schedule(() => {
-        if (!runningRef.current || !activeBugs.current.delete(bug.id)) return;
-        setBugs((prev) => prev.filter((b) => b.id !== bug.id));
-        if (bug.type !== 'good') loseLife();
-      }, lifetime);
-    }, spawnInterval);
-    return () => clearInterval(spawn);
-  }, [loseLife, running, time, timers]);
+        if (cancelled || !runningRef.current) return;
+        if (arenaRef.current) {
+          const rect = arenaRef.current.getBoundingClientRect();
+          const r = Math.random();
+          let type: Bug['type'] = 'normal';
+          if (r < 0.1) type = 'good';        // 🦋 ห้ามตี!
+          else if (r < 0.3) type = 'fast';    // เร็ว หาย 0.8s
+          else if (r < 0.45) type = 'big';    // ใหญ่ หาย 1.2s
+
+          const bug: Bug = {
+            id: Date.now() + Math.random(),
+            x: Math.random() * (rect.width - 80) + 10,
+            y: Math.random() * (rect.height - 80) + 10,
+            type,
+            born: Date.now(),
+          };
+          activeBugs.current.add(bug.id);
+          setBugs((prev) => [...prev, bug]);
+
+          // Auto remove
+          const lifetime = type === 'fast' ? 800 : type === 'big' ? 1200 : 1500;
+          timers.schedule(() => {
+            if (!runningRef.current || !activeBugs.current.delete(bug.id)) return;
+            setBugs((prev) => prev.filter((b) => b.id !== bug.id));
+            if (bug.type !== 'good') loseLife();
+          }, lifetime);
+        }
+        scheduleNext();
+      }, delay);
+    };
+    scheduleNext();
+    return () => {
+      cancelled = true;
+    };
+  }, [loseLife, running, timers]);
 
   // Cleanup particles
   useEffect(() => {

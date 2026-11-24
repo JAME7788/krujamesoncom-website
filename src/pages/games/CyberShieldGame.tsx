@@ -24,48 +24,17 @@ import {
   type MissionLevel,
 } from './cyberShieldData';
 import { sfxCoin, sfxCorrect, sfxWrong } from '../../utils/gameSounds';
+import { playGameTone } from '../../utils/gameAudio';
 import './GameStyles.css';
 import './CyberShieldGame.css';
 
-// Web Audio sound synthesizer for laser and alarms
+// Singleton Web Audio sound synthesizer for laser and alarms (zero AudioContext leak)
 const playLaserSound = (freq = 880) => {
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.13);
-  } catch {
-    // Ignore audio context errors silently
-  }
+  playGameTone(freq, 0.12, 'sawtooth', 0.08, 120);
 };
 
 const playAlarmSound = () => {
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(440, ctx.currentTime);
-    osc.frequency.setValueAtTime(330, ctx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.09, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.19);
-  } catch {
-    // Ignore audio context errors silently
-  }
+  playGameTone(440, 0.16, 'square', 0.09, 330);
 };
 
 interface ActiveThreat {
@@ -128,11 +97,16 @@ const CyberShieldGame: React.FC = () => {
   const [missionWon, setMissionWon] = useState(false);
   const [missionLost, setMissionLost] = useState(false);
 
-  // Spawning Queue Reference
+  // Authoritative simulation refs (prevents StrictMode double-damage, missing lasers & stale HP checks)
   const spawnQueueRef = useRef<Array<{ type: ThreatType; delay: number }>>([]);
-  const lastSpawnTimeRef = useRef<number>(0);
+  const waveElapsedRef = useRef<number>(0);
   const lastFrameTimeRef = useRef<number>(0);
   const reqAnimationRef = useRef<number | null>(null);
+  const threatsRef = useRef<ActiveThreat[]>([]);
+  const towersRef = useRef<Map<number, DeployedTower>>(new Map());
+  const lasersRef = useRef<LaserEffect[]>([]);
+  const serverHpRef = useRef<number>(100);
+  const scoreRef = useRef<number>(0);
 
   // Calculate coordinates along multi-point path
   const getPositionOnPath = useCallback((progress: number, points: Array<{ x: number; y: number }>) => {
@@ -170,8 +144,17 @@ const CyberShieldGame: React.FC = () => {
   // Reset/Initialize Level
   const initLevel = useCallback((lvlIdx: number) => {
     const lvl = MISSION_LEVELS[lvlIdx] || MISSION_LEVELS[0];
+    serverHpRef.current = 100;
+    scoreRef.current = 0;
+    towersRef.current = new Map();
+    threatsRef.current = [];
+    lasersRef.current = [];
+    spawnQueueRef.current = [];
+    waveElapsedRef.current = 0;
+    lastFrameTimeRef.current = 0;
     setLevelIndex(lvlIdx);
     setServerHp(100);
+    setScore(0);
     setBandwidth(lvl.initialBandwidth);
     setWaveIndex(0);
     setWaveActive(false);
@@ -184,7 +167,6 @@ const CyberShieldGame: React.FC = () => {
     setBriefingOpen(true);
     setBriefingAnswered(false);
     setSelectedOption(null);
-    spawnQueueRef.current = [];
   }, []);
 
   // Start Level Briefing Answer
@@ -206,11 +188,11 @@ const CyberShieldGame: React.FC = () => {
 
   // Start Next Wave
   const handleStartWave = () => {
-    if (waveActive || waveIndex >= currentMission.waves.length) return;
+    if (waveActive || missionWon || missionLost || waveIndex >= currentMission.waves.length) return;
     const wave = currentMission.waves[waveIndex];
     if (!wave) return;
 
-    // Build spawn queue
+    // Build cumulative spawn schedule (matched against waveElapsedRef, never reset per spawn)
     const queue: Array<{ type: ThreatType; delay: number }> = [];
     let currentDelay = 0.5;
     wave.threats.forEach((group) => {
@@ -221,14 +203,15 @@ const CyberShieldGame: React.FC = () => {
     });
 
     spawnQueueRef.current = queue;
-    lastSpawnTimeRef.current = performance.now();
+    waveElapsedRef.current = 0;
+    lastFrameTimeRef.current = 0;
     setWaveActive(true);
   };
 
   // Deploy or Upgrade Tower
   const handleNodeClick = (nodeIdx: number) => {
     setSelectedNodeIndex(nodeIdx);
-    const existing = towers.get(nodeIdx);
+    const existing = towersRef.current.get(nodeIdx);
 
     // If empty node, place selected tower if enough bandwidth
     if (!existing) {
@@ -236,302 +219,307 @@ const CyberShieldGame: React.FC = () => {
       if (bandwidth >= cfg.cost) {
         setBandwidth((prev) => prev - cfg.cost);
         sfxCoin();
-        setTowers((prev) => {
-          const next = new Map(prev);
-          next.set(nodeIdx, {
-            nodeIndex: nodeIdx,
-            type: selectedTowerDeck,
-            level: 1,
-            lastShotTime: 0,
-          });
-          return next;
+        const next = new Map(towersRef.current);
+        next.set(nodeIdx, {
+          nodeIndex: nodeIdx,
+          type: selectedTowerDeck,
+          level: 1,
+          lastShotTime: 0,
         });
+        towersRef.current = next;
+        setTowers(next);
       }
     }
   };
 
   const handleUpgradeTower = (nodeIdx: number) => {
-    const current = towers.get(nodeIdx);
+    const current = towersRef.current.get(nodeIdx);
     if (!current || current.level >= 3) return;
     const cfg = TOWER_CONFIGS[current.type];
     const cost = cfg.upgradeCost * current.level;
     if (bandwidth >= cost) {
       setBandwidth((prev) => prev - cost);
       sfxCoin();
-      setTowers((prev) => {
-        const next = new Map(prev);
-        next.set(nodeIdx, { ...current, level: current.level + 1 });
-        return next;
-      });
+      const next = new Map(towersRef.current);
+      next.set(nodeIdx, { ...current, level: current.level + 1 });
+      towersRef.current = next;
+      setTowers(next);
     }
   };
 
   const handleSellTower = (nodeIdx: number) => {
-    const current = towers.get(nodeIdx);
+    const current = towersRef.current.get(nodeIdx);
     if (!current) return;
     const cfg = TOWER_CONFIGS[current.type];
     const refund = Math.floor(cfg.cost * 0.7);
     setBandwidth((prev) => prev + refund);
     sfxCoin();
-    setTowers((prev) => {
-      const next = new Map(prev);
-      next.delete(nodeIdx);
-      return next;
-    });
+    const next = new Map(towersRef.current);
+    next.delete(nodeIdx);
+    towersRef.current = next;
+    setTowers(next);
     setSelectedNodeIndex(null);
   };
 
-  // Main Game Loop (Physics, Combat, Pathing)
+  // Main Game Loop (Physics, Combat, Pathing) — active only during live waves
   useEffect(() => {
-    const loop = (time: number) => {
-      const deltaSec = lastFrameTimeRef.current === 0
-        ? 0
-        : Math.min(0.1, (time - lastFrameTimeRef.current) / 1000) * gameSpeed;
-      lastFrameTimeRef.current = time;
+    if (!waveActive || briefingOpen || missionWon || missionLost) {
+      if (reqAnimationRef.current) {
+        cancelAnimationFrame(reqAnimationRef.current);
+        reqAnimationRef.current = null;
+      }
+      lastFrameTimeRef.current = 0;
+      return;
+    }
 
-      // 1. Spawning from queue
-      if (waveActive && spawnQueueRef.current.length > 0) {
-        const elapsedSinceSpawn = (time - lastSpawnTimeRef.current) / 1000;
-        const nextInQueue = spawnQueueRef.current[0];
-        if (elapsedSinceSpawn >= nextInQueue.delay / gameSpeed) {
-          spawnQueueRef.current.shift();
-          lastSpawnTimeRef.current = time;
-          const conf = THREAT_CONFIGS[nextInQueue.type];
-          const startPt = currentMission.pathPoints[0];
-          setThreats((prev) => [
-            ...prev,
-            {
-              id: `${nextInQueue.type}-${Date.now()}-${Math.random()}`,
-              type: nextInQueue.type,
-              hp: conf.maxHp,
-              maxHp: conf.maxHp,
-              pathProgress: 0,
-              isSlowed: false,
-              slowTimer: 0,
-              x: startPt.x,
-              y: startPt.y,
-            },
-          ]);
-        }
+    const loop = (time: number) => {
+      const rawDeltaSec = lastFrameTimeRef.current === 0
+        ? 0
+        : Math.max(0, Math.min(0.1, (time - lastFrameTimeRef.current) / 1000));
+      lastFrameTimeRef.current = time;
+      const deltaSec = rawDeltaSec * gameSpeed;
+      waveElapsedRef.current += deltaSec;
+
+      // 1. Spawning from cumulative schedule
+      const currentThreats = threatsRef.current.slice();
+      while (spawnQueueRef.current.length > 0 && waveElapsedRef.current >= spawnQueueRef.current[0].delay) {
+        const nextInQueue = spawnQueueRef.current.shift()!;
+        const conf = THREAT_CONFIGS[nextInQueue.type];
+        const startPt = currentMission.pathPoints[0];
+        currentThreats.push({
+          id: `${nextInQueue.type}-${Date.now()}-${Math.random()}`,
+          type: nextInQueue.type,
+          hp: conf.maxHp,
+          maxHp: conf.maxHp,
+          pathProgress: 0,
+          isSlowed: false,
+          slowTimer: 0,
+          x: startPt.x,
+          y: startPt.y,
+        });
       }
 
       // 2. Move Threats along path & Check Server Reach
-      setThreats((prevThreats) => {
-        const updated: ActiveThreat[] = [];
-        let serverHitDamage = 0;
+      const movedThreats: ActiveThreat[] = [];
+      let serverHitDamage = 0;
 
-        for (const t of prevThreats) {
-          const conf = THREAT_CONFIGS[t.type];
-          const currentSpeed = t.isSlowed ? conf.speed * 0.6 : conf.speed;
-          // Approximate total path distance ~ 900 px
-          const pathStep = (currentSpeed * deltaSec) / 900;
-          const nextProgress = t.pathProgress + pathStep;
+      for (const t of currentThreats) {
+        const conf = THREAT_CONFIGS[t.type];
+        const currentSpeed = t.isSlowed ? conf.speed * 0.6 : conf.speed;
+        const pathStep = (currentSpeed * deltaSec) / 900;
+        const nextProgress = t.pathProgress + pathStep;
 
-          if (nextProgress >= 1.0) {
-            // Reached School Server!
-            serverHitDamage += conf.serverDamage;
-          } else {
-            const pos = getPositionOnPath(nextProgress, currentMission.pathPoints);
-            const slowTimer = Math.max(0, t.slowTimer - deltaSec);
-            updated.push({
-              ...t,
-              pathProgress: nextProgress,
-              x: pos.x,
-              y: pos.y,
-              slowTimer,
-              isSlowed: slowTimer > 0,
-            });
-          }
-        }
-
-        if (serverHitDamage > 0) {
-          playAlarmSound();
-          setServerHp((curr) => {
-            const nextHp = Math.max(0, curr - serverHitDamage);
-            if (nextHp <= 0) {
-              setMissionLost(true);
-              setWaveActive(false);
-            }
-            return nextHp;
+        if (nextProgress >= 1.0) {
+          serverHitDamage += conf.serverDamage;
+        } else {
+          const pos = getPositionOnPath(nextProgress, currentMission.pathPoints);
+          const slowTimer = Math.max(0, t.slowTimer - deltaSec);
+          movedThreats.push({
+            ...t,
+            pathProgress: nextProgress,
+            x: pos.x,
+            y: pos.y,
+            slowTimer,
+            isSlowed: slowTimer > 0,
           });
         }
+      }
 
-        return updated;
-      });
+      if (serverHitDamage > 0) {
+        playAlarmSound();
+        const nextHp = Math.max(0, serverHpRef.current - serverHitDamage);
+        serverHpRef.current = nextHp;
+        setServerHp(nextHp);
+        if (nextHp <= 0) {
+          threatsRef.current = movedThreats;
+          lasersRef.current = [];
+          setThreats(movedThreats);
+          setLasers([]);
+          setMissionLost(true);
+          setWaveActive(false);
+          return;
+        }
+      }
 
-      // 3. Towers Target & Attack
-      setTowers((prevTowers) => {
-        const nextTowers = new Map(prevTowers);
-        const newLasers: LaserEffect[] = [];
+      // 3. Towers Target & Attack (synchronous simulation -> lasers render immediately)
+      const newLasers: LaserEffect[] = [];
+      let bonusHeal = 0;
+      let bonusBw = 0;
 
-        nextTowers.forEach((tower, nodeIdx) => {
-          const node = currentMission.mapNodes[nodeIdx];
-          if (!node) return;
-          const cfg = TOWER_CONFIGS[tower.type];
-          const fireInterval = 1 / (cfg.fireRate * (1 + (tower.level - 1) * 0.3));
-          const timeSinceShot = (time - tower.lastShotTime) / 1000;
+      towersRef.current.forEach((tower, nodeIdx) => {
+        const node = currentMission.mapNodes[nodeIdx];
+        if (!node) return;
+        const cfg = TOWER_CONFIGS[tower.type];
+        const fireInterval = 1 / (cfg.fireRate * (1 + (tower.level - 1) * 0.3));
+        const timeSinceShot = (time - tower.lastShotTime) / 1000;
 
-          // Cloud Backup special action
-          if (tower.type === 'cloudbackup') {
-            if (timeSinceShot >= 4.0 / gameSpeed) {
-              setServerHp((hp) => Math.min(100, hp + 8 * tower.level));
-              setBandwidth((bw) => bw + 15 * tower.level);
-              tower.lastShotTime = time;
-              newLasers.push({
-                id: `heal-${Date.now()}-${nodeIdx}`,
-                fromX: node.x,
-                fromY: node.y,
-                toX: currentMission.pathPoints[currentMission.pathPoints.length - 1].x,
-                toY: currentMission.pathPoints[currentMission.pathPoints.length - 1].y,
-                color: '#0ea5e9',
-                expiresAt: time + 300,
-              });
-            }
-            return;
-          }
-
-          if (timeSinceShot < fireInterval / gameSpeed) return;
-
-          // Find target threats in range
-          const effectiveRange = cfg.range * (1 + (tower.level - 1) * 0.2);
-          const effectiveDamage = cfg.damage * (1 + (tower.level - 1) * 0.5);
-
-          setThreats((currThreats) => {
-            if (currThreats.length === 0) return currThreats;
-
-            // AoE Tower (Encryption Gateway)
-            if (tower.type === 'encryption') {
-              let hitAny = false;
-              const nextList = currThreats.map((t) => {
-                const dist = Math.hypot(t.x - node.x, t.y - node.y);
-                if (dist <= effectiveRange) {
-                  hitAny = true;
-                  return { ...t, hp: t.hp - effectiveDamage };
-                }
-                return t;
-              });
-
-              if (hitAny) {
-                tower.lastShotTime = time;
-                playLaserSound(520);
-                newLasers.push({
-                  id: `aoe-${Date.now()}-${nodeIdx}`,
-                  fromX: node.x,
-                  fromY: node.y,
-                  toX: node.x,
-                  toY: node.y,
-                  color: cfg.color,
-                  expiresAt: time + 250,
-                });
-              }
-              return nextList;
-            }
-
-            // Single Target Towers (Firewall, Antivirus, 2FA)
-            // Priority: Most progressed on path
-            const candidates = currThreats
-              .filter((t) => Math.hypot(t.x - node.x, t.y - node.y) <= effectiveRange)
-              .sort((a, b) => b.pathProgress - a.pathProgress);
-
-            const target = candidates[0];
-            if (!target) return currThreats;
-
+        // Cloud Backup special action (only runs during active wave)
+        if (tower.type === 'cloudbackup') {
+          if (timeSinceShot >= 4.0 / gameSpeed) {
+            bonusHeal += 10 * tower.level;
+            bonusBw += 15 * tower.level;
             tower.lastShotTime = time;
-            playLaserSound(tower.type === 'twofa' ? 1200 : 780);
-
             newLasers.push({
-              id: `beam-${Date.now()}-${nodeIdx}`,
+              id: `heal-${time.toFixed(1)}-${nodeIdx}`,
               fromX: node.x,
               fromY: node.y,
-              toX: target.x,
-              toY: target.y,
-              color: cfg.color,
-              expiresAt: time + 180,
+              toX: currentMission.pathPoints[currentMission.pathPoints.length - 1].x,
+              toY: currentMission.pathPoints[currentMission.pathPoints.length - 1].y,
+              color: '#0ea5e9',
+              expiresAt: time + 300,
             });
-
-            return currThreats.map((t) => {
-              if (t.id !== target.id) return t;
-              const isFirewall = tower.type === 'firewall';
-              return {
-                ...t,
-                hp: t.hp - effectiveDamage,
-                isSlowed: isFirewall ? true : t.isSlowed,
-                slowTimer: isFirewall ? 1.5 : t.slowTimer,
-              };
-            });
-          });
-        });
-
-        if (newLasers.length > 0) {
-          setLasers((prev) => [...prev, ...newLasers]);
+          }
+          return;
         }
-        return nextTowers;
+
+        if (timeSinceShot < fireInterval / gameSpeed || movedThreats.length === 0) return;
+
+        const effectiveRange = cfg.range * (1 + (tower.level - 1) * 0.2);
+        const effectiveDamage = cfg.damage * (1 + (tower.level - 1) * 0.5);
+        const canDetect = (t: ActiveThreat) => {
+          const tConf = THREAT_CONFIGS[t.type];
+          return !tConf.stealth || tower.type === 'twofa' || tower.level >= 3;
+        };
+        const calcDamage = (t: ActiveThreat) => {
+          const tConf = THREAT_CONFIGS[t.type];
+          return tConf.shield && tower.type !== 'twofa' ? effectiveDamage * 0.6 : effectiveDamage;
+        };
+
+        // AoE Tower (Encryption Gateway)
+        if (tower.type === 'encryption') {
+          let hitAny = false;
+          for (const t of movedThreats) {
+            if (t.hp <= 0 || !canDetect(t)) continue;
+            if (Math.hypot(t.x - node.x, t.y - node.y) <= effectiveRange) {
+              hitAny = true;
+              t.hp -= calcDamage(t);
+            }
+          }
+          if (hitAny) {
+            tower.lastShotTime = time;
+            playLaserSound(520);
+            newLasers.push({
+              id: `aoe-${time.toFixed(1)}-${nodeIdx}`,
+              fromX: node.x,
+              fromY: node.y,
+              toX: node.x,
+              toY: node.y,
+              color: cfg.color,
+              expiresAt: time + 250,
+            });
+          }
+          return;
+        }
+
+        // Single Target Towers (Firewall, Antivirus, 2FA) — priority: furthest along path
+        let target: ActiveThreat | null = null;
+        for (const t of movedThreats) {
+          if (t.hp <= 0 || !canDetect(t)) continue;
+          if (Math.hypot(t.x - node.x, t.y - node.y) <= effectiveRange) {
+            if (!target || t.pathProgress > target.pathProgress) {
+              target = t;
+            }
+          }
+        }
+        if (!target) return;
+
+        tower.lastShotTime = time;
+        playLaserSound(tower.type === 'twofa' ? 1200 : 780);
+        newLasers.push({
+          id: `beam-${time.toFixed(1)}-${nodeIdx}`,
+          fromX: node.x,
+          fromY: node.y,
+          toX: target.x,
+          toY: target.y,
+          color: cfg.color,
+          expiresAt: time + 180,
+        });
+        target.hp -= calcDamage(target);
+        if (tower.type === 'firewall') {
+          target.isSlowed = true;
+          target.slowTimer = 1.5;
+        }
       });
+
+      if (bonusHeal > 0) {
+        serverHpRef.current = Math.min(100, serverHpRef.current + bonusHeal);
+        setServerHp(serverHpRef.current);
+      }
 
       // 4. Filter Dead Threats & Award Bounty
-      setThreats((currThreats) => {
-        const alive: ActiveThreat[] = [];
-        let earnedBw = 0;
-        let earnedPts = 0;
+      const alive: ActiveThreat[] = [];
+      let earnedBw = bonusBw;
+      let earnedPts = 0;
 
-        currThreats.forEach((t) => {
-          if (t.hp <= 0) {
-            const conf = THREAT_CONFIGS[t.type];
-            earnedBw += conf.reward;
-            earnedPts += conf.reward * 10;
-          } else {
-            alive.push(t);
-          }
-        });
-
-        if (earnedBw > 0) {
-          sfxCoin();
-          setBandwidth((bw) => bw + earnedBw);
-          setScore((s) => s + earnedPts);
+      for (const t of movedThreats) {
+        if (t.hp <= 0) {
+          const conf = THREAT_CONFIGS[t.type];
+          earnedBw += conf.reward;
+          earnedPts += conf.reward * 10;
+        } else {
+          alive.push(t);
         }
+      }
 
-        // Check wave completion
-        if (
-          waveActive &&
-          spawnQueueRef.current.length === 0 &&
-          alive.length === 0 &&
-          serverHp > 0
-        ) {
-          setWaveActive(false);
-          const nextWave = waveIndex + 1;
-          if (nextWave >= currentMission.waves.length) {
-            // Mission Complete!
-            sfxCorrect();
-            setMissionWon(true);
-            void recordProgress(score + 1000, `level-${currentMission.id}`);
-          } else {
-            setWaveIndex(nextWave);
-            // Bonus bandwidth per wave cleared
-            setBandwidth((bw) => bw + 60);
-          }
+      if (earnedBw > 0) {
+        if (earnedPts > 0) sfxCoin();
+        setBandwidth((bw) => bw + earnedBw);
+      }
+      if (earnedPts > 0) {
+        scoreRef.current += earnedPts;
+        setScore(scoreRef.current);
+      }
+
+      threatsRef.current = alive;
+      setThreats(alive);
+
+      // 5. Merge new lasers & drop expired visual lasers
+      const activeLasers = lasersRef.current.filter((l) => l.expiresAt > time);
+      if (newLasers.length > 0) activeLasers.push(...newLasers);
+      lasersRef.current = activeLasers;
+      setLasers(activeLasers);
+
+      // 6. Check wave completion (only when server is alive)
+      if (
+        serverHpRef.current > 0 &&
+        spawnQueueRef.current.length === 0 &&
+        alive.length === 0
+      ) {
+        setWaveActive(false);
+        const nextWave = waveIndex + 1;
+        if (nextWave >= currentMission.waves.length) {
+          sfxCorrect();
+          const finalScore = scoreRef.current + 1000;
+          scoreRef.current = finalScore;
+          setScore(finalScore);
+          setMissionWon(true);
+          void recordProgress(finalScore, `level-${currentMission.id}`);
+        } else {
+          setWaveIndex(nextWave);
+          setBandwidth((bw) => bw + 60);
         }
-
-        return alive;
-      });
-
-      // 5. Clean up expired visual lasers
-      setLasers((curr) => curr.filter((l) => l.expiresAt > time));
+        return;
+      }
 
       reqAnimationRef.current = requestAnimationFrame(loop);
     };
 
     reqAnimationRef.current = requestAnimationFrame(loop);
     return () => {
-      if (reqAnimationRef.current) cancelAnimationFrame(reqAnimationRef.current);
+      if (reqAnimationRef.current) {
+        cancelAnimationFrame(reqAnimationRef.current);
+        reqAnimationRef.current = null;
+      }
     };
   }, [
     waveActive,
+    briefingOpen,
+    missionWon,
+    missionLost,
     gameSpeed,
     currentMission,
     getPositionOnPath,
-    serverHp,
     waveIndex,
-    score,
     recordProgress,
   ]);
 

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, Trophy, Clock } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import './GameStyles.css';
 
 interface FallingLetter {
@@ -23,12 +24,19 @@ const KeyboardPractice: React.FC = () => {
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
   const [easyMode, setEasyMode] = useState(true);
-  const [bestScore, setBestScore] = useState(() =>
-    parseInt(localStorage.getItem('kj_kb_best') || '0')
-  );
+  const [bestScore, setBestScore] = useState(() => readGameRecord('kj_kb_best'));
   const recordGame = useGameProgress('keyboard', 'นักสำรวจคีย์บอร์ด');
 
+  const scoreRef = useRef(0);
+  const comboRef = useRef(0);
+  const lettersRef = useRef<FallingLetter[]>([]);
+  const endedRef = useRef(false);
+
   const start = () => {
+    scoreRef.current = 0;
+    comboRef.current = 0;
+    lettersRef.current = [];
+    endedRef.current = false;
     setScore(0);
     setTime(60);
     setLetters([]);
@@ -37,35 +45,30 @@ const KeyboardPractice: React.FC = () => {
     setRunning(true);
   };
 
-  const scoreRef = React.useRef(score);
-  useEffect(() => {
-    scoreRef.current = score;
-  }, [score]);
-
-  // Timer
+  // Timer (pure state decrement)
   useEffect(() => {
     if (!running) return;
     const t = setInterval(() => {
-      setTime((prev) => {
-        if (prev <= 1) {
-          clearInterval(t);
-          setRunning(false);
-          const currentScore = scoreRef.current;
-          setBestScore((currentBest) => {
-            if (currentScore > currentBest) {
-              localStorage.setItem('kj_kb_best', String(currentScore));
-              return currentScore;
-            }
-            return currentBest;
-          });
-          if (currentScore > 0) void recordGame(currentScore);
-          return 0;
-        }
-        return prev - 1;
-      });
+      setTime((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => clearInterval(t);
-  }, [recordGame, running]);
+  }, [running]);
+
+  // Handle round completion outside state updater (prevents StrictMode double recordGame)
+  useEffect(() => {
+    if (!running || time > 0 || endedRef.current) return;
+    endedRef.current = true;
+    setRunning(false);
+    const currentScore = scoreRef.current;
+    setBestScore((currentBest) => {
+      if (currentScore > currentBest) {
+        writeGameRecord('kj_kb_best', currentScore);
+        return currentScore;
+      }
+      return currentBest;
+    });
+    if (currentScore > 0) void recordGame(currentScore);
+  }, [recordGame, running, time]);
 
   // Spawn falling letters
   useEffect(() => {
@@ -79,51 +82,68 @@ const KeyboardPractice: React.FC = () => {
         y: 0,
         speed: easyMode ? 0.3 : 0.6,
       };
-      setLetters((prev) => [...prev, letter]);
+      lettersRef.current = [...lettersRef.current, letter];
+      setLetters(lettersRef.current);
     }, easyMode ? 1500 : 900);
     return () => clearInterval(spawn);
   }, [running, easyMode]);
 
-  // Animate fall
+  // Animate fall (pure state update outside updater)
   useEffect(() => {
     if (!running) return;
     const tick = setInterval(() => {
-      setLetters((prev) =>
-        prev
-          .map((l) => ({ ...l, y: l.y + l.speed }))
-          .filter((l) => {
-            if (l.y > 95) {
-              setCombo(0); // missed
-              return false;
-            }
-            return true;
-          })
-      );
+      let missedAny = false;
+      const nextLetters: FallingLetter[] = [];
+      for (const l of lettersRef.current) {
+        const ny = l.y + l.speed;
+        if (ny > 95) {
+          missedAny = true;
+        } else {
+          nextLetters.push({ ...l, y: ny });
+        }
+      }
+      lettersRef.current = nextLetters;
+      setLetters(nextLetters);
+      if (missedAny && comboRef.current !== 0) {
+        comboRef.current = 0;
+        setCombo(0);
+      }
     }, 30);
     return () => clearInterval(tick);
   }, [running]);
 
-  // Keyboard handler
+  // Keyboard handler (ignores Shift/Ctrl/Alt modifiers, prevents page scroll, avoids StrictMode double scoring)
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (!running) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === ' ' || e.key.startsWith('Arrow')) {
+      e.preventDefault();
+      return;
+    }
+    if (e.key.length !== 1) return;
+
     const pressed = e.key.toUpperCase();
-    setLetters((prev) => {
-      // หาตัวที่ตรง — ที่ y สูงสุด (ใกล้พื้นที่สุด)
-      const matches = prev.filter((l) => l.char === pressed).sort((a, b) => b.y - a.y);
-      if (matches.length > 0) {
-        const target = matches[0];
-        setScore((s) => s + 10 + combo);
-        setCombo((c) => {
-          const next = c + 1;
-          setMaxCombo((m) => Math.max(m, next));
-          return next;
-        });
-        return prev.filter((l) => l.id !== target.id);
-      }
+    const currentLetters = lettersRef.current;
+    const matches = currentLetters.filter((l) => l.char === pressed).sort((a, b) => b.y - a.y);
+    if (matches.length > 0) {
+      const target = matches[0];
+      const nextLetters = currentLetters.filter((l) => l.id !== target.id);
+      lettersRef.current = nextLetters;
+      setLetters(nextLetters);
+
+      const nextScore = scoreRef.current + 10 + comboRef.current;
+      scoreRef.current = nextScore;
+      setScore(nextScore);
+
+      const nextCombo = comboRef.current + 1;
+      comboRef.current = nextCombo;
+      setCombo(nextCombo);
+      setMaxCombo((m) => Math.max(m, nextCombo));
+    } else if (comboRef.current !== 0) {
+      comboRef.current = 0;
       setCombo(0);
-      return prev;
-    });
-  }, [running, combo]);
+    }
+  }, [running]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKey);
@@ -158,22 +178,22 @@ const KeyboardPractice: React.FC = () => {
               <>
                 <h2>กดปุ่มก่อนตัวอักษรตก!</h2>
                 <p>กดให้ตรงตัวอักษรที่ตกลงมา</p>
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '12px 0' }}>
-                  <button
-                    className={`mode-btn ${easyMode ? 'active' : ''}`}
-                    onClick={() => setEasyMode(true)}
-                  >
-                    👶 ง่าย (A-J, 0-9)
-                  </button>
-                  <button
-                    className={`mode-btn ${!easyMode ? 'active' : ''}`}
-                    onClick={() => setEasyMode(false)}
-                  >
-                    🔥 ยาก (A-Z, 0-9)
-                  </button>
-                </div>
               </>
             )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '12px 0' }}>
+              <button
+                className={`mode-btn ${easyMode ? 'active' : ''}`}
+                onClick={() => setEasyMode(true)}
+              >
+                👶 ง่าย (A-J, 0-9)
+              </button>
+              <button
+                className={`mode-btn ${!easyMode ? 'active' : ''}`}
+                onClick={() => setEasyMode(false)}
+              >
+                🔥 ยาก (A-Z, 0-9)
+              </button>
+            </div>
             <button className="btn-game-start" onClick={start}>
               <RotateCcw size={20} /> {time === 0 ? 'เล่นอีก!' : 'เริ่มเลย'}
             </button>

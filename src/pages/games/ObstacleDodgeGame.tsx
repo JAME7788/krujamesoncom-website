@@ -13,6 +13,8 @@ import {
   Shield,
 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { playGameTone } from '../../utils/gameAudio';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import { sfxCoin, sfxWrong, sfxCorrect } from '../../utils/gameSounds';
 import { drawBlenderSprite, preloadBlenderSprites } from '../../utils/gameSpriteLoader';
 import GameLearnCard from '../../components/GameLearnCard';
@@ -78,9 +80,7 @@ const ObstacleDodgeGame: React.FC = () => {
   const [score, setScore] = useState(0);
   const [distance, setDistance] = useState(0); // in meters
   const [lives, setLives] = useState(3);
-  const [highScore, setHighScore] = useState(() => {
-    return parseInt(localStorage.getItem('kj_obstacle_dodge_best') || '0', 10);
-  });
+  const [highScore, setHighScore] = useState(() => readGameRecord('kj_obstacle_dodge_best'));
   const [overdrive, setOverdrive] = useState(false);
   const [overdriveTime, setOverdriveTime] = useState(0);
   const [hasShield, setHasShield] = useState(false);
@@ -92,6 +92,7 @@ const ObstacleDodgeGame: React.FC = () => {
   const gameLoopRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
   const nextEntityId = useRef(1);
+  const overdriveRef = useRef(false);
 
   const playerStateRef = useRef({
     currentLane: 2, // 0 to 4
@@ -110,25 +111,9 @@ const ObstacleDodgeGame: React.FC = () => {
   const orbSpawnTimerRef = useRef<number>(1800);
   const speedScaleRef = useRef<number>(1);
 
-  // Audio tone helper
+  // Singleton audio tone helper (no AudioContext leak)
   const playTone = useCallback((freq: number, duration: number, type: OscillatorType = 'sine') => {
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + duration);
-    } catch {
-      // Ignored
-    }
+    playGameTone(freq, duration, type, 0.1);
   }, []);
 
   // Lane switching
@@ -168,6 +153,7 @@ const ObstacleDodgeGame: React.FC = () => {
     speedScaleRef.current = 1;
     spawnTimerRef.current = 1000;
     orbSpawnTimerRef.current = 1200;
+    overdriveRef.current = false;
 
     setScore(0);
     setDistance(0);
@@ -405,15 +391,16 @@ const ObstacleDodgeGame: React.FC = () => {
       ctx.fill();
 
       // วงแสงบอกตำแหน่งผู้เล่น
+      const isOverdrive = overdriveRef.current;
       const ring = ctx.createRadialGradient(p.x, drawY, 8, p.x, drawY, 42);
-      ring.addColorStop(0, overdrive ? 'rgba(34, 211, 238, 0.45)' : 'rgba(250, 204, 21, 0.35)');
+      ring.addColorStop(0, isOverdrive ? 'rgba(34, 211, 238, 0.45)' : 'rgba(250, 204, 21, 0.35)');
       ring.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = ring;
       ctx.beginPath();
       ctx.arc(p.x, drawY, 42, 0, Math.PI * 2);
       ctx.fill();
 
-      if (overdrive) {
+      if (isOverdrive) {
         ctx.strokeStyle = '#22d3ee';
         ctx.lineWidth = 4;
         ctx.beginPath();
@@ -424,13 +411,13 @@ const ObstacleDodgeGame: React.FC = () => {
       ctx.save();
       ctx.translate(p.x, drawY);
       ctx.scale(playerScale, playerScale);
-      const playerSprite = overdrive ? DODGE_SPRITES.rocket : DODGE_SPRITES.runner;
+      const playerSprite = isOverdrive ? DODGE_SPRITES.rocket : DODGE_SPRITES.runner;
       if (!drawBlenderSprite(ctx, playerSprite, 0, 0, 72, 72)) {
-        drawEmoji(overdrive ? '🚀' : '🏃', 0, 0, 44);
+        drawEmoji(isOverdrive ? '🚀' : '🏃', 0, 0, 44);
       }
       ctx.restore();
     }
-  }, [overdrive]);
+  }, []);
 
   // Game loop
   useEffect(() => {
@@ -445,38 +432,41 @@ const ObstacleDodgeGame: React.FC = () => {
     let isBoosted = false;
     let boostTimeRemaining = 0;
     let currentShield = false;
+    overdriveRef.current = false;
 
     lastTimeRef.current = performance.now();
 
     const loop = (timestamp: number) => {
-      const dt = Math.min(timestamp - lastTimeRef.current, 50);
+      const dt = Math.max(0, Math.min(timestamp - lastTimeRef.current, 50));
       lastTimeRef.current = timestamp;
+      const dtScale = dt / 16.6667;
 
       // Accelerate speed gradually
       speedScaleRef.current = Math.min(2.4, 1 + currentDistance / 600);
       const baseSpeed = 380 * speedScaleRef.current; // px per second
 
-      // Distance increment
+      // Distance increment (keep float score so 90/120/144Hz frames never truncate to 0)
       const dDist = (baseSpeed * (dt / 1000)) / 10;
       currentDistance += dDist;
       setDistance(Math.floor(currentDistance));
 
-      currentScore += Math.floor(dDist * (isBoosted ? 4 : 2));
-      setScore(currentScore);
+      currentScore += dDist * (isBoosted ? 4 : 2);
+      setScore(Math.floor(currentScore));
 
       // Boost timer
       if (boostTimeRemaining > 0) {
         boostTimeRemaining -= dt;
-        setOverdriveTime(Math.ceil(boostTimeRemaining / 1000));
+        setOverdriveTime(Math.ceil(Math.max(0, boostTimeRemaining) / 1000));
         if (boostTimeRemaining <= 0) {
           isBoosted = false;
+          overdriveRef.current = false;
           setOverdrive(false);
         }
       }
 
-      // Update Player Smooth Position
+      // Update Player Smooth Position (frame-rate independent)
       const p = playerStateRef.current;
-      p.x += (p.targetX - p.x) * 0.25;
+      p.x += (p.targetX - p.x) * Math.min(1, 0.25 * dtScale);
 
       if (p.isJumping) {
         p.jumpTimer -= dt;
@@ -566,10 +556,11 @@ const ObstacleDodgeGame: React.FC = () => {
           // Collected!
           sfxCoin();
           currentScore += orb.points;
-          setScore(currentScore);
+          setScore(Math.floor(currentScore));
 
           if (orb.isBoost) {
             isBoosted = true;
+            overdriveRef.current = true;
             boostTimeRemaining = 4000;
             setOverdrive(true);
             setOverdriveTime(4);
@@ -596,7 +587,7 @@ const ObstacleDodgeGame: React.FC = () => {
             if (isBoosted) {
               // Destroy boulder in overdrive!
               currentScore += 100;
-              setScore(currentScore);
+              setScore(Math.floor(currentScore));
               sfxCorrect();
               active = false;
             } else if (p.iframe <= 0) {
@@ -630,7 +621,7 @@ const ObstacleDodgeGame: React.FC = () => {
             if (!h.safeLanes.includes(p.currentLane)) {
               if (isBoosted) {
                 currentScore += 200;
-                setScore(currentScore);
+                setScore(Math.floor(currentScore));
                 sfxCorrect();
                 active = false;
               } else if (p.iframe <= 0) {
@@ -716,7 +707,7 @@ const ObstacleDodgeGame: React.FC = () => {
       const timer = window.setTimeout(() => {
         setHighScore((prev) => {
           if (score > prev) {
-            localStorage.setItem('kj_obstacle_dodge_best', String(score));
+            writeGameRecord('kj_obstacle_dodge_best', score);
             return score;
           }
           return prev;

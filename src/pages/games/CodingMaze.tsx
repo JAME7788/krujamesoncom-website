@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Play, Trophy, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Trash2, Repeat } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
@@ -105,11 +105,11 @@ const levels: Level[] = [
     name: 'อุโมงค์เขาวงกต',
     difficulty: 'medium',
     ...parseGrid([
-      '##########',
+      '###########',
       '#S........#',
       '#.#######.#',
       '#.......G.#',
-      '##########',
+      '###########',
     ]),
     maxBlocks: 15,
     hint: 'เดินเลาะอุโมงค์ด้านบนหรือล่างเพื่ออ้อมไปหาเป้าหมาย G',
@@ -344,11 +344,18 @@ const CodingMaze: React.FC = () => {
   const [message, setMessage] = useState<string>('');
   const [stepIdx, setStepIdx] = useState(-1);
   const [diffFilter, setDiffFilter] = useState<'all' | 'easy' | 'medium' | 'hard' | 'master'>('all');
-  const recordGame = useGameProgress('coding-maze', 'Coding Maze');
+  const runTokenRef = useRef(0);
+  const recordGame = useGameProgress('coding-maze', 'Coding Maze', { recordOnce: false });
+
+  useEffect(() => () => {
+    runTokenRef.current += 1;
+  }, []);
 
   const level = levels[levelIdx];
 
   const selectLevel = (nextLevelIdx: number) => {
+    if (running) return;
+    runTokenRef.current += 1;
     const nextLevel = levels[nextLevelIdx];
     setLevelIdx(nextLevelIdx);
     setProgram([]);
@@ -361,6 +368,7 @@ const CodingMaze: React.FC = () => {
   };
 
   const resetLevel = () => {
+    runTokenRef.current += 1;
     setProgram([]);
     setPos(level.start);
     setGrid(level.grid.map(row => [...row]));
@@ -385,20 +393,23 @@ const CodingMaze: React.FC = () => {
     setProgram((p) => p.filter((_, i) => i !== idx));
   };
 
-  const expand = (prog: { cmd: Cmd; loop?: number }[]): Cmd[] => {
-    const result: Cmd[] = [];
-    prog.forEach((p) => {
+  const expand = (prog: { cmd: Cmd; loop?: number }[]): Array<{ cmd: Cmd; blockIdx: number }> => {
+    const result: Array<{ cmd: Cmd; blockIdx: number }> = [];
+    prog.forEach((p, blockIdx) => {
       const times = p.loop || 1;
-      for (let i = 0; i < times; i++) result.push(p.cmd);
+      for (let i = 0; i < times; i++) result.push({ cmd: p.cmd, blockIdx });
     });
     return result;
   };
 
   const run = async () => {
+    if (running) return;
     if (program.length === 0) {
       setMessage('🤔 ต้องวางบล็อกก่อนนะ!');
       return;
     }
+    const token = runTokenRef.current + 1;
+    runTokenRef.current = token;
     setRunning(true);
     setMessage('');
     setPos(level.start);
@@ -411,8 +422,9 @@ const CodingMaze: React.FC = () => {
     const collectedStars = new Set<string>();
 
     for (let i = 0; i < commands.length; i++) {
-      setStepIdx(i);
-      const cmd = commands[i];
+      if (runTokenRef.current !== token) return;
+      const { cmd, blockIdx } = commands[i];
+      setStepIdx(blockIdx);
       let [nx, ny] = [x, y];
       if (cmd === 'up') ny -= 1;
       if (cmd === 'down') ny += 1;
@@ -422,7 +434,7 @@ const CodingMaze: React.FC = () => {
       // Check wall / out of bounds
       if (
         ny < 0 || ny >= level.grid.length ||
-        nx < 0 || nx >= level.grid[0].length ||
+        nx < 0 || nx >= level.grid[ny].length ||
         level.grid[ny][nx] === 'wall'
       ) {
         setMessage(`💥 ชนกำแพง! (ขั้นที่ ${i + 1})`);
@@ -442,7 +454,7 @@ const CodingMaze: React.FC = () => {
         setCollected(stars);
         setGrid((g) => {
           const ng = g.map(r => [...r]);
-          ng[y][x] = 'path';
+          if (ng[y]) ng[y][x] = 'path';
           return ng;
         });
       }
@@ -452,13 +464,14 @@ const CodingMaze: React.FC = () => {
         const totalStars = level.grid.flat().filter(c => c === 'star').length;
         if (stars === totalStars) {
           setMessage(`🎉 เยี่ยม! ผ่านด่านนี้แล้ว เก็บดาวครบ ⭐${stars}/${totalStars}`);
-          setSolved((s) => {
-            const ns = [...s];
-            ns[levelIdx] = true;
-            const solvedCount = ns.filter(Boolean).length;
-            recordGame(solvedCount);
-            return ns;
-          });
+          const alreadySolved = solved[levelIdx];
+          const ns = [...solved];
+          ns[levelIdx] = true;
+          const solvedCount = ns.filter(Boolean).length;
+          setSolved(ns);
+          if (!alreadySolved) {
+            void recordGame(solvedCount);
+          }
         } else {
           setMessage(`✅ ถึงเป้าหมายแล้ว! แต่ยังไม่ครบดาว ⭐${stars}/${totalStars}`);
         }
@@ -469,8 +482,10 @@ const CodingMaze: React.FC = () => {
 
       // Animate delay
       await new Promise((r) => setTimeout(r, 350));
+      if (runTokenRef.current !== token) return;
     }
 
+    if (runTokenRef.current !== token) return;
     setMessage('🤖 โปรแกรมจบแล้ว แต่ยังไม่ถึงเป้าหมาย — ลองวางบล็อกเพิ่ม');
     setRunning(false);
     setStepIdx(-1);
@@ -684,6 +699,7 @@ const CodingMaze: React.FC = () => {
                 key={i}
                 className={`level-pill ${i === levelIdx ? 'active' : ''} ${solved[i] ? 'solved' : ''}`}
                 onClick={() => selectLevel(i)}
+                disabled={running}
                 title={`${l.name} (${l.difficulty})`}
               >
                 {solved[i] && '✓ '}ด่าน {i + 1}: {l.name}

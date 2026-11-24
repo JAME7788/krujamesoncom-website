@@ -142,6 +142,7 @@ const PCBuilderGame: React.FC = () => {
   const occupiedSlots = useRef(new Set<string>());
   const scoredParts = useRef(new Set<string>());
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
+  const [completedStages, setCompletedStages] = useState<number[]>([]);
   const [placedParts, setPlacedParts] = useState<{ [slotId: string]: string }>({});
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
@@ -268,13 +269,18 @@ const PCBuilderGame: React.FC = () => {
     setDraggedPartId(null);
   };
 
-  // Move to next stage
+  // Move to next unfinished stage
+  const nextUnfinishedStageIndex = STAGES.findIndex(
+    (_, idx) => idx !== currentStageIndex && !completedStages.includes(idx),
+  );
+
   const handleNextStage = () => {
     timers.clear();
     setShowSummaryModal(false);
-    if (currentStageIndex + 1 < STAGES.length) {
+    const targetIdx = nextUnfinishedStageIndex;
+    if (targetIdx !== -1) {
       occupiedSlots.current.clear();
-      setCurrentStageIndex((i) => i + 1);
+      setCurrentStageIndex(targetIdx);
       setPlacedParts({});
       setSelectedPartId(null);
       sfxCoin();
@@ -292,16 +298,20 @@ const PCBuilderGame: React.FC = () => {
     setDraggedPartId(null);
     setDragOverSlotId(null);
     setCurrentStageIndex(0);
+    setCompletedStages([]);
     setPlacedParts({});
     setSelectedPartId(null);
     setShowSummaryModal(false);
     setScore(0);
   };
 
-  // Check game completion effect
+  // Mark current stage completed and record full game progress when all parts are scored
   useEffect(() => {
-    if (score === STAGES.reduce((total, stage) => total + stage.parts.length * 100, 0) && isStageComplete()) {
-      void recordGame(score, undefined, STAGES.reduce((total, stage) => total + stage.parts.length * 100, 0));
+    if (!isStageComplete()) return;
+    setCompletedStages((prev) => (prev.includes(currentStageIndex) ? prev : [...prev, currentStageIndex]));
+    const totalMax = STAGES.reduce((total, stage) => total + stage.parts.length * 100, 0);
+    if (score === totalMax) {
+      void recordGame(score, undefined, totalMax);
     }
   }, [currentStageIndex, isStageComplete, score, recordGame]);
 
@@ -338,7 +348,7 @@ const PCBuilderGame: React.FC = () => {
             key={stg.stageNumber}
             type="button"
             className={`pcb-tab-btn ${idx === currentStageIndex ? 'active' : ''} ${
-              idx < currentStageIndex ? 'completed' : ''
+              completedStages.includes(idx) ? 'completed' : ''
             }`}
             onClick={() => {
               timers.clear();
@@ -351,7 +361,7 @@ const PCBuilderGame: React.FC = () => {
               setShowSummaryModal(false);
             }}
           >
-            {idx < currentStageIndex ? <CheckCircle2 size={16} /> : <Laptop size={16} />}
+            {completedStages.includes(idx) ? <CheckCircle2 size={16} /> : <Laptop size={16} />}
             <span>ด่าน {stg.stageNumber}: {stg.parts.length} ชิ้นส่วน</span>
           </button>
         ))}
@@ -496,13 +506,15 @@ const PCBuilderGame: React.FC = () => {
 
               {/* Action buttons */}
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                {currentStageIndex + 1 < STAGES.length ? (
+                {nextUnfinishedStageIndex !== -1 ? (
                   <button
                     type="button"
                     className="pcb-btn-primary"
                     onClick={handleNextStage}
                   >
-                    <span>ไปด่านที่ 2 (ชิ้นส่วนภายในเคส)</span>
+                    <span>
+                      ไปด่านที่ {STAGES[nextUnfinishedStageIndex].stageNumber} ({STAGES[nextUnfinishedStageIndex].stageNumber === 1 ? 'อุปกรณ์รอบนอก' : 'ชิ้นส่วนภายในเคส'})
+                    </span>
                     <ArrowRight size={18} />
                   </button>
                 ) : (

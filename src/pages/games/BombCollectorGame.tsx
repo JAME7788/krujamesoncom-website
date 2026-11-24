@@ -15,6 +15,8 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { playGameTone } from '../../utils/gameAudio';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import { sfxCoin, sfxWrong, sfxCorrect } from '../../utils/gameSounds';
 import { drawBlenderSprite, preloadBlenderSprites } from '../../utils/gameSpriteLoader';
 import GameLearnCard from '../../components/GameLearnCard';
@@ -82,9 +84,7 @@ const BombCollectorGame: React.FC = () => {
   // Game state
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameover'>('idle');
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(() => {
-    return parseInt(localStorage.getItem('kj_bomb_collector_best') || '0', 10);
-  });
+  const [highScore, setHighScore] = useState(() => readGameRecord('kj_bomb_collector_best'));
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);
   const [chipsCollected, setChipsCollected] = useState(0);
@@ -99,9 +99,19 @@ const BombCollectorGame: React.FC = () => {
   // Game progress recording hook
   const recordGame = useGameProgress('bomb-collector', 'Bomb Collector Pro');
 
-  // Mutable Game Loop State
+  // Mutable Game Loop State (stored in ref so HUD state updates never restart the rAF loop)
   const gameLoopRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
+  const runStatsRef = useRef({
+    lives: 3,
+    score: 0,
+    level: 1,
+    chips: 0,
+    dodged: 0,
+    freeze: 0,
+    speedBoost: 0,
+    shield: false,
+  });
 
   const keysPressed = useRef<{ [key: string]: boolean }>({});
   const playerRef = useRef({
@@ -121,47 +131,13 @@ const BombCollectorGame: React.FC = () => {
   const powerUpSpawnTimerRef = useRef<number>(12000);
   const nextEntityId = useRef(1);
 
-  // Local audio tone synthesis for ticking and explosions
+  // Singleton Web Audio tones (prevents AudioContext leaks during play)
   const playSfxTone = useCallback((freq: number, duration: number, type: OscillatorType = 'sine') => {
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gain.gain.setValueAtTime(0.12, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + duration);
-    } catch {
-      // Audio context policy or disabled
-    }
+    playGameTone(freq, duration, type, 0.1);
   }, []);
 
   const playExplosionSound = useCallback(() => {
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      // Low boom
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(140, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.35);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.35);
-    } catch {
-      // Fallback
-    }
+    playGameTone(140, 0.35, 'sawtooth', 0.16, 30);
   }, []);
 
   // Spawn random data chip
@@ -225,7 +201,7 @@ const BombCollectorGame: React.FC = () => {
     const x = margin + Math.random() * (ARENA_WIDTH - margin * 2);
     const y = margin + Math.random() * (ARENA_HEIGHT - margin * 2);
     const types: ('shield' | 'speed' | 'freeze' | 'heart')[] = ['shield', 'speed', 'freeze'];
-    if (lives < 3) types.push('heart');
+    if (runStatsRef.current.lives < 3) types.push('heart');
     const type = types[Math.floor(Math.random() * types.length)];
     const icons: { [k: string]: string } = {
       shield: '🛡️',
@@ -242,7 +218,7 @@ const BombCollectorGame: React.FC = () => {
       icon: icons[type],
       duration: 9000,
     });
-  }, [lives]);
+  }, []);
 
   // Add floating text feedback
   const addFloatingText = (text: string, x: number, y: number, color = '#fbbf24') => {
@@ -259,6 +235,17 @@ const BombCollectorGame: React.FC = () => {
 
   // Start / Reset Game
   const startGame = useCallback(() => {
+    keysPressed.current = {};
+    runStatsRef.current = {
+      lives: 3,
+      score: 0,
+      level: 1,
+      chips: 0,
+      dodged: 0,
+      freeze: 0,
+      speedBoost: 0,
+      shield: false,
+    };
     playerRef.current = {
       x: ARENA_WIDTH / 2,
       y: ARENA_HEIGHT / 2,
@@ -305,11 +292,17 @@ const BombCollectorGame: React.FC = () => {
       keysPressed.current[e.key] = false;
     };
 
+    const handleBlur = () => {
+      keysPressed.current = {};
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
     };
   }, []);
 
@@ -527,7 +520,7 @@ const BombCollectorGame: React.FC = () => {
       ctx.fill();
 
       // Shield aura
-      if (hasShield) {
+      if (runStatsRef.current.shield) {
         ctx.strokeStyle = '#7dd3fc';
         ctx.lineWidth = 3;
         ctx.fillStyle = 'rgba(56, 189, 248, 0.18)';
@@ -538,7 +531,7 @@ const BombCollectorGame: React.FC = () => {
       }
 
       // Speed aura
-      if (speedBoostTimer > 0) {
+      if (runStatsRef.current.speedBoost > 0) {
         ctx.strokeStyle = '#fbbf24';
         ctx.lineWidth = 3;
         ctx.setLineDash([5, 5]);
@@ -568,7 +561,7 @@ const BombCollectorGame: React.FC = () => {
       ctx.fillText(ft.text, ft.x, ft.y);
       ctx.restore();
     }
-  }, [hasShield, speedBoostTimer]);
+  }, []);
 
   // Main Canvas & Game Loop
   useEffect(() => {
@@ -577,37 +570,30 @@ const BombCollectorGame: React.FC = () => {
       return;
     }
 
-    let currentLives = 3;
-    let currentScore = 0;
-    let currentLevel = 1;
-    let currentChips = 0;
-    let currentDodged = 0;
-    let currentFreeze = 0;
-    let currentSpeedBoost = 0;
-    let currentShield = false;
-
     lastTimeRef.current = performance.now();
 
     const loop = (timestamp: number) => {
-      const dt = Math.min(timestamp - lastTimeRef.current, 50); // cap delta
+      const dt = Math.max(0, Math.min(timestamp - lastTimeRef.current, 50)); // cap delta
       lastTimeRef.current = timestamp;
+      const dtScale = dt / 16.6667;
+      const stats = runStatsRef.current;
 
       setElapsedTime((prev) => prev + dt / 1000);
 
       // 1. Update timers
-      if (currentFreeze > 0) {
-        currentFreeze = Math.max(0, currentFreeze - dt);
-        setFreezeTimer(Math.ceil(currentFreeze / 1000));
+      if (stats.freeze > 0) {
+        stats.freeze = Math.max(0, stats.freeze - dt);
+        setFreezeTimer(Math.ceil(stats.freeze / 1000));
       }
-      if (currentSpeedBoost > 0) {
-        currentSpeedBoost = Math.max(0, currentSpeedBoost - dt);
-        setSpeedBoostTimer(Math.ceil(currentSpeedBoost / 1000));
+      if (stats.speedBoost > 0) {
+        stats.speedBoost = Math.max(0, stats.speedBoost - dt);
+        setSpeedBoostTimer(Math.ceil(stats.speedBoost / 1000));
       }
 
-      // 2. Update player position
+      // 2. Update player position (frame-rate independent)
       const keys = keysPressed.current;
-      const speedMultiplier = currentSpeedBoost > 0 ? 1.55 : 1;
-      const moveSpeed = playerRef.current.baseSpeed * speedMultiplier;
+      const speedMultiplier = stats.speedBoost > 0 ? 1.55 : 1;
+      const moveSpeed = playerRef.current.baseSpeed * speedMultiplier * dtScale;
 
       let dx = 0;
       let dy = 0;
@@ -633,9 +619,9 @@ const BombCollectorGame: React.FC = () => {
       // 3. Bomb Spawner
       bombSpawnTimerRef.current -= dt;
       if (bombSpawnTimerRef.current <= 0) {
-        spawnBomb(currentLevel);
+        spawnBomb(stats.level);
         // Scaling bomb frequency
-        const nextDelay = Math.max(650, 1600 - currentLevel * 80 + Math.random() * 200);
+        const nextDelay = Math.max(650, 1600 - stats.level * 80 + Math.random() * 200);
         bombSpawnTimerRef.current = nextDelay;
       }
 
@@ -650,7 +636,7 @@ const BombCollectorGame: React.FC = () => {
       const remainingBombs: Bomb[] = [];
       for (const bomb of bombsRef.current) {
         if (bomb.state === 'ticking') {
-          if (currentFreeze <= 0) {
+          if (stats.freeze <= 0) {
             bomb.fuseRemaining -= dt;
           }
           // Ticking sound when close to detonation
@@ -667,22 +653,22 @@ const BombCollectorGame: React.FC = () => {
             const dist = Math.hypot(playerRef.current.x - bomb.x, playerRef.current.y - bomb.y);
             if (dist <= bomb.radius + PLAYER_SIZE / 2) {
               if (playerRef.current.iframe <= 0) {
-                if (currentShield) {
+                if (stats.shield) {
                   // Shield absorbs damage!
-                  currentShield = false;
+                  stats.shield = false;
                   setHasShield(false);
                   playerRef.current.iframe = 1000;
                   addFloatingText('🛡️ SHIELD BROKEN!', playerRef.current.x, playerRef.current.y - 20, '#38bdf8');
                   sfxWrong();
                 } else {
                   // Take damage
-                  currentLives -= 1;
-                  setLives(currentLives);
+                  stats.lives -= 1;
+                  setLives(stats.lives);
                   playerRef.current.iframe = 1500;
                   sfxWrong();
                   addFloatingText('💥 HIT! -1 LIFE', playerRef.current.x, playerRef.current.y - 20, '#ef4444');
 
-                  if (currentLives <= 0) {
+                  if (stats.lives <= 0) {
                     setGameState('gameover');
                     return;
                   }
@@ -690,10 +676,10 @@ const BombCollectorGame: React.FC = () => {
               }
             } else {
               // Successfully dodged
-              currentDodged += 1;
-              setBombsDodged(currentDodged);
-              currentScore += 25;
-              setScore(currentScore);
+              stats.dodged += 1;
+              setBombsDodged(stats.dodged);
+              stats.score += 25;
+              setScore(stats.score);
             }
           }
           remainingBombs.push(bomb);
@@ -713,19 +699,19 @@ const BombCollectorGame: React.FC = () => {
         if (dist <= PLAYER_SIZE + 18) {
           // Collected!
           sfxCoin();
-          currentChips += 1;
-          setChipsCollected(currentChips);
+          stats.chips += 1;
+          setChipsCollected(stats.chips);
           const pts = chip.points;
-          currentScore += pts;
-          setScore(currentScore);
+          stats.score += pts;
+          setScore(stats.score);
           addFloatingText(`+${pts}`, chip.x, chip.y - 10, '#fbbf24');
 
           // Level up every 6 chips
-          if (currentChips % 6 === 0) {
-            currentLevel += 1;
-            setLevel(currentLevel);
+          if (stats.chips % 6 === 0) {
+            stats.level += 1;
+            setLevel(stats.level);
             sfxCorrect();
-            addFloatingText(`LEVEL UP! LV.${currentLevel}`, ARENA_WIDTH / 2, ARENA_HEIGHT / 2, '#a855f7');
+            addFloatingText(`LEVEL UP! LV.${stats.level}`, ARENA_WIDTH / 2, ARENA_HEIGHT / 2, '#a855f7');
           }
         } else {
           remainingChips.push(chip);
@@ -746,21 +732,21 @@ const BombCollectorGame: React.FC = () => {
         if (dist <= PLAYER_SIZE + 20) {
           sfxCorrect();
           if (pu.type === 'shield') {
-            currentShield = true;
+            stats.shield = true;
             setHasShield(true);
             addFloatingText('🛡️ SHIELD ACQUIRED!', playerRef.current.x, playerRef.current.y - 20, '#38bdf8');
           } else if (pu.type === 'speed') {
-            currentSpeedBoost = 6000;
+            stats.speedBoost = 6000;
             setSpeedBoostTimer(6);
             addFloatingText('⚡ SPEED BOOST!', playerRef.current.x, playerRef.current.y - 20, '#fbbf24');
           } else if (pu.type === 'freeze') {
-            currentFreeze = 4000;
+            stats.freeze = 4000;
             setFreezeTimer(4);
             addFloatingText('❄️ EMP TIME FREEZE!', playerRef.current.x, playerRef.current.y - 20, '#c084fc');
           } else if (pu.type === 'heart') {
-            if (currentLives < 3) {
-              currentLives = Math.min(3, currentLives + 1);
-              setLives(currentLives);
+            if (stats.lives < 3) {
+              stats.lives = Math.min(3, stats.lives + 1);
+              setLives(stats.lives);
               addFloatingText('❤️ LIFE RESTORED!', playerRef.current.x, playerRef.current.y - 20, '#f43f5e');
             }
           }
@@ -770,11 +756,11 @@ const BombCollectorGame: React.FC = () => {
       }
       powerUpsRef.current = remainingPowerUps;
 
-      // 8. Update Floating Texts
+      // 8. Update Floating Texts (frame-rate independent)
       const remainingTexts: FloatingText[] = [];
       for (const ft of floatingTextsRef.current) {
-        ft.y -= 0.8;
-        ft.opacity -= 0.02;
+        ft.y -= 0.8 * dtScale;
+        ft.opacity -= 0.02 * dtScale;
         if (ft.opacity > 0) {
           remainingTexts.push(ft);
         }
@@ -801,7 +787,7 @@ const BombCollectorGame: React.FC = () => {
       const timer = window.setTimeout(() => {
         setHighScore((prev) => {
           if (score > prev) {
-            localStorage.setItem('kj_bomb_collector_best', String(score));
+            writeGameRecord('kj_bomb_collector_best', score);
             return score;
           }
           return prev;
@@ -985,8 +971,10 @@ const BombCollectorGame: React.FC = () => {
           className="bc-dpad-btn bc-dpad-up"
           onMouseDown={() => handleVirtualDir('up', true)}
           onMouseUp={() => handleVirtualDir('up', false)}
+          onMouseLeave={() => handleVirtualDir('up', false)}
           onTouchStart={(e) => { e.preventDefault(); handleVirtualDir('up', true); }}
           onTouchEnd={(e) => { e.preventDefault(); handleVirtualDir('up', false); }}
+          onTouchCancel={() => handleVirtualDir('up', false)}
           aria-label="Move Up"
         >
           <ArrowUp size={24} />
@@ -996,8 +984,10 @@ const BombCollectorGame: React.FC = () => {
           className="bc-dpad-btn bc-dpad-left"
           onMouseDown={() => handleVirtualDir('left', true)}
           onMouseUp={() => handleVirtualDir('left', false)}
+          onMouseLeave={() => handleVirtualDir('left', false)}
           onTouchStart={(e) => { e.preventDefault(); handleVirtualDir('left', true); }}
           onTouchEnd={(e) => { e.preventDefault(); handleVirtualDir('left', false); }}
+          onTouchCancel={() => handleVirtualDir('left', false)}
           aria-label="Move Left"
         >
           <ArrowLeft size={24} />
@@ -1007,8 +997,10 @@ const BombCollectorGame: React.FC = () => {
           className="bc-dpad-btn bc-dpad-right"
           onMouseDown={() => handleVirtualDir('right', true)}
           onMouseUp={() => handleVirtualDir('right', false)}
+          onMouseLeave={() => handleVirtualDir('right', false)}
           onTouchStart={(e) => { e.preventDefault(); handleVirtualDir('right', true); }}
           onTouchEnd={(e) => { e.preventDefault(); handleVirtualDir('right', false); }}
+          onTouchCancel={() => handleVirtualDir('right', false)}
           aria-label="Move Right"
         >
           <ArrowRight size={24} />
@@ -1018,8 +1010,10 @@ const BombCollectorGame: React.FC = () => {
           className="bc-dpad-btn bc-dpad-down"
           onMouseDown={() => handleVirtualDir('down', true)}
           onMouseUp={() => handleVirtualDir('down', false)}
+          onMouseLeave={() => handleVirtualDir('down', false)}
           onTouchStart={(e) => { e.preventDefault(); handleVirtualDir('down', true); }}
           onTouchEnd={(e) => { e.preventDefault(); handleVirtualDir('down', false); }}
+          onTouchCancel={() => handleVirtualDir('down', false)}
           aria-label="Move Down"
         >
           <ArrowDown size={24} />

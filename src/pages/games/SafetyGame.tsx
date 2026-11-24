@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
 import { useGameTimers } from '../../hooks/useGameTimers';
+import { createGameRoundGuard } from '../../utils/gameRoundGuard';
 import './GameStyles.css';
 
 interface Scenario { emoji: string; text: string; safe: boolean; why: string }
@@ -32,6 +33,7 @@ const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
 
 const SafetyGame: React.FC = () => {
   const timers = useGameTimers();
+  const roundGuard = useRef(createGameRoundGuard());
   const recordGame = useGameProgress('safety', 'ปลอดภัยหรือไม่ปลอดภัยออนไลน์');
   const [order] = useState<Scenario[]>(() => shuffle(SCENARIOS));
   const [idx, setIdx] = useState(0);
@@ -41,24 +43,33 @@ const SafetyGame: React.FC = () => {
   const cur = order[idx];
 
   const answer = (choice: boolean) => {
-    if (answered !== null) return;
+    if (answered !== null || done || !cur) return;
+    if (!roundGuard.current.claim(`q-${idx}`)) return;
     const correct = choice === cur.safe;
+    const nextScore = score + (correct ? 1 : 0);
     setAnswered(choice);
-    if (correct) setScore((s) => s + 1);
+    if (correct) setScore(nextScore);
     timers.schedule(() => {
       if (idx + 1 >= order.length) {
         setDone(true);
-        recordGame(score + (correct ? 1 : 0), undefined, order.length);
+        void recordGame(nextScore, undefined, order.length);
       } else {
-        setIdx((i) => i + 1);
+        setIdx(idx + 1);
         setAnswered(null);
       }
     }, 1600);
   };
 
-  const restart = () => { timers.clear(); setIdx(0); setScore(0); setAnswered(null); setDone(false); };
+  const restart = () => {
+    timers.clear();
+    roundGuard.current.reset();
+    setIdx(0);
+    setScore(0);
+    setAnswered(null);
+    setDone(false);
+  };
 
-  const isCorrect = answered !== null && answered === cur.safe;
+  const isCorrect = Boolean(cur) && answered !== null && answered === cur.safe;
 
   return (
     <div className="game-page compact-game-page" style={{ maxWidth: 620, textAlign: 'center' }}>
@@ -66,7 +77,7 @@ const SafetyGame: React.FC = () => {
       <h1>🛡️ ปลอดภัยหรือไม่ปลอดภัย?</h1>
       <p style={{ color: '#6b7280' }}>อ่านสถานการณ์แล้วเลือก — ฝึกใช้เทคโนโลยีอย่างปลอดภัย (ป.4-ม.3)</p>
 
-      {done ? (
+      {done || !cur ? (
         <div className="card" style={{ padding: '2rem' }}>
           <div style={{ fontSize: '3rem' }}>{score >= Math.ceil(order.length * 0.8) ? '🏆' : score >= Math.ceil(order.length * 0.6) ? '😃' : '💪'}</div>
           <h2>ได้ {score}/{order.length} คะแนน!</h2>

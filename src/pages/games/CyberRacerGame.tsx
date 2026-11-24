@@ -407,6 +407,21 @@ const CyberRacerGame: React.FC = () => {
   const lastTimeRef = useRef<number>(0);
   const nextEntityIdRef = useRef<number>(1);
   const feedbackTimerRef = useRef<number | null>(null);
+  const isSoundMutedRef = useRef<boolean>(false);
+  const gameOverRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    isSoundMutedRef.current = isSoundMuted;
+  }, [isSoundMuted]);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        window.clearTimeout(feedbackTimerRef.current);
+        feedbackTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Mutable simulation state to prevent 60fps React re-renders
   const simStatsRef = useRef({
@@ -428,6 +443,7 @@ const CyberRacerGame: React.FC = () => {
       }
       setFeedbackBanner(banner);
       feedbackTimerRef.current = window.setTimeout(() => {
+        feedbackTimerRef.current = null;
         setFeedbackBanner(null);
       }, 2200);
     },
@@ -443,6 +459,7 @@ const CyberRacerGame: React.FC = () => {
     tilt: 0, // Car tilt angle during steer
     speedKmH: 180, // Base speed
     maxSpeedKmH: 260,
+    brakeOffsetKmH: 0,
     nitroDurationMs: 0,
     shieldDurationMs: 0,
     spinAngle: 0, // When bumped
@@ -470,9 +487,9 @@ const CyberRacerGame: React.FC = () => {
 
   // Singleton Web Audio Synth for engine and effects (zero AudioContext leak)
   const playSfxTone = useCallback((freq: number, duration: number, type: OscillatorType = 'sawtooth', gain = 0.09) => {
-    if (isSoundMuted) return;
+    if (isSoundMutedRef.current) return;
     playGameTone(freq, duration, type, gain);
-  }, [isSoundMuted]);
+  }, []);
 
   // Steer controls
   const steerTo = useCallback((lane: 0 | 1 | 2) => {
@@ -528,8 +545,8 @@ const CyberRacerGame: React.FC = () => {
         triggerNitro();
       } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
         e.preventDefault();
-        // Slow down slightly
-        carStateRef.current.speedKmH = Math.max(120, carStateRef.current.speedKmH - 25);
+        // Apply sustained braking force that recovers smoothly over time
+        carStateRef.current.brakeOffsetKmH = Math.min(75, carStateRef.current.brakeOffsetKmH + 35);
       }
     };
 
@@ -539,6 +556,11 @@ const CyberRacerGame: React.FC = () => {
 
   // Start / Restart Game
   const startGame = useCallback((lvl = selectedLevel) => {
+    if (feedbackTimerRef.current) {
+      window.clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = null;
+    }
+    gameOverRef.current = false;
     setSelectedLevel(lvl);
     prepareQuestions(lvl);
 
@@ -580,6 +602,7 @@ const CyberRacerGame: React.FC = () => {
       tilt: 0,
       speedKmH: Math.round(180 * speedMult),
       maxSpeedKmH: Math.round(250 * speedMult),
+      brakeOffsetKmH: 0,
       nitroDurationMs: 0,
       shieldDurationMs: 0,
       spinAngle: 0,
@@ -597,6 +620,8 @@ const CyberRacerGame: React.FC = () => {
 
   // Handle Game Over
   const endGame = useCallback(() => {
+    if (gameOverRef.current) return;
+    gameOverRef.current = true;
     setGameState('gameover');
     if (gameLoopRef.current) {
       cancelAnimationFrame(gameLoopRef.current);
@@ -624,20 +649,23 @@ const CyberRacerGame: React.FC = () => {
   useEffect(() => {
     if (gameState !== 'playing') return;
 
-    let animId: number;
+    let animId = 0;
 
     const render = (now: number) => {
-      const dt = Math.min((now - lastTimeRef.current) / 1000, 0.1); // clamp delta
+      if (gameOverRef.current) return;
+      const dt = Math.max(0, Math.min((now - lastTimeRef.current) / 1000, 0.1)); // clamp delta
       lastTimeRef.current = now;
 
       const canvas = canvasRef.current;
       if (!canvas) {
         animId = requestAnimationFrame(render);
+        gameLoopRef.current = animId;
         return;
       }
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         animId = requestAnimationFrame(render);
+        gameLoopRef.current = animId;
         return;
       }
 
@@ -667,6 +695,7 @@ const CyberRacerGame: React.FC = () => {
       // Update Timers & Nitro
       if (car.nitroDurationMs > 0) {
         car.nitroDurationMs -= dt * 1000;
+        car.brakeOffsetKmH = 0;
         car.speedKmH = Math.round(280 * sim.speedMultiplier);
         if (car.nitroDurationMs <= 0) {
           sim.isNitroActive = false;
@@ -674,11 +703,15 @@ const CyberRacerGame: React.FC = () => {
           car.speedKmH = Math.round(185 * sim.speedMultiplier);
         }
       } else {
-        // Natural speed progression
-        car.speedKmH = Math.min(
+        // Recover gradually from brake / cone slowdown instead of snapping back next frame
+        if (car.brakeOffsetKmH > 0) {
+          car.brakeOffsetKmH = Math.max(0, car.brakeOffsetKmH - 42 * dt);
+        }
+        const naturalSpeed = Math.min(
           car.maxSpeedKmH,
-          Math.round((180 + Math.floor(sim.distance / 400) * 8) * sim.speedMultiplier),
+          (180 + Math.floor(sim.distance / 400) * 8) * sim.speedMultiplier,
         );
+        car.speedKmH = Math.max(100, Math.round(naturalSpeed - car.brakeOffsetKmH));
       }
 
       if (car.invulnerableMs > 0) {
@@ -1055,7 +1088,7 @@ const CyberRacerGame: React.FC = () => {
           const isCorrect = car.currentLane === gate.question.correctIndex;
           if (isCorrect) {
             // Correct answer!
-            sfxCorrect();
+            if (!isSoundMutedRef.current) sfxCorrect();
             setCorrectAnswersCount((c) => c + 1);
             const bonusPts = 100 * sim.combo;
             sim.combo += 1;
@@ -1072,7 +1105,7 @@ const CyberRacerGame: React.FC = () => {
             });
           } else {
             // Wrong answer!
-            sfxWrong();
+            if (!isSoundMutedRef.current) sfxWrong();
             sim.combo = 1;
             setCombo(1);
             if (sim.hasShield) {
@@ -1088,6 +1121,7 @@ const CyberRacerGame: React.FC = () => {
               setLives(sim.lives);
               if (sim.lives <= 0) {
                 endGame();
+                return;
               } else {
                 showTransientFeedback({
                   text: `💥 ผิดเลน! เสีย 1 หัวใจ (คำตอบที่ถูก: ${gate.question.choices[gate.question.correctIndex]})`,
@@ -1146,20 +1180,20 @@ const CyberRacerGame: React.FC = () => {
         if (p >= 0.78 && p <= 0.92 && entity.lane === car.currentLane) {
           // Collected or Hit!
           if (entity.type === 'coin') {
-            sfxCoin();
+            if (!isSoundMutedRef.current) sfxCoin();
             sim.score += 25;
             setScore(Math.floor(sim.score));
             setCoinsCollected((c) => c + 1);
             setNitroGauge((g) => Math.min(100, g + 8));
           } else if (entity.type === 'nitro') {
-            sfxCoin();
+            if (!isSoundMutedRef.current) sfxCoin();
             car.nitroDurationMs = 3500;
             sim.isNitroActive = true;
             setIsNitroActive(true);
             setNitroGauge(100);
             playSfxTone(520, 0.2, 'sawtooth', 0.12);
           } else if (entity.type === 'shield') {
-            sfxCoin();
+            if (!isSoundMutedRef.current) sfxCoin();
             sim.hasShield = true;
             setHasShield(true);
             sim.lives = Math.min(maxLives, sim.lives + 1);
@@ -1171,12 +1205,13 @@ const CyberRacerGame: React.FC = () => {
                 setHasShield(false);
                 car.invulnerableMs = 800;
               } else {
-                sfxWrong();
-                car.speedKmH = Math.max(100, car.speedKmH - 50);
+                if (!isSoundMutedRef.current) sfxWrong();
+                car.brakeOffsetKmH = Math.min(90, car.brakeOffsetKmH + 55);
                 sim.lives -= 1;
                 setLives(sim.lives);
                 if (sim.lives <= 0) {
                   endGame();
+                  return;
                 }
                 car.invulnerableMs = 1000;
               }
@@ -1344,12 +1379,15 @@ const CyberRacerGame: React.FC = () => {
       ctx.fillRect(0, 0, width, height);
 
       animId = requestAnimationFrame(render);
+      gameLoopRef.current = animId;
     };
 
     animId = requestAnimationFrame(render);
+    gameLoopRef.current = animId;
 
     return () => {
       cancelAnimationFrame(animId);
+      gameLoopRef.current = null;
     };
   }, [gameState, maxLives, endGame, playSfxTone, showTransientFeedback]);
 

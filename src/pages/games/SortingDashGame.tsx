@@ -171,7 +171,7 @@ const SortingDashGame: React.FC = () => {
       timers.clear();
       setTimeRemaining(0);
       setGameOver(true);
-      void recordProgress(score, `theme-${currentTheme.id}`);
+      if (score > 0) void recordProgress(score, `theme-${currentTheme.id}`);
       return true;
     }
     return false;
@@ -266,7 +266,7 @@ const SortingDashGame: React.FC = () => {
           <select
             className="dash-theme-select"
             value={themeIndex}
-            onChange={(e) => resetGame(Number(e.target.value))}
+            onChange={(e) => { resetGame(Number(e.target.value)); e.currentTarget.blur(); }}
           >
             {THEMES.map((th, idx) => (
               <option key={th.id} value={idx}>

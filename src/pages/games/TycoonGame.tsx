@@ -34,6 +34,7 @@ import {
   X,
 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { playGameTone } from '../../utils/gameAudio';
 import { getFinishedPlayerResult } from '../../utils/gameResultOwnership';
 import { useAuth } from '../../context/AuthContext';
 import GameLearnCard from '../../components/GameLearnCard';
@@ -352,25 +353,46 @@ const TycoonGame: React.FC = () => {
 
   const completedGroups = (p: P) => countCompletedPropertyGroups(p.owned);
 
+  const rollTimersRef = useRef<number[]>([]);
+  const rollingRef = useRef(false);
+  const psRef = useRef<P[]>(ps);
+  psRef.current = ps;
+
+  const clearRollTimers = () => {
+    rollTimersRef.current.forEach((id) => window.clearTimeout(id));
+    rollTimersRef.current = [];
+    rollingRef.current = false;
+  };
+
+  const scheduleRollStep = (fn: () => void, ms: number) => {
+    const id = window.setTimeout(() => {
+      rollTimersRef.current = rollTimersRef.current.filter((item) => item !== id);
+      fn();
+    }, ms);
+    rollTimersRef.current.push(id);
+  };
+
+  useEffect(() => clearRollTimers, []);
+
+  const resetTransientState = () => {
+    clearRollTimers();
+    setIsRolling(false);
+    setDice(null);
+    setQ(null);
+    setPicked(null);
+    setChance(null);
+    setBuyTile(null);
+    setRentTile(null);
+    setRentOwner(null);
+    setPendingRent(0);
+    setUpgradeTile(null);
+    setQuestionTime(QUESTION_SECONDS);
+    setQuestionEndsAt(0);
+  };
+
   const playTone = (frequency: number, duration = 0.12) => {
     if (!soundOn || typeof window === 'undefined') return;
-    try {
-      const AudioContextClass = window.AudioContext
-        || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const context = new AudioContextClass();
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      oscillator.frequency.value = frequency;
-      gain.gain.setValueAtTime(0.055, context.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-      oscillator.start();
-      oscillator.stop(context.currentTime + duration);
-    } catch {
-      // Sound is optional; gameplay must continue when audio is blocked.
-    }
+    playGameTone(frequency, duration, 'sine', 0.055);
   };
 
   const toggleFullscreen = async () => {
@@ -387,6 +409,7 @@ const TycoonGame: React.FC = () => {
   };
 
   const start = () => {
+    resetTransientState();
     const endsAt = Date.now() + (minutes * 60_000);
     recentQuestionKeysRef.current = [];
     setPs(Array.from(
@@ -399,16 +422,17 @@ const TycoonGame: React.FC = () => {
     ));
     setTurn(0);
     setPhase('roll');
-    setDice(null);
     setTimeLeft(minutes * 60);
     setGameEndsAt(endsAt);
-    setQuestionEndsAt(0);
     setFinishReason('');
     setMsg(`เริ่มเกม! ทุกทีมได้เงิน ${baht(START_MONEY)} บาท`);
     playTone(620, 0.18);
   };
   const restart = () => {
+    resetTransientState();
     recentQuestionKeysRef.current = [];
+    appliedRemoteVersionRef.current = 0;
+    lastGameSignatureRef.current = '';
     if (onlineRoomCode) {
       void leaveTycoonRoom(onlineRoomCode, multiplayerPlayerId);
       setSessionValue(ACTIVE_ROOM_KEY, '');
@@ -419,11 +443,11 @@ const TycoonGame: React.FC = () => {
     setPs([]);
     setMsg('');
     setFinishReason('');
-    setUpgradeTile(null);
-    setRentTile(null);
   };
 
   const finish = (list: P[], reason = 'เหลือผู้เล่นเพียงทีมเดียว') => {
+    clearRollTimers();
+    setIsRolling(false);
     const live = list.filter((p) => !p.out);
     const ranked = [...(live.length > 0 ? live : list)].sort((a, b) => worth(b) - worth(a));
     const winner = ranked[0];
@@ -487,7 +511,9 @@ const TycoonGame: React.FC = () => {
   );
 
   const roll = () => {
-    if (!me || isRolling || (isOnlineGame && !canTakeTurn)) return;
+    if (!me || isRolling || rollingRef.current || (isOnlineGame && !canTakeTurn)) return;
+    clearRollTimers();
+    rollingRef.current = true;
     let d = rollDice();
     // พลัง "ทอยซ้ำได้" — ทอยได้น้อยเกินไป ระบบทอยใหม่ให้อัตโนมัติ 1 ครั้ง
     if (abilityOf(me.characterId) === 'dice' && d < ABILITY_VALUES.diceRerollUnder) {
@@ -509,7 +535,7 @@ const TycoonGame: React.FC = () => {
       setPs(movingPlayers);
       playTone(390 + (step * 24), 0.055);
       if (step < d) {
-        window.setTimeout(() => moveStep(step + 1), 180);
+        scheduleRollStep(() => moveStep(step + 1), 180);
         return;
       }
       let settledPlayers = movingPlayers.map((player) => (
@@ -520,11 +546,12 @@ const TycoonGame: React.FC = () => {
       if (passed) setMsg(`เดินครบรอบ! รับเงินเดือน ${baht(SALARY)} บาท`);
       settledPlayers = settle(settledPlayers);
       setPs(settledPlayers);
+      rollingRef.current = false;
       setIsRolling(false);
       playTone(520 + (d * 30), 0.12);
       land(settledPlayers, finalPos);
     };
-    window.setTimeout(() => moveStep(1), 420);
+    scheduleRollStep(() => moveStep(1), 420);
   };
 
   const land = (list: P[], pos: number) => {
@@ -866,6 +893,9 @@ const TycoonGame: React.FC = () => {
   };
 
   const handleLeaveOnlineRoom = () => {
+    resetTransientState();
+    appliedRemoteVersionRef.current = 0;
+    lastGameSignatureRef.current = '';
     if (onlineRoomCode) void leaveTycoonRoom(onlineRoomCode, multiplayerPlayerId);
     setSessionValue(ACTIVE_ROOM_KEY, '');
     setOnlineRoomCode('');
@@ -1128,17 +1158,17 @@ const TycoonGame: React.FC = () => {
   ]);
 
   useEffect(() => {
-    if (phase === 'setup' || phase === 'over' || timeLeft <= 0) return undefined;
-    const timer = window.setTimeout(() => {
-      if (timeLeft <= 1) {
-        if (!isOnlineGame || isRoomHost) finishRef.current(ps, 'หมดเวลาแข่งขัน');
-        else setTimeLeft(0);
-      } else {
-        setTimeLeft((current) => current - 1);
+    if (phase === 'setup' || phase === 'over' || !gameEndsAt) return undefined;
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((gameEndsAt - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining === 0 && (!isOnlineGame || isRoomHost)) {
+        finishRef.current(psRef.current, 'หมดเวลาแข่งขัน');
       }
-    }, 1000);
-    return () => window.clearTimeout(timer);
-  }, [isOnlineGame, isRoomHost, phase, ps, timeLeft]);
+    };
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [gameEndsAt, isOnlineGame, isRoomHost, phase]);
 
   useEffect(() => {
     if (phase !== 'question' || picked !== null || !q) return undefined;

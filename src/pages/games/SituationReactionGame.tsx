@@ -381,6 +381,11 @@ const SituationReactionGame: React.FC = () => {
 
     const interval = 50; // 50ms ticks
     timerRef.current = setInterval(() => {
+      // Pause timer while a lesson dialog is open so reading doesn't drain hearts
+      if (document.querySelector('dialog[open]')) {
+        questionStartTimeRef.current += interval;
+        return;
+      }
       const next = QUESTION_DURATION - (performance.now() - questionStartTimeRef.current) / 1000;
       setTimeLeft(Math.max(0, next));
       if (next <= 0) handleSelectChoice(-1, true);

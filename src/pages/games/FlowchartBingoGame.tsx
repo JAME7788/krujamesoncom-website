@@ -240,6 +240,21 @@ export const FlowchartBingoGame: React.FC = () => {
 
   const currentClue = clueDeck[currentClueIdx] || null;
 
+  const advanceToPlayableClue = (tiles: BoardTile[], fromIdx: number) => {
+    const hasUnmarked = (symbolId: string) => tiles.some((t) => !t.marked && t.symbol?.id === symbolId);
+    for (let i = fromIdx; i < clueDeck.length; i++) {
+      if (hasUnmarked(clueDeck[i].symbolId)) {
+        setCurrentClueIdx(i);
+        return;
+      }
+    }
+    const playable = shuffleArray(clueDeck.filter((c) => hasUnmarked(c.symbolId)));
+    if (playable.length > 0) {
+      setClueDeck(playable);
+      setCurrentClueIdx(0);
+    }
+  };
+
   // Handle tile click
   const handleTileClick = (tileIndex: number) => {
     if (gameWon || advancing.current) return;
@@ -260,17 +275,11 @@ export const FlowchartBingoGame: React.FC = () => {
       // Check for Bingo lines
       checkBingo(nextBoard);
 
-      // Advance to next clue after brief pause
+      // Advance to next playable clue (skips already-marked single-copy symbols)
       timers.schedule(() => {
         advancing.current = false;
         setFeedback(null);
-        if (currentClueIdx + 1 < clueDeck.length) {
-          setCurrentClueIdx((prev) => prev + 1);
-        } else {
-          // Reshuffle deck if ran out
-          setClueDeck(shuffleArray(clueDeck));
-          setCurrentClueIdx(0);
-        }
+        advanceToPlayableClue(nextBoard, currentClueIdx + 1);
       }, 700);
     } else {
       // Wrong tile for this clue
@@ -285,14 +294,8 @@ export const FlowchartBingoGame: React.FC = () => {
   const handleSkipClue = () => {
     if (gameWon || advancing.current) return;
     timers.clear();
-    if (currentClueIdx + 1 < clueDeck.length) {
-      setCurrentClueIdx((prev) => prev + 1);
-      setFeedback(null);
-    } else {
-      setClueDeck(shuffleArray(clueDeck));
-      setCurrentClueIdx(0);
-      setFeedback(null);
-    }
+    setFeedback(null);
+    advanceToPlayableClue(board, currentClueIdx + 1);
   };
 
   // Check Bingo

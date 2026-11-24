@@ -601,7 +601,7 @@ export const InteractiveSchematicSvg: React.FC<SchematicProps> = ({
           {renderResistorVert('r1', 126, 62, `${R} Ω`)}
           {renderLedVert('led1', 126, 112, I_mA > 1, '#ef4444', 'Red')}
           {renderBjtNpn(126, 162, 'Q1')}
-          {renderResistorVert('r2', 364, 62, `${R} Ω`)}
+          {renderResistorVert('r2', 364, 62, `${R2} Ω`)}
           {renderLedVert('led2', 364, 112, I2_mA > 1, '#22c55e', 'Green')}
           {/* Cross-coupling capacitor */}
           {selBox('cap1', 186, 92, 84, 34)}
@@ -1277,10 +1277,10 @@ export const InteractiveBreadboardSvg: React.FC<BreadboardSvgProps> = ({
                 strokeWidth={1.8}
               />
               <circle
-                cx={telemetry.switchClosed ? mx + 4 : mx - 4}
+                cx={(part.id === 'sw2' ? telemetry.sw2Closed : telemetry.switchClosed) ? mx + 4 : mx - 4}
                 cy={my}
                 r={4.5}
-                fill={telemetry.switchClosed ? '#22c55e' : '#ef4444'}
+                fill={(part.id === 'sw2' ? telemetry.sw2Closed : telemetry.switchClosed) ? '#22c55e' : '#ef4444'}
               />
             </g>
           );

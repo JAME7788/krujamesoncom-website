@@ -134,7 +134,6 @@ const RobotMakerGame: React.FC = () => {
   const recordGame = useGameProgress(
     'robot-maker',
     'นักประดิษฐ์หุ่นยนต์กระดาษ',
-    { recordOnce: false },
   );
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const nextPartId = useRef(1);
@@ -268,8 +267,12 @@ const RobotMakerGame: React.FC = () => {
       setMessage('ยังไม่มีผลงานที่บันทึกไว้ ลองสร้างหุ่นยนต์แล้วกดบันทึกก่อน');
       return;
     }
-    commit(saved);
-    setMessage(`เปิดผลงานล่าสุดแล้ว ${saved.length} ชิ้น`);
+    const remapped = saved.map((part) => ({
+      ...part,
+      id: `robot-part-${nextPartId.current++}`,
+    }));
+    commit(remapped);
+    setMessage(`เปิดผลงานล่าสุดแล้ว ${remapped.length} ชิ้น`);
   };
 
   const selectLevel = (index: number) => {
@@ -345,6 +348,7 @@ const RobotMakerGame: React.FC = () => {
   ) => {
     if (event.button !== 0) return;
     event.preventDefault();
+    event.currentTarget.focus();
     event.currentTarget.setPointerCapture(event.pointerId);
     setSelectedId(part.id);
     dragState.current = {
@@ -734,7 +738,7 @@ const RobotMakerGame: React.FC = () => {
                 type="button"
                 className="robot-check-button"
                 onClick={checkSolution}
-                disabled={items.length === 0}
+                disabled={items.length === 0 || analysis !== null}
               >
                 <Check size={20} /> ตรวจผลงาน
               </button>

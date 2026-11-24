@@ -610,7 +610,7 @@ const Electronics101Game: React.FC = () => {
   // Overcurrent Burn, Fuse Blow, and Circuit Breaker Trip Handler
   useEffect(() => {
     if (currentLesson.mode === 'FUSE_TRIP') {
-      if (!fuseBlown && (telemetry.I_mA > 35 || sw2Closed)) {
+      if (!fuseBlown && switchClosed && (telemetry.I_mA > 35 || sw2Closed)) {
         const timer = window.setTimeout(() => {
           setFuseBlown(true);
           playLabSound('burn_pop', soundEnabled);
@@ -650,6 +650,7 @@ const Electronics101Game: React.FC = () => {
     currentLesson.mode,
     resistorWattage,
     breakerRatingA,
+    switchClosed,
     sw2Closed,
     fuseBlown,
     breakerTripped,
@@ -694,6 +695,8 @@ const Electronics101Game: React.FC = () => {
     resistorWattage,
     wireGaugeMm2,
     Vs,
+    switchClosed,
+    sw2Closed,
     currentLesson.id,
     currentLesson.mode,
     showDMM,
@@ -725,6 +728,11 @@ const Electronics101Game: React.FC = () => {
       return next;
     });
   }, [soundEnabled]);
+
+  const toggleSwitch1Ref = useRef(toggleSwitch1WithSound);
+  const toggleSwitch2Ref = useRef(toggleSwitch2WithSound);
+  toggleSwitch1Ref.current = toggleSwitch1WithSound;
+  toggleSwitch2Ref.current = toggleSwitch2WithSound;
 
   const handleReplaceBurnedPart = useCallback(() => {
     setIsBurned(false);
@@ -1580,9 +1588,27 @@ const Electronics101Game: React.FC = () => {
       return topLocal.applyMatrix4(penGroup.matrixWorld);
     }
 
+    function disposeSceneObject(root: THREE.Object3D, sharedTextures: Set<THREE.Texture>) {
+      root.traverse((obj) => {
+        if (obj instanceof THREE.Mesh || obj instanceof THREE.Line || obj instanceof THREE.Points) {
+          obj.geometry?.dispose();
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+          mats.forEach((mat) => {
+            if (!mat) return;
+            const std = mat as THREE.MeshStandardMaterial;
+            if (std.map && !sharedTextures.has(std.map)) std.map.dispose();
+            mat.dispose();
+          });
+        }
+      });
+    }
+
     function rebuildCircuitScene() {
+      const sharedTexSet = new Set<THREE.Texture>([breadboardTex, dmmTex, batteryTex, puckTopTex]);
       while (circuitRoot.children.length > 0) {
-        circuitRoot.remove(circuitRoot.children[0]);
+        const child = circuitRoot.children[0];
+        circuitRoot.remove(child);
+        disposeSceneObject(child, sharedTexSet);
       }
       animRefs = {
         r1Bands: [],
@@ -1601,6 +1627,8 @@ const Electronics101Game: React.FC = () => {
       scene.background = new THREE.Color(flags.darkTheme ? 0x0d111a : 0xf5efe3);
 
       if (Math.abs(lastBatteryVolts - s.Vs) > 0.05) {
+        batteryTex.dispose();
+        puckTopTex.dispose();
         batteryTex = createBatteryTexture(s.Vs);
         puckTopTex = createPowerPuckTopTexture(s.Vs);
         lastBatteryVolts = s.Vs;
@@ -2472,7 +2500,7 @@ const Electronics101Game: React.FC = () => {
               const btn = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.12, 0.12, 0.12, 16),
                 new THREE.MeshStandardMaterial({
-                  color: s.switchClosed ? 0x22c55e : 0xef4444,
+                  color: (part.id === 'sw2' ? s.sw2Closed : s.switchClosed) ? 0x22c55e : 0xef4444,
                 }),
               );
               btn.position.set(mx, 0.52, mz);
@@ -2614,8 +2642,8 @@ const Electronics101Game: React.FC = () => {
           el.addEventListener('click', (ev) => {
             ev.stopPropagation();
             setSelectedPart(p.id);
-            if (p.id === 'sw1') setSwitchClosed((prev) => !prev);
-            if (p.id === 'sw2') setSw2Closed((prev) => !prev);
+            if (p.id === 'sw1') toggleSwitch1Ref.current();
+            if (p.id === 'sw2') toggleSwitch2Ref.current();
           });
           layerEl.appendChild(el);
           p.el = el;
@@ -2665,8 +2693,8 @@ const Electronics101Game: React.FC = () => {
           const hits = raycaster.intersectObject(item.obj, true);
           if (hits.length > 0) {
             setSelectedPart(item.partId);
-            if (item.toggleSw === 1) setSwitchClosed((prev) => !prev);
-            if (item.toggleSw === 2) setSw2Closed((prev) => !prev);
+            if (item.toggleSw === 1) toggleSwitch1Ref.current();
+            if (item.toggleSw === 2) toggleSwitch2Ref.current();
             break;
           }
         }
@@ -2690,6 +2718,12 @@ const Electronics101Game: React.FC = () => {
     const onKeyUp = (e: KeyboardEvent) => {
       keys[e.key.toLowerCase()] = false;
     };
+    const onWindowBlur = () => {
+      Object.keys(keys).forEach((k) => {
+        keys[k] = false;
+      });
+      isDragging = false;
+    };
 
     canvas.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
@@ -2697,6 +2731,7 @@ const Electronics101Game: React.FC = () => {
     canvas.addEventListener('wheel', onWheel, { passive: true });
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onWindowBlur);
 
     const handleResize = () => {
       if (!shell) return;
@@ -3119,6 +3154,12 @@ const Electronics101Game: React.FC = () => {
       canvas.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onWindowBlur);
+      disposeSceneObject(scene, new Set<THREE.Texture>());
+      breadboardTex.dispose();
+      dmmTex.dispose();
+      batteryTex.dispose();
+      puckTopTex.dispose();
       renderer.dispose();
     };
   }, []);

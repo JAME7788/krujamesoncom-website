@@ -265,8 +265,10 @@ const AlgorithmRunner3D: React.FC = () => {
 
     let sceneDisposed = false;
     const pmrem = new THREE.PMREMGenerator(renderer);
-    const envTarget = pmrem.fromScene(new RoomEnvironment(), 0.04);
+    const roomEnv = new RoomEnvironment();
+    const envTarget = pmrem.fromScene(roomEnv, 0.04);
     scene.environment = envTarget.texture;
+    roomEnv.dispose();
     pmrem.dispose();
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -480,43 +482,44 @@ const AlgorithmRunner3D: React.FC = () => {
 
   const tweenRobot = (
     duration: number,
+    token: number,
     update: (progress: number, eased: number, robot: THREE.Group) => void
-  ) => new Promise<void>((resolve) => {
+  ) => new Promise<boolean>((resolve) => {
     const startedAt = performance.now();
     const frame = (now: number) => {
       const robot = robotRef.current;
-      if (!robot) {
-        resolve();
+      if (!robot || runTokenRef.current !== token) {
+        resolve(false);
         return;
       }
       const progress = Math.min(1, (now - startedAt) / duration);
       update(progress, easeInOut(progress), robot);
       if (progress < 1) requestAnimationFrame(frame);
-      else resolve();
+      else resolve(runTokenRef.current === token);
     };
     requestAnimationFrame(frame);
   });
 
-  const animateMove = async (from: Position, to: Position, jumping: boolean) => {
+  const animateMove = async (from: Position, to: Position, jumping: boolean, token: number) => {
     const start = worldPosition(from.x, from.z);
     const end = worldPosition(to.x, to.z);
-    await tweenRobot(jumping ? 620 : 420, (progress, eased, robot) => {
+    return tweenRobot(jumping ? 620 : 420, token, (progress, eased, robot) => {
       robot.position.lerpVectors(start, end, eased);
       robot.position.y = start.y + (jumping ? Math.sin(progress * Math.PI) * 1.35 : Math.sin(progress * Math.PI) * 0.1);
     });
   };
 
-  const animateTurn = async (delta: number) => {
+  const animateTurn = async (delta: number, token: number) => {
     const startAngle = robotRef.current?.rotation.y || 0;
-    await tweenRobot(320, (_progress, eased, robot) => {
+    return tweenRobot(320, token, (_progress, eased, robot) => {
       robot.rotation.y = startAngle + delta * eased;
     });
   };
 
-  const animateBump = async (position: Position) => {
+  const animateBump = async (position: Position, token: number) => {
     const start = worldPosition(position.x, position.z);
     const [dx, dz] = DIRECTION_VECTOR[position.dir];
-    await tweenRobot(360, (progress, _eased, robot) => {
+    return tweenRobot(360, token, (progress, _eased, robot) => {
       const amount = Math.sin(progress * Math.PI) * 0.18;
       robot.position.set(start.x + dx * amount, start.y, start.z + dz * amount);
     });
@@ -584,7 +587,6 @@ const AlgorithmRunner3D: React.FC = () => {
     };
     setRobotPose(player);
     setRunning(true);
-    setEnergy(3);
     setMessageTone('info');
     setMessage('หุ่นยนต์กำลังทำงานตามโปรแกรมทีละคำสั่ง');
 
@@ -598,7 +600,8 @@ const AlgorithmRunner3D: React.FC = () => {
         const direction = command === 'left'
           ? ((player.dir + 3) % 4) as Direction
           : ((player.dir + 1) % 4) as Direction;
-        await animateTurn(command === 'left' ? Math.PI / 2 : -Math.PI / 2);
+        const ok = await animateTurn(command === 'left' ? Math.PI / 2 : -Math.PI / 2, token);
+        if (!ok || runTokenRef.current !== token) return;
         player = { ...player, dir: direction };
       } else {
         const [dx, dz] = DIRECTION_VECTOR[player.dir];
@@ -608,7 +611,8 @@ const AlgorithmRunner3D: React.FC = () => {
         const validJump = command !== 'jump' || middleCell === '#' || middleCell === '~';
 
         if (!isSafeCell(target.x, target.z) || !validJump) {
-          await animateBump(player);
+          const ok = await animateBump(player, token);
+          if (!ok || runTokenRef.current !== token) return;
           setEnergy((current) => Math.max(0, current - 1));
           setMessageTone('error');
           setMessage(
@@ -621,7 +625,8 @@ const AlgorithmRunner3D: React.FC = () => {
           return;
         }
 
-        await animateMove(player, target, command === 'jump');
+        const ok = await animateMove(player, target, command === 'jump', token);
+        if (!ok || runTokenRef.current !== token) return;
         player = target;
       }
 
@@ -631,6 +636,7 @@ const AlgorithmRunner3D: React.FC = () => {
       }
     }
 
+    if (runTokenRef.current !== token) return;
     setActiveCommand(-1);
     setRunning(false);
     if (!reachedGoal) {

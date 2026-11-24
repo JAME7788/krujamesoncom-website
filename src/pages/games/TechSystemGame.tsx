@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, CheckCircle2, XCircle, Lightbulb } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { createGameRoundGuard } from '../../utils/gameRoundGuard';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 
@@ -37,10 +39,11 @@ const makeSession = () => shuffle(DEVICES.map((_, deviceIdx) => deviceIdx)).map(
 }));
 
 const TechSystemGame: React.FC = () => {
+  const roundGuard = useRef(createGameRoundGuard());
   const [session, setSession] = useState(makeSession);
   const [roundIndex, setRoundIndex] = useState(0);
   const [done, setDone] = useState(false);
-  const round = session[roundIndex];
+  const round = session[Math.min(roundIndex, session.length - 1)];
   const device = DEVICES[round.deviceIdx];
   const cards = round.cards;
   const [placed, setPlaced] = useState<Record<Part, Part | null>>({ input: null, process: null, output: null });
@@ -49,7 +52,7 @@ const TechSystemGame: React.FC = () => {
   const [showHelp, setShowHelp] = useState(true);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
-  const [best, setBest] = useState(() => parseInt(localStorage.getItem('kj_techsys_best') || '0', 10));
+  const [best, setBest] = useState(() => readGameRecord('kj_techsys_best'));
   const recordGame = useGameProgress('tech-system', 'ระบบทางเทคโนโลยี');
 
   const usedCards = Object.values(placed).filter(Boolean) as Part[];
@@ -73,17 +76,21 @@ const TechSystemGame: React.FC = () => {
   };
 
   const next = () => {
+    if (done || checked !== 'correct') return;
+    if (!roundGuard.current.claim(`next-${roundIndex}`)) return;
     if (roundIndex + 1 >= session.length) {
       setDone(true);
-      void recordGame(score);
+      void recordGame(score, undefined, session.length * 10);
       return;
     }
-    setRoundIndex((value) => value + 1);
+    setRoundIndex(roundIndex + 1);
     setPlaced({ input: null, process: null, output: null });
-    setSelected(null); setChecked(null);
+    setSelected(null);
+    setChecked(null);
   };
 
   const restart = () => {
+    roundGuard.current.reset();
     setSession(makeSession());
     setRoundIndex(0);
     setPlaced({ input: null, process: null, output: null });
@@ -95,15 +102,23 @@ const TechSystemGame: React.FC = () => {
   };
 
   const check = () => {
+    if (done || checked === 'correct') return;
     const win = SLOTS.every((s) => placed[s.key] === s.key);
     if (win) {
+      if (!roundGuard.current.claim(`check-${roundIndex}`)) return;
       setChecked('correct');
       const nextScore = score + 10;
       setScore(nextScore);
-      // บันทึกเมื่อทำถูกเท่านั้น พร้อมคะแนนจริง — ไม่ให้ฉลองตอนตอบผิด
-      recordGame(nextScore);
-      setStreak((st) => { const ns = st + 1; if (ns > best) { setBest(ns); localStorage.setItem('kj_techsys_best', String(ns)); } return ns; });
-    } else { setChecked('wrong'); setStreak(0); }
+      const nextStreak = streak + 1;
+      setStreak(nextStreak);
+      if (nextStreak > best) {
+        setBest(nextStreak);
+        writeGameRecord('kj_techsys_best', nextStreak);
+      }
+    } else {
+      setChecked('wrong');
+      setStreak(0);
+    }
   };
 
   const allPlaced = usedCards.length === 3;
@@ -127,7 +142,7 @@ const TechSystemGame: React.FC = () => {
       <div className="binary-card ts-card">
         <div className="ts-device">
           <span className="ts-emoji">{device.emoji}</span>
-          <div><div className="ts-name">{device.name}</div><div className="ts-hint">ลากความหมายไปวางในช่อง ตัวป้อน → กระบวนการ → ผลผลิต ให้ถูก</div></div>
+          <div><div className="ts-name">{device.name}</div>{showHelp && <div className="ts-hint">ลากความหมายไปวางในช่อง ตัวป้อน → กระบวนการ → ผลผลิต ให้ถูก</div>}</div>
         </div>
 
         <div className="ts-slots">

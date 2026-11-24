@@ -113,9 +113,9 @@ const generateStage2Questions = (): QuestionStage2[] => {
 
     const correctAnswer = `${target1.th} และ ${target2.th}`;
 
-    // Create 3 distractors
+    // Create 3 distractors (exclude reversed pair which is semantically identical in Thai)
     const distractorPool: string[] = [
-      `${target2.th} และ ${target1.th}`,
+      `${target1.th} และ ${shuffled[3].th}`,
       `${target1.th} และ ${shuffled[2].th}`,
       `${shuffled[2].th} และ ${target2.th}`,
       `${shuffled[2].th} และ ${shuffled[3].th}`,

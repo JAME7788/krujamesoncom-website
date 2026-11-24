@@ -104,6 +104,10 @@ export const SpaceTreasureGame: React.FC = () => {
 
   // Switch Level
   const selectLevel = (idx: number) => {
+    if (executionTimeoutRef.current) {
+      clearTimeout(executionTimeoutRef.current);
+      executionTimeoutRef.current = null;
+    }
     setCurrentLevelIdx(idx);
     setProgram([]);
     setShipPos(LEVELS[idx].start);
@@ -117,8 +121,8 @@ export const SpaceTreasureGame: React.FC = () => {
   // Add block to program
   const addCommand = (cmd: CommandType) => {
     if (isRunning) return;
-    if (program.length >= 24) {
-      setStatusMessage('หน่วยความจำโปรแกรมเต็มแล้ว (สูงสุด 24 คำสั่ง)');
+    if (program.length >= 36) {
+      setStatusMessage('หน่วยความจำโปรแกรมเต็มแล้ว (สูงสุด 36 คำสั่ง)');
       return;
     }
     setProgram((prev) => [...prev, cmd]);
@@ -163,7 +167,7 @@ export const SpaceTreasureGame: React.FC = () => {
           sfxCorrect();
           const newScore = score + 10;
           setScore(newScore);
-          recordGame(newScore);
+          void recordGame(newScore, `level-${currentLevel.levelNum}`, LEVELS.length * 10);
           setWinModal(true);
           setStatusMessage('🎉 ยอดเยี่ยมมาก! เก็บสมบัติครบและเข้าสู่สถานีอวกาศสำเร็จ!');
         } else if (isAtStation && !allTreasuresCollected) {
@@ -240,7 +244,21 @@ export const SpaceTreasureGame: React.FC = () => {
         }
       } else if (cmd === 'SCAN') {
         sfxDice();
-        setStatusMessage('⚡ สแกนเซนเซอร์: ตรวจพบเส้นทางปลอดภัย!');
+        let nx = currentPos.x;
+        let ny = currentPos.y;
+        if (currentPos.dir === 0) nx += 1;
+        else if (currentPos.dir === 1) ny += 1;
+        else if (currentPos.dir === 2) nx -= 1;
+        else if (currentPos.dir === 3) ny -= 1;
+        const outOfBounds = nx < 0 || nx >= 6 || ny < 0 || ny >= 6;
+        const hasAsteroid = !outOfBounds && currentLevel.asteroids.some((a) => a.x === nx && a.y === ny);
+        if (outOfBounds) {
+          setStatusMessage('⚡ สแกนเซนเซอร์: ข้างหน้าเป็นขอบอวกาศ! ควรเลี้ยวหลบ');
+        } else if (hasAsteroid) {
+          setStatusMessage('⚡ สแกนเซนเซอร์: ⚠️ ตรวจพบอุกกาบาตข้างหน้า!');
+        } else {
+          setStatusMessage('⚡ สแกนเซนเซอร์: ตรวจพบเส้นทางปลอดภัย!');
+        }
       }
 
       executionTimeoutRef.current = setTimeout(() => {
@@ -284,6 +302,7 @@ export const SpaceTreasureGame: React.FC = () => {
             key={lvl.levelNum}
             className={`st-level-btn ${currentLevelIdx === idx ? 'active' : ''}`}
             onClick={() => selectLevel(idx)}
+            disabled={isRunning}
           >
             {lvl.title.split(':')[0]}
           </button>
@@ -317,6 +336,7 @@ export const SpaceTreasureGame: React.FC = () => {
 
               const isShip = shipPos.x === x && shipPos.y === y;
               const isStation = currentLevel.station.x === x && currentLevel.station.y === y;
+              const isStart = currentLevel.start.x === x && currentLevel.start.y === y;
               const isTreasure = currentLevel.treasures.some(
                 (t) => t.x === x && t.y === y && !collectedTreasures.some((ct) => ct.x === x && ct.y === y)
               );
@@ -328,7 +348,7 @@ export const SpaceTreasureGame: React.FC = () => {
               return (
                 <div
                   key={i}
-                  className={`st-cell ${isStation ? 'target' : ''} ${x === 0 && y === 0 ? 'start' : ''}`}
+                  className={`st-cell ${isStation ? 'target' : ''} ${isStart ? 'start' : ''}`}
                 >
                   {isShip && (
                     <img
@@ -400,7 +420,7 @@ export const SpaceTreasureGame: React.FC = () => {
           <div className="st-code-header">
             <span>📦 กล่องคำสั่ง (Command Blocks)</span>
             <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-              {program.length} / 24 บล็อก
+              {program.length} / 36 บล็อก
             </span>
           </div>
 

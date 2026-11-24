@@ -6,7 +6,9 @@ import {
   Volume2, VolumeX
 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
+import { useGameTimers } from '../../hooks/useGameTimers';
 import { mouseAudio } from '../../services/mouseAudioService';
+import { readGameRecord, writeGameRecord } from '../../utils/gameRecords';
 import './GameStyles.css';
 
 type PracticeMode = 'single' | 'double' | 'right' | 'drag' | 'exam';
@@ -62,17 +64,26 @@ const MousePractice: React.FC = () => {
   // Drag & drop state
   const [currentDragItem, setCurrentDragItem] = useState<DragItem | null>(null);
 
-  const [bestScore, setBestScore] = useState(() =>
-    parseInt(localStorage.getItem('kj_mouse_best') || '0')
-  );
+  const [bestScore, setBestScore] = useState(() => readGameRecord('kj_mouse_best'));
 
   const arenaRef = useRef<HTMLDivElement>(null);
+  const targetTimers = useGameTimers();
   const recordGame = useGameProgress('mouse', 'ภารกิจเมาส์แม่นยำ Pro (ว.PA ป.1)');
 
   const scoreRef = useRef(score);
-  useEffect(() => {
-    scoreRef.current = score;
-  }, [score]);
+  const hitsRef = useRef(hits);
+  const missesRef = useRef(misses);
+  const comboRef = useRef(combo);
+  const maxComboRef = useRef(maxCombo);
+  const soundOnRef = useRef(soundOn);
+  const endedRef = useRef(false);
+
+  scoreRef.current = score;
+  hitsRef.current = hits;
+  missesRef.current = misses;
+  comboRef.current = combo;
+  maxComboRef.current = maxCombo;
+  soundOnRef.current = soundOn;
 
   // Sound toggle
   const toggleSound = () => {
@@ -81,15 +92,21 @@ const MousePractice: React.FC = () => {
     mouseAudio.setSoundEnabled(next);
   };
 
-  // Handle Game End
+  // Handle Game End (reads latest counters from refs so timer effect never resets on click)
   const handleGameEnd = useCallback(() => {
+    if (endedRef.current) return;
+    endedRef.current = true;
+    targetTimers.clear();
     setRunning(false);
     setGameOver(true);
     const currentScore = scoreRef.current;
+    const finalHits = hitsRef.current;
+    const finalMisses = missesRef.current;
+    const finalMaxCombo = maxComboRef.current;
 
     setBestScore((currentBest) => {
       if (currentScore > currentBest) {
-        localStorage.setItem('kj_mouse_best', String(currentScore));
+        writeGameRecord('kj_mouse_best', currentScore);
         return currentScore;
       }
       return currentBest;
@@ -97,17 +114,17 @@ const MousePractice: React.FC = () => {
 
     if (currentScore > 0) void recordGame(currentScore);
 
-    if (soundOn) mouseAudio.playVictory();
+    if (soundOnRef.current) mouseAudio.playVictory();
 
     // Save detailed assessment for PA report
-    const accuracy = hits + misses > 0 ? Math.round((hits / (hits + misses)) * 100) : 100;
+    const accuracy = finalHits + finalMisses > 0 ? Math.round((finalHits / (finalHits + finalMisses)) * 100) : 100;
     const assessmentData = {
       mode,
       score: currentScore,
-      hits,
-      misses,
+      hits: finalHits,
+      misses: finalMisses,
       accuracy,
-      maxCombo,
+      maxCombo: finalMaxCombo,
       timestamp: Date.now(),
     };
     try {
@@ -117,27 +134,30 @@ const MousePractice: React.FC = () => {
     } catch {
       // ignore
     }
-  }, [hits, misses, maxCombo, mode, recordGame, soundOn]);
+  }, [mode, recordGame, targetTimers]);
 
-  // Timer Effect
+  // Timer Effect (depends only on running so rapid clicks never freeze the clock)
   useEffect(() => {
     if (!running) return;
     const timer = setInterval(() => {
-      setTime((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleGameEnd();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setTime((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => clearInterval(timer);
-  }, [running, handleGameEnd]);
+  }, [running]);
+
+  // Trigger game end cleanly outside state updater when clock reaches 0
+  useEffect(() => {
+    if (running && time === 0) {
+      handleGameEnd();
+    }
+  }, [running, time, handleGameEnd]);
 
   // Spawn Targets Effect
   useEffect(() => {
-    if (!running || mode === 'drag') return;
+    if (!running || mode === 'drag') {
+      targetTimers.clear();
+      return;
+    }
 
     // Timing & sizing parameters tuned specifically for Grade 1 children
     const baseInterval = speed === 'easy' ? 2200 : speed === 'normal' ? 1500 : 900;
@@ -191,14 +211,17 @@ const MousePractice: React.FC = () => {
 
       setTargets((prev) => [...prev.slice(-(maxTargets - 1)), newTarget]);
 
-      // Auto-remove target after generous lifetime
-      setTimeout(() => {
+      // Auto-remove target with tracked timer (cleaned up on stop/restart/unmount)
+      targetTimers.schedule(() => {
         setTargets((prev) => prev.filter((t) => t.id !== newTarget.id));
       }, lifetime);
     }, intervalMs);
 
-    return () => clearInterval(spawn);
-  }, [running, mode, speed]);
+    return () => {
+      clearInterval(spawn);
+      targetTimers.clear();
+    };
+  }, [running, mode, speed, targetTimers]);
 
   // Drag Mode: Spawn initial item
   useEffect(() => {
@@ -210,6 +233,8 @@ const MousePractice: React.FC = () => {
   }, [running, mode, currentDragItem]);
 
   const start = () => {
+    targetTimers.clear();
+    endedRef.current = false;
     setScore(0);
     setHits(0);
     setMisses(0);
@@ -224,6 +249,14 @@ const MousePractice: React.FC = () => {
     setRunning(true);
   };
 
+  const incrementCombo = () => {
+    const nextCombo = comboRef.current + 1;
+    comboRef.current = nextCombo;
+    setCombo(nextCombo);
+    if (nextCombo % 5 === 0 && soundOnRef.current) mouseAudio.playCombo();
+    setMaxCombo((m) => Math.max(m, nextCombo));
+  };
+
   const handleHit = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     const target = targets.find((t) => t.id === id);
@@ -233,6 +266,7 @@ const MousePractice: React.FC = () => {
     if (target.type === 'right') {
       if (soundOn) mouseAudio.playMiss();
       setMisses((m) => m + 1);
+      comboRef.current = 0;
       setCombo(0);
       return;
     }
@@ -255,12 +289,7 @@ const MousePractice: React.FC = () => {
     const addedPoints = 10 + combo * 2;
     setScore((s) => s + addedPoints);
     setHits((h) => h + 1);
-    setCombo((c) => {
-      const next = c + 1;
-      if (next % 5 === 0 && soundOn) mouseAudio.playCombo();
-      setMaxCombo((m) => Math.max(m, next));
-      return next;
-    });
+    incrementCombo();
     setTargets((prev) => prev.filter((t) => t.id !== id));
   };
 
@@ -275,27 +304,28 @@ const MousePractice: React.FC = () => {
       const addedPoints = 15 + combo * 2;
       setScore((s) => s + addedPoints);
       setHits((h) => h + 1);
-      setCombo((c) => {
-        const next = c + 1;
-        if (next % 5 === 0 && soundOn) mouseAudio.playCombo();
-        setMaxCombo((m) => Math.max(m, next));
-        return next;
-      });
+      incrementCombo();
       setTargets((prev) => prev.filter((t) => t.id !== id));
     } else {
       if (soundOn) mouseAudio.playMiss();
       setMisses((m) => m + 1);
+      comboRef.current = 0;
       setCombo(0);
     }
   };
 
   const handleMiss = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.mouse-target-item') || (e.target as HTMLElement).closest('.drag-zone')) {
+    if (
+      mode === 'drag' ||
+      (e.target as HTMLElement).closest('.mouse-target-item') ||
+      (e.target as HTMLElement).closest('.drag-mode-container')
+    ) {
       return;
     }
     if (running) {
       if (soundOn) mouseAudio.playMiss();
       setMisses((m) => m + 1);
+      comboRef.current = 0;
       setCombo(0);
     }
   };
@@ -314,15 +344,11 @@ const MousePractice: React.FC = () => {
       if (soundOn) mouseAudio.playDragSuccess();
       setScore((s) => s + 20);
       setHits((h) => h + 1);
-      setCombo((c) => {
-        const next = c + 1;
-        if (next % 5 === 0 && soundOn) mouseAudio.playCombo();
-        setMaxCombo((m) => Math.max(m, next));
-        return next;
-      });
+      incrementCombo();
     } else {
       if (soundOn) mouseAudio.playMiss();
       setMisses((m) => m + 1);
+      comboRef.current = 0;
       setCombo(0);
     }
 
@@ -464,7 +490,7 @@ const MousePractice: React.FC = () => {
         ref={arenaRef}
         className="mouse-arena"
         onClick={handleMiss}
-        onContextMenu={(e) => { if (mode !== 'right' && mode !== 'exam') e.preventDefault(); }}
+        onContextMenu={(e) => { e.preventDefault(); }}
       >
         {!running && !gameOver && (
           <div className="arena-overlay">

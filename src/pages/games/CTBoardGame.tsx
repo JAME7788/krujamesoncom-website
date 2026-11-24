@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, Dices, Trophy, Users } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
@@ -34,7 +34,17 @@ const CTBoardGame: React.FC = () => {
   const tier = ageTierFromClassroom(user?.classroom);
   const bank = QUESTION_BANK[tier];
   const recentQuestionKeysRef = useRef<string[]>([]);
+  const winTimerRef = useRef<number | null>(null);
   const recordGame = useGameProgress('ct-board', 'บอร์ดเกมเส้นทางนักคิดเชิงคำนวณ');
+
+  const clearWinTimer = () => {
+    if (winTimerRef.current !== null) {
+      window.clearTimeout(winTimerRef.current);
+      winTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => clearWinTimer, []);
 
   const [count, setCount] = useState(2);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -48,6 +58,7 @@ const CTBoardGame: React.FC = () => {
   const me = players[turn];
 
   const start = () => {
+    clearWinTimer();
     recentQuestionKeysRef.current = [];
     setPlayers(Array.from({ length: count }, (_, i) => newPlayer(i)));
     setTurn(0); setPhase('roll'); setDice(null); setCard(null); setPicked(null);
@@ -55,6 +66,7 @@ const CTBoardGame: React.FC = () => {
   };
 
   const restart = () => {
+    clearWinTimer();
     recentQuestionKeysRef.current = [];
     setPhase('setup');
     setPlayers([]);
@@ -140,12 +152,18 @@ const CTBoardGame: React.FC = () => {
       // ถ้าอยู่เส้นชัยและเก็บดาวครบแล้ว = ชนะทันที
       const after = updated[turn];
       if (after.pos === LAST && hasAll(after)) {
-        setTimeout(() => { win(); void recordGame(after.score); }, 900);
+        clearWinTimer();
+        winTimerRef.current = window.setTimeout(() => {
+          winTimerRef.current = null;
+          win();
+          void recordGame(after.score);
+        }, 900);
       }
     }
   };
 
   const continueTurn = () => {
+    clearWinTimer();
     if (!me) return;
     const after = players[turn];
     if (after.pos === LAST && hasAll(after)) { win(); void recordGame(after.score); return; }
