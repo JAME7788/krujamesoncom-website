@@ -4,6 +4,7 @@ import { grades } from '../data/curriculum';
 import { fetchCustomSlides, saveCustomSlides, deleteCustomSlides, parseMarkdownToSlides, slidesToMarkdown } from '../services/slideService';
 import { getRichSlides, type RichSlide } from '../data/richSlides';
 import { getUnitSlideImages } from '../data/slideImages';
+import { getNextDriveImageFallbackUrl } from '../utils/googleDriveImage';
 import { useToast } from './Toast';
 
 const SlideManager: React.FC = () => {
@@ -287,6 +288,11 @@ layout: cover
                     alt={`สไลด์แผ่นที่ ${idx + 1}`}
                     style={{ width: '100%', aspectRatio: '16/9', objectFit: 'contain', display: 'block' }}
                     loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const nextUrl = getNextDriveImageFallbackUrl(e.currentTarget.src, imgUrl);
+                      if (nextUrl) e.currentTarget.src = nextUrl;
+                    }}
                   />
                   <div style={{ padding: '4px 8px', fontSize: '0.72rem', color: '#cbd5e1', textAlign: 'center', background: '#1e293b' }}>
                     แผ่นที่ {idx + 1}

@@ -39,6 +39,7 @@ import '../components/RichSlideViewer.css';
 import ExitTicketModal from '../components/ExitTicketModal';
 import { enrichRichSlideDeck, hasRichSlides, getRichSlides, type RichSlide } from '../data/richSlides';
 import { hasUnitSlideImages, getUnitSlideImages } from '../data/slideImages';
+import { getNextDriveImageFallbackUrl } from '../utils/googleDriveImage';
 import { fetchCustomSlides } from '../services/slideService';
 import { detectLessonTheme, isArduinoLessonText, type LessonTheme } from '../utils/lessonTheme';
 import BloomTaxonomyBadge from '../components/BloomTaxonomyBadge';
@@ -1980,11 +1981,10 @@ const UnitDetail: React.FC = () => {
                               alt={`สไลด์แผ่นที่ ${idx + 1} - ${unit.title}`}
                               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
                               loading="lazy"
+                              referrerPolicy="no-referrer"
                               onError={(e) => {
-                                const m = imgUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                                if (m && !e.currentTarget.src.includes('drive.usercontent.google.com')) {
-                                  e.currentTarget.src = `https://drive.usercontent.google.com/download?id=${m[1]}&export=view`;
-                                }
+                                const nextUrl = getNextDriveImageFallbackUrl(e.currentTarget.src, imgUrl);
+                                if (nextUrl) e.currentTarget.src = nextUrl;
                               }}
                             />
                           </div>
@@ -2197,12 +2197,11 @@ const UnitDetail: React.FC = () => {
                               alt={`สไลด์ที่ ${slideIdx + 1} จาก ${totalSlides}`}
                               className="slide-presentation-img"
                               loading="eager"
+                              referrerPolicy="no-referrer"
                               onError={(e) => {
                                 const currentUrl = unitSlideImgs[Math.min(slideIdx, unitSlideImgs.length - 1)] || '';
-                                const m = currentUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                                if (m && !e.currentTarget.src.includes('drive.usercontent.google.com')) {
-                                  e.currentTarget.src = `https://drive.usercontent.google.com/download?id=${m[1]}&export=view`;
-                                }
+                                const nextUrl = getNextDriveImageFallbackUrl(e.currentTarget.src, currentUrl);
+                                if (nextUrl) e.currentTarget.src = nextUrl;
                               }}
                             />
                           </div>

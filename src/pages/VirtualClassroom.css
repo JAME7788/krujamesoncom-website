@@ -1429,6 +1429,35 @@
   .world-dpad { display: none; }
 }
 
+@media (max-width: 1120px) {
+  .world-avatar-badge {
+    left: 12px;
+    max-width: 210px;
+  }
+  .world-star-score {
+    top: 174px;
+    left: 12px;
+  }
+  .world-mode-control {
+    top: 214px;
+    left: 12px;
+    transform: none;
+  }
+  .world-actions {
+    right: 12px;
+    gap: 4px;
+    padding: 4px;
+  }
+  .world-actions button {
+    width: 36px;
+    height: 36px;
+  }
+  .world-build-mission {
+    top: 172px;
+    right: 12px;
+  }
+}
+
 @media (max-width: 720px) {
   .virtual-classroom { min-height: 540px; }
   .world-top-nav { top: 10px; left: 10px; right: 10px; gap: 6px; flex-wrap: nowrap; }

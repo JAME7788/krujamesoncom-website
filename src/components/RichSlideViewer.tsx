@@ -97,7 +97,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
         <div className={`rs-cover ${slide.image ? 'has-image' : ''}`}>
           {slide.image && (
             <div className="rs-image-cover">
-              <img src={slide.image} alt={slide.imageCaption || displayTitle} loading="eager" />
+              <img src={slide.image} alt={slide.imageCaption || displayTitle} loading="eager" referrerPolicy="no-referrer" />
               {slide.imageCaption && <div className="rs-caption">{slide.imageCaption}</div>}
             </div>
           )}
@@ -202,7 +202,7 @@ const RichSlideViewer: React.FC<Props> = ({ slide, current, total }) => {
             </div>
             {slide.image && (
               <div className="rs-image-side">
-                <img src={slide.image} alt={slide.imageCaption || displayTitle} loading="lazy" />
+                <img src={slide.image} alt={slide.imageCaption || displayTitle} loading="lazy" referrerPolicy="no-referrer" />
                 {slide.imageCaption && <div className="rs-caption">{slide.imageCaption}</div>}
               </div>
             )}

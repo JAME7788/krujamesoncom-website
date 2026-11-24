@@ -20,6 +20,7 @@ import {
   Sprout,
 } from 'lucide-react';
 import { getIsLessonSlideImages } from '../data/slideImages';
+import { getNextDriveImageFallbackUrl } from '../utils/googleDriveImage';
 
 const IS_SLUG_TO_LESSON: Record<string, number> = {
   'period-1-problem-identification-and-questioning': 1,
@@ -771,12 +772,11 @@ const IsKnowledgeBlog: React.FC<IsKnowledgeBlogProps> = ({ embedded = false }) =
                       display: 'block',
                     }}
                     loading="eager"
+                    referrerPolicy="no-referrer"
                     onError={(e) => {
                       const currentUrl = activeSlides[isSlideIdx] || '';
-                      const m = currentUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                      if (m && !e.currentTarget.src.includes('drive.usercontent.google.com')) {
-                        e.currentTarget.src = `https://drive.usercontent.google.com/download?id=${m[1]}&export=view`;
-                      }
+                      const nextUrl = getNextDriveImageFallbackUrl(e.currentTarget.src, currentUrl);
+                      if (nextUrl) e.currentTarget.src = nextUrl;
                     }}
                   />
 
