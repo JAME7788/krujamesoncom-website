@@ -34,6 +34,16 @@ import {
   type SubmissionMethod,
 } from '../services/homeworkService';
 import { isScoreEligibleUser } from '../services/userAccessService';
+import InteractiveWorksheetPlayer from '../components/InteractiveWorksheetPlayer';
+import {
+  getWorksheetTemplatesForClassroom,
+  type InteractiveWorksheetTemplate,
+} from '../data/interactiveWorksheetTemplates';
+import {
+  gradeInteractiveWorksheet,
+  parseWorksheetSubmission,
+  type WorksheetGradingResult,
+} from '../utils/interactiveWorksheetEngine';
 
 type HomeworkFilterTab =
   | 'all'
@@ -94,6 +104,42 @@ const HomeworkStudent: React.FC = () => {
   const [dtTestFeedback, setDtTestFeedback] = useState('');
 
   const [packChoices, setPackChoices] = useState<Record<string, string>>({});
+  const [practiceTemplate, setPracticeTemplate] = useState<InteractiveWorksheetTemplate | null>(null);
+  const [practiceScores, setPracticeScores] = useState<
+    Record<string, { score: number; max: number; percent: number }>
+  >(() => {
+    try {
+      const raw = localStorage.getItem(`krujames_ws_practice_${user?.id || 'guest'}`);
+      return raw ? (JSON.parse(raw) as Record<string, { score: number; max: number; percent: number }>) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const gradeTemplates = useMemo(
+    () => (user?.classroom ? getWorksheetTemplatesForClassroom(user.classroom) : []),
+    [user?.classroom],
+  );
+
+  const savePracticeScore = useCallback(
+    (templateId: string, result: WorksheetGradingResult) => {
+      setPracticeScores((prev) => {
+        const existing = prev[templateId];
+        const nextEntry =
+          !existing || result.totalScore >= existing.score
+            ? { score: result.totalScore, max: result.totalMax, percent: result.percent }
+            : existing;
+        const next = { ...prev, [templateId]: nextEntry };
+        try {
+          localStorage.setItem(`krujames_ws_practice_${user?.id || 'guest'}`, JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+        return next;
+      });
+    },
+    [user?.id],
+  );
 
   const initDrawingCanvas = useCallback(() => {
     const canvas = drawCanvasRef.current;
@@ -491,6 +537,34 @@ const HomeworkStudent: React.FC = () => {
     }
   };
 
+  const handleSubmitInteractiveWorksheet = async (
+    encodedData: string,
+    summaryComment: string,
+    _result: WorksheetGradingResult,
+  ) => {
+    if (!selected || !user) return;
+    setSyncing(true);
+    try {
+      await submitWork({
+        assignmentId: selected.id,
+        studentId: user.id,
+        studentName: user.name,
+        classroom: user.classroom,
+        studentNo: parseInt(user.studentNumber),
+        contentData: encodedData,
+        submissionMethod: 'interactive_worksheet',
+        comment: summaryComment,
+      });
+      setDataVersion((version) => version + 1);
+    } catch (error: unknown) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : 'ส่งใบงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
+      throw error;
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!selected) return;
 
@@ -796,9 +870,15 @@ const HomeworkStudent: React.FC = () => {
                     type="button"
                     className="btn-primary"
                     onClick={() => openSubmission(item.assignment)}
-                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '0.8rem',
+                      background: item.assignment.interactiveWorksheet
+                        ? 'linear-gradient(135deg, #2563eb, #10b981)'
+                        : undefined,
+                    }}
                   >
-                    <Upload size={13} /> ส่งงานนี้เลย
+                    <Upload size={13} /> {item.assignment.interactiveWorksheet ? '🧩 ทำใบงานในเว็บเลย' : 'ส่งงานนี้เลย'}
                   </button>
                 </div>
               ))}
@@ -932,6 +1012,11 @@ const HomeworkStudent: React.FC = () => {
                   <div style={{ flex: 1, minWidth: 200 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
                       <h3 style={{ margin: 0 }}>{a.title}</h3>
+                      {a.interactiveWorksheet && (
+                        <span style={{ background: 'linear-gradient(135deg, #dbeafe, #d1fae5)', color: '#065f46', border: '1px solid #6ee7b7', padding: '2px 9px', borderRadius: 999, fontSize: '0.73rem', fontWeight: 800 }}>
+                          🧩 ใบงานโต้ตอบในเว็บ (ตรวจอัตโนมัติ)
+                        </span>
+                      )}
                       {a.difficulty === 'foundation' ? (
                         <span style={{ background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
                           🟢 พื้นฐาน (มีคำใบ้)
@@ -1007,10 +1092,30 @@ const HomeworkStudent: React.FC = () => {
                           <div style={{ marginTop: 4, padding: '4px 12px', background: '#dcfce7', borderRadius: 999, fontSize: '0.85rem' }}>
                             ได้ {sub.score}/{a.maxScore} (K {sub.kScore ?? '-'} / P {sub.pScore ?? '-'})
                           </div>
-                        ) : (
+                        ) : a.interactiveWorksheet && sub.contentData ? (() => {
+                          const parsed = parseWorksheetSubmission(sub.contentData);
+                          const autoRes = parsed
+                            ? gradeInteractiveWorksheet(a.interactiveWorksheet, parsed.answers)
+                            : null;
+                          return autoRes ? (
+                            <div style={{ marginTop: 4, padding: '4px 10px', background: '#e0f2fe', color: '#0369a1', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700 }}>
+                              ⚡ ตรวจอัตโนมัติ: {autoRes.totalScore}/{autoRes.totalMax} (K {autoRes.kScore} / P {autoRes.pScore}) · รอครูลง ปพ.5
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>รอครูตรวจ</div>
+                          );
+                        })() : (
                           <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>รอครูตรวจ</div>
                         )}
-                        {sub.reviewedAt === undefined && <button className="btn-secondary" onClick={() => openSubmission(a)}>แก้ไขการส่งงาน</button>}
+                        {sub.reviewedAt === undefined ? (
+                          <button className="btn-secondary" style={{ marginTop: 6 }} onClick={() => openSubmission(a)}>
+                            {a.interactiveWorksheet ? '👁️ ดูผล / แก้คำตอบ' : 'แก้ไขการส่งงาน'}
+                          </button>
+                        ) : a.interactiveWorksheet ? (
+                          <button className="btn-secondary" style={{ marginTop: 6 }} onClick={() => openSubmission(a)}>
+                            👁️ ดูเฉลยใบงาน
+                          </button>
+                        ) : null}
                         {sub.feedback && (
                           <div style={{ marginTop: 8, padding: 8, background: '#fef3c7', borderRadius: 8, fontSize: '0.82rem' }}>
                             💬 {sub.feedback}
@@ -1023,12 +1128,16 @@ const HomeworkStudent: React.FC = () => {
                           <AlertCircle size={15} style={{ verticalAlign: 'middle' }} /> ค้างส่ง (เลยกำหนด)
                         </div>
                         <button onClick={() => openSubmission(a)} className="btn-primary" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}>
-                          <Upload size={14} /> ส่งงานย้อนหลัง
+                          <Upload size={14} /> {a.interactiveWorksheet ? '🧩 ทำใบงานย้อนหลัง' : 'ส่งงานย้อนหลัง'}
                         </button>
                       </div>
                     ) : (
-                      <button onClick={() => openSubmission(a)} className="btn-primary">
-                        <Upload size={14} /> ส่งงาน
+                      <button
+                        onClick={() => openSubmission(a)}
+                        className="btn-primary"
+                        style={a.interactiveWorksheet ? { background: 'linear-gradient(135deg, #2563eb, #10b981)' } : undefined}
+                      >
+                        <Upload size={14} /> {a.interactiveWorksheet ? '🧩 ทำใบงานในเว็บ' : 'ส่งงาน'}
                       </button>
                     )}
                   </div>
@@ -1039,8 +1148,248 @@ const HomeworkStudent: React.FC = () => {
         </div>
       )}
 
+      {/* 🧩 คลังใบงานโต้ตอบประจำชั้นเรียน (ตอบผ่านเว็บ ตรวจคะแนนทันที ไม่ต้องเข้าแอปอื่น) */}
+      {gradeTemplates.length > 0 && (
+        <div
+          className="card"
+          style={{
+            marginTop: '1.5rem',
+            padding: '1.25rem',
+            borderRadius: 18,
+            border: '1.5px solid #93c5fd',
+            background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '1.08rem', color: '#0f172a' }}>
+                🧩 ใบงานโต้ตอบออนไลน์ประจำชั้น {user.classroom} (ทำผ่านเว็บ • ตรวจคะแนนทันที)
+              </h2>
+              <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#475569' }}>
+                ฝึกทำแบบฝึกหัด ถามต่อ ลากบล็อกต่อบล็อก และจัดหมวดหมู่ตามตัวชี้วัดของชั้น {user.classroom} ได้เลยในเว็บเดียว
+              </p>
+            </div>
+            <span style={{ padding: '4px 12px', borderRadius: 999, background: '#dbeafe', color: '#1d4ed8', fontSize: '0.78rem', fontWeight: 800 }}>
+              พร้อมเล่น {gradeTemplates.length} ใบงาน
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+            {gradeTemplates.map((tpl) => {
+              const assignedMatch = overview.tasks.find(
+                (t) => t.assignment.interactiveWorksheet?.templateId === tpl.id,
+              );
+              const bestPractice = practiceScores[tpl.id];
+              return (
+                <div
+                  key={tpl.id}
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: 14,
+                    padding: '14px',
+                    border: assignedMatch ? '1.5px solid #34d399' : '1px solid #cbd5e1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.73rem', fontWeight: 800, color: '#1d4ed8', background: '#eff6ff', padding: '2px 8px', borderRadius: 999 }}>
+                      {tpl.subjectLabel} · {tpl.indicatorCode}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>⏱️ ~{tpl.estimatedMinutes} นาที</span>
+                  </div>
+                  <strong style={{ fontSize: '0.93rem', color: '#0f172a', lineHeight: 1.35 }}>{tpl.title}</strong>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569', lineHeight: 1.45, flex: 1 }}>
+                    {tpl.description}
+                  </p>
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                    {tpl.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 999, background: '#f1f5f9', color: '#334155', fontWeight: 700 }}
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                  {bestPractice && !assignedMatch && (
+                    <div style={{ fontSize: '0.76rem', color: '#15803d', fontWeight: 700 }}>
+                      🏆 สถิติฝึกทำดีสุด: {bestPractice.score}/{bestPractice.max} คะแนน ({bestPractice.percent}%)
+                    </div>
+                  )}
+                  {assignedMatch ? (
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={() => openSubmission(assignedMatch.assignment)}
+                      style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #059669, #10b981)' }}
+                    >
+                      ✅ ทำใบงานส่งครูเข้า ปพ.5
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={() => setPracticeTemplate(tpl)}
+                      style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #2563eb, #0ea5e9)' }}
+                    >
+                      🧩 เปิดทำใบงานเลย (ตรวจทันที)
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Submit modal (Interactive Worksheet OR 5-in-1 No-Gmail Direct Classroom Submission System) */}
+      {selected && selected.interactiveWorksheet && (() => {
+        const previous = getStudentSubmissionForAssignment(
+          selected.id,
+          user.id,
+          user.classroom,
+          parseInt(user.studentNumber),
+        );
+        const parsedPrev = parseWorksheetSubmission(previous?.contentData);
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.65)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem',
+              overflowY: 'auto',
+            }}
+            onClick={() => {
+              if (!syncing) closeSubmission();
+            }}
+          >
+            <div
+              className="card"
+              style={{
+                width: '100%',
+                maxWidth: 880,
+                maxHeight: '94vh',
+                overflowY: 'auto',
+                background: 'white',
+                padding: '1.35rem',
+                borderRadius: 18,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.22rem' }}>{selected.title}</h2>
+                  <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 2 }}>
+                    ส่งงานออนไลน์ในระบบครูเจมส์ • คะแนนเต็ม {selected.maxScore} (K {selected.knowledgeMaxScore ?? 0} / P {selected.practiceMaxScore ?? 0})
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={syncing}
+                  onClick={closeSubmission}
+                  style={{ padding: '4px 10px', fontSize: '0.8rem' }}
+                >
+                  ✕ ปิด
+                </button>
+              </div>
+              <InteractiveWorksheetPlayer
+                title={selected.title}
+                description={selected.description}
+                spec={selected.interactiveWorksheet}
+                initialAnswers={parsedPrev?.answers}
+                draftStorageKey={`krujames_ws_draft_${user.id}_${selected.id}`}
+                locked={Boolean(previous?.reviewedAt)}
+                reviewedResult={
+                  previous?.reviewedAt
+                    ? {
+                        score: previous.score,
+                        maxScore: selected.maxScore,
+                        kScore: previous.kScore,
+                        pScore: previous.pScore,
+                        feedback: previous.feedback,
+                      }
+                    : undefined
+                }
+                submitting={syncing}
+                onSubmit={handleSubmitInteractiveWorksheet}
+                onClose={closeSubmission}
+              />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Practice Mode Interactive Worksheet Modal */}
+      {practiceTemplate && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            overflowY: 'auto',
+          }}
+          onClick={() => setPracticeTemplate(null)}
+        >
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: 880,
+              maxHeight: '94vh',
+              overflowY: 'auto',
+              background: 'white',
+              padding: '1.35rem',
+              borderRadius: 18,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.22rem' }}>{practiceTemplate.title}</h2>
+                <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 2 }}>
+                  {practiceTemplate.classroom} • {practiceTemplate.subjectLabel} ({practiceTemplate.indicatorCode}) • {practiceTemplate.unitLabel}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setPracticeTemplate(null)}
+                style={{ padding: '4px 10px', fontSize: '0.8rem' }}
+              >
+                ✕ ปิด
+              </button>
+            </div>
+            <InteractiveWorksheetPlayer
+              title={practiceTemplate.title}
+              description={practiceTemplate.description}
+              spec={practiceTemplate.spec}
+              draftStorageKey={`krujames_ws_practice_draft_${user.id}_${practiceTemplate.id}`}
+              practiceMode
+              onSubmit={(_encoded, _comment, result) => {
+                savePracticeScore(practiceTemplate.id, result);
+              }}
+              onClose={() => setPracticeTemplate(null)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Submit modal (5-in-1 No-Gmail / No-Phone Direct Classroom Submission System) */}
-      {selected && (
+      {selected && !selected.interactiveWorksheet && (
         <div
           style={{
             position: 'fixed',

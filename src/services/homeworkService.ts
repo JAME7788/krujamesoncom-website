@@ -19,6 +19,17 @@ import { loadRoster } from './rosterService';
 import { recordLearningEvidence } from './learningEvidenceService';
 import { writeAuditLog } from './auditLogService';
 import { IS_CAREER_CURRICULUM } from '../data/isCareerCurriculum';
+import {
+  gradeInteractiveWorksheet,
+  parseWorksheetSubmission,
+  scaleWorksheetScoresToAssignment,
+  getWorksheetMaxScores,
+} from '../utils/interactiveWorksheetEngine';
+import type {
+  InteractiveWorksheetSpec,
+  WorksheetGradingResult,
+} from '../utils/interactiveWorksheetEngine';
+import type { InteractiveWorksheetTemplate } from '../data/interactiveWorksheetTemplates';
 
 export type AssignmentDifficulty = 'foundation' | 'standard' | 'advanced';
 export type AssignmentTargetType = 'all' | 'ability_tier' | 'specific_students';
@@ -28,7 +39,8 @@ export type SubmissionMethod =
   | 'canvas_drawing'
   | 'workstation'
   | 'written_answer'
-  | 'external_link';
+  | 'external_link'
+  | 'interactive_worksheet';
 
 export interface Assignment {
   id: string;
@@ -74,6 +86,8 @@ export interface Assignment {
   isDesignThinking?: boolean;
   /** ซ่อนเป็นแบบร่าง (ยังไม่เปิดสั่งนักเรียนจริง) — งาน system-seed-2569 จะถือเป็นแบบร่างจนกว่าครูจะกดเปิดสั่ง */
   isDraft?: boolean;
+  /** ชุดโจทย์ใบงานโต้ตอบออนไลน์ (ปรนัย / ถามต่อ / ลากบล็อก / จัดหมวดหมู่ / เติมคำ) ที่นักเรียนตอบในเว็บและตรวจคะแนนอัตโนมัติได้ทันที */
+  interactiveWorksheet?: InteractiveWorksheetSpec;
 }
 
 export interface DesignThinkingSteps {
@@ -123,7 +137,19 @@ const GDRIVE_CONFIG_DOC_ID = '__gdrive_bridge_config__';
 const ASS_COLLECTION = 'homeworkAssignments';
 const SUB_COLLECTION = 'homeworkSubmissions';
 const MAX_FIRESTORE_CONTENT_DATA_LEN = 120_000; // จำกัดขนาดรูปย่อสำรองไม่เกิน ~90 KB เพื่อไม่ให้เปลืองความจำฐานข้อมูล
+const MAX_INTERACTIVE_WORKSHEET_PAYLOAD_LEN = 32_000; // JSON คำตอบใบงานโต้ตอบ (ข้อความล้วน ~1-4 KB)
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+/** ตรวจสอบว่าเป็นข้อมูลคำตอบใบงานโต้ตอบออนไลน์ (JSON ข้อความขนาดเล็ก ไม่ใช่ไฟล์ภาพไบนารี) */
+export const isInteractiveWorksheetPayload = (
+  submission: Pick<Submission, 'submissionMethod' | 'contentData'>,
+): boolean => {
+  if (submission.submissionMethod !== 'interactive_worksheet') return false;
+  if (!submission.contentData || typeof submission.contentData !== 'string') return false;
+  if (submission.contentData.length > MAX_INTERACTIVE_WORKSHEET_PAYLOAD_LEN) return false;
+  if (/^data:/i.test(submission.contentData.trim())) return false;
+  return Boolean(parseWorksheetSubmission(submission.contentData));
+};
 
 export interface GoogleDriveBridgeConfig {
   /** URL ของ Google Apps Script Web App ของครูสำหรับรับไฟล์นักเรียนเข้า Google Drive ครูโดยตรง (ไม่ต้องใช้ Gmail นักเรียน) */
@@ -152,7 +178,7 @@ const cache = <T>(key: string, value: T) => {
     // กรณี localStorage เต็ม ให้ตัด contentData ออกจากสำเนาในเครื่องโดยอัตโนมัติ (เก็บเฉพาะลิงก์)
     if (key === SUB_KEY && Array.isArray(value)) {
       try {
-        const slim = (value as Submission[]).map((s) => ({ ...s, contentData: undefined }));
+        const slim = (value as Submission[]).map((s) => (isInteractiveWorksheetPayload(s) ? s : { ...s, contentData: undefined }));
         localStorage.setItem(key, JSON.stringify(slim));
         return;
       } catch {
@@ -236,8 +262,11 @@ const saveSubmissionRemote = async (submission: Submission) => {
   const remote = { ...submission };
   // นโยบายความจำระดับองค์กร (Zero-Bloat Firestore Policy):
   // Cloud Firestore เก็บเฉพาะข้อมูลขนาดเบา (< 1 KB ต่อชิ้น) เช่น รหัสนักเรียน คะแนน ข้อเสนอแนะ และลิงก์ Google Drive
-  // ห้ามบันทึก contentData หรือไฟล์ไบนารีลงใน Cloud Firestore โดยเด็ดขาด 100%!
-  delete remote.contentData;
+  // ห้ามบันทึกไฟล์ไบนารี/ภาพ base64 ลงใน Cloud Firestore โดยเด็ดขาด 100%!
+  // ยกเว้นคำตอบใบงานโต้ตอบออนไลน์ (JSON ข้อความล้วน ~1-4 KB) เพื่อให้เครื่องครูตรวจและตัดคะแนนเข้า ปพ.5 อัตโนมัติได้
+  if (!isInteractiveWorksheetPayload(submission)) {
+    delete remote.contentData;
+  }
   await setDoc(doc(db, SUB_COLLECTION, submission.id), cleanForFirestore(remote));
 };
 
@@ -283,7 +312,7 @@ export const fetchSubmissionsFromFirebase = async (): Promise<Submission[]> => {
     const snap = await getDocs(collection(db, SUB_COLLECTION));
     const remote = snap.docs.map((item) => {
       const data = item.data() as Submission;
-      if (data.contentData) {
+      if (data.contentData && !isInteractiveWorksheetPayload(data)) {
         delete data.contentData;
         try {
           void updateDoc(item.ref, { contentData: deleteField() }).catch(() => {});
@@ -941,7 +970,7 @@ export const getSubmissionStorageUsageSummary = (): {
     if (s.contentUrl && isExternalCloudUrl(s.contentUrl)) {
       driveLinkedCount += 1;
     }
-    if (s.contentData && s.contentData.length > 0) {
+    if (s.contentData && s.contentData.length > 0 && !isInteractiveWorksheetPayload(s)) {
       inlineFallbackCount += 1;
       inlineBytesApprox += s.contentData.length;
     }
@@ -967,7 +996,7 @@ export const purgeSubmissionBinaryCache = async (
   let purgedCount = 0;
   let freedBytes = 0;
   const updated = subs.map((s) => {
-    if (!s.contentData) return s;
+    if (!s.contentData || isInteractiveWorksheetPayload(s)) return s;
     if (onlyReviewed && !s.reviewedAt && !isExternalCloudUrl(s.contentUrl)) return s;
     purgedCount += 1;
     freedBytes += s.contentData.length;
@@ -1151,6 +1180,16 @@ export const validateSubmissionContent = (data: {
     return { valid: true };
   }
 
+  if (data.submissionMethod === 'interactive_worksheet') {
+    if (!parseWorksheetSubmission(data.contentData)) {
+      return {
+        valid: false,
+        error: '❌ ข้อมูลคำตอบใบงานโต้ตอบไม่สมบูรณ์ กรุณาตอบแบบฝึกหัดแล้วกดส่งอีกครั้งครับ',
+      };
+    }
+    return { valid: true };
+  }
+
   // ถ้ามีการกรอกลิงก์มา ต้องตรวจความถูกต้องของโดเมนก่อนเสมอ
   if (url && !isValidSubmissionUrl(url)) {
     return {
@@ -1221,7 +1260,11 @@ export const submitWork = async (
   const previous = loadSubmissions().find(s => alternatives.has(s.assignmentId) && s.studentId === data.studentId);
   if (previous?.reviewedAt) throw new Error('ครูตรวจงานนี้แล้ว กรุณาติดต่อครูก่อนแก้ไข');
 
-  const hasDirectFile = Boolean(data.contentData && data.contentData.trim().length > 20);
+  const isInteractive = isInteractiveWorksheetPayload({
+    submissionMethod: data.submissionMethod,
+    contentData: data.contentData,
+  });
+  const hasDirectFile = !isInteractive && Boolean(data.contentData && data.contentData.trim().length > 20);
   const hasWorkstation = Boolean(data.workstationNo && data.workstationNo.trim().length >= 1);
 
   let effectiveUrl = data.contentUrl?.trim() || '';
@@ -1247,7 +1290,7 @@ export const submitWork = async (
   if (data.designThinkingSteps?.prototypeUrl?.trim() && !isValidSubmissionUrl(data.designThinkingSteps.prototypeUrl)) {
     throw new Error('ลิงก์ผลงานต้นแบบไม่ถูกต้อง กรุณาใส่ URL เว็บไซต์จริง');
   }
-  if (!effectiveUrl && !hasDirectFile && !hasWorkstation && !data.comment?.trim() && !data.designThinkingSteps) {
+  if (!effectiveUrl && !hasDirectFile && !isInteractive && !hasWorkstation && !data.comment?.trim() && !data.designThinkingSteps) {
     throw new Error('กรุณาแนบภาพหน้าจอ/ไฟล์งาน หรือระบุลิงก์ผลงาน หรือพิมพ์คำตอบของงาน');
   }
 
@@ -1260,13 +1303,15 @@ export const submitWork = async (
   const submission: Submission = {
     ...data,
     contentUrl: normalizedContentUrl || undefined,
-    contentData: hasDirectFile ? data.contentData : undefined,
+    contentData: hasDirectFile || isInteractive ? data.contentData : undefined,
     attachmentFileName: data.attachmentFileName?.trim() || undefined,
     attachmentMimeType: data.attachmentMimeType?.trim() || undefined,
     workstationNo: data.workstationNo?.trim() || undefined,
     submissionMethod:
       data.submissionMethod ||
-      (hasDirectFile
+      (isInteractive
+        ? 'interactive_worksheet'
+        : hasDirectFile
         ? 'screenshot_file'
         : hasWorkstation
         ? 'workstation'
@@ -1329,11 +1374,18 @@ export const reviewSubmission = async (
   if (!assignment.classroom || !assignment.subject) return;
 
   const grades = loadGrades(assignment.classroom, assignment.subject);
-  const student = grades.find((grade) => (
+  const rosterFallback = grades.length === 0 ? loadRoster(assignment.classroom) : [];
+  const matchedGrade = grades.find((grade) => (
     (submission.studentId && (grade.studentCode === submission.studentId || submission.studentId.includes(grade.studentCode))) ||
     grade.name === submission.studentName ||
     grade.studentNo === submission.studentNo
   ));
+  const matchedRoster = !matchedGrade ? rosterFallback.find((r) => (
+    (submission.studentId && (r.studentCode === submission.studentId || submission.studentId.includes(r.studentCode))) ||
+    r.name === submission.studentName ||
+    r.no === submission.studentNo
+  )) : undefined;
+  const student = matchedGrade || (matchedRoster ? { studentCode: matchedRoster.studentCode } : undefined);
   if (!student) return;
   if (assignment.linkedKnowledgeAssessmentId && kScore !== undefined) {
     updateManualAssessmentScore(
@@ -1840,4 +1892,219 @@ export const seedIsAgriAssignmentsForClassroom = async (
   }
 
   return { createdCount, totalCount: course.steps.length };
+};
+
+
+// ============================================================================
+// 🧩 ระบบใบงานโต้ตอบออนไลน์ (สั่งใบงานสำเร็จรูป / สร้างเอง / ตัดคะแนนอัตโนมัติเข้า ปพ.5)
+// ============================================================================
+
+export interface CreateInteractiveWorksheetOptions {
+  title: string;
+  description?: string;
+  classroom: string;
+  subject: Subject;
+  indicatorId?: string;
+  dueDate?: string;
+  spec: InteractiveWorksheetSpec;
+  knowledgeMaxScore?: number;
+  practiceMaxScore?: number;
+  hints?: string[];
+  recommendedReason?: string;
+}
+
+export interface EvaluatedWorksheetSubmission {
+  result: WorksheetGradingResult;
+  scaledK: number;
+  scaledP: number;
+  scaledTotal: number;
+  autoFeedback: string;
+}
+
+/** สร้างและเปิดสั่งใบงานโต้ตอบออนไลน์ให้นักเรียนทำผ่านเว็บได้ทันที (เชื่อมตัวชี้วัดและ ปพ.5 อัตโนมัติ) */
+export const createInteractiveWorksheetAssignment = async (
+  options: CreateInteractiveWorksheetOptions,
+): Promise<Assignment> => {
+  const maxScores = getWorksheetMaxScores(options.spec);
+  const kMax = options.knowledgeMaxScore ?? maxScores.kMax;
+  const pMax = options.practiceMaxScore ?? maxScores.pMax;
+  const dueDate =
+    options.dueDate || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+
+  const validIndicators = getIndicators(options.classroom, options.subject);
+  const resolvedIndicatorId =
+    options.indicatorId && validIndicators.some((ind) => ind.id === options.indicatorId)
+      ? options.indicatorId
+      : validIndicators[0]?.id || options.indicatorId;
+
+  return createAssignment({
+    title: options.title.trim(),
+    description:
+      options.description?.trim() ||
+      'ทำใบงานโต้ตอบออนไลน์ในเว็บได้เลย (เลือกตอบ / ถามต่อ / ลากบล็อกต่อบล็อก / จัดหมวดหมู่) ระบบตรวจคะแนนและส่งครูอัตโนมัติ',
+    classroom: options.classroom,
+    subject: options.subject,
+    indicatorId: resolvedIndicatorId,
+    category: 'p',
+    dueDate,
+    maxScore: Math.max(1, kMax + pMax),
+    knowledgeMaxScore: kMax,
+    practiceMaxScore: pMax,
+    difficulty: 'standard',
+    targetType: 'all',
+    hints: options.hints,
+    recommendedReason:
+      options.recommendedReason || 'ใบงานโต้ตอบออนไลน์ในเว็บ ตรวจคะแนนแยกด้าน K/P อัตโนมัติ',
+    isDraft: false,
+    interactiveWorksheet: options.spec,
+    createdBy: 'teacher',
+  });
+};
+
+/** เปิดสั่งใบงานโต้ตอบจากคลังสำเร็จรูป (ป.1–ม.3) ด้วยคลิกเดียว */
+export const createInteractiveWorksheetFromTemplate = async (
+  template: InteractiveWorksheetTemplate,
+  overrides?: Partial<CreateInteractiveWorksheetOptions>,
+): Promise<Assignment> => {
+  return createInteractiveWorksheetAssignment({
+    title: overrides?.title ?? template.title,
+    description:
+      overrides?.description ??
+      `${template.description} (${template.unitLabel} · ${template.indicatorCode})`,
+    classroom: overrides?.classroom ?? template.classroom,
+    subject: overrides?.subject ?? template.subject,
+    indicatorId: overrides?.indicatorId ?? template.indicatorId,
+    dueDate: overrides?.dueDate,
+    spec: overrides?.spec ?? template.spec,
+    knowledgeMaxScore: overrides?.knowledgeMaxScore,
+    practiceMaxScore: overrides?.practiceMaxScore,
+    hints: overrides?.hints,
+    recommendedReason:
+      overrides?.recommendedReason ??
+      `ใบงานโต้ตอบคลังมาตรฐาน ${template.classroom} · ${template.subjectLabel} (${template.indicatorCode})`,
+  });
+};
+
+/**
+ * ตรวจคำตอบใบงานโต้ตอบฝั่งครูแบบ Deterministic จากโจทย์จริง (ป้องกันการแก้คะแนนฝั่งนักเรียน)
+ */
+export const evaluateWorksheetSubmissionForTeacher = (
+  assignment: Assignment,
+  submission: Submission,
+): EvaluatedWorksheetSubmission | null => {
+  if (!assignment.interactiveWorksheet) return null;
+  const payload = parseWorksheetSubmission(submission.contentData);
+  if (!payload) return null;
+
+  const result = gradeInteractiveWorksheet(assignment.interactiveWorksheet, payload.answers);
+  const hasSplitKP =
+    (assignment.knowledgeMaxScore || 0) > 0 || (assignment.practiceMaxScore || 0) > 0;
+  const targetKMax = hasSplitKP
+    ? assignment.knowledgeMaxScore || 0
+    : assignment.category === 'p'
+      ? 0
+      : assignment.maxScore;
+  const targetPMax = hasSplitKP
+    ? assignment.practiceMaxScore || 0
+    : assignment.category === 'p'
+      ? assignment.maxScore
+      : 0;
+
+  const scaled = scaleWorksheetScoresToAssignment(result, targetKMax, targetPMax);
+  const scaledTotal = scaled.kScore + scaled.pScore;
+  const wrongItems = result.details.filter((d) => !d.correct);
+  const praise =
+    result.percent >= 80
+      ? 'ยอดเยี่ยมมาก!'
+      : result.percent >= 60
+        ? 'ทำได้ดี ผ่านเกณฑ์แล้ว'
+        : 'ควรทบทวนเนื้อหาเพิ่มเติมอีกเล็กน้อย';
+  const missedHint =
+    wrongItems.length > 0
+      ? ` · ทบทวนเพิ่ม ${wrongItems.length} ข้อ (${wrongItems
+          .slice(0, 2)
+          .map((d) => d.label.split(':')[0])
+          .join(', ')})`
+      : ' · ตอบถูกครบทุกข้อ!';
+  const manualHint =
+    result.needsManualReviewCount > 0
+      ? ` · มีข้อเติมคำรอครูตรวจเพิ่ม ${result.needsManualReviewCount} ข้อ`
+      : '';
+
+  const autoFeedback = `⚡ ตรวจใบงานโต้ตอบอัตโนมัติ: ${praise} ได้ ${scaledTotal}/${assignment.maxScore} คะแนน (K ${scaled.kScore}/${targetKMax}, P ${scaled.pScore}/${targetPMax})${missedHint}${manualHint}`;
+
+  return {
+    result,
+    scaledK: scaled.kScore,
+    scaledP: scaled.pScore,
+    scaledTotal,
+    autoFeedback,
+  };
+};
+
+/** ตัดคะแนนใบงานโต้ตอบรายบุคคลเข้า ปพ.5 อัตโนมัติ (เรียก reviewSubmission เพื่อบันทึกครบทุกตาราง) */
+export const autoGradeInteractiveWorksheetSubmission = async (
+  submissionId: string,
+): Promise<{
+  graded: boolean;
+  kScore?: number;
+  pScore?: number;
+  totalScore?: number;
+  percent?: number;
+  reason?: string;
+}> => {
+  const sub = loadSubmissions().find((s) => s.id === submissionId);
+  if (!sub) return { graded: false, reason: 'ไม่พบงานที่ส่ง' };
+  const assignment = loadAssignments().find((a) => a.id === sub.assignmentId);
+  if (!assignment || !assignment.interactiveWorksheet) {
+    return { graded: false, reason: 'ใบงานนี้ไม่ใช่ใบงานโต้ตอบอัตโนมัติ' };
+  }
+  const evaluated = evaluateWorksheetSubmissionForTeacher(assignment, sub);
+  if (!evaluated) {
+    return { graded: false, reason: 'ไม่พบข้อมูลคำตอบใบงานโต้ตอบของนักเรียนคนนี้' };
+  }
+
+  await reviewSubmission(
+    sub.id,
+    { kScore: evaluated.scaledK, pScore: evaluated.scaledP },
+    evaluated.autoFeedback,
+  );
+  return {
+    graded: true,
+    kScore: evaluated.scaledK,
+    pScore: evaluated.scaledP,
+    totalScore: evaluated.scaledTotal,
+    percent: evaluated.result.percent,
+  };
+};
+
+/** ตัดคะแนนใบงานโต้ตอบทั้งห้องเข้า ปพ.5 ในคลิกเดียว */
+export const autoGradeAllWorksheetSubmissions = async (
+  assignmentId: string,
+  options?: { onlyUnreviewed?: boolean },
+): Promise<{ gradedCount: number; skippedCount: number; failedCount: number }> => {
+  const onlyUnreviewed = options?.onlyUnreviewed ?? true;
+  const subs = getSubmissionsByAssignment(assignmentId);
+  let gradedCount = 0;
+  let skippedCount = 0;
+  let failedCount = 0;
+
+  for (const sub of subs) {
+    if (onlyUnreviewed && sub.reviewedAt) {
+      skippedCount += 1;
+      continue;
+    }
+    try {
+      const res = await autoGradeInteractiveWorksheetSubmission(sub.id);
+      if (res.graded) {
+        gradedCount += 1;
+      } else {
+        skippedCount += 1;
+      }
+    } catch {
+      failedCount += 1;
+    }
+  }
+
+  return { gradedCount, skippedCount, failedCount };
 };

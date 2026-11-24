@@ -15,6 +15,10 @@ import {
   Check,
   ClipboardCopy,
   EyeOff,
+  Zap,
+  Pencil,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   loadAssignments, createAssignment, deleteAssignment, updateAssignment,
@@ -29,10 +33,19 @@ import {
   getGoogleDriveAppsScriptTemplate,
   getSubmissionStorageUsageSummary,
   purgeSubmissionBinaryCache,
+  createInteractiveWorksheetFromTemplate,
+  evaluateWorksheetSubmissionForTeacher,
+  autoGradeInteractiveWorksheetSubmission,
+  autoGradeAllWorksheetSubmissions,
   type AssignmentDifficulty, type AssignmentTargetType, type AbilityTier,
   type GoogleDriveBridgeConfig,
 } from '../services/homeworkService';
 import type { Assignment, Submission } from '../services/homeworkService';
+import {
+  INTERACTIVE_WORKSHEET_TEMPLATES,
+  type InteractiveWorksheetTemplate,
+} from '../data/interactiveWorksheetTemplates';
+import InteractiveWorksheetBuilder from './InteractiveWorksheetBuilder';
 import { allClassrooms2569 } from '../data/students2569';
 import { getSubjectsForClassroom, getIndicators } from '../services/gradeService';
 import type { Subject } from '../services/gradeService';
@@ -56,6 +69,12 @@ const HomeworkManager: React.FC = () => {
   const [show, setShow] = useState(false);
   const [showAuto3Tier, setShowAuto3Tier] = useState(false);
   const [showDriveSetup, setShowDriveSetup] = useState(false);
+  const [showWorksheetLibrary, setShowWorksheetLibrary] = useState(false);
+  const [libClassroom, setLibClassroom] = useState<string>('ป.1');
+  const [builderState, setBuilderState] = useState<{
+    open: boolean;
+    template: InteractiveWorksheetTemplate | null;
+  }>({ open: false, template: null });
   const [driveConfig, setDriveConfig] = useState<GoogleDriveBridgeConfig>(() => loadGoogleDriveBridgeConfig());
   const [storageSummary, setStorageSummary] = useState(() => getSubmissionStorageUsageSummary());
   const [copiedScript, setCopiedScript] = useState(false);
@@ -356,6 +375,56 @@ const HomeworkManager: React.FC = () => {
     }
   };
 
+  const handlePublishTemplateNow = async (tpl: InteractiveWorksheetTemplate) => {
+    setSyncing(true);
+    try {
+      await createInteractiveWorksheetFromTemplate(tpl);
+      reload();
+      alert(`✅ เปิดสั่งใบงานโต้ตอบ "${tpl.title}" ให้ชั้น ${tpl.classroom} เรียบร้อยแล้ว!\nนักเรียนสามารถตอบผ่านเว็บและระบบจะตรวจคะแนนให้ทันที`);
+    } catch (err) {
+      console.error(err);
+      alert('เปิดสั่งใบงานไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handlePublishAllTemplatesForClassroom = async (targetClass: string) => {
+    const templates = INTERACTIVE_WORKSHEET_TEMPLATES.filter((t) => t.classroom === targetClass);
+    if (templates.length === 0) return;
+    const existingTemplateIds = new Set(
+      list
+        .filter((a) => a.classroom === targetClass && a.interactiveWorksheet?.templateId)
+        .map((a) => a.interactiveWorksheet!.templateId!),
+    );
+    const toCreate = templates.filter((t) => !existingTemplateIds.has(t.id));
+    if (toCreate.length === 0) {
+      alert(`ห้อง ${targetClass} เปิดสั่งครบทุกใบงานในคลังแล้ว (${templates.length} ใบงาน)`);
+      return;
+    }
+    if (!window.confirm(`ยืนยันเปิดสั่งใบงานโต้ตอบทั้งหมด ${toCreate.length} ใบงาน ให้ห้อง ${targetClass}?`)) {
+      return;
+    }
+    setSyncing(true);
+    try {
+      for (const tpl of toCreate) {
+        await createInteractiveWorksheetFromTemplate(tpl);
+      }
+      reload();
+      alert(`🎉 เปิดสั่งใบงานโต้ตอบให้ห้อง ${targetClass} สำเร็จ ${toCreate.length} ใบงาน!`);
+    } catch (err) {
+      console.error(err);
+      alert('เปิดสั่งใบงานบางรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const libraryTemplates = useMemo(() => {
+    if (libClassroom === 'all') return INTERACTIVE_WORKSHEET_TEMPLATES;
+    return INTERACTIVE_WORKSHEET_TEMPLATES.filter((t) => t.classroom === libClassroom);
+  }, [libClassroom]);
+
   const filteredList = useMemo(() => {
     return list.filter((a) => {
       if (filterClassroom !== 'all' && a.classroom !== filterClassroom) return false;
@@ -376,6 +445,19 @@ const HomeworkManager: React.FC = () => {
       <div className="filter-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
         <button className="btn-primary" onClick={() => setShow(!show)}>
           <Plus size={16} /> {show ? 'ยกเลิก' : 'สร้างการบ้านใหม่'}
+        </button>
+        <button
+          className="btn-primary"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'linear-gradient(135deg, #2563eb, #0d9488)',
+            fontWeight: 800,
+          }}
+          onClick={() => setShowWorksheetLibrary(!showWorksheetLibrary)}
+        >
+          <Zap size={16} /> 🧩 คลังใบงานโต้ตอบ ป.1–ม.3 (สั่ง + ตัดคะแนนอัตโนมัติ)
         </button>
         <button
           className="btn-secondary"
@@ -403,6 +485,160 @@ const HomeworkManager: React.FC = () => {
           ☁️ {driveConfig.scriptWebAppUrl ? 'เชื่อม Google Drive ครูแล้ว (ความจำเว็บ 0 KB)' : 'ตั้งค่า Google Drive รับงานเด็ก (ไม่เปลืองความจำเว็บ)'}
         </button>
       </div>
+
+      {/* 🧩 คลังใบงานโต้ตอบสำเร็จรูป ป.1–ม.3 (สั่งให้ห้องทันที / แก้โจทย์ก่อนสั่ง / สร้างใหม่) */}
+      {showWorksheetLibrary && (
+        <div
+          className="card"
+          style={{
+            marginTop: 12,
+            background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+            border: '1.5px solid #60a5fa',
+            padding: '1.25rem',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+            <div>
+              <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.04rem' }}>
+                🧩 คลังใบงานโต้ตอบออนไลน์ ป.1–ม.3 (ตอบผ่านเว็บ • ตัดคะแนนเข้า ปพ.5 อัตโนมัติ)
+              </h3>
+              <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#334155' }}>
+                มีโจทย์ครบทั้งแบบฝึกหัดปรนัย ถามต่อ ลากบล็อกต่อบล็อก จัดหมวดหมู่ และเติมคำ ตรงตัวชี้วัด ว 4.2 / ว 4.1 / ทักษะอาชีพ IS (K 5 / P 5)
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              {libClassroom !== 'all' && (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={syncing}
+                  onClick={() => void handlePublishAllTemplatesForClassroom(libClassroom)}
+                  style={{ fontSize: '0.8rem', padding: '6px 12px', background: 'linear-gradient(135deg, #059669, #10b981)' }}
+                >
+                  <Zap size={14} /> สั่งครบทุกใบงานของห้อง {libClassroom}
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() =>
+                  setBuilderState({
+                    open: true,
+                    template: null,
+                  })
+                }
+                style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+              >
+                <Plus size={14} /> สร้างใบงานโต้ตอบใหม่เอง
+              </button>
+              <button type="button" className="btn-ghost" onClick={() => setShowWorksheetLibrary(false)}>
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* แถบเลือกชั้นเรียน */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+            {['all', ...allClassrooms2569].map((cls) => {
+              const count =
+                cls === 'all'
+                  ? INTERACTIVE_WORKSHEET_TEMPLATES.length
+                  : INTERACTIVE_WORKSHEET_TEMPLATES.filter((t) => t.classroom === cls).length;
+              const active = libClassroom === cls;
+              return (
+                <button
+                  key={cls}
+                  type="button"
+                  onClick={() => setLibClassroom(cls)}
+                  style={{
+                    padding: '4px 11px',
+                    borderRadius: 999,
+                    border: active ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                    background: active ? '#2563eb' : '#ffffff',
+                    color: active ? '#ffffff' : '#334155',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {cls === 'all' ? `ทั้งหมด (${count})` : `${cls} (${count})`}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* การ์ดใบงานในคลัง */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: 10 }}>
+            {libraryTemplates.map((tpl) => {
+              const alreadyPublished = list.some(
+                (a) =>
+                  a.classroom === tpl.classroom &&
+                  a.interactiveWorksheet?.templateId === tpl.id,
+              );
+              return (
+                <div
+                  key={tpl.id}
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: 12,
+                    padding: 12,
+                    border: alreadyPublished ? '1.5px solid #86efac' : '1px solid #cbd5e1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1d4ed8', background: '#eff6ff', padding: '2px 8px', borderRadius: 999 }}>
+                      {tpl.classroom} · {tpl.subjectLabel} ({tpl.indicatorCode})
+                    </span>
+                    {alreadyPublished && (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#15803d', background: '#dcfce7', padding: '2px 7px', borderRadius: 999 }}>
+                        ✅ สั่งแล้ว
+                      </span>
+                    )}
+                  </div>
+                  <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{tpl.title}</strong>
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: '#475569', lineHeight: 1.45, flex: 1 }}>
+                    {tpl.description}
+                  </p>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {tpl.tags.map((tag) => (
+                      <span key={tag} style={{ fontSize: '0.69rem', padding: '1px 7px', borderRadius: 999, background: '#f1f5f9', color: '#334155', fontWeight: 700 }}>
+                        #{tag}
+                      </span>
+                    ))}
+                    <span style={{ fontSize: '0.69rem', padding: '1px 7px', borderRadius: 999, background: '#ecfdf5', color: '#047857', fontWeight: 700 }}>
+                      K 5 / P 5
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={syncing}
+                      onClick={() => void handlePublishTemplateNow(tpl)}
+                      style={{ flex: 1, fontSize: '0.77rem', padding: '6px 8px', justifyContent: 'center' }}
+                    >
+                      🚀 {alreadyPublished ? 'สั่งซ้ำอีกครั้ง' : `สั่งให้ห้อง ${tpl.classroom} เลย`}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={syncing}
+                      onClick={() => setBuilderState({ open: true, template: tpl })}
+                      style={{ fontSize: '0.77rem', padding: '6px 9px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      title="แก้ไขโจทย์หรือปรับห้องก่อนเปิดสั่ง"
+                    >
+                      <Pencil size={12} /> แก้โจทย์
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Teacher Google Drive Bridge & Zero-Bloat Memory Manager */}
       {showDriveSetup && (
@@ -931,6 +1167,11 @@ const HomeworkManager: React.FC = () => {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <strong>{a.title}</strong>
+                        {a.interactiveWorksheet && (
+                          <span style={{ background: 'linear-gradient(135deg, #dbeafe, #d1fae5)', color: '#065f46', border: '1px solid #6ee7b7', padding: '1px 7px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 800 }}>
+                            🧩 ใบงานโต้ตอบ (ตัดคะแนนอัตโนมัติ)
+                          </span>
+                        )}
                         {isPublished ? (
                           <span style={{ background: '#dcfce7', color: '#15803d', padding: '1px 7px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700 }}>
                             🟢 เปิดสั่งงาน
@@ -1034,6 +1275,19 @@ const HomeworkManager: React.FC = () => {
       {viewing && (
         <ReviewSubmissions assignment={viewing} onClose={() => setViewing(null)} />
       )}
+
+      {builderState.open && (
+        <InteractiveWorksheetBuilder
+          initialTemplate={builderState.template}
+          defaultClassroom={libClassroom === 'all' ? 'ป.1' : libClassroom}
+          onPublished={(created) => {
+            setBuilderState({ open: false, template: null });
+            reload();
+            alert(`🚀 เปิดสั่งใบงานโต้ตอบ "${created.title}" ให้ห้อง ${created.classroom} เรียบร้อยแล้ว!`);
+          }}
+          onClose={() => setBuilderState({ open: false, template: null })}
+        />
+      )}
     </div>
   );
 };
@@ -1049,6 +1303,8 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
   const [pCriteria, setPCriteria] = useState([0, 0, 0, 0]);
   const [pOverride, setPOverride] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
+  const [expandedSubIds, setExpandedSubIds] = useState<Record<string, boolean>>({});
+  const [autoGrading, setAutoGrading] = useState(false);
   const reload = () => setSubs(getSubmissionsByAssignment(assignment.id));
   const roster = loadRoster(assignment.classroom);
   const kMax = assignment.knowledgeMaxScore ?? (assignment.category === 'k' ? assignment.maxScore : 0);
@@ -1056,6 +1312,49 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
   const pRaw = pCriteria.reduce((sum, value) => sum + value, 0);
   const calculatedPScore = pMax > 0 ? Math.round((pRaw / 12) * pMax) : 0;
   const pScore = pOverride ?? calculatedPScore;
+
+  const isInteractiveAssignment = Boolean(assignment.interactiveWorksheet);
+  const unreviewedAutoCount = useMemo(() => {
+    if (!isInteractiveAssignment) return 0;
+    return subs.filter(
+      (s) => !s.reviewedAt && Boolean(evaluateWorksheetSubmissionForTeacher(assignment, s)),
+    ).length;
+  }, [assignment, subs, isInteractiveAssignment]);
+
+  const handleAutoGradeAll = async (onlyUnreviewed: boolean) => {
+    setAutoGrading(true);
+    try {
+      const res = await autoGradeAllWorksheetSubmissions(assignment.id, { onlyUnreviewed });
+      reload();
+      alert(
+        `⚡ ตัดคะแนนใบงานโต้ตอบเข้า ปพ.5 สำเร็จ ${res.gradedCount} คน!` +
+          (res.skippedCount > 0 ? ` (ข้าม ${res.skippedCount} คน)` : '') +
+          (res.failedCount > 0 ? ` · ผิดพลาด ${res.failedCount} คน` : ''),
+      );
+    } catch (err) {
+      console.error(err);
+      alert('เกิดข้อผิดพลาดระหว่างตัดคะแนนอัตโนมัติ');
+    } finally {
+      setAutoGrading(false);
+    }
+  };
+
+  const handleAutoGradeOne = async (subId: string) => {
+    setAutoGrading(true);
+    try {
+      const res = await autoGradeInteractiveWorksheetSubmission(subId);
+      if (res.graded) {
+        reload();
+      } else {
+        alert(res.reason || 'ไม่สามารถตัดคะแนนอัตโนมัติได้');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('ตัดคะแนนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setAutoGrading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -1068,12 +1367,18 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
   const openScore = (submission: Submission) => {
     setCheckInTarget(null);
     setGrading(submission);
-    setKScore(submission.kScore || 0);
-    const existingRatio = pMax > 0 ? (submission.pScore || 0) / pMax : 0;
+    const autoEval =
+      submission.reviewedAt === undefined && isInteractiveAssignment
+        ? evaluateWorksheetSubmissionForTeacher(assignment, submission)
+        : null;
+    const initK = autoEval ? autoEval.scaledK : submission.kScore || 0;
+    const initP = autoEval ? autoEval.scaledP : submission.pScore;
+    setKScore(initK);
+    const existingRatio = pMax > 0 ? (initP || 0) / pMax : 0;
     const criterion = Math.max(0, Math.min(3, Math.round(existingRatio * 3)));
     setPCriteria([criterion, criterion, criterion, criterion]);
-    setPOverride(submission.pScore === undefined ? null : submission.pScore);
-    setFeedback(submission.feedback || '');
+    setPOverride(initP === undefined ? null : initP);
+    setFeedback(submission.feedback || autoEval?.autoFeedback || '');
   };
 
   const openClassroomCheckIn = (student: { studentCode: string; name: string; no: number }) => {
@@ -1211,9 +1516,70 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
           <div><span>ส่งช้า</span><strong>{subs.filter((item) => item.submittedAt > dueTime).length}</strong></div>
           <div><span>ขาดส่ง</span><strong>{Math.max(0, roster.length - subs.length)}</strong></div>
         </div>
+        {isInteractiveAssignment && (
+          <div
+            style={{
+              margin: '10px 0 12px',
+              padding: '10px 14px',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, #eff6ff 0%, #ecfdf5 100%)',
+              border: '1.5px solid #6ee7b7',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 10,
+            }}
+          >
+            <div style={{ fontSize: '0.82rem', color: '#065f46' }}>
+              <strong>🧩 ใบงานโต้ตอบออนไลน์ (ตรวจอัตโนมัติ):</strong>{' '}
+              ระบบคำนวณคะแนน K/P จากคำตอบจริงของนักเรียนทุกคนให้แล้ว กดปุ่มเดียวเพื่อตัดคะแนนลง ปพ.5 ได้ทันที
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={syncing || autoGrading || unreviewedAutoCount === 0}
+                onClick={() => void handleAutoGradeAll(true)}
+                style={{
+                  padding: '6px 13px',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #2563eb, #10b981)',
+                }}
+              >
+                <Zap size={14} />{' '}
+                {autoGrading
+                  ? 'กำลังตัดคะแนน...'
+                  : `ตัดคะแนนอัตโนมัติทั้งห้องเข้า ปพ.5 (รอตรวจ ${unreviewedAutoCount} คน)`}
+              </button>
+              {subs.some((item) => item.reviewedAt) && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={syncing || autoGrading}
+                  onClick={() => {
+                    if (window.confirm('ยืนยันคำนวณและอัปเดตคะแนนอัตโนมัติใหม่สำหรับนักเรียนที่ส่งทุกคน?')) {
+                      void handleAutoGradeAll(false);
+                    }
+                  }}
+                  style={{ padding: '6px 10px', fontSize: '0.76rem' }}
+                >
+                  🔄 คำนวณใหม่ทุกคน
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         {rosterRows.length === 0 ? <p>ยังไม่มีรายชื่อนักเรียนในห้องนี้</p> : (
           <div className="homework-submission-list">
-            {rosterRows.map(({ student, submission: s }) => (
+            {rosterRows.map(({ student, submission: s }) => {
+              const wsEval =
+                s && isInteractiveAssignment
+                  ? evaluateWorksheetSubmissionForTeacher(assignment, s)
+                  : null;
+              const isExpanded = Boolean(s && expandedSubIds[s.id]);
+              return (
               <div key={student.studentCode} className={`homework-submission-row ${s ? '' : 'missing'}`}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                   <div>
@@ -1224,6 +1590,11 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                           ? <span className="late"><Clock3 size={13} /> ส่งช้า</span>
                           : <span className="submitted"><CheckCircle2 size={13} /> ส่งแล้ว</span>}
                         <small>{new Date(s.submittedAt).toLocaleString('th-TH')}</small>
+                        {s.submissionMethod === 'interactive_worksheet' && (
+                          <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '1px 8px', borderRadius: 999, fontSize: '0.73rem', fontWeight: 800 }}>
+                            🧩 ทำใบงานโต้ตอบในเว็บ
+                          </span>
+                        )}
                         {s.workstationNo && (
                           <span style={{ background: '#FEF3C7', color: '#92400E', padding: '1px 8px', borderRadius: 999, fontSize: '0.73rem', fontWeight: 700 }}>
                             🖥️ {s.workstationNo}
@@ -1239,6 +1610,57 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                       <span className="missing-label"><AlertTriangle size={13} /> ยังไม่ส่ง</span>
                     )}
                     {s?.comment && <div style={{ fontSize: '0.85rem', marginTop: 6 }}>{s.comment}</div>}
+                    {wsEval && s && (
+                      <div style={{ marginTop: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ padding: '2px 9px', borderRadius: 999, background: '#ecfdf5', color: '#065f46', border: '1px solid #6ee7b7', fontSize: '0.76rem', fontWeight: 800 }}>
+                            ⚡ ผลตรวจอัตโนมัติ: {wsEval.scaledTotal}/{assignment.maxScore} (K {wsEval.scaledK} / P {wsEval.scaledP} · {wsEval.result.percent}%)
+                          </span>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() =>
+                              setExpandedSubIds((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
+                            }
+                            style={{ padding: '2px 9px', fontSize: '0.74rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          >
+                            {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                            {isExpanded ? 'ซ่อนคำตอบรายข้อ' : `ดูคำตอบรายข้อ (${wsEval.result.details.length} ข้อย่อย)`}
+                          </button>
+                        </div>
+                        {isExpanded && (
+                          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, background: '#f8fafc', padding: 10, borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                            {wsEval.result.details.map((d) => (
+                              <div
+                                key={d.id}
+                                style={{
+                                  padding: '6px 9px',
+                                  borderRadius: 8,
+                                  background: d.correct ? '#f0fdf4' : '#fef2f2',
+                                  border: `1px solid ${d.correct ? '#bbf7d0' : '#fecaca'}`,
+                                  fontSize: '0.78rem',
+                                }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontWeight: 700 }}>
+                                  <span>{d.correct ? '✅' : '❌'} {d.label}</span>
+                                  <span style={{ whiteSpace: 'nowrap', color: d.correct ? '#15803d' : '#b91c1c' }}>
+                                    {d.domain.toUpperCase()} {d.earned}/{d.max}
+                                  </span>
+                                </div>
+                                <div style={{ color: '#334155', marginTop: 2 }}>
+                                  <strong>คำตอบนักเรียน:</strong> {d.studentSummary}
+                                </div>
+                                {!d.correct && (
+                                  <div style={{ color: '#9a3412', marginTop: 1 }}>
+                                    <strong>เฉลย:</strong> {d.expectedSummary}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {s?.designThinkingSteps && (
                       <div style={{ marginTop: 8, padding: 8, background: '#f0fdfa', borderRadius: 8, border: '1px solid #ccfbf1', fontSize: '0.82rem' }}>
                         <strong style={{ color: '#0f766e', display: 'block', marginBottom: 4 }}>💡 รายละเอียดกระบวนการ Design Thinking:</strong>
@@ -1264,9 +1686,27 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                         <button type="button" className="homework-edit-score" onClick={() => openScore(s)}>แก้คะแนน</button>
                       </div>
                     ) : s ? (
-                      <button className="btn-primary" disabled={syncing} onClick={() => openScore(s)} style={{ padding: '4px 12px', fontSize: '0.85rem' }}>
-                        ให้คะแนน
-                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-end' }}>
+                        {wsEval && (
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            disabled={syncing || autoGrading}
+                            onClick={() => void handleAutoGradeOne(s.id)}
+                            style={{
+                              padding: '4px 10px',
+                              fontSize: '0.76rem',
+                              fontWeight: 800,
+                              background: 'linear-gradient(135deg, #2563eb, #10b981)',
+                            }}
+                          >
+                            ⚡ ตัดคะแนน ({wsEval.scaledTotal}/{assignment.maxScore})
+                          </button>
+                        )}
+                        <button className="btn-secondary" disabled={syncing} onClick={() => openScore(s)} style={{ padding: '4px 10px', fontSize: '0.78rem' }}>
+                          {wsEval ? 'ปรับคะแนนเอง' : 'ให้คะแนน'}
+                        </button>
+                      </div>
                     ) : (
                       <button
                         type="button"
@@ -1281,7 +1721,7 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                     )}
                   </div>
                 </div>
-                {s && (s.contentUrl || s.contentData) && (
+                {s && (s.contentUrl || (s.contentData && s.submissionMethod !== 'interactive_worksheet')) && (
                   <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       {s.contentUrl && !isDirectPortalSubmissionUrl(s.contentUrl) && (() => {
@@ -1329,7 +1769,7 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                           🛡️ ส่งตรงผ่านระบบโรงเรียน (ไม่ต้องใช้ Gmail)
                         </span>
                       )}
-                      {s.contentData && (
+                      {s.contentData && s.submissionMethod !== 'interactive_worksheet' && (
                         <a
                           href={s.contentData}
                           download={s.attachmentFileName || `งาน_${student.no}_${student.name}`}
@@ -1371,7 +1811,8 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
