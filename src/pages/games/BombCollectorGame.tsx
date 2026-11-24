@@ -16,9 +16,19 @@ import {
 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
 import { sfxCoin, sfxWrong, sfxCorrect } from '../../utils/gameSounds';
+import { drawBlenderSprite, preloadBlenderSprites } from '../../utils/gameSpriteLoader';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 import './BombCollectorGame.css';
+
+const BOMB_SPRITES = {
+  bot: '/images/games/blender/collector_bot.png',
+  bomb: '/images/games/blender/cyber_bomb.png',
+  core: '/images/games/blender/chip_battery.png',
+  gem: '/images/games/blender/chip_gem.png',
+  disk: '/images/games/blender/chip_disk.png',
+} as const;
+preloadBlenderSprites(Object.values(BOMB_SPRITES));
 
 // Logical arena coordinate system
 const ARENA_WIDTH = 800;
@@ -409,33 +419,19 @@ const BombCollectorGame: React.FC = () => {
         ctx.arc(bomb.x, bomb.y, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - progress), false);
         ctx.stroke();
 
-        // ตัวระเบิด (วาดเอง): ลูกกลมมีแสงสะท้อน + ชนวน + ประกายไฟ
+        // ตัวระเบิด 3D (Blender Cycles PBR) พร้อมขยาย-หดตามจังหวะนับถอยหลัง
         shadow(bomb.x, bomb.y + 20, 18);
-        const body = ctx.createRadialGradient(bomb.x - 6, bomb.y - 6, 2, bomb.x, bomb.y, 19);
-        body.addColorStop(0, '#64748b');
-        body.addColorStop(0.5, '#1e293b');
-        body.addColorStop(1, '#020617');
-        ctx.fillStyle = body;
-        ctx.beginPath();
-        ctx.arc(bomb.x, bomb.y + 2, 18, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(bomb.x - 6, bomb.y - 19, 12, 7);
-        ctx.strokeStyle = '#a16207';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(bomb.x, bomb.y - 19);
-        ctx.quadraticCurveTo(bomb.x + 8, bomb.y - 30, bomb.x + 14, bomb.y - 26);
-        ctx.stroke();
-        const spark = 4 + pulse * 4;
-        ctx.fillStyle = '#fde047';
-        ctx.beginPath();
-        ctx.arc(bomb.x + 14, bomb.y - 26, spark, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(bomb.x + 14, bomb.y - 26, spark * 0.45, 0, Math.PI * 2);
-        ctx.fill();
+        const bombSize = 54 + pulse * 5;
+        if (!drawBlenderSprite(ctx, BOMB_SPRITES.bomb, bomb.x, bomb.y - 2, bombSize, bombSize)) {
+          const body = ctx.createRadialGradient(bomb.x - 6, bomb.y - 6, 2, bomb.x, bomb.y, 19);
+          body.addColorStop(0, '#64748b');
+          body.addColorStop(0.5, '#1e293b');
+          body.addColorStop(1, '#020617');
+          ctx.fillStyle = body;
+          ctx.beginPath();
+          ctx.arc(bomb.x, bomb.y + 2, 18, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
         // ป้ายเวลา
         const secs = `${(bomb.fuseRemaining / 1000).toFixed(1)}s`;
@@ -485,8 +481,15 @@ const BombCollectorGame: React.FC = () => {
       ctx.beginPath();
       ctx.arc(chip.x, chip.y + bob, 26, 0, Math.PI * 2);
       ctx.fill();
-      const icon = chip.type === 'core' ? '🔋' : chip.type === 'gem' ? '💎' : '💾';
-      drawEmoji(icon, chip.x, chip.y + bob, 30);
+      const chipSprite = chip.type === 'core'
+        ? BOMB_SPRITES.core
+        : chip.type === 'gem'
+          ? BOMB_SPRITES.gem
+          : BOMB_SPRITES.disk;
+      if (!drawBlenderSprite(ctx, chipSprite, chip.x, chip.y + bob, 44, 44)) {
+        const icon = chip.type === 'core' ? '🔋' : chip.type === 'gem' ? '💎' : '💾';
+        drawEmoji(icon, chip.x, chip.y + bob, 30);
+      }
     }
 
     // 3. Draw Power-Ups (กล่องทองหมุนวง)
@@ -546,8 +549,10 @@ const BombCollectorGame: React.FC = () => {
         ctx.setLineDash([]);
       }
 
-      // Player body
-      drawEmoji('🤖', p.x, p.y, 42);
+      // Player 3D Bot (Blender Cycles PBR)
+      if (!drawBlenderSprite(ctx, BOMB_SPRITES.bot, p.x, p.y - 3, 62, 62)) {
+        drawEmoji('🤖', p.x, p.y, 42);
+      }
     }
 
     // 5. Draw Floating Texts

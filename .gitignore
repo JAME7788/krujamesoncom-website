@@ -81,6 +81,7 @@ scripts/*.py
 *.txt
 *.png
 !public/sprites/**
+!public/images/games/blender/**
 
 
 

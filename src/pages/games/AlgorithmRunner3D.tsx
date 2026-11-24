@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import {
   ArrowUp,
   BatteryMedium,
@@ -257,7 +259,15 @@ const AlgorithmRunner3D: React.FC = () => {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
     mount.replaceChildren(renderer.domElement);
+
+    let sceneDisposed = false;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envTarget = pmrem.fromScene(new RoomEnvironment(), 0.04);
+    scene.environment = envTarget.texture;
+    pmrem.dispose();
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -295,6 +305,7 @@ const AlgorithmRunner3D: React.FC = () => {
     const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xe05c43, roughness: 0.55 });
     const wallTopMaterial = new THREE.MeshStandardMaterial({ color: 0xffb23f, roughness: 0.45 });
     const pitMaterial = new THREE.MeshStandardMaterial({ color: 0x172033, roughness: 0.82 });
+    const barrierSlots: Array<{ x: number; z: number; fallbacks: THREE.Object3D[] }> = [];
 
     level.rows.forEach((row, z) => {
       Array.from({ length: cols }).forEach((_, x) => {
@@ -324,6 +335,7 @@ const AlgorithmRunner3D: React.FC = () => {
           cap.position.set(point.x, 0.98, point.z);
           cap.castShadow = true;
           scene.add(cap);
+          barrierSlots.push({ x: point.x, z: point.z, fallbacks: [wall, cap] });
         }
       });
     });
@@ -338,19 +350,21 @@ const AlgorithmRunner3D: React.FC = () => {
     scene.add(startRing);
 
     const goalPoint = worldPosition(level.goal[0], level.goal[1]);
+    const goalGroup = new THREE.Group();
+    goalGroup.position.set(goalPoint.x, 0, goalPoint.z);
     const pole = new THREE.Mesh(
       new THREE.CylinderGeometry(0.035, 0.045, 1.65, 12),
       new THREE.MeshStandardMaterial({ color: 0x334155 })
     );
-    pole.position.set(goalPoint.x, 0.82, goalPoint.z);
+    pole.position.set(0, 0.82, 0);
     pole.castShadow = true;
-    scene.add(pole);
     const flag = new THREE.Mesh(
       new THREE.PlaneGeometry(0.72, 0.44),
       new THREE.MeshStandardMaterial({ color: 0x16a34a, side: THREE.DoubleSide })
     );
-    flag.position.set(goalPoint.x + 0.36, 1.34, goalPoint.z);
-    scene.add(flag);
+    flag.position.set(0.36, 1.34, 0);
+    goalGroup.add(pole, flag);
+    scene.add(goalGroup);
 
     const robot = createRobot();
     robotRef.current = robot;
@@ -360,6 +374,67 @@ const AlgorithmRunner3D: React.FC = () => {
       z: level.start[1],
       dir: level.startDir,
     });
+
+    // 🎨 โหลดโมเดล 3D PBR ที่ปั้นด้วย Blender 5.2 (หุ่นยนต์ฮีโร่ + แท่นสิ่งกีดขวาง + ธงเส้นชัย)
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load(
+      '/models/games/runner_robot.glb',
+      (gltf) => {
+        if (sceneDisposed) return;
+        const model = gltf.scene;
+        model.scale.setScalar(0.95);
+        model.traverse((n) => {
+          if ((n as THREE.Mesh).isMesh) {
+            n.castShadow = true;
+            n.receiveShadow = true;
+          }
+        });
+        robot.children.forEach((child) => { child.visible = false; });
+        robot.add(model);
+      },
+      undefined,
+      () => { /* fallback procedural robot stays visible */ },
+    );
+    if (barrierSlots.length > 0) {
+      gltfLoader.load(
+        '/models/games/runner_barrier.glb',
+        (gltf) => {
+          if (sceneDisposed) return;
+          barrierSlots.forEach((slot) => {
+            const barrier = gltf.scene.clone(true);
+            barrier.position.set(slot.x, 0, slot.z);
+            barrier.traverse((n) => {
+              if ((n as THREE.Mesh).isMesh) {
+                n.castShadow = true;
+                n.receiveShadow = true;
+              }
+            });
+            slot.fallbacks.forEach((fb) => { fb.visible = false; });
+            scene.add(barrier);
+          });
+        },
+        undefined,
+        () => { /* fallback procedural barriers stay visible */ },
+      );
+    }
+    gltfLoader.load(
+      '/models/games/runner_goal_flag.glb',
+      (gltf) => {
+        if (sceneDisposed) return;
+        const model = gltf.scene;
+        model.traverse((n) => {
+          if ((n as THREE.Mesh).isMesh) {
+            n.castShadow = true;
+            n.receiveShadow = true;
+          }
+        });
+        pole.visible = false;
+        flag.visible = false;
+        goalGroup.add(model);
+      },
+      undefined,
+      () => { /* fallback procedural flag stays visible */ },
+    );
 
     const resize = () => {
       const width = Math.max(mount.clientWidth, 320);
@@ -376,12 +451,14 @@ const AlgorithmRunner3D: React.FC = () => {
     const animate = () => {
       animationFrame = requestAnimationFrame(animate);
       controls.update();
-      flag.rotation.y = Math.sin(Date.now() * 0.002) * 0.1;
+      goalGroup.rotation.y = Math.sin(Date.now() * 0.002) * 0.14;
       renderer.render(scene, camera);
     };
     animate();
 
     return () => {
+      sceneDisposed = true;
+      envTarget.dispose();
       runTokenRef.current += 1;
       resizeObserver.disconnect();
       cancelAnimationFrame(animationFrame);

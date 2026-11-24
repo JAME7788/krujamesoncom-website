@@ -18,7 +18,17 @@ import {
 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
 import { sfxCorrect, sfxWrong, sfxCoin } from '../../utils/gameSounds';
+import { drawBlenderSprite, preloadBlenderSprites } from '../../utils/gameSpriteLoader';
 import { playGameTone } from '../../utils/gameAudio';
+
+const RACER_SPRITES = {
+  car: '/images/games/blender/racer_car_player.png',
+  coin: '/images/games/blender/racer_coin.png',
+  nitro: '/images/games/blender/racer_nitro.png',
+  shield: '/images/games/blender/racer_shield.png',
+  cone: '/images/games/blender/racer_cone.png',
+} as const;
+preloadBlenderSprites(Object.values(RACER_SPRITES));
 import { getUnifiedGameRecord } from '../../data/unifiedGameRegistry';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
@@ -1188,73 +1198,53 @@ const CyberRacerGame: React.FC = () => {
         ctx.translate(0, bob);
 
         if (entity.type === 'coin') {
-          // เหรียญทองหมุน
-          const spin = Math.abs(Math.cos(now * 0.005 + entity.id));
-          ctx.fillStyle = '#b45309';
-          ctx.beginPath();
-          ctx.ellipse(0, 0, 14 * Math.max(0.25, spin), 14, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#fbbf24';
-          ctx.beginPath();
-          ctx.ellipse(0, 0, 11.5 * Math.max(0.2, spin), 11.5, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#fff7d6';
-          ctx.fillRect(-1.5 * spin, -7, 3 * spin, 14);
+          // เหรียญชิปทอง 3D (Blender Cycles PBR) หมุนเบาๆ
+          const spin = Math.max(0.35, Math.abs(Math.cos(now * 0.004 + entity.id)));
+          if (!drawBlenderSprite(ctx, RACER_SPRITES.coin, 0, 0, 38 * spin, 38)) {
+            ctx.fillStyle = '#b45309';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 14 * Math.max(0.25, spin), 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 11.5 * Math.max(0.2, spin), 11.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
         } else if (entity.type === 'nitro') {
-          // ถังไนโตร + สายฟ้า
-          roundRect(-10, -16, 20, 32, 5);
-          ctx.fillStyle = '#0e7490';
-          ctx.fill();
-          roundRect(-8, -14, 16, 28, 4);
-          ctx.fillStyle = '#22d3ee';
-          ctx.fill();
-          ctx.fillStyle = '#ecfeff';
-          ctx.beginPath();
-          ctx.moveTo(2, -10);
-          ctx.lineTo(-5, 1);
-          ctx.lineTo(0, 1);
-          ctx.lineTo(-2, 10);
-          ctx.lineTo(5, -2);
-          ctx.lineTo(0, -2);
-          ctx.closePath();
-          ctx.fill();
+          // ถังไนโตรพลาสมา 3D (Blender Cycles PBR)
+          if (!drawBlenderSprite(ctx, RACER_SPRITES.nitro, 0, 0, 42, 42)) {
+            roundRect(-10, -16, 20, 32, 5);
+            ctx.fillStyle = '#0e7490';
+            ctx.fill();
+            roundRect(-8, -14, 16, 28, 4);
+            ctx.fillStyle = '#22d3ee';
+            ctx.fill();
+          }
         } else if (entity.type === 'shield') {
-          // ฟองพลังงาน + โล่
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
-          ctx.strokeStyle = '#7dd3fc';
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          ctx.arc(0, 0, 16, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = '#e0f2fe';
-          ctx.beginPath();
-          ctx.moveTo(0, -9);
-          ctx.lineTo(8, -5);
-          ctx.quadraticCurveTo(7, 6, 0, 10);
-          ctx.quadraticCurveTo(-7, 6, -8, -5);
-          ctx.closePath();
-          ctx.fill();
+          // โล่โฮโลแกรม 3D (Blender Cycles PBR)
+          if (!drawBlenderSprite(ctx, RACER_SPRITES.shield, 0, 0, 44, 44)) {
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+            ctx.strokeStyle = '#7dd3fc';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, 16, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
         } else if (entity.type === 'cone') {
-          // กรวยจราจร
-          ctx.fillStyle = '#1f2937';
-          ctx.fillRect(-14, 12, 28, 5);
-          ctx.fillStyle = '#f97316';
-          ctx.beginPath();
-          ctx.moveTo(-3, -18);
-          ctx.lineTo(3, -18);
-          ctx.lineTo(12, 13);
-          ctx.lineTo(-12, 13);
-          ctx.closePath();
-          ctx.fill();
-          ctx.fillStyle = '#f8fafc';
-          ctx.beginPath();
-          ctx.moveTo(-6.5, -2);
-          ctx.lineTo(6.5, -2);
-          ctx.lineTo(8.3, 4);
-          ctx.lineTo(-8.3, 4);
-          ctx.closePath();
-          ctx.fill();
+          // กรวยจราจรไซเบอร์ 3D (Blender Cycles PBR)
+          if (!drawBlenderSprite(ctx, RACER_SPRITES.cone, 0, 0, 44, 44)) {
+            ctx.fillStyle = '#1f2937';
+            ctx.fillRect(-14, 12, 28, 5);
+            ctx.fillStyle = '#f97316';
+            ctx.beginPath();
+            ctx.moveTo(-3, -18);
+            ctx.lineTo(3, -18);
+            ctx.lineTo(12, 13);
+            ctx.lineTo(-12, 13);
+            ctx.closePath();
+            ctx.fill();
+          }
         }
 
         ctx.restore();
@@ -1305,68 +1295,33 @@ const CyberRacerGame: React.FC = () => {
       // เงารถ
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.beginPath();
-      ctx.ellipse(0, 6, 34, 30, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 8, 36, 28, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // ล้อ
-      ctx.fillStyle = '#0b0f19';
-      for (const [wx, wy] of [[-27, -20], [27, -20], [-28, 17], [28, 17]]) {
-        roundRect(wx - 5, wy - 9, 10, 18, 3);
+      // รถสปอร์ตไซเบอร์ 3D (Blender Cycles PBR) พร้อม fallback อัตโนมัติ
+      if (!drawBlenderSprite(ctx, RACER_SPRITES.car, 0, -4, 96, 96)) {
+        ctx.fillStyle = '#0b0f19';
+        for (const [wx, wy] of [[-27, -20], [27, -20], [-28, 17], [28, 17]]) {
+          roundRect(wx - 5, wy - 9, 10, 18, 3);
+          ctx.fill();
+        }
+        const carGrad = ctx.createLinearGradient(-26, 0, 26, 0);
+        carGrad.addColorStop(0, '#7f1d1d');
+        carGrad.addColorStop(0.5, '#f87171');
+        carGrad.addColorStop(1, '#7f1d1d');
+        ctx.fillStyle = carGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, -40);
+        ctx.bezierCurveTo(16, -40, 22, -30, 23, -18);
+        ctx.lineTo(25, 18);
+        ctx.quadraticCurveTo(25, 30, 14, 31);
+        ctx.lineTo(-14, 31);
+        ctx.quadraticCurveTo(-25, 30, -25, 18);
+        ctx.lineTo(-23, -18);
+        ctx.bezierCurveTo(-22, -30, -16, -40, 0, -40);
+        ctx.closePath();
         ctx.fill();
       }
-
-      // ตัวถัง
-      const carGrad = ctx.createLinearGradient(-26, 0, 26, 0);
-      carGrad.addColorStop(0, '#7f1d1d');
-      carGrad.addColorStop(0.25, '#dc2626');
-      carGrad.addColorStop(0.5, '#f87171');
-      carGrad.addColorStop(0.75, '#dc2626');
-      carGrad.addColorStop(1, '#7f1d1d');
-      ctx.fillStyle = carGrad;
-      ctx.beginPath();
-      ctx.moveTo(0, -40);
-      ctx.bezierCurveTo(16, -40, 22, -30, 23, -18);
-      ctx.lineTo(25, 18);
-      ctx.quadraticCurveTo(25, 30, 14, 31);
-      ctx.lineTo(-14, 31);
-      ctx.quadraticCurveTo(-25, 30, -25, 18);
-      ctx.lineTo(-23, -18);
-      ctx.bezierCurveTo(-22, -30, -16, -40, 0, -40);
-      ctx.closePath();
-      ctx.fill();
-
-      // แถบลายกลางรถ
-      ctx.fillStyle = nitro ? '#22d3ee' : '#facc15';
-      ctx.fillRect(-3.5, -39, 7, 70);
-
-      // กระจกห้องโดยสาร
-      const glassGrad = ctx.createLinearGradient(0, -18, 0, 10);
-      glassGrad.addColorStop(0, '#7dd3fc');
-      glassGrad.addColorStop(0.45, '#0369a1');
-      glassGrad.addColorStop(1, '#0b1220');
-      ctx.fillStyle = glassGrad;
-      ctx.beginPath();
-      ctx.moveTo(-15, -12);
-      ctx.quadraticCurveTo(0, -22, 15, -12);
-      ctx.lineTo(13, 9);
-      ctx.quadraticCurveTo(0, 12, -13, 9);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-      ctx.beginPath();
-      ctx.moveTo(-10, -12);
-      ctx.lineTo(-3, -15);
-      ctx.lineTo(-7, 2);
-      ctx.closePath();
-      ctx.fill();
-
-      // สปอยเลอร์ + ไฟท้าย
-      ctx.fillStyle = '#111827';
-      roundRect(-29, 25, 58, 7, 2);
-      ctx.fill();
-      ctx.fillStyle = '#ff1f5a';
-      ctx.fillRect(-23, 31, 11, 3);
-      ctx.fillRect(12, 31, 11, 3);
 
       // Shield Bubble Aura if active
       if (sim.hasShield) {

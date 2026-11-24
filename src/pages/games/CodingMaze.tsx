@@ -548,9 +548,29 @@ const CodingMaze: React.FC = () => {
                 const isGoal = level.goal[0] === x && level.goal[1] === y;
                 return (
                   <div key={`${x}-${y}`} className={`maze-cell maze-${cell}`}>
-                    {isRobot && <div className="robot">🤖</div>}
-                    {!isRobot && isGoal && <span>🏁</span>}
-                    {!isRobot && !isGoal && cell === 'star' && <span>⭐</span>}
+                    {isRobot && (
+                      <div className="robot">
+                        <img
+                          src="/images/games/blender/collector_bot.png"
+                          alt="หุ่นยนต์โค้ดดิ้ง"
+                          style={{ width: '88%', height: '88%', objectFit: 'contain', display: 'block', margin: '0 auto', filter: 'drop-shadow(0 3px 6px rgba(15, 23, 42, 0.4))' }}
+                        />
+                      </div>
+                    )}
+                    {!isRobot && isGoal && (
+                      <img
+                        src="/images/games/blender/goal_flag_3d.png"
+                        alt="ธงเส้นชัย"
+                        style={{ width: '84%', height: '84%', objectFit: 'contain', display: 'block', margin: '0 auto', filter: 'drop-shadow(0 2px 5px rgba(22, 163, 74, 0.45))' }}
+                      />
+                    )}
+                    {!isRobot && !isGoal && cell === 'star' && (
+                      <img
+                        src="/images/games/blender/gold_star_3d.png"
+                        alt="ดาวทอง"
+                        style={{ width: '76%', height: '76%', objectFit: 'contain', display: 'block', margin: '0 auto', filter: 'drop-shadow(0 2px 5px rgba(245, 158, 11, 0.5))' }}
+                      />
+                    )}
                     {!isRobot && !isGoal && isStart && cell !== 'star' && <span style={{ opacity: 0.3 }}>🟢</span>}
                   </div>
                 );

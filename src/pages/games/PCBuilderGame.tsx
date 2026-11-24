@@ -385,7 +385,22 @@ const PCBuilderGame: React.FC = () => {
                 onDrop={(e) => handleDrop(e, part.id)}
               >
                 <div className="pcb-slot-icon">
-                  {isFilled ? part.emoji : '⭕'}
+                  <img
+                    src={`/images/games/blender/pc_${part.id}.png`}
+                    alt={part.name}
+                    style={{
+                      width: 68,
+                      height: 68,
+                      objectFit: 'contain',
+                      display: 'block',
+                      margin: '0 auto',
+                      opacity: isFilled ? 1 : 0.28,
+                      filter: isFilled
+                        ? 'drop-shadow(0 6px 14px rgba(56, 189, 248, 0.45))'
+                        : 'grayscale(1) brightness(1.3)',
+                      transition: 'all 0.25s ease',
+                    }}
+                  />
                 </div>
                 <div className="pcb-slot-label">
                   {isFilled ? part.name : `ช่องวาง: ${part.name}`}
@@ -422,7 +437,21 @@ const PCBuilderGame: React.FC = () => {
                   }}
                   className={`pcb-part-item ${isUsed ? 'used' : ''} ${isSelected ? 'selected' : ''}`}
                 >
-                  <div className="pcb-part-emoji">{part.emoji}</div>
+                  <div className="pcb-part-emoji">
+                    <img
+                      src={`/images/games/blender/pc_${part.id}.png`}
+                      alt={part.name}
+                      draggable={false}
+                      style={{
+                        width: 58,
+                        height: 58,
+                        objectFit: 'contain',
+                        display: 'block',
+                        margin: '0 auto',
+                        filter: 'drop-shadow(0 4px 10px rgba(15, 23, 42, 0.55))',
+                      }}
+                    />
+                  </div>
                   <div className="pcb-part-name">{part.name}</div>
                 </div>
               );
@@ -448,7 +477,13 @@ const PCBuilderGame: React.FC = () => {
               <div className="pcb-learn-list">
                 {currentStage.parts.map((part) => (
                   <div key={part.id} className="pcb-learn-item">
-                    <span className="pcb-learn-icon">{part.emoji}</span>
+                    <span className="pcb-learn-icon">
+                      <img
+                        src={`/images/games/blender/pc_${part.id}.png`}
+                        alt={part.name}
+                        style={{ width: 42, height: 42, objectFit: 'contain', display: 'block' }}
+                      />
+                    </span>
                     <div className="pcb-learn-info">
                       <div className="pcb-learn-name">
                         {part.name} ({part.nameEn}) • <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{part.category}</span>

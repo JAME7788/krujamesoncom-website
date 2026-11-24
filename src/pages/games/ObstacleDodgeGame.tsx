@@ -14,9 +14,19 @@ import {
 } from 'lucide-react';
 import { useGameProgress } from '../../hooks/useGameProgress';
 import { sfxCoin, sfxWrong, sfxCorrect } from '../../utils/gameSounds';
+import { drawBlenderSprite, preloadBlenderSprites } from '../../utils/gameSpriteLoader';
 import GameLearnCard from '../../components/GameLearnCard';
 import './GameStyles.css';
 import './ObstacleDodgeGame.css';
+
+const DODGE_SPRITES = {
+  runner: '/images/games/blender/dodge_runner.png',
+  rocket: '/images/games/blender/dodge_rocket.png',
+  asteroid: '/images/games/blender/dodge_asteroid.png',
+  bolt: '/images/games/blender/dodge_bolt.png',
+  gem: '/images/games/blender/chip_gem.png',
+} as const;
+preloadBlenderSprites(Object.values(DODGE_SPRITES));
 
 const ARENA_WIDTH = 500;
 const ARENA_HEIGHT = 750;
@@ -304,7 +314,11 @@ const ObstacleDodgeGame: React.FC = () => {
       ctx.beginPath();
       ctx.arc(ox, orb.y, 30, 0, Math.PI * 2);
       ctx.fill();
-      drawEmoji(orb.isBoost ? '⚡' : '💎', ox, orb.y + Math.sin(now * 0.006 + orb.y) * 2, 32);
+      const orbSprite = orb.isBoost ? DODGE_SPRITES.bolt : DODGE_SPRITES.gem;
+      const bobY = orb.y + Math.sin(now * 0.006 + orb.y) * 2;
+      if (!drawBlenderSprite(ctx, orbSprite, ox, bobY, 44, 44)) {
+        drawEmoji(orb.isBoost ? '⚡' : '💎', ox, bobY, 32);
+      }
     }
 
     // 3. Draw Hazards: Boulders & Walls
@@ -316,28 +330,20 @@ const ObstacleDodgeGame: React.FC = () => {
         ctx.beginPath();
         ctx.ellipse(bx, h.y + r * 0.85, r * 0.9, r * 0.3, 0, 0, Math.PI * 2);
         ctx.fill();
-        // หินเหลี่ยม (วาดเอง) หมุนตามระยะทาง
+        // อุกกาบาตลาวา 3D (Blender Cycles PBR) หมุนตามระยะทาง
         ctx.save();
         ctx.translate(bx, h.y);
         ctx.rotate(h.y * 0.01);
-        const rock = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 2, 0, 0, r);
-        rock.addColorStop(0, '#a8a29e');
-        rock.addColorStop(0.6, '#57534e');
-        rock.addColorStop(1, '#292524');
-        ctx.fillStyle = rock;
-        ctx.beginPath();
-        const pts = 9;
-        for (let i = 0; i < pts; i++) {
-          const a = (i / pts) * Math.PI * 2;
-          const rr = r * (0.82 + ((i * 37) % 7) / 30);
-          if (i === 0) ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
-          else ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+        if (!drawBlenderSprite(ctx, DODGE_SPRITES.asteroid, 0, 0, r * 2.45, r * 2.45)) {
+          const rock = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 2, 0, 0, r);
+          rock.addColorStop(0, '#a8a29e');
+          rock.addColorStop(0.6, '#57534e');
+          rock.addColorStop(1, '#292524');
+          ctx.fillStyle = rock;
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fill();
         }
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#f43f5e';
-        ctx.lineWidth = 2.5;
-        ctx.stroke();
         ctx.restore();
       } else if (h.type === 'wall') {
         const wallHeight = 30;
@@ -418,7 +424,10 @@ const ObstacleDodgeGame: React.FC = () => {
       ctx.save();
       ctx.translate(p.x, drawY);
       ctx.scale(playerScale, playerScale);
-      drawEmoji(overdrive ? '🚀' : '🏃', 0, 0, 44);
+      const playerSprite = overdrive ? DODGE_SPRITES.rocket : DODGE_SPRITES.runner;
+      if (!drawBlenderSprite(ctx, playerSprite, 0, 0, 72, 72)) {
+        drawEmoji(overdrive ? '🚀' : '🏃', 0, 0, 44);
+      }
       ctx.restore();
     }
   }, [overdrive]);

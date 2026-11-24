@@ -331,17 +331,47 @@ export const SpaceTreasureGame: React.FC = () => {
                   className={`st-cell ${isStation ? 'target' : ''} ${x === 0 && y === 0 ? 'start' : ''}`}
                 >
                   {isShip && (
-                    <span
+                    <img
+                      src="/images/games/blender/dodge_rocket.png"
+                      alt="ยานอวกาศ"
                       className="st-ship"
-                      style={{ transform: `rotate(${DIR_ANGLES[shipPos.dir]}deg)` }}
-                    >
-                      🚀
-                    </span>
+                      style={{
+                        width: '86%',
+                        height: '86%',
+                        objectFit: 'contain',
+                        transform: `rotate(${DIR_ANGLES[shipPos.dir] + 90}deg)`,
+                        filter: 'drop-shadow(0 4px 10px rgba(56, 189, 248, 0.55))',
+                      }}
+                    />
                   )}
-                  {!isShip && isStation && <span>🛰️</span>}
-                  {!isShip && isTreasure && <span>💎</span>}
-                  {!isShip && isAsteroid && <span>🪨</span>}
-                  {!isShip && isEnergy && <span>⚡</span>}
+                  {!isShip && isStation && (
+                    <img
+                      src="/images/games/blender/space_station.png"
+                      alt="สถานีอวกาศ"
+                      style={{ width: '88%', height: '88%', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(56, 189, 248, 0.5))' }}
+                    />
+                  )}
+                  {!isShip && isTreasure && (
+                    <img
+                      src="/images/games/blender/chip_gem.png"
+                      alt="สมบัติคริสตัล"
+                      style={{ width: '74%', height: '74%', objectFit: 'contain', filter: 'drop-shadow(0 3px 8px rgba(34, 211, 238, 0.6))' }}
+                    />
+                  )}
+                  {!isShip && isAsteroid && (
+                    <img
+                      src="/images/games/blender/dodge_asteroid.png"
+                      alt="อุกกาบาต"
+                      style={{ width: '82%', height: '82%', objectFit: 'contain', filter: 'drop-shadow(0 3px 8px rgba(244, 63, 94, 0.5))' }}
+                    />
+                  )}
+                  {!isShip && isEnergy && (
+                    <img
+                      src="/images/games/blender/dodge_bolt.png"
+                      alt="พลังงานสำรอง"
+                      style={{ width: '72%', height: '72%', objectFit: 'contain', filter: 'drop-shadow(0 3px 8px rgba(250, 204, 21, 0.6))' }}
+                    />
+                  )}
                 </div>
               );
             })}
