@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { getSummary, fetchStudentProgress } from '../services/progressService';
 import type { ActivityType } from '../services/progressService';
+import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import { findGrade } from '../data/curriculum';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import TrendChart from '../components/TrendChart';
@@ -108,8 +109,10 @@ const Dashboard: React.FC = () => {
           await persistStudent(partner);
         }
         await fetchStudentProgress(user.id);
+        await syncStudentGradesFromProgress(user);
         if (partner) {
           await fetchStudentProgress(partner.id);
+          await syncStudentGradesFromProgress(partner);
         }
         setSummary(getSummary(user.id, user.classroom));
         const remoteSlots = await fetchScheduleFromFirebase();
@@ -494,6 +497,7 @@ const Dashboard: React.FC = () => {
         classroom={user.classroom}
         studentNumber={user.studentNumber}
         name={user.name}
+        studentId={user.id}
       />
 
       {/* Achievement badges */}

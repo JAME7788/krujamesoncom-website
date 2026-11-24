@@ -1545,16 +1545,38 @@ const UnitDetail: React.FC = () => {
       ? richSlideList.length
       : displaySlides.length;
 
-  // Track slide views — บันทึกทุกครั้งที่นักเรียนเปลี่ยนสไลด์
+  // Track slide views — ต้องอ่านอย่างน้อย 4 วินาทีต่อหน้าเพื่อป้องกันการกดรัว
+  const SLIDE_READ_DWELL_MS = 4000;
+  const currentSlideRecordKey = `${gradeId || ''}_${unitNumber}_${slideIdx}`;
+  const [slideDwellSeconds, setSlideDwellSeconds] = useState<number>(0);
+  const [recordedSlideKeys, setRecordedSlideKeys] = useState<Record<string, boolean>>({});
+
   useEffect(() => {
     if (!user || !gradeId || activeTab !== 'slides' || totalSlides === 0) return;
+    const recordKey = `${gradeId}_${unitNumber}_${slideIdx}`;
+    if (recordedSlideKeys[recordKey]) {
+      setSlideDwellSeconds(0);
+      return;
+    }
+    const start = Date.now();
+    setSlideDwellSeconds(Math.ceil(SLIDE_READ_DWELL_MS / 1000));
+    const countdown = setInterval(() => {
+      const left = Math.max(0, Math.ceil((SLIDE_READ_DWELL_MS - (Date.now() - start)) / 1000));
+      setSlideDwellSeconds(left);
+    }, 250);
     const t = setTimeout(() => {
+      clearInterval(countdown);
+      setSlideDwellSeconds(0);
+      setRecordedSlideKeys((prev) => (prev[recordKey] ? prev : { ...prev, [recordKey]: true }));
       // บันทึกให้ทั้ง main + partner (ถ้านั่งคู่)
       Promise.all(getActiveIds().map((id) => trackSlideView(id, gradeId, unitNumber, slideIdx, totalSlides)))
         .then((stored) => stored.every(Boolean) ? syncActiveUserGrades() : undefined)
         .catch((error) => console.warn('slide progress sync failed', error));
-    }, 800);
-    return () => clearTimeout(t);
+    }, SLIDE_READ_DWELL_MS);
+    return () => {
+      clearInterval(countdown);
+      clearTimeout(t);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIdx, activeTab, user, gradeId, unitNumber, totalSlides]);
 
@@ -2117,7 +2139,20 @@ const UnitDetail: React.FC = () => {
                 <div className="lms-section-header"><h2><FileText size={24} /> สไลด์เนื้อหาบทเรียน</h2></div>
                 <div className={`slide-viewer glass ${isFullscreen ? 'is-fullscreen' : ''}`}>
                   <div className="slide-header">
-                    <div className="slide-counter">สไลด์ {slideIdx + 1} จาก {totalSlides}</div>
+                    <div className="slide-counter" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                      <span>สไลด์ {slideIdx + 1} จาก {totalSlides}</span>
+                      {user && user.id !== 'admin_teacher_account' && (
+                        recordedSlideKeys[currentSlideRecordKey] ? (
+                          <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 999, background: 'rgba(22, 163, 74, 0.16)', color: '#15803d', fontWeight: 700 }}>
+                            ✓ บันทึกการอ่านแล้ว
+                          </span>
+                        ) : slideDwellSeconds > 0 ? (
+                          <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 999, background: 'rgba(234, 179, 8, 0.18)', color: '#a16207', fontWeight: 600 }}>
+                            ⏳ อ่านต่ออีก {slideDwellSeconds} วิ เพื่อบันทึก
+                          </span>
+                        ) : null
+                      )}
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div className="dots-container">
                         {visibleSlideIndexes.map((slideNumber) => (

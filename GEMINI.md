@@ -10,5 +10,5 @@
 - แบบทดสอบเขียนคำตอบที่ถูกเป็นตัวเลือกแรก (`answer: 0`) ระบบสลับตำแหน่งให้
 - ห้ามอีโมจิช่วง U+1FA70–U+1FAFF, ใช้ข้อมูลสมมุติเท่านั้น, ห้ามใช้ข้อมูลส่วนบุคคลจาก `D:\เอกสารโรงเรียน`
 - แก้แล้วรัน `node scripts/build_course_worksheets.mjs`, `node scripts/build_slide_prompts.mjs`, `npx tsc -b`, `npx vitest run`
-- ภาพสไลด์ 144 แผ่นยังไม่ได้สร้าง: ใช้ `docs/slide-prompts/` กับสกิล `/สร้างภาพ`
+- ภาพสไลด์ 144 แผ่นสร้างและเชื่อมครบแล้วใน Google Drive (`G:\My Drive\02_สื่อการสอนและนวัตกรรมการเรียนรู้\สไลด์สอน`) และ `src/data/slideImages.ts` (`iot-smart` 54, `database-basic` 45, `digital-story` 45)
 - งานส่วนนี้ยังไม่ได้ commit: commit เฉพาะไฟล์ที่เกี่ยวข้อง พร้อมแท็กผู้ทำ

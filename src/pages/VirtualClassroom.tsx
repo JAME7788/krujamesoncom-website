@@ -792,6 +792,9 @@ const VirtualClassroom: React.FC = () => {
   });
   const applyStudioBackdropRef = useRef<(idx: number) => void>(() => undefined);
   const teleportToTechZoneRef = useRef<(zone: TechZoneInfo, openModal?: boolean) => void>(() => undefined);
+  const getZoneAnchorRef = useRef<(zoneId: string) => { x: number; z: number; lookX: number; lookZ: number } | undefined>(() => undefined);
+  const [worldSlideDwellSec, setWorldSlideDwellSec] = useState(0);
+  const [worldSlidesRecorded, setWorldSlidesRecorded] = useState<Record<string, boolean>>({});
   const [mode, setMode] = useState<WorldMode>('build');
   const [material, setMaterial] = useState<BlockMaterial>('grass');
   const [teacherRoom, setTeacherRoom] = useState(user?.classroom || 'ป.1');
@@ -974,6 +977,54 @@ const VirtualClassroom: React.FC = () => {
     artifacts: todayEvents.filter((event) => event.kind === 'artifact').length,
   }), [onlinePlayers, todayEvents]);
 
+  const studentProgressSummary = useMemo(() => {
+    const map = new Map<string, {
+      id: string;
+      name: string;
+      color: string;
+      online: boolean;
+      slides: number;
+      questions: number;
+      games: number;
+      artifacts: number;
+    }>();
+    onlinePlayers
+      .filter((p) => p.role !== 'teacher')
+      .forEach((p) => {
+        map.set(p.id, {
+          id: p.id,
+          name: p.name,
+          color: p.color,
+          online: true,
+          slides: 0,
+          questions: 0,
+          games: 0,
+          artifacts: 0,
+        });
+      });
+    todayEvents.forEach((ev) => {
+      if (ev.playerId === 'admin_teacher_account') return;
+      const existing = map.get(ev.playerId) || {
+        id: ev.playerId,
+        name: ev.playerName,
+        color: '#38bdf8',
+        online: false,
+        slides: 0,
+        questions: 0,
+        games: 0,
+        artifacts: 0,
+      };
+      if (ev.kind === 'slide') existing.slides += 1;
+      else if (ev.kind === 'question') existing.questions += 1;
+      else if (ev.kind === 'game') existing.games += 1;
+      else if (ev.kind === 'artifact') existing.artifacts += 1;
+      map.set(ev.playerId, existing);
+    });
+    return Array.from(map.values()).sort(
+      (a, b) => (b.slides + b.questions * 2 + b.games * 2 + b.artifacts) - (a.slides + a.questions * 2 + a.games * 2 + a.artifacts),
+    );
+  }, [onlinePlayers, todayEvents]);
+
   useEffect(() => {
     const unsubscribeRoom = subscribeVirtualRoomState(
       roomId,
@@ -1086,14 +1137,44 @@ const VirtualClassroom: React.FC = () => {
     setQuizAnswer(null);
     setSelectedBoard(board);
     if (broadcast) broadcastPresentation(board, safeIndex);
-    void recordActivity(
-      'slide',
-      `u${board.unitNo}-slide-${safeIndex}`,
-      board.unitNo,
-      `เปิดสไลด์ ${safeIndex + 1}: ${board.title}`,
-      { slideIndex: safeIndex, totalSlides: board.slides.length },
-    );
-  }, [broadcastPresentation, recordActivity, setQuizAnswer, setSelectedBoard, setSlideIndex]);
+  }, [broadcastPresentation, setQuizAnswer, setSelectedBoard, setSlideIndex]);
+
+  // บันทึกการอ่านสไลด์ในห้อง 3D เมื่ออ่านอย่างน้อย 3.5 วินาทีต่อหน้า (กันเด็กกดเปลี่ยนสไลด์รัวๆ)
+  useEffect(() => {
+    if (!selectedBoard || isTeacher || !user || user.id === 'admin_teacher_account' || qaMode) {
+      setWorldSlideDwellSec(0);
+      return;
+    }
+    const key = `u${selectedBoard.unitNo}-slide-${slideIndex}`;
+    if (worldSlidesRecorded[key]) {
+      setWorldSlideDwellSec(0);
+      return;
+    }
+    const DWELL_MS = 3500;
+    const start = Date.now();
+    setWorldSlideDwellSec(Math.ceil(DWELL_MS / 1000));
+    const countdown = window.setInterval(() => {
+      const left = Math.max(0, Math.ceil((DWELL_MS - (Date.now() - start)) / 1000));
+      setWorldSlideDwellSec(left);
+    }, 250);
+    const timer = window.setTimeout(() => {
+      window.clearInterval(countdown);
+      setWorldSlideDwellSec(0);
+      setWorldSlidesRecorded((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
+      void recordActivity(
+        'slide',
+        key,
+        selectedBoard.unitNo,
+        `เปิดสไลด์ ${slideIndex + 1}: ${selectedBoard.title}`,
+        { slideIndex, totalSlides: selectedBoard.slides.length },
+      );
+    }, DWELL_MS);
+    return () => {
+      window.clearInterval(countdown);
+      window.clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTeacher, qaMode, recordActivity, selectedBoard, slideIndex, user]);
 
   useEffect(() => {
     if (isTeacher || !followTeacher || roomState.presentationVersion <= lastPresentationVersionRef.current) return;
@@ -1122,16 +1203,45 @@ const VirtualClassroom: React.FC = () => {
   useEffect(() => {
     if (isTeacher || roomState.summonVersion <= lastSummonVersionRef.current) return;
     lastSummonVersionRef.current = roomState.summonVersion;
+    const label = roomState.summonLabel || 'หน้าห้องเรียน';
     const timer = window.setTimeout(() => {
       summonRef.current();
-      setStatus('ครูเรียกรวมหน้าห้องเรียน');
+      setStatus(`ครูพาทั้งห้องมาที่: ${label}`);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [isTeacher, roomState.summonVersion]);
+  }, [isTeacher, roomState.summonLabel, roomState.summonVersion]);
 
   const updateRoom = (patch: Partial<VirtualRoomState>) => {
     if (!isTeacher) return;
     void updateVirtualRoomState(roomId, roomClassroom, patch, playerId);
+  };
+
+  const summonClassToSpot = (x: number, z: number, lookX: number, lookZ: number, label: string) => {
+    if (!isTeacher) return;
+    updateRoom({
+      summonVersion: (roomState.summonVersion || 0) + 1,
+      summonX: x,
+      summonZ: z,
+      summonLookX: lookX,
+      summonLookZ: lookZ,
+      summonLabel: label,
+    });
+    teleportToCoordsRef.current(x, 1.7, z, `พาทั้งห้องมาที่: ${label}`);
+  };
+
+  const summonClassToZone = (zone: TechZoneInfo) => {
+    if (!isTeacher) return;
+    const anchor = getZoneAnchorRef.current(zone.id) ?? zone;
+    updateRoom({
+      summonVersion: (roomState.summonVersion || 0) + 1,
+      summonX: anchor.x,
+      summonZ: anchor.z,
+      summonLookX: anchor.lookX,
+      summonLookZ: anchor.lookZ,
+      summonLabel: zone.shortTitle,
+    });
+    teleportToTechZoneRef.current(zone, false);
+    setStatus(`🏛️ พาทั้งห้องวาร์ปมาที่ ${zone.shortTitle} แล้ว`);
   };
 
   const submitRoomCode = async () => {
@@ -1189,13 +1299,6 @@ const VirtualClassroom: React.FC = () => {
     setSlideIndex(safeIndex);
     setQuizAnswer(null);
     if (isTeacher) broadcastPresentation(selectedBoard, safeIndex);
-    void recordActivity(
-      'slide',
-      `u${selectedBoard.unitNo}-slide-${safeIndex}`,
-      selectedBoard.unitNo,
-      `เปิดสไลด์ ${safeIndex + 1}: ${selectedBoard.title}`,
-      { slideIndex: safeIndex, totalSlides: selectedBoard.slides.length },
-    );
   };
 
   useEffect(() => {
@@ -1234,8 +1337,8 @@ const VirtualClassroom: React.FC = () => {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0c192c);
-    scene.fog = new THREE.Fog(0x0c192c, 42, graphicsQuality === 'low' ? 92 : 140);
-    const camera = new THREE.PerspectiveCamera(70, mount.clientWidth / mount.clientHeight, 0.1, 210);
+    scene.fog = new THREE.Fog(0x0c192c, 52, graphicsQuality === 'low' ? 115 : 178);
+    const camera = new THREE.PerspectiveCamera(70, mount.clientWidth / mount.clientHeight, 0.1, 270);
     const spawn = playerSpawn(playerId);
     const playerPosition = new THREE.Vector3(spawn.x, 1.7, spawn.z);
     camera.position.copy(playerPosition);
@@ -1560,8 +1663,41 @@ const VirtualClassroom: React.FC = () => {
         roughness: 0.15,
       }),
     );
-    domeCoreOrb.position.set(0, 7.1, 0);
-    cyberDomeGroup.add(skylightRing, skylightInnerRing, domeCoreOrb);
+    domeCoreOrb.position.set(0, 7.3, 0);
+    const domeWireGlobe = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(1.55, 1),
+      new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.48,
+      }),
+    );
+    domeWireGlobe.position.set(0, 7.3, 0);
+    const domeGyroRingA = new THREE.Mesh(
+      new THREE.TorusGeometry(2.05, 0.06, 8, 42),
+      neonGoldTrimMat,
+    );
+    domeGyroRingA.position.set(0, 7.3, 0);
+    domeGyroRingA.rotation.x = Math.PI / 3;
+    const domeGyroRingB = new THREE.Mesh(
+      new THREE.TorusGeometry(2.35, 0.05, 8, 42),
+      new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.85 }),
+    );
+    domeGyroRingB.position.set(0, 7.3, 0);
+    domeGyroRingB.rotation.y = Math.PI / 4;
+    // แถบไฟเรืองแสงล้อมขอบพื้นลานโดมกลาง
+    [
+      [0, -8.52, 20.4, 0.14],
+      [0, 8.52, 20.4, 0.14],
+      [-10.08, 0, 0.14, 17.2],
+      [10.08, 0, 0.14, 17.2],
+    ].forEach(([tx, tz, tw, td]) => {
+      const floorTrim = new THREE.Mesh(new THREE.BoxGeometry(tw, 0.08, td), neonCyanTrimMat);
+      floorTrim.position.set(tx, 0.21, tz);
+      cyberDomeGroup.add(floorTrim);
+    });
+    cyberDomeGroup.add(skylightRing, skylightInnerRing, domeCoreOrb, domeWireGlobe, domeGyroRingA, domeGyroRingB);
     scene.add(cyberDomeGroup);
 
     // ภูเขาคริสตัลข้อมูลว็อกเซล (Cyber Data Crystal Hills) รอบขอบแผนที่ ใช้ InstancedMesh เพื่อลด draw call
@@ -1620,27 +1756,127 @@ const VirtualClassroom: React.FC = () => {
     addTerrainInstances(dirtPositions, dirtMaterial);
     addTerrainInstances(grassPositions, grassMaterial);
 
-    // ท้องฟ้าโลกไซเบอร์: ดวงอาทิตย์ควอนตัม + วงแหวนดาวเทียมโคจร (Orbital Cyber Ring)
+    // ท้องฟ้าโลกไซเบอร์: ดวงอาทิตย์ควอนตัม + วงแหวนดาวเทียมคู่ + ดาวอวกาศ + แสงเหนือ Aurora + เส้นขอบฟ้าเมืองอนาคต
     const skyDecor = new THREE.Group();
     const cubeSun = new THREE.Mesh(
-      new THREE.BoxGeometry(4.5, 4.5, 1),
+      new THREE.BoxGeometry(5.2, 5.2, 1.2),
       new THREE.MeshBasicMaterial({ color: 0x38bdf8, fog: false }),
     );
-    cubeSun.position.set(-28, 27, -42);
-    skyDecor.add(cubeSun);
+    cubeSun.position.set(-34, 34, -56);
+    const cubeSunHalo = new THREE.Mesh(
+      new THREE.RingGeometry(4.2, 6.4, 24),
+      new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.28,
+        side: THREE.DoubleSide,
+        fog: false,
+      }),
+    );
+    cubeSunHalo.position.copy(cubeSun.position);
+    skyDecor.add(cubeSun, cubeSunHalo);
+
     const orbitalSkyRing = new THREE.Mesh(
-      new THREE.TorusGeometry(32, 0.22, 8, 64),
+      new THREE.TorusGeometry(34, 0.22, 8, 64),
       new THREE.MeshBasicMaterial({ color: 0x0ea5e9, fog: false }),
     );
     orbitalSkyRing.rotation.x = Math.PI / 2.25;
     orbitalSkyRing.rotation.y = 0.28;
-    orbitalSkyRing.position.set(0, 24, 0);
+    orbitalSkyRing.position.set(0, 26, 0);
+    // ดาวเทียมมินิโคจรบนวงแหวน
+    const satMat = new THREE.MeshBasicMaterial({ color: 0xfde047, fog: false });
+    [0, (Math.PI * 2) / 3, (Math.PI * 4) / 3].forEach((angle) => {
+      const sat = new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), satMat);
+      sat.position.set(Math.cos(angle) * 34, Math.sin(angle) * 34, 0);
+      orbitalSkyRing.add(sat);
+    });
     skyDecor.add(orbitalSkyRing);
-    const cloudMaterial = new THREE.MeshBasicMaterial({ color: 0x38bdf8, fog: false });
-    [[-18, 19, -28], [20, 22, -35], [6, 18, 32]].forEach(([x, y, z], cloudIndex) => {
+
+    const orbitalSkyRing2 = new THREE.Mesh(
+      new THREE.TorusGeometry(48, 0.16, 8, 72),
+      new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.72, fog: false }),
+    );
+    orbitalSkyRing2.rotation.x = Math.PI / 2.4;
+    orbitalSkyRing2.rotation.y = -0.35;
+    orbitalSkyRing2.position.set(0, 31, 0);
+    skyDecor.add(orbitalSkyRing2);
+
+    // 🌌 ทุ่งดาวจักรวาล (Cosmic Starfield) บนท้องฟ้า 360°
+    const starCount = graphicsQuality === 'low' ? 160 : 420;
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+    const starPalette = [
+      new THREE.Color(0xe0f2fe),
+      new THREE.Color(0x38bdf8),
+      new THREE.Color(0xfde047),
+      new THREE.Color(0xc084fc),
+      new THREE.Color(0x6ee7b7),
+    ];
+    for (let i = 0; i < starCount; i += 1) {
+      const seed = (i + 1) * 12.9898;
+      const randA = Math.abs(Math.sin(seed) * 43758.5453) % 1;
+      const randB = Math.abs(Math.sin(seed * 1.37) * 24634.6345) % 1;
+      const randC = Math.abs(Math.sin(seed * 2.13) * 19532.1234) % 1;
+      const theta = randA * Math.PI * 2;
+      const phi = 0.14 + randB * (Math.PI * 0.36);
+      const radius = 112 + randC * 32;
+      starPositions[i * 3] = Math.cos(theta) * Math.cos(phi) * radius;
+      starPositions[i * 3 + 1] = Math.sin(phi) * radius + 12;
+      starPositions[i * 3 + 2] = Math.sin(theta) * Math.cos(phi) * radius;
+      const col = starPalette[i % starPalette.length];
+      starColors[i * 3] = col.r;
+      starColors[i * 3 + 1] = col.g;
+      starColors[i * 3 + 2] = col.b;
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    const starFieldMat = new THREE.PointsMaterial({
+      size: graphicsQuality === 'low' ? 1.15 : 1.35,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.72,
+      fog: false,
+      depthWrite: false,
+    });
+    const starField = new THREE.Points(starGeo, starFieldMat);
+    skyDecor.add(starField);
+
+    // 🌈 ริบบิ้นแสงเหนือออโรราไซเบอร์ (Aurora Cyber Sky Ribbons)
+    const makeAuroraRibbon = (colorHex: number, zOffset: number, yBase: number, phase: number) => {
+      const geo = new THREE.PlaneGeometry(155, 13, 28, 1);
+      const pos = geo.attributes.position;
+      for (let idx = 0; idx < pos.count; idx += 1) {
+        const px = pos.getX(idx);
+        const py = pos.getY(idx);
+        const curveZ = Math.sin((px / 155) * Math.PI * 2.2 + phase) * 14 - (px * px) * 0.0042;
+        const curveY = Math.cos((px / 155) * Math.PI * 1.8 + phase) * 4.2;
+        pos.setXYZ(idx, px, py + curveY, curveZ);
+      }
+      geo.computeVertexNormals();
+      const mat = new THREE.MeshBasicMaterial({
+        color: colorHex,
+        transparent: true,
+        opacity: 0.16,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        fog: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(0, yBase, zOffset);
+      return { mesh, mat };
+    };
+    const auroraNorth = makeAuroraRibbon(0x22d3ee, -78, 38, 0.4);
+    const auroraSouth = makeAuroraRibbon(0xa855f7, 78, 41, 2.1);
+    auroraSouth.mesh.rotation.y = Math.PI;
+    skyDecor.add(auroraNorth.mesh, auroraSouth.mesh);
+
+    const cloudMaterial = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45, fog: false });
+    [[-22, 22, -32], [24, 25, -38], [8, 21, 36], [-28, 24, 28]].forEach(([x, y, z], cloudIndex) => {
       const cloud = new THREE.Group();
-      [[0, 0, 0, 4.5], [2.8, 0, 0, 3], [-2.8, 0, 0, 2.5]].forEach(([cx, cy, cz, width]) => {
-        const part = new THREE.Mesh(new THREE.BoxGeometry(width, 0.9, 1.4), cloudMaterial);
+      [[0, 0, 0, 5.2], [3.0, 0, 0, 3.2], [-3.0, 0, 0, 2.8]].forEach(([cx, cy, cz, width]) => {
+        const part = new THREE.Mesh(new THREE.BoxGeometry(width, 0.75, 1.4), cloudMaterial);
         part.position.set(cx, cy, cz);
         cloud.add(part);
       });
@@ -1649,34 +1885,127 @@ const VirtualClassroom: React.FC = () => {
     });
     scene.add(skyDecor);
 
+    // 🏙️ เส้นขอบฟ้าเมืองไซเบอร์อนาคต 360° (Distant Futuristic City Skyline · InstancedMesh ประหยัด draw call)
+    const skylineAccentMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.72,
+    });
+    if (graphicsQuality !== 'low') {
+      const skylineBodyMat = new THREE.MeshStandardMaterial({
+        color: 0x0b1528,
+        roughness: 0.55,
+        metalness: 0.45,
+      });
+      const towerSpecs: Array<{ x: number; z: number; w: number; h: number; d: number }> = [];
+      const sides = 4;
+      const perSide = 16;
+      for (let side = 0; side < sides; side += 1) {
+        for (let idx = 0; idx < perSide; idx += 1) {
+          const frac = (idx / (perSide - 1)) * 2 - 1;
+          const seed = side * 31 + idx * 17 + 5;
+          const r1 = Math.abs(Math.sin(seed * 12.31) * 4375.5) % 1;
+          const r2 = Math.abs(Math.sin(seed * 27.19) * 2813.7) % 1;
+          const dist = 85 + r1 * 11;
+          const along = frac * 78;
+          const x = side === 0 ? along : side === 1 ? along : side === 2 ? -dist : dist;
+          const z = side === 0 ? -dist : side === 1 ? dist : along;
+          const w = 4.2 + r1 * 4.5;
+          const d = 4.2 + r2 * 4.2;
+          const h = 11 + ((r1 + r2) * 0.5) * 28;
+          towerSpecs.push({ x, z, w, h, d });
+        }
+      }
+      const towerGeo = new THREE.BoxGeometry(1, 1, 1);
+      const skylineBodyInst = new THREE.InstancedMesh(towerGeo, skylineBodyMat, towerSpecs.length);
+      const skylineGlowInst = new THREE.InstancedMesh(towerGeo, skylineAccentMat, towerSpecs.length);
+      const towerDummy = new THREE.Object3D();
+      towerSpecs.forEach((t, index) => {
+        towerDummy.position.set(t.x, t.h / 2, t.z);
+        towerDummy.scale.set(t.w, t.h, t.d);
+        towerDummy.updateMatrix();
+        skylineBodyInst.setMatrixAt(index, towerDummy.matrix);
+
+        // แถบไฟนีออนแนวตั้งบนตึก + ยอดหอคอยเรืองแสง
+        towerDummy.position.set(t.x, t.h + 0.35, t.z);
+        towerDummy.scale.set(t.w * 0.65, 0.55, t.d * 0.65);
+        towerDummy.updateMatrix();
+        skylineGlowInst.setMatrixAt(index, towerDummy.matrix);
+      });
+      skylineBodyInst.instanceMatrix.needsUpdate = true;
+      skylineGlowInst.instanceMatrix.needsUpdate = true;
+      scene.add(skylineBodyInst, skylineGlowInst);
+
+      // เสาแสงโฮโลแกรมรอบทิศ 8 ทิศที่ขอบแผนที่ (Compass Horizon Light Beacons)
+      const beaconGeo = new THREE.CylinderGeometry(0.18, 0.9, 44, 10, 1, true);
+      for (let b = 0; b < 8; b += 1) {
+        const ang = (b / 8) * Math.PI * 2;
+        const bx = Math.cos(ang) * 79;
+        const bz = Math.sin(ang) * 79;
+        const bMat = new THREE.MeshBasicMaterial({
+          color: b % 2 === 0 ? 0x38bdf8 : 0xa855f7,
+          transparent: true,
+          opacity: 0.14,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        });
+        const beacon = new THREE.Mesh(beaconGeo, bMat);
+        beacon.position.set(bx, 22, bz);
+        scene.add(beacon);
+      }
+    }
+
     applyWorldTimeRef.current = (timeMode: 'day' | 'sunset' | 'night') => {
+      const fogFar = graphicsQuality === 'low' ? 115 : 178;
       if (timeMode === 'night') {
-        scene.background = new THREE.Color(0x050b14);
-        scene.fog = new THREE.Fog(0x050b14, 42, graphicsQuality === 'low' ? 92 : 140);
+        scene.background = new THREE.Color(0x040914);
+        scene.fog = new THREE.Fog(0x040914, 52, fogFar);
         hemiLight.color.setHex(0x38bdf8);
         hemiLight.groundColor.setHex(0x090d16);
-        hemiLight.intensity = 1.1;
+        hemiLight.intensity = 1.2;
         sun.color.setHex(0x7dd3fc);
-        sun.intensity = 1.05;
+        sun.intensity = 1.1;
         (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0xe2e8f0);
+        (cubeSunHalo.material as THREE.MeshBasicMaterial).color.setHex(0x7dd3fc);
+        starFieldMat.opacity = 0.95;
+        auroraNorth.mat.color.setHex(0x22d3ee);
+        auroraNorth.mat.opacity = 0.28;
+        auroraSouth.mat.color.setHex(0x34d399);
+        auroraSouth.mat.opacity = 0.24;
+        skylineAccentMat.color.setHex(0x22d3ee);
       } else if (timeMode === 'sunset') {
-        scene.background = new THREE.Color(0x2e1065);
-        scene.fog = new THREE.Fog(0x2e1065, 42, graphicsQuality === 'low' ? 92 : 140);
+        scene.background = new THREE.Color(0x2b1055);
+        scene.fog = new THREE.Fog(0x2b1055, 52, fogFar);
         hemiLight.color.setHex(0xf472b6);
         hemiLight.groundColor.setHex(0x1e1b4b);
-        hemiLight.intensity = 1.75;
+        hemiLight.intensity = 1.8;
         sun.color.setHex(0xfb923c);
-        sun.intensity = 1.9;
+        sun.intensity = 1.95;
         (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0xf97316);
+        (cubeSunHalo.material as THREE.MeshBasicMaterial).color.setHex(0xf472b6);
+        starFieldMat.opacity = 0.78;
+        auroraNorth.mat.color.setHex(0xf472b6);
+        auroraNorth.mat.opacity = 0.26;
+        auroraSouth.mat.color.setHex(0xfb923c);
+        auroraSouth.mat.opacity = 0.22;
+        skylineAccentMat.color.setHex(0xf472b6);
       } else {
         scene.background = new THREE.Color(0x0c192c);
-        scene.fog = new THREE.Fog(0x0c192c, 42, graphicsQuality === 'low' ? 92 : 140);
+        scene.fog = new THREE.Fog(0x0c192c, 52, fogFar);
         hemiLight.color.setHex(0xbae6fd);
         hemiLight.groundColor.setHex(0x0f172a);
         hemiLight.intensity = 2.15;
         sun.color.setHex(0xf8fafc);
         sun.intensity = 2.25;
         (cubeSun.material as THREE.MeshBasicMaterial).color.setHex(0x38bdf8);
+        (cubeSunHalo.material as THREE.MeshBasicMaterial).color.setHex(0x38bdf8);
+        starFieldMat.opacity = 0.62;
+        auroraNorth.mat.color.setHex(0x22d3ee);
+        auroraNorth.mat.opacity = 0.16;
+        auroraSouth.mat.color.setHex(0xa855f7);
+        auroraSouth.mat.opacity = 0.14;
+        skylineAccentMat.color.setHex(0x38bdf8);
       }
     };
 
@@ -2960,7 +3289,7 @@ const VirtualClassroom: React.FC = () => {
       padFloor.userData = { kind: 'ground', sampleColor: plot.hex };
       plotGroup.add(padFloor);
 
-      // กรอบนีออนรอบแปลง
+      // กรอบนีออนรอบแปลง + เสาคริสตัลมุมแปลง 4 ต้น (ไม่ขวางการสร้าง)
       [
         [0, -half, size + 0.2, 0.18],
         [0, half, size + 0.2, 0.18],
@@ -2971,6 +3300,38 @@ const VirtualClassroom: React.FC = () => {
         edge.position.set(bx, 0.06, bz);
         plotGroup.add(edge);
       });
+      const cornerMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        metalness: 0.65,
+        roughness: 0.25,
+      });
+      [
+        [-half, -half],
+        [half, -half],
+        [-half, half],
+        [half, half],
+      ].forEach(([cx, cz]) => {
+        const cornerPost = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.85, 0.24), cornerMat);
+        cornerPost.position.set(cx, 0.92, cz);
+        const crystalCap = new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 0), borderMat);
+        crystalCap.position.set(cx, 2.05, cz);
+        plotGroup.add(cornerPost, crystalCap);
+      });
+      if (plot.id === 'plot_team') {
+        // ซุ้มประตูต้อนรับลานสร้างสรรค์รวม Team Yard (20×20) ตั้งคร่อมโปสเตอร์อย่างสวยงาม
+        [-4.8, 4.8].forEach((gx) => {
+          const gateCol = new THREE.Mesh(new THREE.BoxGeometry(0.55, 8.4, 0.55), cornerMat);
+          gateCol.position.set(gx, 4.2, -half - 0.6);
+          const gateStrip = new THREE.Mesh(new THREE.BoxGeometry(0.18, 8.0, 0.62), borderMat);
+          gateStrip.position.set(gx, 4.2, -half - 0.6);
+          plotGroup.add(gateCol, gateStrip);
+        });
+        const gateArch = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.36, 0.58), cornerMat);
+        gateArch.position.set(0, 8.45, -half - 0.6);
+        const gateArchGlow = new THREE.Mesh(new THREE.BoxGeometry(9.8, 0.14, 0.64), borderMat);
+        gateArchGlow.position.set(0, 8.22, -half - 0.6);
+        plotGroup.add(gateArch, gateArchGlow);
+      }
 
       // ป้ายโฮโลแกรมประจำแปลง (คลิกเพื่อเปิดโหมดสร้างบล็อกหรือ Code Builder ทันที)
       const signPost = new THREE.Mesh(
@@ -3042,17 +3403,24 @@ const VirtualClassroom: React.FC = () => {
         halfSpan: Math.min(halfSpan, 6),
       });
     });
+    getZoneAnchorRef.current = (zoneId: string) => zoneAnchors.get(zoneId);
 
     const posterLoader = new THREE.TextureLoader();
     posterLoader.setCrossOrigin('anonymous');
+    const posterLedTopMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const posterLedBotMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
     const hangPoster = (spot: string, x: number, z: number, rotY: number) => {
       const poster = WORLD_EXHIBIT_POSTERS[spot];
       if (!poster) return;
       const banner = new THREE.Group();
       const frame = new THREE.Mesh(
         new THREE.BoxGeometry(5.6, 3.3, 0.12),
-        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 }),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.5 }),
       );
+      const topBar = new THREE.Mesh(new THREE.BoxGeometry(5.68, 0.09, 0.18), posterLedTopMat);
+      topBar.position.y = 1.68;
+      const botBar = new THREE.Mesh(new THREE.BoxGeometry(5.68, 0.08, 0.18), posterLedBotMat);
+      botBar.position.y = -1.68;
       const faceMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
       const face = new THREE.Mesh(new THREE.PlaneGeometry(5.33, 3.0), faceMat);
       face.position.z = 0.07;
@@ -3060,7 +3428,7 @@ const VirtualClassroom: React.FC = () => {
       const backFace = new THREE.Mesh(face.geometry, faceMat);
       backFace.position.z = -0.07;
       backFace.rotation.y = Math.PI;
-      banner.add(backFace);
+      banner.add(backFace, topBar, botBar);
       posterLoader.load(
         exhibitPosterUrl(spot),
         (texture) => {
@@ -3193,6 +3561,186 @@ const VirtualClassroom: React.FC = () => {
     if (teamYard) hangPoster('team_yard', teamYard.x, teamYard.z - (teamYard.size ?? 10) / 2 - 0.6, Math.PI);
 
     // =========================================================================
+    // ✨ สถาปัตยกรรมทางเดินพิพิธภัณฑ์ (Museum Boulevard Arches, Cyber Planters, Benches & Living Data Pulses)
+    // =========================================================================
+    const museumArchMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      metalness: 0.65,
+      roughness: 0.28,
+    });
+    const addCyberArchway = (x: number, z: number, span: number, height: number, rotY: number, glowHex: number) => {
+      const archGroup = new THREE.Group();
+      const glowMat = new THREE.MeshBasicMaterial({ color: glowHex });
+      const halfSpanArch = span / 2;
+      [-halfSpanArch, halfSpanArch].forEach((px) => {
+        const col = new THREE.Mesh(new THREE.BoxGeometry(0.44, height, 0.44), museumArchMat);
+        col.position.set(px, height / 2, 0);
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(0.14, height - 0.4, 0.5), glowMat);
+        strip.position.set(px, height / 2, 0);
+        archGroup.add(col, strip);
+      });
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(span + 0.6, 0.34, 0.48), museumArchMat);
+      beam.position.set(0, height + 0.14, 0);
+      const beamGlow = new THREE.Mesh(new THREE.BoxGeometry(span + 0.2, 0.12, 0.54), glowMat);
+      beamGlow.position.set(0, height - 0.06, 0);
+      const centerJewel = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), glowMat);
+      centerJewel.position.set(0, height + 0.52, 0);
+      archGroup.add(beam, beamGlow, centerJewel);
+      archGroup.position.set(x, 0, z);
+      archGroup.rotation.y = rotY;
+      scene.add(archGroup);
+    };
+    // ซุ้มทางเดินพิพิธภัณฑ์เหนือถนนหลักและปีกซ้าย-ขวา (โล่งโปร่ง ไม่บังจุดเกิดและโปสเตอร์ 11 ภาพ)
+    addCyberArchway(0, 13.6, 9.4, 6.6, 0, 0x38bdf8);
+    addCyberArchway(0, 32.2, 8.4, 6.4, 0, 0x22d3ee);
+    addCyberArchway(-12.8, 6.0, 6.2, 5.8, Math.PI / 2, 0x10b981);
+    addCyberArchway(12.8, 6.0, 6.2, 5.8, Math.PI / 2, 0xf59e0b);
+
+    // กระถางต้นไม้คริสตัลไซเบอร์เรืองแสง (Cyber Crystal Planters) + ม้านั่งชมนิทรรศการมีไฟใต้เบาะ
+    const planterBaseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.5 });
+    const crystalLeafMats = [
+      new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: new THREE.Color(0x0284c7), emissiveIntensity: 0.75, roughness: 0.2 }),
+      new THREE.MeshStandardMaterial({ color: 0x34d399, emissive: new THREE.Color(0x059669), emissiveIntensity: 0.75, roughness: 0.2 }),
+      new THREE.MeshStandardMaterial({ color: 0xc084fc, emissive: new THREE.Color(0x7e22ce), emissiveIntensity: 0.75, roughness: 0.2 }),
+    ];
+    const crystalPlanterCoords: Array<[number, number]> = [
+      [-5.2, 11.5], [5.2, 11.5],
+      [-5.2, 24.8], [5.2, 24.8],
+      [-5.2, 33.5], [5.2, 33.5],
+      [-12.5, -7.8], [12.5, -7.8],
+      [-30.5, -10.0], [30.5, -10.0],
+      [-30.5, 6.0], [30.5, 6.0],
+      [-30.5, 22.0], [30.5, 22.0],
+    ];
+    const floatingCrystals: THREE.Mesh[] = [];
+    crystalPlanterCoords.forEach(([px, pz], idx) => {
+      const planter = new THREE.Group();
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.78, 0.65, 6), planterBaseMat);
+      pot.position.y = 0.325;
+      const trimRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.66, 0.04, 6, 18),
+        crystalLeafMats[idx % crystalLeafMats.length],
+      );
+      trimRing.rotation.x = Math.PI / 2;
+      trimRing.position.y = 0.62;
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, 1.35, 6), planterBaseMat);
+      trunk.position.y = 1.25;
+      const crown = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.68, 0),
+        crystalLeafMats[idx % crystalLeafMats.length],
+      );
+      crown.position.y = 2.25;
+      crown.scale.set(0.85, 1.25, 0.85);
+      planter.add(pot, trimRing, trunk, crown);
+      planter.position.set(px, 0, pz);
+      scene.add(planter);
+      floatingCrystals.push(crown);
+      staticColliders.push({
+        minX: px - 0.72,
+        maxX: px + 0.72,
+        minZ: pz - 0.72,
+        maxZ: pz + 0.72,
+        minY: 0,
+        maxY: 2.6,
+      });
+    });
+
+    // ม้านั่งพิพิธภัณฑ์ล้ำสมัยพร้อมแถบไฟ LED ใต้เบาะ
+    const benchPositions: Array<[number, number, number]> = [
+      [-4.9, 14.5, Math.PI / 2],
+      [4.9, 14.5, -Math.PI / 2],
+      [-4.9, 28.5, Math.PI / 2],
+      [4.9, 28.5, -Math.PI / 2],
+    ];
+    benchPositions.forEach(([bx, bz, rotY]) => {
+      const bench = new THREE.Group();
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.16, 0.68), planterBaseMat);
+      seat.position.y = 0.52;
+      const ledUnder = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.06, 0.5), neonCyanTrimMat);
+      ledUnder.position.y = 0.42;
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.46, 0.56), planterBaseMat);
+      legL.position.set(-0.92, 0.23, 0);
+      const legR = legL.clone();
+      legR.position.x = 0.92;
+      bench.add(seat, ledUnder, legL, legR);
+      bench.position.set(bx, 0, bz);
+      bench.rotation.y = rotY;
+      scene.add(bench);
+      platforms.push({
+        minX: bx - 0.45,
+        maxX: bx + 0.45,
+        minZ: bz - 1.2,
+        maxZ: bz + 1.2,
+        top: 0.6,
+      });
+    });
+
+    // ⚡ เส้นทางใยแก้วนำแสงและแพ็กเก็ตข้อมูลเรืองแสงไหลผ่านถนนพิพิธภัณฑ์แบบเรียลไทม์
+    const dataTrackDefs: Array<{ x1: number; z1: number; x2: number; z2: number; color: number; count: number; speed: number }> = [
+      { x1: -2.05, z1: 38.5, x2: -2.05, z2: 8.6, color: 0x38bdf8, count: 4, speed: 0.14 },
+      { x1: 2.05, z1: 8.6, x2: 2.05, z2: 38.5, color: 0x22d3ee, count: 4, speed: 0.14 },
+      { x1: -10.2, z1: 6.0, x2: -33.5, z2: 6.0, color: 0x10b981, count: 4, speed: 0.16 },
+      { x1: 10.2, z1: 6.0, x2: 33.5, z2: 6.0, color: 0xf59e0b, count: 4, speed: 0.16 },
+      { x1: -10.2, z1: -7.8, x2: -33.5, z2: -7.8, color: 0xa855f7, count: 3, speed: 0.15 },
+      { x1: 10.2, z1: -7.8, x2: 33.5, z2: -7.8, color: 0xf43f5e, count: 3, speed: 0.15 },
+      { x1: 0, z1: -8.6, x2: 0, z2: -24.5, color: 0xfacc15, count: 3, speed: 0.18 },
+    ];
+    const dataPacketOrbs: Array<{
+      mesh: THREE.Mesh;
+      x1: number;
+      z1: number;
+      x2: number;
+      z2: number;
+      phase: number;
+      speed: number;
+    }> = [];
+    const dataOrbGeo = new THREE.SphereGeometry(0.16, 8, 8);
+    dataTrackDefs.forEach((tr) => {
+      const dx = tr.x2 - tr.x1;
+      const dz = tr.z2 - tr.z1;
+      const len = Math.hypot(dx, dz);
+      const conduit = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 0.03, len),
+        new THREE.MeshBasicMaterial({ color: tr.color, transparent: true, opacity: 0.35 }),
+      );
+      conduit.position.set((tr.x1 + tr.x2) / 2, 0.03, (tr.z1 + tr.z2) / 2);
+      conduit.rotation.y = Math.atan2(dx, dz);
+      scene.add(conduit);
+
+      const orbMat = new THREE.MeshBasicMaterial({ color: tr.color });
+      const orbCount = graphicsQuality === 'low' ? Math.max(1, Math.floor(tr.count / 2)) : tr.count;
+      for (let i = 0; i < orbCount; i += 1) {
+        const orb = new THREE.Mesh(dataOrbGeo, orbMat);
+        orb.position.set(tr.x1, 0.18, tr.z1);
+        scene.add(orb);
+        dataPacketOrbs.push({
+          mesh: orb,
+          x1: tr.x1,
+          z1: tr.z1,
+          x2: tr.x2,
+          z2: tr.z2,
+          phase: i / orbCount,
+          speed: tr.speed,
+        });
+      }
+    });
+    techAnimatedObjects.push((now, delta) => {
+      floatingCrystals.forEach((crystal, idx) => {
+        crystal.rotation.y += delta * 0.9;
+        crystal.position.y = 2.25 + Math.sin(now * 0.0024 + idx * 0.7) * 0.12;
+      });
+      const sec = now * 0.001;
+      dataPacketOrbs.forEach((p) => {
+        const t = (sec * p.speed + p.phase) % 1;
+        p.mesh.position.set(
+          p.x1 + (p.x2 - p.x1) * t,
+          0.18 + Math.sin(t * Math.PI) * 0.06,
+          p.z1 + (p.z2 - p.z1) * t,
+        );
+      });
+    });
+
+    // =========================================================================
     // 🏃‍♂️ หอคอยกระโดดลอยฟ้า 3D CYBER SKY OBBY (10 ด่านลอยฟ้า · บันทึกหลักฐาน P +5 XP)
     // และตู้ Kiosk ศูนย์รวม 4 กิจกรรม & มินิเกมเชื่อมระบบ K / P / A จริง (x = 0, z = -25.2..-47.5)
     // =========================================================================
@@ -3220,6 +3768,40 @@ const VirtualClassroom: React.FC = () => {
     techExhibitMeshes.push(obbyKiosk);
     scene.add(obbyKiosk);
 
+    // วงแหวนปล่อยตัว (Launch Ring Pad) + เสาซุ้มจุดเริ่ม Cyber Sky Obby
+    const obbyLaunchRing = new THREE.Mesh(
+      new THREE.RingGeometry(1.15, 1.65, 32),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }),
+    );
+    obbyLaunchRing.rotation.x = -Math.PI / 2;
+    obbyLaunchRing.position.set(0, 0.05, -26.35);
+    scene.add(obbyLaunchRing);
+    addCyberArchway(0, -25.2, 6.6, 4.4, 0, 0xfacc15);
+
+    const makeStageBadgeTexture = (num: number, hexNum: number) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d')!;
+      const hexStr = `#${hexNum.toString(16).padStart(6, '0')}`;
+      ctx.fillStyle = '#090d16';
+      ctx.beginPath();
+      ctx.arc(64, 64, 56, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = hexStr;
+      ctx.lineWidth = 10;
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 58px Sarabun, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(num === 10 ? '🏆' : String(num), 64, 68);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      pixelTextures.push(tex);
+      return tex;
+    };
+
     const obbyStages: Array<{ x: number; y: number; z: number; w: number; d: number; color: number }> = [
       { x: 0, y: 1.0, z: -27.5, w: 3.2, d: 2.4, color: 0x38bdf8 },
       { x: -3.2, y: 1.9, z: -29.8, w: 2.8, d: 2.4, color: 0x22d3ee },
@@ -3232,7 +3814,7 @@ const VirtualClassroom: React.FC = () => {
       { x: -0.2, y: 8.4, z: -44.8, w: 2.8, d: 2.4, color: 0xa78bfa },
       { x: 0, y: 9.5, z: -47.5, w: 4.6, d: 4.6, color: 0xfacc15 },
     ];
-    obbyStages.forEach((st) => {
+    obbyStages.forEach((st, stageIdx) => {
       const padMesh = new THREE.Mesh(
         new THREE.BoxGeometry(st.w, 0.32, st.d),
         new THREE.MeshStandardMaterial({
@@ -3247,6 +3829,40 @@ const VirtualClassroom: React.FC = () => {
       padMesh.castShadow = true;
       padMesh.receiveShadow = true;
       scene.add(padMesh);
+
+      // ขอบไฟนีออนเรืองแสงรอบแท่น + ลำแสงนำสายตาแนวตั้ง
+      const rimMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(st.w + 0.14, 0.08, st.d + 0.14),
+        new THREE.MeshBasicMaterial({ color: st.color }),
+      );
+      rimMesh.position.set(st.x, st.y - 0.02, st.z);
+      scene.add(rimMesh);
+
+      if (graphicsQuality !== 'low') {
+        const beamH = Math.max(0.8, st.y - 0.2);
+        const guideBeam = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.08, 0.24, beamH, 8, 1, true),
+          new THREE.MeshBasicMaterial({
+            color: st.color,
+            transparent: true,
+            opacity: 0.14,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+          }),
+        );
+        guideBeam.position.set(st.x, beamH / 2, st.z);
+        scene.add(guideBeam);
+      }
+
+      // ป้ายหมายเลขด่านลอยฟ้าข้างแท่น (1..10)
+      const stageBadge = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: makeStageBadgeTexture(stageIdx + 1, st.color), transparent: true }),
+      );
+      stageBadge.scale.set(0.82, 0.82, 1);
+      stageBadge.position.set(st.x + st.w / 2 + 0.45, st.y + 0.72, st.z);
+      scene.add(stageBadge);
+
       platforms.push({
         minX: st.x - st.w / 2,
         maxX: st.x + st.w / 2,
@@ -3255,6 +3871,35 @@ const VirtualClassroom: React.FC = () => {
         top: st.y,
       });
     });
+
+    // 🏆 ซุ้มศาลาถ้วยรางวัลทองคำบนยอดด่าน 10 (Grand Golden Trophy Pavilion)
+    const trophyPavilion = new THREE.Group();
+    const goldPillarMat = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      emissive: new THREE.Color(0xd97706),
+      emissiveIntensity: 0.65,
+      metalness: 0.7,
+      roughness: 0.2,
+    });
+    [
+      [-1.95, -1.95],
+      [1.95, -1.95],
+      [-1.95, 1.95],
+      [1.95, 1.95],
+    ].forEach(([cx, cz]) => {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 3.2, 8), goldPillarMat);
+      col.position.set(cx, 1.6, cz);
+      trophyPavilion.add(col);
+    });
+    const victoryCrownRing = new THREE.Mesh(
+      new THREE.TorusGeometry(2.35, 0.09, 10, 36),
+      goldPillarMat,
+    );
+    victoryCrownRing.rotation.x = Math.PI / 2;
+    victoryCrownRing.position.y = 3.25;
+    trophyPavilion.add(victoryCrownRing);
+    trophyPavilion.position.set(0, 9.5, -47.5);
+    scene.add(trophyPavilion);
 
     const skyObbyTrophy = new THREE.Mesh(
       new THREE.OctahedronGeometry(0.75, 0),
@@ -3273,6 +3918,8 @@ const VirtualClassroom: React.FC = () => {
     techAnimatedObjects.push((now, delta) => {
       skyObbyTrophy.rotation.y += delta * 1.6;
       skyObbyTrophy.position.y = 10.9 + Math.sin(now * 0.003) * 0.18;
+      victoryCrownRing.rotation.z += delta * 0.75;
+      obbyLaunchRing.rotation.z -= delta * 0.9;
     });
 
     const starGeometry = new THREE.OctahedronGeometry(0.3, 0);
@@ -4471,12 +5118,26 @@ const VirtualClassroom: React.FC = () => {
 
     summonRef.current = () => {
       const state = roomStateRef.current;
-      playerPosition.set(state?.summonX || 0, 1.7, state?.summonZ || 10);
+      const destX = state?.summonX ?? 0;
+      const destZ = state?.summonZ ?? 10;
+      playerPosition.set(destX, 1.7, destZ);
       verticalVelocity = 0;
       velX = 0;
       velZ = 0;
-      yaw = Math.PI;
+      grounded = true;
+      flyingRef.current = false;
+      setIsFlying(false);
+      if (
+        typeof state?.summonLookX === 'number'
+        && typeof state?.summonLookZ === 'number'
+        && (state.summonLookX !== destX || state.summonLookZ !== destZ)
+      ) {
+        yaw = Math.atan2(-(state.summonLookX - destX), -(state.summonLookZ - destZ));
+      } else {
+        yaw = Math.PI;
+      }
       avatarYaw = yaw;
+      pitch = 0;
       publishPresence(true, 'idle');
     };
     teleportToPlayerRef.current = (target: WorldPlayer) => {
@@ -5021,12 +5682,26 @@ const VirtualClassroom: React.FC = () => {
         camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
       }
 
-      // หมุนวงแหวนโฮโลแกรมบนเพดานโดมเทคโนโลยีและวงแหวนดาวเทียมบนท้องฟ้า
+      // หมุนวงแหวนโฮโลแกรมบนเพดานโดมเทคโนโลยี ลูกโลกไซเบอร์ ดวงดาว และแสงเหนือ
       skylightRing.rotation.z += delta * 0.32;
       skylightInnerRing.rotation.z -= delta * 0.55;
+      const coreBobY = 7.3 + Math.sin(now * 0.0024) * 0.16;
       domeCoreOrb.rotation.y += delta * 1.15;
-      domeCoreOrb.position.y = 7.1 + Math.sin(now * 0.0024) * 0.16;
+      domeCoreOrb.position.y = coreBobY;
+      domeWireGlobe.rotation.y -= delta * 0.42;
+      domeWireGlobe.rotation.x += delta * 0.2;
+      domeWireGlobe.position.y = coreBobY;
+      domeGyroRingA.rotation.z += delta * 0.85;
+      domeGyroRingA.rotation.y += delta * 0.35;
+      domeGyroRingA.position.y = coreBobY;
+      domeGyroRingB.rotation.x -= delta * 0.65;
+      domeGyroRingB.rotation.z -= delta * 0.4;
+      domeGyroRingB.position.y = coreBobY;
       orbitalSkyRing.rotation.z += delta * 0.08;
+      orbitalSkyRing2.rotation.z -= delta * 0.055;
+      starField.rotation.y += delta * 0.008;
+      auroraNorth.mesh.position.y = 38 + Math.sin(now * 0.0005) * 1.8;
+      auroraSouth.mesh.position.y = 41 + Math.cos(now * 0.00045) * 1.8;
 
       lessonProps.forEach((prop, index) => {
         prop.rotation.y += delta * (0.65 + index * 0.08);
@@ -5798,14 +6473,28 @@ const VirtualClassroom: React.FC = () => {
             </button>
             <button
               className="world-teacher-command"
-              onClick={() => updateRoom({
-                summonVersion: (roomState.summonVersion || 0) + 1,
-                summonX: 0,
-                summonZ: 10,
-              })}
+              onClick={() => summonClassToSpot(0, 10, 0, -4, 'หน้าโดมห้องเรียนกลาง')}
             >
               <Users size={17} /> เรียกรวมหน้าห้อง
             </button>
+            <div className="world-zone-summon-grid" aria-label="พาทั้งห้องวาร์ปไปโซนนิทรรศการ">
+              <button type="button" onClick={() => summonClassToSpot(0, -23.2, 0, -32, '🏃‍♂️ หอคอย Sky Obby')}>
+                🏃‍♂️ พาไป Sky Obby
+              </button>
+              <button type="button" onClick={() => summonClassToSpot(0, 38.5, 0, 50, '🤝 ลานสร้างรวม Team Yard')}>
+                🤝 พาไป Team Yard
+              </button>
+              {TECH_ZONES.map((zone) => (
+                <button
+                  key={zone.id}
+                  type="button"
+                  onClick={() => summonClassToZone(zone)}
+                  title={`พาทั้งห้องวาร์ปไปที่ ${zone.title}`}
+                >
+                  {zone.icon} {zone.shortTitle}
+                </button>
+              ))}
+            </div>
             <div className="world-game-launcher">
               {gameStations.map((game) => (
                 <button key={game.id} onClick={() => startRoomGame(game)} title={`เริ่ม ${game.title}`}>
@@ -5874,6 +6563,21 @@ const VirtualClassroom: React.FC = () => {
               <span><b>{roomAnalytics.games}</b>เกม</span>
               <span><b>{roomAnalytics.artifacts}</b>ผลงาน</span>
             </div>
+            {studentProgressSummary.length > 0 && (
+              <div className="world-student-progress-list" aria-label="ความคืบหน้ารายคนวันนี้">
+                {studentProgressSummary.map((st) => (
+                  <div key={st.id} className="world-student-progress-row">
+                    <b title={st.name}>{st.online ? '🟢 ' : '⚪ '}{st.name}</b>
+                    <div className="world-student-progress-badges">
+                      <em title="สไลด์ที่อ่าน">สไลด์ {st.slides}</em>
+                      <em title="ตอบคำถาม K">K {st.questions}</em>
+                      <em title="เล่นเกม/ฝึก P">P {st.games}</em>
+                      <em title="ผลงานสร้าง 3D">ชิ้น {st.artifacts}</em>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="world-recent-events">
               {todayEvents.slice(0, 5).map((event) => <p key={event.id}><b>{event.playerName}</b><span>{event.detail}</span></p>)}
             </div>
@@ -6148,7 +6852,16 @@ const VirtualClassroom: React.FC = () => {
         <div className="world-lesson-overlay" onClick={() => setSelectedBoard(null)}>
           <section className={`world-lesson-modal theme-${selectedSlide.theme || 'blue'}`} onClick={(event) => event.stopPropagation()}>
             <button className="world-modal-close" onClick={() => setSelectedBoard(null)} aria-label="ปิด"><X /></button>
-            <span className="world-unit-number">หน่วยที่ {selectedBoard.unitNo} · สไลด์ {slideIndex + 1}/{selectedBoard.slides.length}</span>
+            <span className="world-unit-number">
+              หน่วยที่ {selectedBoard.unitNo} · สไลด์ {slideIndex + 1}/{selectedBoard.slides.length}
+              {!isTeacher && user && user.id !== 'admin_teacher_account' && (
+                worldSlidesRecorded[`u${selectedBoard.unitNo}-slide-${slideIndex}`] ? (
+                  <span className="world-slide-dwell-pill is-done">✓ บันทึกการอ่านแล้ว</span>
+                ) : worldSlideDwellSec > 0 ? (
+                  <span className="world-slide-dwell-pill is-wait">⏳ อ่านต่ออีก {worldSlideDwellSec} วิ</span>
+                ) : null
+              )}
+            </span>
             <h2>{selectedSlide.emoji && <span>{selectedSlide.emoji} </span>}{selectedSlide.title}</h2>
             <div className="world-slide-content">
               {selectedSlide.image && <img src={selectedSlide.image} alt={selectedSlide.imageCaption || selectedSlide.title} />}
@@ -7878,7 +8591,7 @@ const VirtualClassroom: React.FC = () => {
         >
           <div
             className="world-modal"
-            style={{ maxWidth: 820, maxHeight: '88vh', overflowY: 'auto' }}
+            style={{ maxWidth: 820, maxHeight: '88vh', overflowY: 'auto', background: '#ffffff', color: '#0f172a' }}
             onClick={(event) => event.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>

@@ -104,6 +104,9 @@ export interface VirtualRoomState {
   summonVersion: number;
   summonX: number;
   summonZ: number;
+  summonLookX?: number;
+  summonLookZ?: number;
+  summonLabel?: string;
   approvedPlayerIds: string[];
   blockedPlayerIds: string[];
   camouflageRound: CamouflageRound | null;
@@ -220,6 +223,9 @@ export const defaultVirtualRoomState = (roomId: string, classroom: string): Virt
   summonVersion: 0,
   summonX: 0,
   summonZ: 10,
+  summonLookX: 0,
+  summonLookZ: 0,
+  summonLabel: '',
   approvedPlayerIds: [],
   blockedPlayerIds: [],
   camouflageRound: null,

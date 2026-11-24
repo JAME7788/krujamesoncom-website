@@ -72,6 +72,8 @@ export interface Assignment {
   personalizedPackId?: string;
   /** ระบุว่าเป็นงานโครงงานกระบวนการคิดเชิงออกแบบ (Design Thinking: ว 4.1) หรือไม่ */
   isDesignThinking?: boolean;
+  /** ซ่อนเป็นแบบร่าง (ยังไม่เปิดสั่งนักเรียนจริง) — งาน system-seed-2569 จะถือเป็นแบบร่างจนกว่าครูจะกดเปิดสั่ง */
+  isDraft?: boolean;
 }
 
 export interface DesignThinkingSteps {
@@ -468,13 +470,47 @@ export const getRecommendedDifficulty = (tier: AbilityTier): AssignmentDifficult
 /**
  * ดึงรายการงานสำหรับนักเรียนคนหนึ่งๆ โดยคำนึงถึงการมอบหมายงานเฉพาะบุคคล
  */
+/**
+ * ตรวจว่างานชิ้นนี้เปิดสั่งให้นักเรียนเห็นจริงหรือไม่
+ * - งานที่ตั้ง isDraft: true จะซ่อนจากฝั่งนักเรียน
+ * - งานตัวอย่างที่ระบบ seed ไว้ (createdBy === 'system-seed-2569') จะซ่อนเป็นแบบร่างจนกว่าครูจะกดเปิดสั่งงาน (isDraft: false)
+ */
+export const isAssignmentPublishedForStudents = (assignment: Assignment): boolean => {
+  if (assignment.isDraft === true) return false;
+  if (assignment.createdBy === 'system-seed-2569' && assignment.isDraft !== false) return false;
+  return true;
+};
+
+/**
+ * สร้างข้อความสรุปรายชื่อนักเรียนที่ยังไม่ส่งงาน (ค้างงาน) พร้อมคัดลอกส่งแชทกลุ่ม LINE / Messenger
+ */
+export const formatMissingStudentsMessage = (assignment: Assignment): string => {
+  const classroom = assignment.classroom || 'ทุกห้อง';
+  const roster = assignment.classroom ? loadRoster(assignment.classroom) : [];
+  const subs = getSubmissionsByAssignment(assignment.id);
+  const submittedNos = new Set(subs.map((s) => Number(s.studentNo)).filter(Number.isFinite));
+  const submittedNames = new Set(subs.map((s) => s.studentName.replace(/\s+/g, '')));
+  const missing = roster.filter((student) => (
+    !submittedNos.has(student.no) && !submittedNames.has(student.name.replace(/\s+/g, ''))
+  ));
+  const header = `📌 แจ้งเตือนงานค้าง — ${classroom}\n📝 ${assignment.title}${assignment.dueDate ? ` (กำหนดส่ง ${assignment.dueDate})` : ''}`;
+  if (roster.length === 0) {
+    return `${header}\nส่งแล้ว ${subs.length} คน`;
+  }
+  if (missing.length === 0) {
+    return `${header}\n🎉 ส่งครบทุกคนแล้ว (${subs.length}/${roster.length} คน)`;
+  }
+  const lines = missing.map((s) => `• เลขที่ ${s.no} ${s.name}`);
+  return `${header}\nส่งแล้ว ${roster.length - missing.length}/${roster.length} คน | ยังไม่ส่ง ${missing.length} คน:\n${lines.join('\n')}\n\n🔗 ส่งงานได้ที่เว็บห้องเรียนครูเจมส์ครับ`;
+};
+
 export const getAssignmentsForStudent = (
   classroom: string,
   studentId?: string,
   studentNo?: number,
 ): Assignment[] => {
   const all = loadAssignments().filter(
-    (assignment) => !assignment.classroom || assignment.classroom === classroom
+    (assignment) => isAssignmentPublishedForStudents(assignment) && (!assignment.classroom || assignment.classroom === classroom)
   );
   if (!studentId && studentNo === undefined) {
     return all.filter(a => !a.targetType || a.targetType === 'all');
@@ -1088,6 +1124,8 @@ export const validateSubmissionContent = (data: {
   submissionMethod?: SubmissionMethod;
   comment?: string;
   isDesignThinking?: boolean;
+  /** ซ่อนเป็นแบบร่าง (ยังไม่เปิดสั่งนักเรียนจริง) — งาน system-seed-2569 จะถือเป็นแบบร่างจนกว่าครูจะกดเปิดสั่ง */
+  isDraft?: boolean;
   dtDefine?: string;
   dtIdeate?: string;
   dtPrototypeUrl?: string;

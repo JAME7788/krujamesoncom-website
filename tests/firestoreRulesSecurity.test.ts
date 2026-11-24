@@ -58,6 +58,12 @@ describe('Firestore security rule regression checks', () => {
     expect(block).not.toMatch(/allow\s+read[^;]*:\s*if\s+true/);
   });
 
+  it('restricts virtualRooms teacher controls to teachers (or QA rooms)', () => {
+    const block = collectionBlock('virtualRooms/{roomId}');
+    expect(block).toContain("allow create, update: if (isTeacher() || roomId.matches('.*-qa-.*'))");
+    expect(block).toContain("allow delete: if isTeacher() || roomId.matches('.*-qa-.*');");
+  });
+
   it('keeps the default rule closed', () => {
     expect(rules).toMatch(/match \/\{document=\*\*\}[\s\S]*allow read, write: if false;/);
   });

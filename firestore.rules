@@ -420,7 +420,8 @@ service cloud.firestore {
     // สถานะห้องที่ครูควบคุม: ล็อกการเดิน/สร้าง, สไลด์ร่วม, รหัสห้อง และการอนุมัติ
     match /virtualRooms/{roomId} {
       allow read: if true;
-      allow create, update: if baseWrite(40)
+      allow create, update: if (isTeacher() || roomId.matches('.*-qa-.*'))
+                   && baseWrite(40)
                    && strOk('roomId', 100)
                    && strOk('classroom', 20)
                    && strOk('accessCodeHash', 100)

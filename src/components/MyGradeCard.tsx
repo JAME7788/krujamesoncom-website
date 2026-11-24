@@ -5,11 +5,14 @@ import {
   fetchClassroomFromFirebase, cacheGradesLocally, getGradingPolicy,
 } from '../services/gradeService';
 import type { Subject, StudentGrade } from '../services/gradeService';
+import { fetchStudentProgress } from '../services/progressService';
+import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 
 interface Props {
   classroom: string;
   studentNumber: string;
   name: string;
+  studentId?: string;
 }
 
 interface SubjectCard {
@@ -25,19 +28,35 @@ interface SubjectCard {
   grade: string;
 }
 
-const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name }) => {
-  // ดึงคะแนนล่าสุดจาก Firebase ตอน mount (เผื่อเครื่องใหม่ที่ localStorage ว่าง)
+const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name, studentId }) => {
+  // ดึงความก้าวหน้าล่าสุดจาก Firebase (progress) แล้วคำนวณพรีวิว K/P/A สดทุกเครื่อง
+  // (พร้อมดึง grades เพิ่มถ้าบัญชีมีสิทธิ์อ่าน เช่น บัญชีครู)
   const [revision, setRevision] = useState(0);
+  const resolvedStudentId = studentId || `${classroom}_${studentNumber}_${name.replace(/\s/g, '')}`;
+
   useEffect(() => {
     let cancelled = false;
     const subjects = getSubjectsForClassroom(classroom);
-    Promise.all(subjects.map((s) => fetchClassroomFromFirebase(classroom, s.id).then((data) => {
-      if (!cancelled && data && data.length > 0) cacheGradesLocally(classroom, data, s.id);
-    }))).then(() => {
+    const hydrate = async () => {
+      try {
+        await fetchStudentProgress(resolvedStudentId);
+        await syncStudentGradesFromProgress({
+          id: resolvedStudentId,
+          name,
+          classroom,
+          studentNumber,
+        });
+      } catch {
+        // ignore preview sync error
+      }
+      await Promise.all(subjects.map((s) => fetchClassroomFromFirebase(classroom, s.id).then((data) => {
+        if (!cancelled && data && data.length > 0) cacheGradesLocally(classroom, data, s.id);
+      }).catch(() => {})));
       if (!cancelled) setRevision((r) => r + 1);
-    }).catch(() => {});
+    };
+    void hydrate();
     return () => { cancelled = true; };
-  }, [classroom]);
+  }, [classroom, name, resolvedStudentId, studentNumber]);
 
   const cards = useMemo<SubjectCard[]>(() => {
     void revision;

@@ -613,6 +613,44 @@ const GradeBook: React.FC = () => {
     }
   };
 
+  const handleSyncAllClassrooms = async () => {
+    setLoading(true);
+    try {
+      let totalStudentsUpdated = 0;
+      let totalIndicatorsUpdated = 0;
+      let totalSubjectsSynced = 0;
+      let failedSaves = 0;
+      for (const cls of allClassrooms2569) {
+        const subs = getSubjectsForClassroom(cls);
+        for (const subj of subs) {
+          const r = await withTimeout(
+            syncAllFromProgressAsync(cls, subj.id),
+            12000,
+            `ซิงก์ ${cls} (${subj.title})`,
+          );
+          totalSubjectsSynced += 1;
+          totalStudentsUpdated += r.studentsUpdated;
+          totalIndicatorsUpdated += r.indicatorsUpdated;
+          if (r.firebaseGradeSaved === false) failedSaves += 1;
+        }
+      }
+      reload();
+      let msg = `🌐 ซิงก์คะแนนทุกห้อง-ทุกวิชาเสร็จแล้ว (${allClassrooms2569.length} ห้อง / ${totalSubjectsSynced} วิชา)\n\n`;
+      msg += `✅ อัปเดตคะแนนนักเรียนรวม: ${totalStudentsUpdated} รายการ (${totalIndicatorsUpdated} ตัวชี้วัด)\n`;
+      if (failedSaves > 0) {
+        msg += `⚠️ บันทึกขึ้น Firebase ไม่สำเร็จ ${failedSaves} วิชา (เก็บไว้ในเครื่องแล้ว)\n`;
+      } else {
+        msg += `☁️ บันทึกสมุดคะแนนทุกห้องขึ้น Firebase เรียบร้อย`;
+      }
+      toast.show(msg, failedSaves > 0 ? 'error' : totalStudentsUpdated > 0 ? 'success' : 'info');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.show(`ซิงก์ทุกห้องไม่สำเร็จ: ${msg}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDiagnose = () => {
     const d = diagnoseProgress(classroom);
     let msg = `🔍 Diagnostic — ห้อง ${classroom}\n\n`;
@@ -850,6 +888,14 @@ const GradeBook: React.FC = () => {
         )}
         <button className="btn-secondary" onClick={handleSync} disabled={loading}>
           <RefreshCw size={14} /> {loading ? 'กำลังดึงคะแนน...' : 'นำเข้า K/P/A จากเว็บ (Firebase)'}
+        </button>
+        <button
+          className="btn-secondary"
+          onClick={handleSyncAllClassrooms}
+          disabled={loading}
+          title="ซิงก์คะแนนจากเว็บให้ครบทุกห้อง (ป.1–ม.3) และทุกวิชาในปุ่มเดียว"
+        >
+          <RefreshCw size={14} /> {loading ? 'กำลังซิงก์...' : 'ซิงก์ทุกห้อง-ทุกวิชา'}
         </button>
         <button className="btn-secondary" onClick={() => setShowLinkage(!showLinkage)}>
           <LinkIcon size={14} /> {showLinkage ? 'ซ่อน' : 'ดู'} การเชื่อมโยงตัวชี้วัด↔หน่วย

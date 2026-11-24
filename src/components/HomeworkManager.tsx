@@ -13,9 +13,12 @@ import {
   Wand2,
   Link2,
   Check,
+  ClipboardCopy,
+  EyeOff,
 } from 'lucide-react';
 import {
-  loadAssignments, createAssignment, deleteAssignment,
+  loadAssignments, createAssignment, deleteAssignment, updateAssignment,
+  isAssignmentPublishedForStudents, formatMissingStudentsMessage,
   getSubmissionsByAssignment, reviewSubmission,
   fetchAssignmentsFromFirebase, fetchSubmissionsFromFirebase,
   generate3TierAssignments,
@@ -57,6 +60,30 @@ const HomeworkManager: React.FC = () => {
   const [storageSummary, setStorageSummary] = useState(() => getSubmissionStorageUsageSummary());
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedMissingId, setCopiedMissingId] = useState<string | null>(null);
+
+  const handleCopyMissing = (assignment: Assignment) => {
+    const text = formatMissingStudentsMessage(assignment);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopiedMissingId(assignment.id);
+        setTimeout(() => setCopiedMissingId(null), 2500);
+      }).catch(() => {
+        window.prompt('คัดลอกรายชื่อคนค้างงานส่งแชทกลุ่ม:', text);
+      });
+    } else {
+      window.prompt('คัดลอกรายชื่อคนค้างงานส่งแชทกลุ่ม:', text);
+    }
+  };
+
+  const handleTogglePublished = (assignment: Assignment) => {
+    const currentlyPublished = isAssignmentPublishedForStudents(assignment);
+    setSyncing(true);
+    void updateAssignment(assignment.id, { isDraft: currentlyPublished })
+      .then(reload)
+      .catch(() => alert('อัปเดตสถานะการบ้านไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase'))
+      .finally(() => setSyncing(false));
+  };
 
   const handleCopyLink = (id: string) => {
     const shareUrl = `${window.location.origin}/homework?id=${id}`;
@@ -898,10 +925,22 @@ const HomeworkManager: React.FC = () => {
             <tbody>
               {filteredList.map((a) => {
                 const subs = getSubmissionsByAssignment(a.id);
+                const isPublished = isAssignmentPublishedForStudents(a);
                 return (
-                  <tr key={a.id}>
+                  <tr key={a.id} style={!isPublished ? { opacity: 0.72, background: '#f8fafc' } : undefined}>
                     <td>
-                      <strong>{a.title}</strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <strong>{a.title}</strong>
+                        {isPublished ? (
+                          <span style={{ background: '#dcfce7', color: '#15803d', padding: '1px 7px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700 }}>
+                            🟢 เปิดสั่งงาน
+                          </span>
+                        ) : (
+                          <span style={{ background: '#e2e8f0', color: '#475569', padding: '1px 7px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700 }}>
+                            ⚪ แบบร่าง/ซ่อนอยู่
+                          </span>
+                        )}
+                      </div>
                       {a.hints && a.hints.length > 0 && (
                         <div style={{ fontSize: '0.72rem', color: '#2563eb' }}>
                           💡 มี {a.hints.length} คำใบ้ช่วยคิด
@@ -947,6 +986,23 @@ const HomeworkManager: React.FC = () => {
                     </td>
                     <td>{subs.length} คน</td>
                     <td>
+                      <button
+                        className="cb-icon-btn"
+                        disabled={syncing}
+                        title={isPublished ? 'ซ่อนกลับเป็นแบบร่าง (นักเรียนไม่เห็น)' : 'เปิดสั่งงานให้นักเรียนเห็นทันที'}
+                        onClick={() => handleTogglePublished(a)}
+                        style={isPublished ? { color: '#16a34a', borderColor: '#86efac' } : { color: '#64748b' }}
+                      >
+                        {isPublished ? <CheckCircle2 size={14} /> : <EyeOff size={14} />}
+                      </button>
+                      <button
+                        className="cb-icon-btn"
+                        title={copiedMissingId === a.id ? 'คัดลอกรายชื่อคนค้างงานแล้ว!' : 'คัดลอกรายชื่อคนค้างงานส่งแชทกลุ่ม'}
+                        onClick={() => handleCopyMissing(a)}
+                        style={copiedMissingId === a.id ? { color: '#16a34a', borderColor: '#86efac' } : undefined}
+                      >
+                        {copiedMissingId === a.id ? <Check size={14} /> : <ClipboardCopy size={14} />}
+                      </button>
                       <button
                         className="cb-icon-btn"
                         title={copiedId === a.id ? 'คัดลอกลิงก์แล้ว!' : 'คัดลอกลิงก์ส่งงาน (แชร์ให้นักเรียน)'}

@@ -2201,7 +2201,9 @@ export const syncFromProgress = (
 
     // ============ P = ทักษะที่เกี่ยวกับตัวชี้วัด ============
     // หลักฐานในคาบได้ 100% นอกคาบได้ 40% และแต่ละกิจกรรมนับครั้งเดียว
-    let skillPoints = 0;
+    const SLIDE_P_MAX = 12;
+    let slideSkillPoints = 0;
+    let otherSkillPoints = 0;
     let practiceCount = 0;
     let quizAttempts = 0;
     let completedUnits = 0;
@@ -2227,12 +2229,14 @@ export const syncFromProgress = (
       const evidence = u.scoreEvidence || [];
       // item.inClass ถูกคำนวณไว้ตอนบันทึก ถ้าตารางสอนตอนนั้นผิดวัน ค่าที่ค้างไว้ก็ผิดตาม
       // จึงคิดใหม่จาก timestamp เทียบตารางปัจจุบันเสมอ — แก้ตารางแล้วคะแนนกลับมาเองโดยไม่ต้องแก้ข้อมูลเด็ก
-      skillPoints += evidence.reduce((sum, item) => {
+      evidence.forEach((item) => {
         const inClass = item.timestamp
           ? isInClassTime(item.timestamp, classroom, schedule)
           : item.inClass;
-        return sum + item.basePoints * (inClass ? 1 : 0.4);
-      }, 0);
+        const pts = item.basePoints * (inClass ? 1 : 0.4);
+        if (item.type === 'slide') slideSkillPoints += pts;
+        else otherSkillPoints += pts;
+      });
 
       // ข้อมูลรุ่นเก่าไม่มี scoreEvidence: เทียบ log กิจกรรมของหน่วยนี้กับตารางสอน
       // เดิมเหมา ×0.4 ให้ทุกรายการ ทำให้งานที่ทำ "ในคาบ" ถูกหักคะแนน 60% ทั้งที่มาเรียนจริง
@@ -2259,11 +2263,11 @@ export const syncFromProgress = (
         ? inClassActivities / unitActivities.length
         : 0;
       const legacyMultiplier = inClassRatio + (1 - inClassRatio) * 0.4;
-      skillPoints += (
+      slideSkillPoints += legacyCounts.slide * legacyMultiplier;
+      otherSkillPoints += (
         legacyCounts.practice * 5
         + legacyCounts.fun * 3
         + legacyCounts.video * 2
-        + legacyCounts.slide
         + legacyCounts.article
       ) * legacyMultiplier;
       practiceCount += u.practiceCompleted?.length || 0;
@@ -2302,6 +2306,7 @@ export const syncFromProgress = (
       : Math.min(ind.maxScore, webK + (currentScore.manualK || 0));
 
     // P: คะแนนปฏิบัติจากการใช้เว็บ รวมสูงสุด 30 คะแนน
+    const skillPoints = Math.min(SLIDE_P_MAX, slideSkillPoints) + otherSkillPoints;
     const webPScore = Math.min(PRACTICE_MAX_SCORE, Math.round(skillPoints * 10) / 10);
     const legacyTeacherPScore = currentScore.webPScore === undefined
       && currentScore.manualPScore === undefined
