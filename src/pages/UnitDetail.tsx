@@ -9,6 +9,7 @@ import { buildOfficialArticles, buildOfficialFiles, buildOfficialLessonNotes } f
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { isAdminAuthed } from '../services/authAdmin';
+import { isExternalVisitor } from '../services/userAccessService';
 import {
   fetchUnlockedUnits,
   getUnlockedUnits,
@@ -1621,9 +1622,10 @@ const UnitDetail: React.FC = () => {
     );
   }
 
-  // 🔒 Access control: เช็คสิทธิ์ — admin เข้าได้หมด, นักเรียนเข้าได้เฉพาะคอร์สของชั้น
+  // 🔒 Access control: เช็คสิทธิ์ — admin และผู้ทดลองภายนอก (ตามป้าย /courses) เข้าดูบทเรียนได้, นักเรียนในโรงเรียนเข้าได้เฉพาะคอร์สของชั้น
   const isAdmin = isAdminAuthed();
-  if (!isAdmin && user) {
+  const isTrialVisitor = isExternalVisitor(user);
+  if (!isAdmin && !isTrialVisitor && user) {
     const allowed = getCourseIdsForClassroom(user.classroom).filter((id) =>
       isCourseOpenForClassroom(user.classroom, id, courseAccessSettings)
     );
