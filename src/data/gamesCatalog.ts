@@ -1,4 +1,22 @@
 // แคตตาล็อกเกมกลาง — ใช้ร่วมกันทั้งหน้า "เกมฝึก" (Games.tsx) และพอร์ทัลเกมในห้องเรียน 3D
+export type GameTrack = 'curriculum' | 'arcade';
+
+/** เกมโซนอาร์เคด/ฝึกไหวพริบและพักสมอง (แยกออกจากเกมหลักสูตรที่ตรงตัวชี้วัด ว 4.2 / ว 4.1 ชัดเจน) */
+export const ARCADE_GAME_IDS = new Set<string>([
+  'snake',
+  'bug',
+  'memory',
+  'sorting-dash',
+  'bomb-collector',
+  'obstacle-dodge',
+  'stroop-color',
+  'cyber-racer',
+  'claw-platformer',
+]);
+
+export const getGameTrack = (gameId: string): GameTrack =>
+  ARCADE_GAME_IDS.has(gameId) ? 'arcade' : 'curriculum';
+
 export interface GameInfo {
   id: string;
   title: string;
@@ -8,6 +26,7 @@ export interface GameInfo {
   skill: string;
   color: string;
   path: string;
+  track?: GameTrack;
 }
 
 export const gamesCatalog: GameInfo[] = [

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Upload,
   CheckCircle2,
@@ -66,6 +67,7 @@ const WORKSTATION_OPTIONS = [
 
 const HomeworkStudent: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [selected, setSelected] = useState<Assignment | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [contentUrl, setContentUrl] = useState('');
@@ -257,19 +259,42 @@ const HomeworkStudent: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    if (openedFromUrlRef.current || !assignments.length) return;
-    const params = new URLSearchParams(window.location.search);
+    if (openedFromUrlRef.current) return;
+    const params = new URLSearchParams(location.search);
     const targetId = params.get('id') || params.get('assignmentId');
-    if (targetId) {
+    const targetTemplateId = params.get('template');
+    if (targetId && assignments.length > 0) {
       const match = assignments.find((a) => a.id === targetId);
       if (match) {
-        openedFromUrlRef.current = true;
-        const timer = window.setTimeout(() => openSubmission(match), 0);
+        const timer = window.setTimeout(() => {
+          openedFromUrlRef.current = true;
+          openSubmission(match);
+        }, 0);
+        return () => window.clearTimeout(timer);
+      }
+    }
+    if (targetTemplateId && gradeTemplates.length > 0) {
+      const assignedMatch = assignments.find(
+        (a) => a.interactiveWorksheet?.templateId === targetTemplateId,
+      );
+      if (assignedMatch) {
+        const timer = window.setTimeout(() => {
+          openedFromUrlRef.current = true;
+          openSubmission(assignedMatch);
+        }, 0);
+        return () => window.clearTimeout(timer);
+      }
+      const tpl = gradeTemplates.find((t) => t.id === targetTemplateId);
+      if (tpl) {
+        const timer = window.setTimeout(() => {
+          openedFromUrlRef.current = true;
+          setPracticeTemplate(tpl);
+        }, 0);
         return () => window.clearTimeout(timer);
       }
     }
     return undefined;
-  }, [assignments, openSubmission]);
+  }, [location.search, assignments, gradeTemplates, openSubmission]);
 
   const workOverview = useMemo(() => {
     void dataVersion;

@@ -806,6 +806,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
             <button type="button" onClick={() => onNavigate('locks')}><LockOpen size={17} /> เปิดบทเรียน</button>
             <button type="button" onClick={() => window.open('/live/host', '_blank')}><FileQuestion size={17} /> ควิซสด</button>
             <button type="button" onClick={() => window.open('/games', '_blank')}><Gamepad2 size={17} /> เกมฝึก</button>
+            <button type="button" onClick={() => window.open('/tools', '_blank')} title="เปิดกระดานวาดรูป แบ่งกลุ่ม และบอร์ดหน้าชั้น"><Sparkles size={17} /> เครื่องมือหน้าชั้น</button>
             <button type="button" className="action-spinner" onClick={() => setShowSpinner(true)} title="สุ่มรายชื่อนักเรียนห้องนี้มาตอบคำถามหน้าห้อง">
               <Sparkles size={17} /> วงล้อสุ่มชื่อ
             </button>
@@ -815,7 +816,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
             <button type="button" className="action-slips" onClick={() => setShowGradeSlips(true)} title="พิมพ์ใบแจ้งผลการเรียนรายบุคคล (ปพ.6) ทั้งห้อง 2 คน/แผ่น">
               <Printer size={17} /> พิมพ์ใบแจ้งเกรดทั้งห้อง
             </button>
-            <button type="button" onClick={() => onNavigate('homework')}><BookOpen size={17} /> มอบหมายงาน</button>
+            <button type="button" onClick={() => onNavigate('homework')}><BookOpen size={17} /> 🧩 ใบงานโต้ตอบ / การบ้าน</button>
             <button
               type="button"
               className="complete"

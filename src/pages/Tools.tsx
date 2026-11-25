@@ -1,100 +1,61 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { PenTool, Wallet, Calendar, Sparkles, Pin, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { PenTool, Sparkles, Pin, Users } from 'lucide-react';
 import Whiteboard from '../components/Whiteboard';
-import SavingsTracker from '../components/tools/SavingsTracker';
-import ChoreTracker from '../components/tools/ChoreTracker';
 import RosterSpinner from '../components/tools/RosterSpinner';
 import GroupMaker from '../components/tools/GroupMaker';
 import PeerReminderBoard from '../components/tools/PeerReminderBoard';
-import { useAuth } from '../context/AuthContext';
-import { trackMediaClick } from '../services/progressService';
-import { syncStudentGradesFromProgress } from '../services/gameProgressService';
-import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
 
-type TabType = 'whiteboard' | 'savings' | 'chores' | 'spinner' | 'groups' | 'board';
+type TabType = 'whiteboard' | 'spinner' | 'groups' | 'board';
 
 const Tools: React.FC = () => {
   const [tab, setTab] = useState<TabType>('whiteboard');
-  const { user } = useAuth();
-  const seenRef = useRef<Set<string>>(new Set());
-
-  // นับการใช้เครื่องมือเป็น "กิจกรรมทักษะ" (P skill points) — บันทึก 1 ครั้งต่อ tool ต่อ session
-  useEffect(() => {
-    if (!user || user.id === 'admin_teacher_account') return;
-    if (seenRef.current.has(tab)) return;
-    const gradeId = getDefaultProgressGradeIdForClassroom(user.classroom);
-    if (!gradeId) return;
-    let detail = '';
-    switch (tab) {
-      case 'whiteboard': detail = '[Tool] Whiteboard'; break;
-      case 'savings': detail = '[Tool] Student Savings'; break;
-      case 'chores': detail = '[Tool] Daily Chore Tracker'; break;
-      case 'spinner': detail = '[Tool] Roster Wheel Spinner'; break;
-      case 'groups': detail = '[Tool] Group Maker'; break;
-      case 'board': detail = '[Tool] Peer Homework Board'; break;
-    }
-    
-    if (!detail) return;
-    
-    void trackMediaClick(user.id, gradeId, 1, 'fun', detail).then((saved) => {
-      if (!saved) return;
-      seenRef.current.add(tab);
-      return syncStudentGradesFromProgress({
-        id: user.id,
-        name: user.name,
-        classroom: user.classroom,
-        studentNumber: user.studentNumber,
-      });
-    });
-  }, [tab, user]);
 
   return (
     <div className="container section-padding" style={{ paddingTop: '6rem' }}>
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <span className="badge-yellow">🛠️ เครื่องมือเสริม</span>
-        <h1>เครื่องมือสร้างสรรค์และจัดการชั้นเรียน</h1>
-        <p style={{ color: '#6b7280' }}>กระดานวาดรูป บันทึกเงินออม จัดเวรประจำวัน วงล้อสุ่ม และบอร์ดเตือนการบ้าน</p>
+        <span className="badge-yellow">🛠️ เครื่องมือช่วยสอนในคาบเรียน</span>
+        <h1>เครื่องมือสร้างสรรค์และจัดกิจกรรมหน้าชั้นเรียน</h1>
+        <p style={{ color: '#6b7280', marginBottom: 6 }}>
+          กระดานวาดรูป วงล้อสุ่มชื่อ สุ่มแบ่งกลุ่ม และบอร์ดเตือนความจำสำหรับชั่วโมงเรียนคอมพิวเตอร์
+        </p>
+        <p style={{ color: '#94a3b8', fontSize: '0.82rem', margin: 0 }}>
+          * หมายเหตุ: เครื่องมือนี้ใช้ประกอบกิจกรรมในคาบเรียน (ไม่นับคะแนนทักษะ P อัตโนมัติ) ส่วนระบบออมเงินและเวรประจำวันให้ใช้งานผ่านระบบหลักของโรงเรียน
+        </p>
       </div>
 
       {/* Tabs */}
-      <div style={{ 
-        display: 'flex', 
-        gap: 8, 
-        justifyContent: 'center', 
-        marginBottom: '1.5rem',
-        flexWrap: 'wrap'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          justifyContent: 'center',
+          marginBottom: '1.5rem',
+          flexWrap: 'wrap',
+        }}
+      >
         <button
+          type="button"
           className={tab === 'whiteboard' ? 'btn-primary' : 'btn-secondary'}
           onClick={() => setTab('whiteboard')}
         >
-          <PenTool size={16} /> วาดรูป (Whiteboard)
+          <PenTool size={16} /> กระดานวาดรูป (Whiteboard)
         </button>
         <button
-          className={tab === 'savings' ? 'btn-primary' : 'btn-secondary'}
-          onClick={() => setTab('savings')}
-        >
-          <Wallet size={16} /> บันทึกเงินออม (Savings)
-        </button>
-        <button
-          className={tab === 'chores' ? 'btn-primary' : 'btn-secondary'}
-          onClick={() => setTab('chores')}
-        >
-          <Calendar size={16} /> เวรประจำวัน (Chores)
-        </button>
-        <button
+          type="button"
           className={tab === 'spinner' ? 'btn-primary' : 'btn-secondary'}
           onClick={() => setTab('spinner')}
         >
-          <Sparkles size={16} /> วงล้อสุ่ม (Spinner)
+          <Sparkles size={16} /> วงล้อสุ่มชื่อ (Spinner)
         </button>
         <button
+          type="button"
           className={tab === 'groups' ? 'btn-primary' : 'btn-secondary'}
           onClick={() => setTab('groups')}
         >
           <Users size={16} /> สุ่มแบ่งกลุ่ม (Groups)
         </button>
         <button
+          type="button"
           className={tab === 'board' ? 'btn-primary' : 'btn-secondary'}
           onClick={() => setTab('board')}
         >
@@ -104,8 +65,6 @@ const Tools: React.FC = () => {
 
       <div className="card">
         {tab === 'whiteboard' && <Whiteboard />}
-        {tab === 'savings' && <SavingsTracker />}
-        {tab === 'chores' && <ChoreTracker />}
         {tab === 'spinner' && <RosterSpinner />}
         {tab === 'groups' && <GroupMaker />}
         {tab === 'board' && <PeerReminderBoard />}

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isSfxMuted, setSfxMuted, playWinSound } from '../../utils/celebrate';
-import { gamesCatalog } from '../../data/gamesCatalog';
+import { gamesCatalog, getGameTrack, type GameTrack } from '../../data/gamesCatalog';
 import {
   CT_PILLARS,
   calculateStudentCtProfile,
@@ -34,6 +34,7 @@ import './GameStyles.css';
 type GradeFilter = 'all' | 'lower-primary' | 'upper-primary' | 'secondary';
 type CtFilter = 'all' | CtPillar;
 type PlayStatusFilter = 'all' | 'played' | 'unplayed';
+type TrackFilter = 'all' | GameTrack;
 
 const gradeFilters: { id: GradeFilter; label: string; range: [number, number] }[] = [
   { id: 'all', label: 'ทั้งหมด', range: [1, 9] },
@@ -79,6 +80,7 @@ const Games: React.FC = () => {
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>('all');
   const [ctFilter, setCtFilter] = useState<CtFilter>('all');
   const [playStatusFilter, setPlayStatusFilter] = useState<PlayStatusFilter>('all');
+  const [trackFilter, setTrackFilter] = useState<TrackFilter>('all');
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [configVersion, setConfigVersion] = useState(0);
 
@@ -135,6 +137,12 @@ const Games: React.FC = () => {
     [unifiedSnapshot],
   );
 
+  const curriculumCount = useMemo(
+    () => allUnifiedRecords.filter((rec) => getGameTrack(rec.catalog.id) === 'curriculum').length,
+    [allUnifiedRecords],
+  );
+  const arcadeCount = allUnifiedRecords.length - curriculumCount;
+
   const featuredGame = gamesCatalog.find((game) => game.id === 'digital-city-quest') || gamesCatalog[0];
   const filteredGames = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('th');
@@ -147,14 +155,15 @@ const Games: React.FC = () => {
           .some((value) => value.toLocaleLowerCase('th').includes(normalizedQuery));
       const matchesGrade = gameMatchesGrade(game.level, gradeFilter);
       const matchesCt = ctFilter === 'all' || rec.ctPillar.id === ctFilter;
+      const matchesTrack = trackFilter === 'all' || getGameTrack(game.id) === trackFilter;
       const isPlayed = Boolean(snapEntry?.played);
       const matchesPlayStatus =
         playStatusFilter === 'all' ||
         (playStatusFilter === 'played' && isPlayed) ||
         (playStatusFilter === 'unplayed' && !isPlayed);
-      return matchesQuery && matchesGrade && matchesCt && matchesPlayStatus;
+      return matchesQuery && matchesGrade && matchesCt && matchesTrack && matchesPlayStatus;
     });
-  }, [allUnifiedRecords, unifiedGamesMap, gradeFilter, ctFilter, playStatusFilter, query]);
+  }, [allUnifiedRecords, unifiedGamesMap, gradeFilter, ctFilter, trackFilter, playStatusFilter, query]);
 
   const handleToggleSpeak = (e: React.MouseEvent, gameId: string, title: string, level: string, desc: string) => {
     e.preventDefault();
@@ -258,6 +267,70 @@ const Games: React.FC = () => {
               🆕 ยังไม่เคยเล่น ({allUnifiedRecords.length - playedCount})
             </button>
           </div>
+        </div>
+
+        {/* โซนแยกประเภทเกม: เกมหลักสูตร (ตรงตัวชี้วัด ว 4.2/ว 4.1) vs โซนอาร์เคด/พักสมอง */}
+        <div
+          role="tablist"
+          aria-label="เลือกโซนคลังเกม"
+          style={{
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            margin: '12px 0 14px',
+            padding: '10px 12px',
+            borderRadius: 14,
+            background: '#f8fafc',
+            border: '1.5px solid #e2e8f0',
+          }}
+        >
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[
+              { id: 'all' as const, label: `🎮 ทั้งหมด (${allUnifiedRecords.length})` },
+              { id: 'curriculum' as const, label: `🎯 เกมหลักสูตรตามตัวชี้วัด (${curriculumCount})` },
+              { id: 'arcade' as const, label: `🕹️ โซนอาร์เคด / ฝึกไหวพริบ (${arcadeCount})` },
+            ].map((zone) => (
+              <button
+                key={zone.id}
+                type="button"
+                role="tab"
+                aria-selected={trackFilter === zone.id}
+                onClick={() => setTrackFilter(zone.id)}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 999,
+                  border: trackFilter === zone.id ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                  background: trackFilter === zone.id ? '#2563eb' : '#ffffff',
+                  color: trackFilter === zone.id ? '#ffffff' : '#334155',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {zone.label}
+              </button>
+            ))}
+          </div>
+          <Link
+            to="/homework"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 12px',
+              borderRadius: 999,
+              background: '#ecfdf5',
+              border: '1px solid #6ee7b7',
+              color: '#047857',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              textDecoration: 'none',
+            }}
+          >
+            🧩 ทำใบงานโต้ตอบส่งครู →
+          </Link>
         </div>
 
         {/* New Games Spotlight */}
@@ -384,6 +457,19 @@ const Games: React.FC = () => {
                             ⚙️ ปรับแต่งแล้ว
                           </span>
                         )}
+                        <span
+                          style={{
+                            padding: '2px 8px',
+                            borderRadius: 999,
+                            fontSize: '0.7rem',
+                            fontWeight: 800,
+                            background: getGameTrack(game.id) === 'curriculum' ? '#ecfdf5' : '#fef3c7',
+                            color: getGameTrack(game.id) === 'curriculum' ? '#047857' : '#92400e',
+                            border: `1px solid ${getGameTrack(game.id) === 'curriculum' ? '#6ee7b7' : '#fcd34d'}`,
+                          }}
+                        >
+                          {getGameTrack(game.id) === 'curriculum' ? '🎯 หลักสูตร' : '🕹️ อาร์เคด'}
+                        </span>
                         <span className="gc-level">{game.level}</span>
                       </div>
                     </div>
@@ -439,6 +525,7 @@ const Games: React.FC = () => {
                 setQuery('');
                 setGradeFilter('all');
                 setCtFilter('all');
+                setTrackFilter('all');
                 setPlayStatusFilter('all');
               }}
             >

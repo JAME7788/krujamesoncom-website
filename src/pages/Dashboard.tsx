@@ -87,6 +87,8 @@ const Dashboard: React.FC = () => {
   const [schedule, setSchedule] = useState<ClassSlot[]>(() => loadSchedule());
   const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
   const [showExitTicketModal, setShowExitTicketModal] = useState(false);
+  const [dashTab, setDashTab] = useState<'today' | 'study' | 'insights'>('today');
+  const isJuniorPrimary = Boolean(user?.classroom && /^ป\.[1-3]$/.test(user.classroom));
   const [todayExitTicket, setTodayExitTicket] = useState<ExitTicket | null>(() => {
     if (!user) return null;
     const tickets = loadLocalExitTickets();
@@ -310,6 +312,22 @@ const Dashboard: React.FC = () => {
           <Link to="/courses" className="btn-primary">
             <BookOpen size={18} /> ไปเรียนต่อ
           </Link>
+          <Link to="/homework" className="btn-secondary" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '0.65rem 1rem', background: '#ecfdf5',
+            border: '1.5px solid #6ee7b7', borderRadius: 10,
+            fontWeight: 700, color: '#047857', textDecoration: 'none',
+          }}>
+            🧩 ใบงานโต้ตอบ
+          </Link>
+          <Link to="/live" className="btn-secondary" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '0.65rem 1rem', background: '#fffbeb',
+            border: '1.5px solid #fcd34d', borderRadius: 10,
+            fontWeight: 700, color: '#92400e', textDecoration: 'none',
+          }}>
+            ⚡ ควิซสด
+          </Link>
           <Link to="/report-card" className="btn-secondary" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '0.65rem 1rem', background: 'white',
@@ -319,6 +337,50 @@ const Dashboard: React.FC = () => {
             🎓 สมุดรายงานผลการเรียน
           </Link>
         </div>
+      </div>
+
+      {/* แถบสลับมุมมองแดชบอร์ด (ลดความแน่นของหน้าสำหรับ ป.1–ป.3 แต่เก็บข้อมูลครบ 100%) */}
+      <div
+        role="tablist"
+        aria-label="หมวดข้อมูลแดชบอร์ด"
+        style={{
+          display: 'flex',
+          gap: 8,
+          flexWrap: 'wrap',
+          margin: '0 0 1rem',
+          padding: 6,
+          background: '#f8fafc',
+          borderRadius: 14,
+          border: '1px solid #e2e8f0',
+        }}
+      >
+        {[
+          { id: 'today' as const, label: isJuniorPrimary ? '🌟 ภารกิจและคะแนนของหนู' : '🎯 ภาพรวมและงานของฉัน' },
+          { id: 'study' as const, label: '📚 บทเรียนและคลังข้อสอบ' },
+          { id: 'insights' as const, label: isJuniorPrimary ? '🏅 เหรียญรางวัลและสถิติเพิ่ม' : '📈 วิเคราะห์เชิงลึก & สะท้อนคิด' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={dashTab === t.id}
+            onClick={() => setDashTab(t.id)}
+            style={{
+              flex: '1 1 180px',
+              padding: '9px 14px',
+              borderRadius: 10,
+              border: dashTab === t.id ? '1.5px solid #2563eb' : '1px solid transparent',
+              background: dashTab === t.id ? '#ffffff' : 'transparent',
+              color: dashTab === t.id ? '#1d4ed8' : '#475569',
+              fontWeight: dashTab === t.id ? 800 : 600,
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              boxShadow: dashTab === t.id ? '0 2px 8px rgba(37, 99, 235, 0.1)' : 'none',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {/* SCHEDULE INDICATOR BANNER */}
@@ -385,163 +447,194 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 📌 แจ้งเตือนงานค้างและการบ้านของฉัน */}
-      {scoreEligible && (
-        <StudentMissingWorkBanner
-          classroom={user.classroom}
-          studentId={user.id}
-          studentNumber={user.studentNumber}
-          studentName={user.name}
-        />
-      )}
+      {dashTab === 'today' && (
+        <>
+          {/* 📌 แจ้งเตือนงานค้างและการบ้านของฉัน */}
+          {scoreEligible && (
+            <StudentMissingWorkBanner
+              classroom={user.classroom}
+              studentId={user.id}
+              studentNumber={user.studentNumber}
+              studentName={user.name}
+            />
+          )}
 
-      {/* Daily Question — ครูตั้งคำถามวัน */}
-      <DailyQuestionWidget studentId={user.id} />
+          {/* ปุ่มลัดใหญ่สำหรับน้อง ป.1–ป.3 */}
+          {isJuniorPrimary && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginBottom: 16 }}>
+              <Link to="/courses" className="card" style={{ textDecoration: 'none', padding: '14px', borderRadius: 14, border: '1.5px solid #93c5fd', background: '#eff6ff', color: '#1e3a8a', fontWeight: 800, textAlign: 'center' }}>
+                📚 1. เปิดบทเรียน
+              </Link>
+              <Link to="/games" className="card" style={{ textDecoration: 'none', padding: '14px', borderRadius: 14, border: '1.5px solid #fcd34d', background: '#fffbeb', color: '#92400e', fontWeight: 800, textAlign: 'center' }}>
+                🎮 2. เล่นเกมฝึก
+              </Link>
+              <Link to="/homework" className="card" style={{ textDecoration: 'none', padding: '14px', borderRadius: 14, border: '1.5px solid #6ee7b7', background: '#ecfdf5', color: '#065f46', fontWeight: 800, textAlign: 'center' }}>
+                🧩 3. ทำใบงานโต้ตอบ
+              </Link>
+              <Link to="/live" className="card" style={{ textDecoration: 'none', padding: '14px', borderRadius: 14, border: '1.5px solid #f9a8d4', background: '#fdf2f8', color: '#9d174d', fontWeight: 800, textAlign: 'center' }}>
+                ⚡ 4. เล่นควิซสด
+              </Link>
+            </div>
+          )}
 
-      {/* แบบสอบถามความพึงพอใจ (ตอบครั้งเดียว) */}
-      <SatisfactionSurvey studentId={user.id} classroom={user.classroom} />
+          {/* Daily Question — ครูตั้งคำถามวัน */}
+          <DailyQuestionWidget studentId={user.id} />
 
-      {/* Exit Ticket — ตั๋วบอกลาคาบเรียน สะท้อนคิดรับคะแนน A */}
-      {scoreEligible && (
-        <div
-          className="exit-ticket-student-card glass"
-          style={{
-            padding: '1.25rem 1.5rem',
-            borderRadius: 18,
-            marginBottom: 16,
-            background: todayExitTicket
-              ? 'linear-gradient(135deg, rgba(236,253,245,0.95) 0%, rgba(240,253,250,0.85) 100%)'
-              : 'linear-gradient(135deg, rgba(238,242,255,0.95) 0%, rgba(245,243,255,0.85) 100%)',
-            border: todayExitTicket ? '1.5px solid #10b981' : '1.5px solid #B45309',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 12,
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Exit Ticket — ตั๋วบอกลาคาบเรียน สะท้อนคิดรับคะแนน A */}
+          {scoreEligible && (
             <div
+              className="exit-ticket-student-card glass"
               style={{
-                fontSize: '1.8rem',
-                width: 46,
-                height: 46,
-                borderRadius: 14,
-                background: todayExitTicket ? '#d1fae5' : '#FEF3C7',
+                padding: '1.25rem 1.5rem',
+                borderRadius: 18,
+                marginBottom: 16,
+                background: todayExitTicket
+                  ? 'linear-gradient(135deg, rgba(236,253,245,0.95) 0%, rgba(240,253,250,0.85) 100%)'
+                  : 'linear-gradient(135deg, rgba(238,242,255,0.95) 0%, rgba(245,243,255,0.85) 100%)',
+                border: todayExitTicket ? '1.5px solid #10b981' : '1.5px solid #B45309',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12,
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
               }}
             >
-              {todayExitTicket ? '🎫' : '📝'}
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <strong style={{ fontSize: '1rem', color: '#1e293b' }}>
-                  {todayExitTicket ? 'ส่งตั๋วบอกลาคาบเรียนวันนี้แล้ว' : 'ตั๋วบอกลาคาบเรียน (Exit Ticket)'}
-                </strong>
-                <span
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div
                   style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 9999,
-                    background: todayExitTicket ? '#10b981' : '#B45309',
-                    color: '#ffffff',
+                    fontSize: '1.8rem',
+                    width: 46,
+                    height: 46,
+                    borderRadius: 14,
+                    background: todayExitTicket ? '#d1fae5' : '#FEF3C7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
                   }}
                 >
-                  {todayExitTicket ? `+${todayExitTicket.earnedScoreA} คะแนนจิตพิสัย (A)` : 'รับคะแนน A 1-3 คะแนน'}
-                </span>
+                  {todayExitTicket ? '🎫' : '📝'}
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <strong style={{ fontSize: '1rem', color: '#1e293b' }}>
+                      {todayExitTicket ? 'ส่งตั๋วบอกลาคาบเรียนวันนี้แล้ว' : 'ตั๋วบอกลาคาบเรียน (Exit Ticket)'}
+                    </strong>
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: 9999,
+                        background: todayExitTicket ? '#10b981' : '#B45309',
+                        color: '#ffffff',
+                      }}
+                    >
+                      {todayExitTicket ? `+${todayExitTicket.earnedScoreA} คะแนนจิตพิสัย (A)` : 'รับคะแนน A 1-3 คะแนน'}
+                    </span>
+                  </div>
+                  <p style={{ margin: '3px 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                    {todayExitTicket
+                      ? `เข้าใจ: "${todayExitTicket.learnedKeyword}" • สมาธิ ${todayExitTicket.selfScore}/5 ดาว • บันทึกลงสมุดคะแนนเรียบร้อย`
+                      : 'สะท้อนคิด 1 นาที ก่อนหมดคาบ เพื่อบันทึกผลการเรียนรู้และรับคะแนนจิตพิสัย'}
+                  </p>
+                </div>
               </div>
-              <p style={{ margin: '3px 0 0', fontSize: '0.85rem', color: '#64748b' }}>
-                {todayExitTicket
-                  ? `เข้าใจ: "${todayExitTicket.learnedKeyword}" • สมาธิ ${todayExitTicket.selfScore}/5 ดาว • บันทึกลงสมุดคะแนนเรียบร้อย`
-                  : 'สะท้อนคิด 1 นาที ก่อนหมดคาบ เพื่อบันทึกผลการเรียนรู้และรับคะแนนจิตพิสัย'}
-              </p>
+              <button
+                type="button"
+                onClick={() => setShowExitTicketModal(true)}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: 12,
+                  background: todayExitTicket ? '#ffffff' : 'linear-gradient(135deg, #92400E 0%, #B45309 100%)',
+                  color: todayExitTicket ? '#047857' : '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  boxShadow: todayExitTicket ? '0 2px 4px rgba(0,0,0,0.05)' : '0 4px 12px rgba(245, 158, 11,0.3)',
+                  border: todayExitTicket ? '1.5px solid #10b981' : 'none',
+                  transition: 'transform 0.15s ease',
+                }}
+              >
+                {todayExitTicket ? '✏️ ส่งซ้ำ / ปรับปรุง' : '✨ เขียนตั๋วบอกลาคาบเรียน'}
+              </button>
             </div>
+          )}
+
+          {/* XP / Level / Streak — Gamification */}
+          <GamificationCard studentId={user.id} />
+
+          {/* คะแนนของฉัน */}
+          <MyGradeCard
+            classroom={user.classroom}
+            studentNumber={user.studentNumber}
+            name={user.name}
+            studentId={user.id}
+          />
+
+          {/* STATS */}
+          <div className="stats-grid">
+            {stats.map((stat, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="stat-card glass"
+              >
+                <div className="stat-icon" style={{ color: stat.color }}>
+                  {stat.icon}
+                </div>
+                <div className="stat-info">
+                  <p>{stat.label}</p>
+                  <h3>{stat.value}</h3>
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    {stat.sub}
+                  </small>
+                </div>
+              </motion.div>
+            ))}
           </div>
-          <button
-            type="button"
-            onClick={() => setShowExitTicketModal(true)}
-            style={{
-              padding: '9px 18px',
-              borderRadius: 12,
-              background: todayExitTicket ? '#ffffff' : 'linear-gradient(135deg, #92400E 0%, #B45309 100%)',
-              color: todayExitTicket ? '#047857' : '#ffffff',
-              fontWeight: 700,
-              fontSize: '0.88rem',
-              cursor: 'pointer',
-              boxShadow: todayExitTicket ? '0 2px 4px rgba(0,0,0,0.05)' : '0 4px 12px rgba(245, 158, 11,0.3)',
-              border: todayExitTicket ? '1.5px solid #10b981' : 'none',
-              transition: 'transform 0.15s ease',
-            }}
-          >
-            {todayExitTicket ? '✏️ ส่งซ้ำ / ปรับปรุง' : '✨ เขียนตั๋วบอกลาคาบเรียน'}
-          </button>
-        </div>
+        </>
       )}
 
-      {/* เป้าหมายการเรียนรู้สัปดาห์นี้ (Self-Regulated Learning - SRL) */}
-      <WeeklyGoalTracker studentId={user.id} />
+      {dashTab === 'insights' && (
+        <>
+          {/* เป้าหมายการเรียนรู้สัปดาห์นี้ (Self-Regulated Learning - SRL) */}
+          <WeeklyGoalTracker studentId={user.id} />
 
-      {/* XP / Level / Streak — Gamification */}
-      <GamificationCard studentId={user.id} />
+          {/* โปรไฟล์ทักษะการคิดเชิงคำนวณ (Computational Thinking 4 เสาหลัก) */}
+          <CtRadarWidget studentId={user.id} classroom={user.classroom} />
 
-      {/* โปรไฟล์ทักษะการคิดเชิงคำนวณ (Computational Thinking 4 เสาหลัก) */}
-      <CtRadarWidget studentId={user.id} classroom={user.classroom} />
+          {/* Achievement badges */}
+          <AchievementShowcase studentId={user.id} />
 
-      {/* คะแนนของฉัน */}
-      <MyGradeCard
-        classroom={user.classroom}
-        studentNumber={user.studentNumber}
-        name={user.name}
-        studentId={user.id}
-      />
+          {/* ทบทวนความจำเว้นระยะห่าง (Ebbinghaus Spaced Repetition) */}
+          <SmartSpacedReviewWidget studentId={user.id} />
 
-      {/* Achievement badges */}
-      <AchievementShowcase studentId={user.id} />
+          {/* สมุดสะท้อนคิดการเรียนรู้ของผู้เรียน */}
+          <StudentReflectionJournal
+            studentId={user.id}
+            studentName={user.name}
+            classroom={user.classroom}
+            compact={true}
+          />
 
-      {/* STATS */}
-      <div className="stats-grid">
-        {stats.map((stat, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="stat-card glass"
-          >
-            <div className="stat-icon" style={{ color: stat.color }}>
-              {stat.icon}
-            </div>
-            <div className="stat-info">
-              <p>{stat.label}</p>
-              <h3>{stat.value}</h3>
-              <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                {stat.sub}
-              </small>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+          {/* แบบสอบถามความพึงพอใจ (ตอบครั้งเดียว) */}
+          <SatisfactionSurvey studentId={user.id} classroom={user.classroom} />
+        </>
+      )}
 
-      {/* คลังข้อสอบมาตรฐานหลักสูตร ว 4.2 (25 ชุด) */}
-      <CurriculumExamWidget studentId={user.id} classroom={user.classroom} />
+      {dashTab === 'study' && (
+        <>
+          {/* คลังข้อสอบมาตรฐานหลักสูตร ว 4.2 (25 ชุด) */}
+          <CurriculumExamWidget studentId={user.id} classroom={user.classroom} />
+        </>
+      )}
 
-      {/* ทบทวนความจำเว้นระยะห่าง (Ebbinghaus Spaced Repetition) */}
-      <SmartSpacedReviewWidget studentId={user.id} />
-
-      {/* สมุดสะท้อนคิดการเรียนรู้ของผู้เรียน (GBL 36 เกม) */}
-      <StudentReflectionJournal
-        studentId={user.id}
-        studentName={user.name}
-        classroom={user.classroom}
-        compact={true}
-      />
-
-      {/* MAIN GRID */}
+      {/* MAIN GRID — แสดงในแท็บ "บทเรียนและคลังข้อสอบ" และ "วิเคราะห์เชิงลึก" */}
+      {dashTab !== 'today' && (
       <div className="dashboard-main">
         <div className="main-left">
           {/* PROGRESS PER UNIT */}
@@ -785,6 +878,7 @@ const Dashboard: React.FC = () => {
           </section>
         </div>
       </div>
+      )}
 
       {showExitTicketModal && user && (
         <ExitTicketModal

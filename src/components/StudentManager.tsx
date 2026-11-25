@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Plus, Trash2, Edit3, Save, X, Users, Search,
-  Download, RefreshCw, ArrowRightLeft, ListOrdered,
+  Download, RefreshCw, ArrowRightLeft, ListOrdered, Link2, Check,
 } from 'lucide-react';
 import {
   loadRoster, addStudent, updateStudent, deleteStudent,
@@ -20,6 +20,23 @@ const StudentManager: React.FC = () => {
   const [search, setSearch] = useState('');
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [copiedParentCode, setCopiedParentCode] = useState<string | null>(null);
+
+  const handleCopyParentLink = (s: StudentInfo) => {
+    const parentId = `${classroom}_${s.no}_${s.name.replace(/\s+/g, '')}`;
+    const url = `${window.location.origin}/parent/${encodeURIComponent(parentId)}`;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(url)
+        .then(() => {
+          setCopiedParentCode(s.studentCode);
+          setTimeout(() => setCopiedParentCode(null), 2500);
+        })
+        .catch(() => window.prompt(`ลิงก์พอร์ทัลผู้ปกครองสำหรับ ${s.name}:`, url));
+    } else {
+      window.prompt(`ลิงก์พอร์ทัลผู้ปกครองสำหรับ ${s.name}:`, url);
+    }
+  };
 
   // form state
   const [draft, setDraft] = useState<Partial<StudentInfo>>({
@@ -255,6 +272,8 @@ const StudentManager: React.FC = () => {
                     key={s.studentCode}
                     student={s}
                     isEditing={isEditing}
+                    copiedParent={copiedParentCode === s.studentCode}
+                    onCopyParentLink={() => handleCopyParentLink(s)}
                     onEdit={() => setEditingCode(s.studentCode)}
                     onCancel={() => setEditingCode(null)}
                     onSave={(patch) => handleSave(s.studentCode, patch)}
@@ -283,12 +302,14 @@ const StudentManager: React.FC = () => {
 const StudentRow: React.FC<{
   student: StudentInfo;
   isEditing: boolean;
+  copiedParent: boolean;
+  onCopyParentLink: () => void;
   onEdit: () => void;
   onCancel: () => void;
   onSave: (patch: Partial<StudentInfo>) => void;
   onDelete: () => void;
   onMove: () => void;
-}> = ({ student, isEditing, onEdit, onCancel, onSave, onDelete, onMove }) => {
+}> = ({ student, isEditing, copiedParent, onCopyParentLink, onEdit, onCancel, onSave, onDelete, onMove }) => {
   const [draft, setDraft] = useState(student);
 
   // Synchronize draft student state when editing mode or student changes
@@ -309,6 +330,14 @@ const StudentRow: React.FC<{
         <td>{student.name}</td>
         <td>
           <div style={{ display: 'flex', gap: 4 }}>
+            <button
+              className="cb-icon-btn"
+              onClick={onCopyParentLink}
+              title={copiedParent ? 'คัดลอกลิงก์ผู้ปกครองแล้ว!' : 'คัดลอกลิงก์พอร์ทัลผู้ปกครอง (ส่งให้ผู้ปกครองดูผลการเรียน)'}
+              style={copiedParent ? { color: '#16a34a', borderColor: '#86efac' } : { color: '#0284c7' }}
+            >
+              {copiedParent ? <Check size={14} /> : <Link2 size={14} />}
+            </button>
             <button className="cb-icon-btn" onClick={onEdit} title="แก้ไข">
               <Edit3 size={14} />
             </button>

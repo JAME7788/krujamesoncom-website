@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users, Calendar, BarChart3, TrendingUp, Activity, Clock,
@@ -9,33 +9,40 @@ import {
   ChevronDown, Briefcase, ExternalLink,
 } from 'lucide-react';
 import AdminGate from '../components/AdminGate';
+import Loading from '../components/Loading';
 import { PA_PORTFOLIO_URL } from './PaPortfolioPage';
-import CourseBuilder from '../components/CourseBuilder';
-import GradeBook from '../components/GradeBook';
-import { OfficialGradeExportModal } from '../components/OfficialGradeExportModal';
-import { MediaReportHub } from '../components/MediaReportHub';
-import SkillGradeTable from '../components/SkillGradeTable';
-import BonusAwarder from '../components/BonusAwarder';
-import DailyQuestionEditor from '../components/DailyQuestionEditor';
-import QuickAttendance from '../components/QuickAttendance';
-import MasterCsvExport from '../components/MasterCsvExport';
-import ResearchGenerator from '../components/ResearchGenerator';
-import StudentManager from '../components/StudentManager';
-import AnnouncementManager from '../components/AnnouncementManager';
-import CalendarManager from '../components/CalendarManager';
-import HomeworkManager from '../components/HomeworkManager';
-import ThemeCustomizer from '../components/ThemeCustomizer';
-import LessonLockManager from '../components/LessonLockManager';
-import SlideManager from '../components/SlideManager';
-import VirtualClassroomManager from '../components/VirtualClassroomManager';
-import TechnologyPlanHub from '../components/TechnologyPlanHub';
-import CoursePlan5 from '../components/CoursePlan5';
-import StudentAssessmentHub from '../components/StudentAssessmentHub';
-import TeacherClassroomHub from '../components/TeacherClassroomHub';
-import ExternalVisitorManager from '../components/ExternalVisitorManager';
-import QuestionBankManager from '../components/QuestionBankManager';
-import AuditLogViewer from '../components/AuditLogViewer';
-import StudentReflectionJournal from '../components/StudentReflectionJournal';
+
+// Code-splitting ทุกแท็บในพื้นที่ครู เพื่อลดขนาดโหลดแรกจาก ~1.3 MB เหลือเฉพาะแท็บที่เปิดใช้งาน
+const CourseBuilder = React.lazy(() => import('../components/CourseBuilder'));
+const GradeBook = React.lazy(() => import('../components/GradeBook'));
+const OfficialGradeExportModal = React.lazy(() =>
+  import('../components/OfficialGradeExportModal').then((m) => ({ default: m.OfficialGradeExportModal })),
+);
+const MediaReportHub = React.lazy(() =>
+  import('../components/MediaReportHub').then((m) => ({ default: m.MediaReportHub })),
+);
+const SkillGradeTable = React.lazy(() => import('../components/SkillGradeTable'));
+const BonusAwarder = React.lazy(() => import('../components/BonusAwarder'));
+const DailyQuestionEditor = React.lazy(() => import('../components/DailyQuestionEditor'));
+const QuickAttendance = React.lazy(() => import('../components/QuickAttendance'));
+const MasterCsvExport = React.lazy(() => import('../components/MasterCsvExport'));
+const ResearchGenerator = React.lazy(() => import('../components/ResearchGenerator'));
+const StudentManager = React.lazy(() => import('../components/StudentManager'));
+const AnnouncementManager = React.lazy(() => import('../components/AnnouncementManager'));
+const CalendarManager = React.lazy(() => import('../components/CalendarManager'));
+const HomeworkManager = React.lazy(() => import('../components/HomeworkManager'));
+const ThemeCustomizer = React.lazy(() => import('../components/ThemeCustomizer'));
+const LessonLockManager = React.lazy(() => import('../components/LessonLockManager'));
+const SlideManager = React.lazy(() => import('../components/SlideManager'));
+const VirtualClassroomManager = React.lazy(() => import('../components/VirtualClassroomManager'));
+const TechnologyPlanHub = React.lazy(() => import('../components/TechnologyPlanHub'));
+const CoursePlan5 = React.lazy(() => import('../components/CoursePlan5'));
+const StudentAssessmentHub = React.lazy(() => import('../components/StudentAssessmentHub'));
+const TeacherClassroomHub = React.lazy(() => import('../components/TeacherClassroomHub'));
+const ExternalVisitorManager = React.lazy(() => import('../components/ExternalVisitorManager'));
+const QuestionBankManager = React.lazy(() => import('../components/QuestionBankManager'));
+const AuditLogViewer = React.lazy(() => import('../components/AuditLogViewer'));
+const StudentReflectionJournal = React.lazy(() => import('../components/StudentReflectionJournal'));
 import { loadErrors, clearErrors } from '../services/errorLogger';
 import { Megaphone, Calendar as CalIcon, Bug } from 'lucide-react';
 import { adminLogout, getAdminSession } from '../services/authAdmin';
@@ -76,116 +83,109 @@ interface NavGroup {
 
 const NAVIGATION_GROUPS: NavGroup[] = [
   {
-    title: 'การสอนวันนี้',
+    title: '🎯 สอนในคาบเรียน (Daily)',
     folders: [
       {
         id: 'today', label: 'คาบเรียนวันนี้', icon: <PlayCircle size={16} />,
         items: [{ id: 'today', label: 'คาบเรียนวันนี้', icon: <PlayCircle size={16} /> }],
       },
-    ],
-  },
-  {
-    title: '📊 หน้าหลักและสถิติ',
-    folders: [{
-      id: 'insights', label: 'ภาพรวมและพัฒนาการ', icon: <BarChart3 size={16} />,
-      items: [
-        { id: 'overview', label: 'ภาพรวมระบบ', icon: <BarChart3 size={16} /> },
-        { id: 'world', label: 'ห้องเรียน 3D', icon: <MonitorPlay size={16} /> },
-        { id: 'scores', label: 'สถิตินักเรียนในเว็บ', icon: <BarChart3 size={16} /> },
-        { id: 'development', label: 'พัฒนาการรายคน', icon: <TrendingUp size={16} /> },
-      ],
-    }],
-  },
-  {
-    title: '👥 ชั้นเรียนและเช็คชื่อ',
-    folders: [{
-      id: 'students', label: 'นักเรียนและเช็คชื่อ', icon: <Users size={16} />,
-      items: [
-        { id: 'roster', label: 'จัดการนักเรียน', icon: <Users size={16} /> },
-        { id: 'external-visitors', label: 'ผู้ทดลองภายนอก', icon: <Globe2 size={16} /> },
-        { id: 'attendance', label: 'เช็คชื่อตามตาราง', icon: <Calendar size={16} /> },
-        { id: 'quick-att', label: 'เช็คชื่อ Quick (มา/ขาด/ลา)', icon: <Calendar size={16} /> },
-      ],
-    }],
-  },
-  {
-    title: '📋 การวัดผลการเรียน',
-    folders: [
       {
-        id: 'grades', label: 'คะแนนและเอกสาร', icon: <FileSpreadsheet size={16} />,
+        id: 'homework-folder', label: 'ใบงานโต้ตอบ & การบ้าน', icon: <Award size={16} />,
+        items: [{ id: 'homework', label: 'ใบงานโต้ตอบ / การบ้าน', icon: <Award size={16} /> }],
+      },
+      {
+        id: 'attendance-folder', label: 'เช็คชื่อนักเรียน', icon: <Calendar size={16} />,
         items: [
-          { id: 'gradebook', label: 'เก็บคะแนน K/P/A', icon: <Award size={16} /> },
-          { id: 'export-grades', label: 'ปพ.5 และเอกสารวัดผล', icon: <FileSpreadsheet size={16} /> },
-          { id: 'assessments', label: 'แบบประเมินและหลังสอน', icon: <FileText size={16} /> },
-          { id: 'skill', label: 'ทักษะอาชีพ (K/P)', icon: <Award size={16} /> },
+          { id: 'quick-att', label: 'เช็คชื่อด่วน (มา/ขาด/ลา)', icon: <Calendar size={16} /> },
+          { id: 'attendance', label: 'เช็คชื่อตามตารางเรียน', icon: <Calendar size={16} /> },
         ],
       },
       {
-        id: 'assessment-activities', label: 'ข้อสอบและกิจกรรม', icon: <Award size={16} />,
+        id: 'lesson-content', label: 'สื่อ สไลด์ & ปลดล็อก', icon: <BookOpen size={16} />,
+        items: [
+          { id: 'locks', label: 'ปลดล็อกบทเรียน', icon: <Lock size={16} /> },
+          { id: 'slides', label: 'จัดการสไลด์', icon: <BookOpen size={16} /> },
+          { id: 'courses', label: 'จัดการรายวิชา', icon: <Pencil size={16} /> },
+          { id: 'world', label: 'ห้องเรียน 3D', icon: <MonitorPlay size={16} /> },
+        ],
+      },
+    ],
+  },
+  {
+    title: '📊 วัดผลและ ปพ.5',
+    folders: [
+      {
+        id: 'grades', label: 'สมุดคะแนนและ ปพ.5', icon: <FileSpreadsheet size={16} />,
+        items: [
+          { id: 'gradebook', label: 'เก็บคะแนน K/P/A', icon: <Award size={16} /> },
+          { id: 'export-grades', label: 'ปพ.5 และเอกสารวัดผล', icon: <FileSpreadsheet size={16} /> },
+          { id: 'skill', label: 'ทักษะอาชีพ IS (K/P)', icon: <Award size={16} /> },
+          { id: 'assessments', label: 'แบบประเมินและหลังสอน', icon: <FileText size={16} /> },
+        ],
+      },
+      {
+        id: 'assessment-activities', label: 'ข้อสอบและกิจกรรมคะแนน', icon: <Award size={16} />,
         items: [
           { id: 'question-bank', label: 'คลังข้อสอบ', icon: <FileText size={16} /> },
           { id: 'daily', label: 'คำถามประจำวัน', icon: <Award size={16} /> },
           { id: 'bonus', label: 'รางวัลและ Bonus', icon: <Award size={16} /> },
+          { id: 'reflections', label: 'บันทึกสะท้อนคิด (GBL)', icon: <BookOpen size={16} /> },
         ],
       },
       {
-        id: 'reports', label: 'รายงานและวิจัย', icon: <Layers size={16} />,
+        id: 'insights', label: 'สถิติและพัฒนาการ', icon: <BarChart3 size={16} />,
+        items: [
+          { id: 'overview', label: 'ภาพรวมระบบ', icon: <BarChart3 size={16} /> },
+          { id: 'scores', label: 'สถิตินักเรียนในเว็บ', icon: <BarChart3 size={16} /> },
+          { id: 'development', label: 'พัฒนาการรายคน', icon: <TrendingUp size={16} /> },
+        ],
+      },
+    ],
+  },
+  {
+    title: '📚 แผนการสอนและเอกสาร ว.PA',
+    folders: [
+      {
+        id: 'lesson-plans', label: 'แผนและตารางสอน', icon: <FileText size={16} />,
+        items: [
+          { id: 'p1-plan', label: 'แผนเทคโนโลยีและหลังสอน', icon: <FileText size={16} /> },
+          { id: 'teaching-schedule', label: 'กำหนดการสอน ป.1-6', icon: <Calendar size={16} /> },
+          { id: 'schedule', label: 'จัดการตารางสอน', icon: <Clock size={16} /> },
+        ],
+      },
+      {
+        id: 'reports', label: 'รายงานสื่อ วิจัย & ว.PA', icon: <Layers size={16} />,
         items: [
           { id: 'media-reports', label: 'รายงานผลิตสื่อ (A4)', icon: <Layers size={16} /> },
           { id: 'research', label: 'วิจัย ๕ บท และ ว.PA', icon: <FileText size={16} /> },
           { id: 'pa-portfolio', label: 'แฟ้มผลงาน ว.PA (Portfolio)', icon: <Briefcase size={16} /> },
-          { id: 'reflections', label: 'บันทึกสะท้อนคิด (GBL)', icon: <BookOpen size={16} /> },
         ],
       },
     ],
   },
   {
-    title: '📚 จัดการบทเรียน',
+    title: '⚙️ จัดการชั้นเรียนและระบบ',
     folders: [
       {
-        id: 'lesson-plans', label: 'แผนและหลังสอน', icon: <FileText size={16} />,
+        id: 'students', label: 'นักเรียนและสื่อสาร', icon: <Users size={16} />,
         items: [
-          { id: 'p1-plan', label: 'แผนเทคโนโลยีและหลังสอน', icon: <FileText size={16} /> },
-          { id: 'teaching-schedule', label: 'กำหนดการสอน ป.1-6', icon: <Calendar size={16} /> },
+          { id: 'roster', label: 'รายชื่อนักเรียน & ลิงก์ผู้ปกครอง', icon: <Users size={16} /> },
+          { id: 'external-visitors', label: 'ผู้ทดลองภายนอก', icon: <Globe2 size={16} /> },
+          { id: 'announcements', label: 'ประกาศข่าวสาร', icon: <Megaphone size={16} /> },
+          { id: 'calendar', label: 'ปฏิทินกิจกรรม', icon: <CalIcon size={16} /> },
         ],
       },
       {
-        id: 'lesson-content', label: 'รายวิชา สไลด์ และการเข้าถึง', icon: <BookOpen size={16} />,
+        id: 'settings', label: 'ตั้งค่าและตรวจสอบระบบ', icon: <Activity size={16} />,
         items: [
-          { id: 'courses', label: 'จัดการรายวิชา', icon: <Pencil size={16} /> },
-          { id: 'slides', label: 'จัดการสไลด์', icon: <BookOpen size={16} /> },
-          { id: 'locks', label: 'ปลดล็อกบทเรียน', icon: <Lock size={16} /> },
+          { id: 'theme', label: 'ธีมและสำรองข้อมูล', icon: <Activity size={16} /> },
+          { id: 'audit', label: 'ประวัติการแก้ไข', icon: <Clock size={16} /> },
+          { id: 'site', label: 'ข้อมูลเว็บ', icon: <Activity size={16} /> },
+          { id: 'errors', label: 'Error Log', icon: <Bug size={16} /> },
         ],
-      },
-      {
-        id: 'class-schedule', label: 'ตารางสอน', icon: <Clock size={16} />,
-        items: [{ id: 'schedule', label: 'จัดการตารางสอน', icon: <Clock size={16} /> }],
       },
     ],
   },
-  {
-    title: '📣 สื่อสารและกิจกรรม',
-    folders: [{
-      id: 'communication', label: 'ข่าวสาร ปฏิทิน และการบ้าน', icon: <Megaphone size={16} />,
-      items: [
-        { id: 'announcements', label: 'ประกาศข่าวสาร', icon: <Megaphone size={16} /> },
-        { id: 'calendar', label: 'ปฏิทินกิจกรรม', icon: <CalIcon size={16} /> },
-        { id: 'homework', label: 'การบ้าน / งานเฉพาะบุคคล', icon: <Award size={16} /> },
-      ],
-    }],
-  },
-  {
-    title: '⚙️ ตั้งค่าระบบ',
-    folders: [{
-      id: 'settings', label: 'ตั้งค่าและตรวจสอบระบบ', icon: <Activity size={16} />,
-      items: [
-        { id: 'theme', label: 'ธีมและสำรองข้อมูล', icon: <Activity size={16} /> },
-        { id: 'audit', label: 'ประวัติการแก้ไข', icon: <Clock size={16} /> },
-        { id: 'site', label: 'ข้อมูลเว็บ', icon: <Activity size={16} /> },
-        { id: 'errors', label: 'Error Log', icon: <Bug size={16} /> },
-      ],
-    }],
-  }
 ];
 
 const findNavigationFolder = (tab: Tab) => (
@@ -590,6 +590,7 @@ const AdminDashboardInner: React.FC = () => {
 
           {/* Content Area */}
           <div className="admin2-content">
+            <Suspense fallback={<Loading text="กำลังโหลดเครื่องมือครู..." />}>
             {/* TAB: TODAY'S CLASS */}
             {tab === 'today' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
@@ -1418,6 +1419,7 @@ const AdminDashboardInner: React.FC = () => {
                 <SiteInfo stats={stats} students={students} />
               </motion.div>
             )}
+            </Suspense>
           </div>
         </div>
       </div>

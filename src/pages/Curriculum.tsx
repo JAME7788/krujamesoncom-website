@@ -108,7 +108,8 @@ const Curriculum: React.FC = () => {
         </div>
       )}
 
-      {/* Teacher & Lesson Plan Resource Bar */}
+      {/* Teacher & Lesson Plan Resource Bar — แสดงเฉพาะครูผู้สอน (ไม่รบกวนหน้านักเรียน) */}
+      {isAdmin && (
       <div style={{
         background: 'var(--primary-soft)',
         border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -174,6 +175,7 @@ const Curriculum: React.FC = () => {
           </Link>
         </div>
       </div>
+      )}
       {visibleGrades.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
           <p>ไม่มีคอร์สสำหรับชั้นนี้</p>

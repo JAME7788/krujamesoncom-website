@@ -19,7 +19,6 @@ const UnitDetail = React.lazy(() => import('./pages/UnitDetail'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Quiz = React.lazy(() => import('./pages/Quiz'));
 const Login = React.lazy(() => import('./pages/Login'));
-const Lesson = React.lazy(() => import('./pages/Lesson'));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 const ResearchPage = React.lazy(() => import('./pages/ResearchPage'));
 const PaPortfolioPage = React.lazy(() => import('./pages/PaPortfolioPage'));
@@ -126,7 +125,7 @@ function App() {
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/report-card" element={<ProtectedRoute><ReportCard /></ProtectedRoute>} />
                   <Route path="/quiz/:id" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
-                  <Route path="/lesson/:id" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
+                  <Route path="/lesson/:id" element={<Navigate to="/courses" replace />} />
                   <Route path="/games" element={<LoginPromptOverlay><Games /></LoginPromptOverlay>} />
                   <Route path="/games/mouse-practice" element={<LearningGameRoute gameId="mouse"><MousePractice /></LearningGameRoute>} />
                   <Route path="/games/keyboard-practice" element={<LearningGameRoute gameId="keyboard"><KeyboardPractice /></LearningGameRoute>} />
