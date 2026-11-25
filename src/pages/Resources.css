@@ -227,3 +227,33 @@
   .resources-toolbar { flex-direction: column; align-items: stretch; }
   .cat-pills { justify-content: center; }
 }
+
+/* ========== Dark Mode — Resources ========== */
+html[data-theme="dark"] .resources-toolbar,
+html[data-theme="dark"] .lr-card {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html[data-theme="dark"] .resources-search,
+html[data-theme="dark"] .cat-pill,
+html[data-theme="dark"] .lr-emoji {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+html[data-theme="dark"] .lr-head h3 {
+  color: #f1f5f9;
+}
+html[data-theme="dark"] .section-title {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .resources-info {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #a7f3d0;
+}
+html[data-theme="dark"] .resources-info.warn {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fde68a;
+}

@@ -12,8 +12,15 @@ html[data-theme="dark"] {
   --border-light: rgba(255, 255, 255, 0.04);
   --glass-bg: rgba(30, 41, 59, 0.7);
   --glass-border: rgba(255, 255, 255, 0.08);
+  --primary-soft: rgba(245, 158, 11, 0.16);
   --primary-ink: #FCD34D;
   --primary-ring: #FCD34D;
+}
+
+html[data-theme="dark"] .badge-yellow {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.35);
 }
 
 html[data-theme="dark"] body {
@@ -452,4 +459,214 @@ dialog[data-modal-fallback] {
   max-height: calc(100vh - 2rem);
   overflow: auto;
   box-shadow: 0 0 0 100vmax rgba(15, 23, 42, 0.55);
+}
+
+/* ============================================
+   Student Homework Center (Light + Dark Mode)
+   ============================================ */
+.hw-summary-panel {
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, var(--card) 0%, var(--surface) 100%);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.hw-status-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.hw-status-badge.done { background: #dcfce7; color: #166534; }
+.hw-status-badge.overdue { background: #fee2e2; color: #b91c1c; }
+.hw-status-badge.pending { background: #fef3c7; color: #92400e; }
+
+.hw-progress-track {
+  height: 10px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.hw-stat-tile {
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hw-stat-tile:hover { transform: translateY(-1px); }
+.hw-stat-label { font-size: 0.78rem; font-weight: 700; }
+.hw-stat-val { font-size: 1.5rem; font-weight: 900; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.hw-stat-val span { font-size: 0.82rem; font-weight: 600; }
+
+.hw-stat-tile.tile-red { border: 1px solid #fecaca; background: #fef2f2; }
+.hw-stat-tile.tile-red.active { border: 2px solid #ef4444; }
+.hw-stat-tile.tile-red .hw-stat-label { color: #b91c1c; }
+.hw-stat-tile.tile-red .hw-stat-val { color: #dc2626; }
+
+.hw-stat-tile.tile-amber { border: 1px solid #fde68a; background: #fffbeb; }
+.hw-stat-tile.tile-amber.active { border: 2px solid #f59e0b; }
+.hw-stat-tile.tile-amber .hw-stat-label { color: #b45309; }
+.hw-stat-tile.tile-amber .hw-stat-val { color: #d97706; }
+
+.hw-stat-tile.tile-blue { border: 1px solid #bae6fd; background: #f0f9ff; }
+.hw-stat-tile.tile-blue.active { border: 2px solid #0284c7; }
+.hw-stat-tile.tile-blue .hw-stat-label { color: #0369a1; }
+.hw-stat-tile.tile-blue .hw-stat-val { color: #0284c7; }
+
+.hw-stat-tile.tile-green { border: 1px solid #bbf7d0; background: #f0fdf4; }
+.hw-stat-tile.tile-green.active { border: 2px solid #16a34a; }
+.hw-stat-tile.tile-green .hw-stat-label { color: #15803d; }
+.hw-stat-tile.tile-green .hw-stat-val { color: #16a34a; }
+
+.hw-filter-pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.hw-filter-pill.active {
+  font-weight: 700;
+  border: 1.5px solid #d97706;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.hw-empty-card {
+  text-align: center;
+  padding: 1.5rem 1.25rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.hw-task-card {
+  background: var(--card);
+}
+.hw-task-card.recommended {
+  background: linear-gradient(to right, #fffdf5, #ffffff);
+}
+
+.hw-iw-library {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border-radius: 18px;
+  border: 1.5px solid #93c5fd;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+}
+.hw-iw-count-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.hw-iw-tpl-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+.hw-iw-tpl-card.assigned {
+  border: 1.5px solid #34d399;
+}
+.hw-iw-tpl-subj {
+  font-size: 0.73rem;
+  font-weight: 800;
+  color: #1d4ed8;
+  background: #eff6ff;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.hw-iw-tag {
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.hw-iw-best {
+  font-size: 0.76rem;
+  color: #15803d;
+  font-weight: 700;
+}
+
+/* Dark Mode for Homework Center */
+html[data-theme="dark"] .hw-summary-panel {
+  background: linear-gradient(135deg, #1e293b 0%, #172033 100%) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+html[data-theme="dark"] .hw-status-badge.done { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+html[data-theme="dark"] .hw-status-badge.overdue { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+html[data-theme="dark"] .hw-status-badge.pending { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+
+html[data-theme="dark"] .hw-stat-tile.tile-red { background: rgba(239, 68, 68, 0.14); border-color: rgba(248, 113, 113, 0.32); }
+html[data-theme="dark"] .hw-stat-tile.tile-red .hw-stat-label,
+html[data-theme="dark"] .hw-stat-tile.tile-red .hw-stat-val { color: #fca5a5; }
+
+html[data-theme="dark"] .hw-stat-tile.tile-amber { background: rgba(245, 158, 11, 0.14); border-color: rgba(251, 191, 36, 0.35); }
+html[data-theme="dark"] .hw-stat-tile.tile-amber .hw-stat-label,
+html[data-theme="dark"] .hw-stat-tile.tile-amber .hw-stat-val { color: #fcd34d; }
+
+html[data-theme="dark"] .hw-stat-tile.tile-blue { background: rgba(14, 165, 233, 0.14); border-color: rgba(56, 189, 248, 0.35); }
+html[data-theme="dark"] .hw-stat-tile.tile-blue .hw-stat-label,
+html[data-theme="dark"] .hw-stat-tile.tile-blue .hw-stat-val { color: #7dd3fc; }
+
+html[data-theme="dark"] .hw-stat-tile.tile-green { background: rgba(34, 197, 94, 0.14); border-color: rgba(74, 222, 128, 0.35); }
+html[data-theme="dark"] .hw-stat-tile.tile-green .hw-stat-label,
+html[data-theme="dark"] .hw-stat-tile.tile-green .hw-stat-val { color: #86efac; }
+
+html[data-theme="dark"] .hw-filter-pill {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+html[data-theme="dark"] .hw-filter-pill.active {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  color: #fde68a;
+}
+
+html[data-theme="dark"] .hw-task-card.recommended {
+  background: linear-gradient(to right, rgba(245, 158, 11, 0.12), #1e293b) !important;
+}
+
+html[data-theme="dark"] .hw-iw-library {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(6, 78, 59, 0.25) 100%) !important;
+  border-color: rgba(96, 165, 250, 0.35) !important;
+}
+html[data-theme="dark"] .hw-iw-count-pill {
+  background: rgba(59, 130, 246, 0.24);
+  color: #93c5fd;
+}
+html[data-theme="dark"] .hw-iw-tpl-card {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html[data-theme="dark"] .hw-iw-tpl-subj {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+html[data-theme="dark"] .hw-iw-tag {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+html[data-theme="dark"] .hw-iw-best {
+  color: #86efac;
 }

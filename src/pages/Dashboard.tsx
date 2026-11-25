@@ -312,28 +312,13 @@ const Dashboard: React.FC = () => {
           <Link to="/courses" className="btn-primary">
             <BookOpen size={18} /> ไปเรียนต่อ
           </Link>
-          <Link to="/homework" className="btn-secondary" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '0.65rem 1rem', background: '#ecfdf5',
-            border: '1.5px solid #6ee7b7', borderRadius: 10,
-            fontWeight: 700, color: '#047857', textDecoration: 'none',
-          }}>
+          <Link to="/homework" className="btn-secondary dash-quick-btn dash-quick-emerald">
             🧩 ใบงานโต้ตอบ
           </Link>
-          <Link to="/live" className="btn-secondary" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '0.65rem 1rem', background: '#fffbeb',
-            border: '1.5px solid #fcd34d', borderRadius: 10,
-            fontWeight: 700, color: '#92400e', textDecoration: 'none',
-          }}>
+          <Link to="/live" className="btn-secondary dash-quick-btn dash-quick-amber">
             ⚡ ควิซสด
           </Link>
-          <Link to="/report-card" className="btn-secondary" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '0.65rem 1rem', background: 'white',
-            border: '1px solid #e5e7eb', borderRadius: 10,
-            fontWeight: 600, color: '#374151', textDecoration: 'none',
-          }}>
+          <Link to="/report-card" className="btn-secondary dash-quick-btn">
             🎓 สมุดรายงานผลการเรียน
           </Link>
         </div>
@@ -343,16 +328,7 @@ const Dashboard: React.FC = () => {
       <div
         role="tablist"
         aria-label="หมวดข้อมูลแดชบอร์ด"
-        style={{
-          display: 'flex',
-          gap: 8,
-          flexWrap: 'wrap',
-          margin: '0 0 1rem',
-          padding: 6,
-          background: '#f8fafc',
-          borderRadius: 14,
-          border: '1px solid #e2e8f0',
-        }}
+        className="dash-tab-bar"
       >
         {[
           { id: 'today' as const, label: isJuniorPrimary ? '🌟 ภารกิจและคะแนนของหนู' : '🎯 ภาพรวมและงานของฉัน' },
@@ -365,18 +341,7 @@ const Dashboard: React.FC = () => {
             role="tab"
             aria-selected={dashTab === t.id}
             onClick={() => setDashTab(t.id)}
-            style={{
-              flex: '1 1 180px',
-              padding: '9px 14px',
-              borderRadius: 10,
-              border: dashTab === t.id ? '1.5px solid #2563eb' : '1px solid transparent',
-              background: dashTab === t.id ? '#ffffff' : 'transparent',
-              color: dashTab === t.id ? '#1d4ed8' : '#475569',
-              fontWeight: dashTab === t.id ? 800 : 600,
-              fontSize: '0.88rem',
-              cursor: 'pointer',
-              boxShadow: dashTab === t.id ? '0 2px 8px rgba(37, 99, 235, 0.1)' : 'none',
-            }}
+            className={`dash-tab-btn ${dashTab === t.id ? 'active' : ''}`}
           >
             {t.label}
           </button>
@@ -484,13 +449,12 @@ const Dashboard: React.FC = () => {
           {/* Exit Ticket — ตั๋วบอกลาคาบเรียน สะท้อนคิดรับคะแนน A */}
           {scoreEligible && (
             <div
-              className="exit-ticket-student-card"
+              className="exit-ticket-student-card card"
               style={{
                 padding: '1.15rem 1.35rem',
                 borderRadius: 16,
                 marginBottom: 16,
-                background: '#ffffff',
-                border: todayExitTicket ? '1px solid #86efac' : '1px solid #e2e8f0',
+                border: todayExitTicket ? '1px solid #86efac' : '1px solid var(--border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -506,7 +470,7 @@ const Dashboard: React.FC = () => {
                     width: 46,
                     height: 46,
                     borderRadius: 14,
-                    background: todayExitTicket ? '#d1fae5' : '#FEF3C7',
+                    background: todayExitTicket ? 'rgba(16, 185, 129, 0.18)' : 'var(--primary-soft)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -517,7 +481,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <strong style={{ fontSize: '1rem', color: '#1e293b' }}>
+                    <strong style={{ fontSize: '1rem', color: 'var(--text-main)' }}>
                       {todayExitTicket ? 'ส่งตั๋วบอกลาคาบเรียนวันนี้แล้ว' : 'ตั๋วบอกลาคาบเรียน (Exit Ticket)'}
                     </strong>
                     <span
@@ -533,7 +497,7 @@ const Dashboard: React.FC = () => {
                       {todayExitTicket ? `+${todayExitTicket.earnedScoreA} คะแนนจิตพิสัย (A)` : 'รับคะแนน A 1-3 คะแนน'}
                     </span>
                   </div>
-                  <p style={{ margin: '3px 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                  <p style={{ margin: '3px 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     {todayExitTicket
                       ? `เข้าใจ: "${todayExitTicket.learnedKeyword}" • สมาธิ ${todayExitTicket.selfScore}/5 ดาว • บันทึกลงสมุดคะแนนเรียบร้อย`
                       : 'สะท้อนคิด 1 นาที ก่อนหมดคาบ เพื่อบันทึกผลการเรียนรู้และรับคะแนนจิตพิสัย'}

@@ -217,3 +217,32 @@
 .leader-card.rank-1 { border: 1px solid rgba(251, 191, 36, 0.45); background: linear-gradient(135deg, #fffbeb, white); }
 .leader-card.rank-2 { border: 1px solid rgba(156, 163, 175, 0.6); }
 .leader-card.rank-3 { border: 1px solid rgba(180, 83, 9, 0.45); }
+
+/* ========== Dark Mode — LeaderboardSection ========== */
+html[data-theme="dark"] .leaderboard-section {
+  background: transparent;
+}
+html[data-theme="dark"] .leaderboard-container {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .leader-card {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .leader-card.rank-1 {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), #0f172a);
+  border-color: rgba(251, 191, 36, 0.45);
+}
+html[data-theme="dark"] .lb-pill {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+html[data-theme="dark"] .lb-empty {
+  background: #0f172a;
+  color: #94a3b8;
+}
+html[data-theme="dark"] .leader-mini-stats {
+  color: #94a3b8;
+}

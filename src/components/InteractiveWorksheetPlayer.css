@@ -662,3 +662,151 @@
   padding-top: 8px;
   border-top: 1px solid #e2e8f0;
 }
+
+/* ========== Dark Mode — Interactive Worksheet Player ========== */
+html[data-theme="dark"] .iw-player {
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .iw-sticky-bar {
+  background: linear-gradient(135deg, #1e293b 0%, #172554 100%);
+  border-color: rgba(148, 163, 184, 0.28);
+}
+html[data-theme="dark"] .iw-mode-badge.official {
+  background: rgba(22, 163, 74, 0.22);
+  color: #86efac;
+  border-color: rgba(74, 222, 128, 0.45);
+}
+html[data-theme="dark"] .iw-mode-badge.practice {
+  background: rgba(14, 165, 233, 0.22);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.45);
+}
+html[data-theme="dark"] .iw-pill {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .iw-pill.k {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(96, 165, 250, 0.45);
+  color: #93c5fd;
+}
+html[data-theme="dark"] .iw-pill.p {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(74, 222, 128, 0.45);
+  color: #86efac;
+}
+html[data-theme="dark"] .iw-progress-track {
+  background: rgba(255, 255, 255, 0.12);
+}
+html[data-theme="dark"] .iw-intro-box {
+  background: rgba(15, 23, 42, 0.65);
+  color: #cbd5e1;
+}
+html[data-theme="dark"] .iw-item-card {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+html[data-theme="dark"] .iw-item-card.correct {
+  background: rgba(20, 83, 45, 0.25);
+  border-color: #22c55e;
+}
+html[data-theme="dark"] .iw-item-card.wrong {
+  background: rgba(127, 29, 29, 0.25);
+  border-color: #f87171;
+}
+html[data-theme="dark"] .iw-item-prompt,
+html[data-theme="dark"] .iw-result-score-big {
+  color: #f1f5f9;
+}
+html[data-theme="dark"] .iw-kind-tag {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+html[data-theme="dark"] .iw-choice-btn {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .iw-choice-btn:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.22);
+  border-color: #60a5fa;
+}
+html[data-theme="dark"] .iw-choice-btn.selected {
+  background: rgba(37, 99, 235, 0.3);
+  border-color: #60a5fa;
+}
+html[data-theme="dark"] .iw-choice-letter {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .iw-scenario-box {
+  background: rgba(30, 58, 138, 0.32);
+  border-color: rgba(129, 140, 248, 0.4);
+  color: #e0e7ff;
+}
+html[data-theme="dark"] .iw-followup-step {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+html[data-theme="dark"] .iw-followup-step.locked {
+  background: rgba(15, 23, 42, 0.6);
+}
+html[data-theme="dark"] .iw-block-panel {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+html[data-theme="dark"] .iw-block-panel.target {
+  background: rgba(30, 58, 138, 0.2);
+  border-color: #60a5fa;
+}
+html[data-theme="dark"] .iw-block-panel-head {
+  color: #cbd5e1;
+}
+html[data-theme="dark"] .iw-match-pool {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.28);
+}
+html[data-theme="dark"] .iw-match-chip {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.35);
+  color: #f1f5f9;
+}
+html[data-theme="dark"] .iw-match-bucket {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+html[data-theme="dark"] .iw-bucket-title {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+html[data-theme="dark"] .iw-short-input {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #f1f5f9;
+}
+html[data-theme="dark"] .iw-result-card {
+  background: linear-gradient(135deg, rgba(20, 83, 45, 0.4) 0%, rgba(14, 116, 144, 0.35) 100%);
+  border-color: #22c55e;
+}
+html[data-theme="dark"] .iw-result-card.mid {
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.45) 0%, rgba(146, 64, 14, 0.35) 100%);
+  border-color: #f59e0b;
+}
+html[data-theme="dark"] .iw-result-card.low {
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.45) 0%, rgba(153, 27, 27, 0.35) 100%);
+  border-color: #f87171;
+}
+html[data-theme="dark"] .iw-explanation {
+  background: rgba(20, 83, 45, 0.32);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: #dcfce7;
+}
+html[data-theme="dark"] .iw-explanation.wrong {
+  background: rgba(124, 45, 18, 0.35);
+  border-color: rgba(251, 146, 60, 0.45);
+  color: #ffedd5;
+}
+html[data-theme="dark"] .iw-footer-actions {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}

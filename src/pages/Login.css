@@ -106,6 +106,7 @@
 }
 
 .btn-login-submit {
+  width: 100%;
   background: var(--primary);
   color: var(--text-on-primary);
   padding: 16px;
@@ -764,7 +765,10 @@
   color: #166534;
 }
 .pcb-submit {
+  width: auto;
+  margin-top: 0;
   background: linear-gradient(135deg, #16a34a, #15803d) !important;
+  color: #ffffff !important;
   white-space: nowrap;
 }
 
@@ -892,4 +896,49 @@
   .portal-mode-switch button {
     font-size: 0.76rem;
   }
+}
+
+/* ========== Dark Mode — Login ========== */
+html[data-theme="dark"] .login-page {
+  background: #0f172a;
+}
+html[data-theme="dark"] .login-card {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .portal-mode-switch {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html[data-theme="dark"] .portal-mode-switch button {
+  color: #94a3b8;
+}
+html[data-theme="dark"] .portal-mode-switch button.active {
+  background: #1e293b;
+  color: #fde68a;
+}
+html[data-theme="dark"] .access-code-input,
+html[data-theme="dark"] .external-name-field input {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #f8fafc;
+}
+html[data-theme="dark"] .class-card,
+html[data-theme="dark"] .student-card,
+html[data-theme="dark"] .search-box,
+html[data-theme="dark"] .pair-mode-toggle,
+html[data-theme="dark"] .pair-confirm-bar {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .class-name,
+html[data-theme="dark"] .sc-name,
+html[data-theme="dark"] .switch-text {
+  color: #f1f5f9;
+}
+html[data-theme="dark"] .class-count,
+html[data-theme="dark"] .sc-no {
+  color: #94a3b8;
 }

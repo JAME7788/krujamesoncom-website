@@ -94,7 +94,7 @@ const StudentMissingWorkBanner: React.FC<Props> = ({
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <strong style={{ fontSize: '1.02rem', color: '#0f172a' }}>
+              <strong style={{ fontSize: '1.02rem', color: 'var(--text-main)' }}>
                 {hasMissing
                   ? `📌 แจ้งเตือนงานค้างของฉัน (${overview.totalMissingCount} รายการ)`
                   : '🎉 สถานะการส่งงาน: ส่งงานครบทุกชิ้นแล้ว!'}
@@ -142,7 +142,7 @@ const StudentMissingWorkBanner: React.FC<Props> = ({
                 </span>
               )}
             </div>
-            <p style={{ margin: '3px 0 0', fontSize: '0.84rem', color: '#475569' }}>
+            <p style={{ margin: '3px 0 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
               {hasMissing
                 ? 'คลิกที่งานด้านล่างเพื่อเปิดส่งงานได้ทันที หรือไปที่หน้าการบ้านเพื่อดูคำใบ้ช่วยเหลือ'
                 : `ส่งการบ้านแล้ว ${overview.completedCount} ชิ้น (ตรวจแล้ว ${overview.gradedCount} ชิ้น) • ไม่มีงานค้างในระบบ`}
@@ -190,7 +190,7 @@ const StudentMissingWorkBanner: React.FC<Props> = ({
                 gap: 8,
                 padding: '7px 11px',
                 borderRadius: 10,
-                background: '#ffffff',
+                background: 'var(--card)',
                 border: item.isOverdue ? '1px solid #fca5a5' : '1px solid #fde68a',
               }}
             >
@@ -207,8 +207,8 @@ const StudentMissingWorkBanner: React.FC<Props> = ({
                 >
                   {item.isOverdue ? 'เลยกำหนด' : 'ค้างส่ง'}
                 </span>
-                <strong style={{ fontSize: '0.86rem', color: '#1e293b' }}>{item.assignment.title}</strong>
-                <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                <strong style={{ fontSize: '0.86rem', color: 'var(--text-main)' }}>{item.assignment.title}</strong>
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
                   • {item.dueLabel}
                 </span>
               </div>
@@ -242,7 +242,7 @@ const StudentMissingWorkBanner: React.FC<Props> = ({
                 gap: 8,
                 padding: '7px 11px',
                 borderRadius: 10,
-                background: '#ffffff',
+                background: 'var(--card)',
                 border: '1px dashed #fbbf24',
               }}
             >
@@ -259,8 +259,8 @@ const StudentMissingWorkBanner: React.FC<Props> = ({
                 >
                   ใบงานในชั้นเรียน
                 </span>
-                <strong style={{ fontSize: '0.86rem', color: '#1e293b' }}>{ma.title}</strong>
-                <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                <strong style={{ fontSize: '0.86rem', color: 'var(--text-main)' }}>{ma.title}</strong>
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
                   • วิชา{ma.subjectTitle} ({ma.indicatorCode}) • เต็ม {ma.maxScore} คะแนน
                 </span>
               </div>

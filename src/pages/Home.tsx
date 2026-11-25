@@ -107,31 +107,21 @@ const Home: React.FC = () => {
           </div>
 
           {/* แถบต้อนรับ + สถานะคาบเรียน */}
-          <section
-            className="card"
-            style={{
-              padding: '1.5rem 1.75rem',
-              borderRadius: 20,
-              border: '1px solid #e2e8f0',
-              background: '#ffffff',
-              boxShadow: '0 8px 28px rgba(15, 23, 42, 0.05)',
-              marginBottom: '1.25rem',
-            }}
-          >
+          <section className="card home-ws-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
               <div>
-                <h1 style={{ margin: '0 0 6px', fontSize: 'clamp(1.45rem, 2.6vw, 1.95rem)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+                <h1 className="home-ws-title">
                   สวัสดี {user.name}
                   {partner ? ` และ ${partner.name.split(' ')[0]}` : ''}
                 </h1>
-                <p style={{ margin: 0, color: '#57606f', fontSize: '0.94rem', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <p className="home-ws-subtitle">
                   <span>ชั้น {user.classroom} • เลขที่ {user.studentNumber}</span>
                   {activeSlot ? (
-                    <span style={{ padding: '2px 10px', borderRadius: 999, background: '#fee2e2', color: '#b91c1c', fontWeight: 700, fontSize: '0.8rem' }}>
+                    <span className="home-ws-pill live">
                       ● กำลังเรียนคาบวิชา{activeSlot.subject || 'เทคโนโลยี'} ({activeSlot.start}–{activeSlot.end} น.)
                     </span>
                   ) : nextSlot ? (
-                    <span style={{ padding: '2px 10px', borderRadius: 999, background: '#f1f5f9', color: '#334155', fontWeight: 600, fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <span className="home-ws-pill next">
                       <Calendar size={13} /> คาบถัดไป: วัน{dayNames[nextSlot.day]} {nextSlot.start}–{nextSlot.end} น.
                     </span>
                   ) : null}
@@ -139,124 +129,69 @@ const Home: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <Link to="/live" className="btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem', borderColor: '#f59e0b', color: '#92400e', background: '#fffbeb' }}>
+                <Link to="/live" className="btn-secondary home-ws-quick-live">
                   <Radio size={15} /> เข้าร่วมควิซสด
                 </Link>
-                <Link to="/world" className="btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }}>
+                <Link to="/world" className="btn-secondary home-ws-quick-btn">
                   <Box size={15} /> ห้องเรียน 3D
                 </Link>
-                <Link to="/resources" className="btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }}>
+                <Link to="/resources" className="btn-secondary home-ws-quick-btn">
                   <Library size={15} /> แหล่งเรียนรู้
                 </Link>
-                <Link to="/report-card" className="btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }}>
+                <Link to="/report-card" className="btn-secondary home-ws-quick-btn">
                   <GraduationCap size={15} /> สมุดรายงานผล
                 </Link>
               </div>
             </div>
 
             {/* เส้นทางเรียน 4 ขั้นในคาบเดียว */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-                gap: 12,
-                marginTop: '1.25rem',
-              }}
-            >
-              <Link
-                to={resumePath}
-                style={{
-                  padding: '1rem 1.15rem',
-                  borderRadius: 16,
-                  border: '1.5px solid #bfdbfe',
-                  background: '#eff6ff',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#1d4ed8', fontWeight: 800, fontSize: '0.78rem' }}>
+            <div className="home-ws-steps">
+              <Link to={resumePath} className="home-ws-step step-blue">
+                <div className="home-ws-step-head">
                   <span>ขั้นที่ 1 • เรียนบทเรียน</span>
                   <BookOpen size={17} />
                 </div>
-                <strong style={{ fontSize: '1.02rem', color: '#0f172a', lineHeight: 1.35 }}>{resumeLabel}</strong>
-                <span style={{ fontSize: '0.8rem', color: '#475569' }}>
+                <strong className="home-ws-step-main">{resumeLabel}</strong>
+                <span className="home-ws-step-meta">
                   อ่านสไลด์แล้ว {summary.totalSlidesViewed} หน้า • จบแล้ว {summary.unitsCompleted} หน่วย
                 </span>
               </Link>
 
-              <Link
-                to="/homework"
-                style={{
-                  padding: '1rem 1.15rem',
-                  borderRadius: 16,
-                  border: overview.totalMissingCount > 0 ? '2px solid #f59e0b' : '1.5px solid #a7f3d0',
-                  background: overview.totalMissingCount > 0 ? '#fffbeb' : '#ecfdf5',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: overview.totalMissingCount > 0 ? '#b45309' : '#047857', fontWeight: 800, fontSize: '0.78rem' }}>
+              <Link to="/homework" className={`home-ws-step ${overview.totalMissingCount > 0 ? 'step-amber' : 'step-emerald'}`}>
+                <div className="home-ws-step-head">
                   <span>ขั้นที่ 2 • ใบงานโต้ตอบ & การบ้าน</span>
                   <ClipboardCheck size={17} />
                 </div>
-                <strong style={{ fontSize: '1.02rem', color: '#0f172a', lineHeight: 1.35 }}>
+                <strong className="home-ws-step-main">
                   {overview.totalMissingCount > 0
                     ? `มีงานค้างรอส่ง ${overview.totalMissingCount} รายการ`
                     : 'ส่งงานครบแล้ว — ฝึกทำใบงานต่อได้'}
                 </strong>
-                <span style={{ fontSize: '0.8rem', color: '#475569' }}>
+                <span className="home-ws-step-meta">
                   มีใบงานโต้ตอบชั้น {user.classroom} พร้อมตรวจทันที {templates.length} ชุด
                 </span>
               </Link>
 
-              <Link
-                to="/games"
-                style={{
-                  padding: '1rem 1.15rem',
-                  borderRadius: 16,
-                  border: '1.5px solid #fde68a',
-                  background: '#fefce8',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#92400e', fontWeight: 800, fontSize: '0.78rem' }}>
+              <Link to="/games" className="home-ws-step step-gold">
+                <div className="home-ws-step-head">
                   <span>ขั้นที่ 3 • เกมฝึกทักษะ</span>
                   <Gamepad2 size={17} />
                 </div>
-                <strong style={{ fontSize: '1.02rem', color: '#0f172a', lineHeight: 1.35 }}>คลังเกม 38 เกม (แยกโซนชัดเจน)</strong>
-                <span style={{ fontSize: '0.8rem', color: '#475569' }}>
+                <strong className="home-ws-step-main">คลังเกม 38 เกม (แยกโซนชัดเจน)</strong>
+                <span className="home-ws-step-meta">
                   เล่นกิจกรรมสะสมแล้ว {summary.totalActivities} ครั้ง
                 </span>
               </Link>
 
-              <Link
-                to="/dashboard"
-                style={{
-                  padding: '1rem 1.15rem',
-                  borderRadius: 16,
-                  border: '1.5px solid #e2e8f0',
-                  background: '#f8fafc',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#334155', fontWeight: 800, fontSize: '0.78rem' }}>
+              <Link to="/dashboard" className="home-ws-step step-slate">
+                <div className="home-ws-step-head">
                   <span>ขั้นที่ 4 • คะแนนของฉัน</span>
                   <BarChart3 size={17} />
                 </div>
-                <strong className="tabular-nums" style={{ fontSize: '1.02rem', color: '#0f172a', lineHeight: 1.35 }}>
+                <strong className="home-ws-step-main tabular-nums">
                   คะแนนสะสม {summary.totalPoints} • เฉลี่ย {summary.averageScore}%
                 </strong>
-                <span style={{ fontSize: '0.8rem', color: '#475569' }}>
+                <span className="home-ws-step-meta">
                   ดูคะแนน K/P/A และเขียนตั๋วบอกลาคาบเรียน
                 </span>
               </Link>
@@ -265,50 +200,32 @@ const Home: React.FC = () => {
 
           {/* ใบงานโต้ตอบประจำชั้นที่เปิดทำได้ทันทีใน 1 คลิก */}
           {templates.length > 0 && (
-            <section
-              className="card"
-              style={{
-                padding: '1.25rem 1.5rem',
-                borderRadius: 18,
-                border: '1px solid #e2e8f0',
-                background: '#ffffff',
-                marginBottom: '1.5rem',
-              }}
-            >
+            <section className="card home-ws-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '1.08rem', color: '#0f172a' }}>
+                  <h2 className="home-ws-section-title">
                     ใบงานโต้ตอบประจำชั้น {user.classroom} (ตอบผ่านเว็บ • ตรวจคะแนนทันที)
                   </h2>
-                  <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                  <p className="home-ws-section-desc">
                     กดเลือกใบงานเพื่อทำแบบฝึกหัด ถามต่อ ลากบล็อกต่อบล็อก และจัดหมวดหมู่ได้เลย
                   </p>
                 </div>
-                <Link to="/homework" style={{ fontSize: '0.84rem', fontWeight: 700, color: '#2563eb' }}>
+                <Link to="/homework" className="home-ws-more-link">
                   ดูใบงานและการบ้านทั้งหมด →
                 </Link>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
+              <div className="home-ws-tpl-grid">
                 {templates.slice(0, 3).map((tpl) => (
                   <Link
                     key={tpl.id}
                     to={`/homework?template=${encodeURIComponent(tpl.id)}`}
-                    style={{
-                      padding: '12px 14px',
-                      borderRadius: 14,
-                      border: '1px solid #e2e8f0',
-                      background: '#faf9f6',
-                      textDecoration: 'none',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 5,
-                    }}
+                    className="home-ws-tpl-card"
                   >
-                    <span style={{ fontSize: '0.73rem', fontWeight: 700, color: '#2563eb' }}>
+                    <span className="home-ws-tpl-tag">
                       {tpl.subjectLabel} • {tpl.indicatorCode}
                     </span>
-                    <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>{tpl.title}</strong>
-                    <span style={{ fontSize: '0.79rem', color: '#57606f', lineHeight: 1.4 }}>{tpl.description}</span>
+                    <strong className="home-ws-tpl-title">{tpl.title}</strong>
+                    <span className="home-ws-tpl-desc">{tpl.description}</span>
                   </Link>
                 ))}
               </div>
@@ -331,51 +248,32 @@ const Home: React.FC = () => {
           <div style={{ marginBottom: '1rem' }}>
             <AnnouncementBanner />
           </div>
-          <section
-            className="card"
-            style={{
-              padding: '1.75rem',
-              borderRadius: 20,
-              border: '1px solid #fde68a',
-              background: '#ffffff',
-              boxShadow: '0 8px 28px rgba(15, 23, 42, 0.05)',
-              marginBottom: '1.5rem',
-            }}
-          >
-            <h1 style={{ margin: '0 0 6px', fontSize: '1.7rem', color: '#0f172a' }}>
+          <section className="card home-ws-card home-ws-teacher-shell">
+            <h1 className="home-ws-title">
               ศูนย์ควบคุมการสอนครูเจมส์
             </h1>
-            <p style={{ margin: '0 0 1.25rem', color: '#57606f', fontSize: '0.94rem' }}>
+            <p className="home-ws-subtitle" style={{ marginBottom: '1.25rem' }}>
               โรงเรียนบ้านคลองมดแดง • เลือกงานประจำคาบเพื่อเข้าสู่หน้าจัดการได้ทันที
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12 }}>
+            <div className="home-ws-teacher-grid">
               {[
-                { title: 'คาบเรียนวันนี้', desc: 'เช็คชื่อ เปิดสไลด์ ปลดล็อกหน่วย และบันทึกหลังสอน', to: '/admin?tab=today', icon: <Presentation size={19} color="#d97706" />, bg: '#fffbeb', border: '#fde68a' },
-                { title: 'ใบงานโต้ตอบ & ตัดคะแนน', desc: 'สั่งใบงาน ป.1–ม.3 และตัดคะแนนอัตโนมัติเข้า ปพ.5', to: '/admin?tab=homework', icon: <ClipboardCheck size={19} color="#059669" />, bg: '#ecfdf5', border: '#a7f3d0' },
-                { title: 'เช็คชื่อด่วน', desc: 'เช็คมา/ขาด/ลา แยกห้องเรียนในหน้าเดียว', to: '/admin?tab=quick-att', icon: <CheckCircle2 size={19} color="#2563eb" />, bg: '#eff6ff', border: '#bfdbfe' },
-                { title: 'สมุดคะแนน ปพ.5', desc: 'ตรวจคะแนน K/P/A และส่งออกเอกสารวัดผล', to: '/admin?tab=gradebook', icon: <Award size={19} color="#7c3aed" />, bg: '#f5f3ff', border: '#ddd6fe' },
-                { title: 'เปิดห้อง Live Quiz', desc: 'ควิซสดแข่งขันทั้งห้องแบบเรียลไทม์', to: '/live/host', icon: <Radio size={19} color="#dc2626" />, bg: '#fef2f2', border: '#fecaca' },
-                { title: 'รายชื่อ & ลิงก์ผู้ปกครอง', desc: 'จัดการนักเรียนและคัดลอกลิงก์พอร์ทัลผู้ปกครอง', to: '/admin?tab=roster', icon: <Users size={19} color="#0f766e" />, bg: '#f0fdfa', border: '#99f6e4' },
+                { title: 'คาบเรียนวันนี้', desc: 'เช็คชื่อ เปิดสไลด์ ปลดล็อกหน่วย และบันทึกหลังสอน', to: '/admin?tab=today', icon: <Presentation size={19} color="#d97706" />, tone: 'amber' },
+                { title: 'ใบงานโต้ตอบ & ตัดคะแนน', desc: 'สั่งใบงาน ป.1–ม.3 และตัดคะแนนอัตโนมัติเข้า ปพ.5', to: '/admin?tab=homework', icon: <ClipboardCheck size={19} color="#059669" />, tone: 'emerald' },
+                { title: 'เช็คชื่อด่วน', desc: 'เช็คมา/ขาด/ลา แยกห้องเรียนในหน้าเดียว', to: '/admin?tab=quick-att', icon: <CheckCircle2 size={19} color="#2563eb" />, tone: 'blue' },
+                { title: 'สมุดคะแนน ปพ.5', desc: 'ตรวจคะแนน K/P/A และส่งออกเอกสารวัดผล', to: '/admin?tab=gradebook', icon: <Award size={19} color="#7c3aed" />, tone: 'violet' },
+                { title: 'เปิดห้อง Live Quiz', desc: 'ควิซสดแข่งขันทั้งห้องแบบเรียลไทม์', to: '/live/host', icon: <Radio size={19} color="#dc2626" />, tone: 'rose' },
+                { title: 'รายชื่อ & ลิงก์ผู้ปกครอง', desc: 'จัดการนักเรียนและคัดลอกลิงก์พอร์ทัลผู้ปกครอง', to: '/admin?tab=roster', icon: <Users size={19} color="#0f766e" />, tone: 'teal' },
               ].map((card) => (
                 <Link
                   key={card.to}
                   to={card.to}
-                  style={{
-                    padding: '1rem 1.1rem',
-                    borderRadius: 14,
-                    border: `1.5px solid ${card.border}`,
-                    background: card.bg,
-                    textDecoration: 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 6,
-                  }}
+                  className={`home-ws-teacher-card tone-${card.tone}`}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800, color: '#0f172a', fontSize: '0.96rem' }}>
+                  <div className="home-ws-teacher-card-head">
                     {card.icon}
                     <span>{card.title}</span>
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.45 }}>{card.desc}</span>
+                  <span className="home-ws-teacher-card-desc">{card.desc}</span>
                 </Link>
               ))}
             </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trophy, Users, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Trophy, Users, AlertCircle, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { joinRoom, subscribeRoom, submitAnswer } from '../services/liveQuizService';
 import type { LiveQuizRoom } from '../services/liveQuizService';
@@ -116,38 +117,64 @@ const LiveQuizPlay: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="container section-padding" style={{ paddingTop: '6rem', textAlign: 'center' }}>
-        <AlertCircle size={48} color="#f59e0b" />
-        <h2>กรุณา Login ก่อน</h2>
-        <p>ต้องเข้าสู่ระบบเพื่อเข้าร่วม Live Quiz</p>
-        <a href="/login" className="btn-primary">เข้าสู่ระบบ</a>
+      <div className="container section-padding" style={{ paddingTop: '6.5rem', maxWidth: 520 }}>
+        <div className="card" style={{ textAlign: 'center', padding: '2.25rem 2rem', borderRadius: 20 }}>
+          <AlertCircle size={48} color="#f59e0b" />
+          <h2 style={{ margin: '0.75rem 0 0.4rem' }}>กรุณาเข้าสู่ระบบก่อน</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.25rem' }}>ต้องเข้าสู่ระบบเพื่อเข้าร่วม Live Quiz กับเพื่อนในห้อง</p>
+          <Link to="/login" className="btn-primary">เข้าสู่ระบบ</Link>
+        </div>
       </div>
     );
   }
 
   if (!joined) {
     return (
-      <div className="container section-padding" style={{ paddingTop: '6rem', textAlign: 'center', maxWidth: 500 }}>
-        <h1>🎯 เข้าร่วม Live Quiz</h1>
-        <p>ใส่รหัส 6 หลักจากครู</p>
-        <input
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-          placeholder="000000"
-          maxLength={6}
-          style={{
-            fontSize: '3rem', padding: '1rem',
-            width: '100%', maxWidth: 360, textAlign: 'center',
-            letterSpacing: '0.5rem', border: '2px solid #e5e7eb',
-            borderRadius: 16, fontWeight: 800, fontFamily: 'monospace',
-            margin: '1rem 0',
-          }}
-        />
-        {error && <p style={{ color: '#dc2626' }}>{error}</p>}
-        <br />
-        <button onClick={() => void handleJoin()} disabled={joining} className="btn-primary" style={{ padding: '14px 40px', fontSize: '1.1rem' }}>
-          {joining ? 'กำลังเข้าห้อง...' : 'เข้าร่วม'}
-        </button>
+      <div className="container section-padding" style={{ paddingTop: '6.5rem', maxWidth: 520 }}>
+        <div className="card" style={{ textAlign: 'center', padding: '2.25rem 2rem', borderRadius: 20 }}>
+          <span className="badge-yellow" style={{ marginBottom: '0.75rem' }}>⚡ Live Classroom Quiz</span>
+          <h1 style={{ margin: '0.35rem 0 0.4rem', fontSize: '1.85rem' }}>🎯 เข้าร่วม Live Quiz</h1>
+          <p style={{ color: 'var(--text-muted)', margin: '0 0 1.25rem' }}>
+            ใส่รหัสห้อง 6 หลักที่ครูขึ้นหน้าจอ แล้วกดเข้าร่วมได้เลย
+          </p>
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            onKeyDown={(e) => { if (e.key === 'Enter' && code.length === 6 && !joining) void handleJoin(); }}
+            placeholder="000000"
+            maxLength={6}
+            inputMode="numeric"
+            aria-label="รหัสห้อง Live Quiz 6 หลัก"
+            style={{
+              fontSize: '2.75rem',
+              padding: '0.9rem 1rem',
+              width: '100%',
+              maxWidth: 340,
+              textAlign: 'center',
+              letterSpacing: '0.5rem',
+              border: '2px solid var(--border)',
+              borderRadius: 16,
+              fontWeight: 800,
+              fontFamily: 'monospace',
+              margin: '0.5rem auto 1rem',
+              display: 'block',
+            }}
+          />
+          {error && <p style={{ color: '#dc2626', fontWeight: 600, marginBottom: '0.75rem' }}>{error}</p>}
+          <button
+            onClick={() => void handleJoin()}
+            disabled={joining || code.length !== 6}
+            className="btn-primary"
+            style={{ width: '100%', maxWidth: 340, padding: '14px 28px', fontSize: '1.05rem', margin: '0 auto' }}
+          >
+            {joining ? 'กำลังเข้าห้อง...' : 'เข้าร่วมห้องควิซ'}
+          </button>
+          <div style={{ marginTop: '1.25rem' }}>
+            <Link to="/" className="btn-ghost" style={{ fontSize: '0.88rem' }}>
+              <ChevronLeft size={16} /> กลับหน้าแรก
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

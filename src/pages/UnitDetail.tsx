@@ -1807,37 +1807,19 @@ const UnitDetail: React.FC = () => {
           <div className="lms-breadcrumb">
             {grade.title} <ChevronRight size={14} style={{ display: 'inline', margin: '0 5px' }} /> หน่วยที่ {unit.no} {unit.title}
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>ขั้นตอนการเรียนหน่วยนี้:</span>
+          <div className="lms-flow-bar">
+            <span className="lms-flow-label">4 ขั้น:</span>
             <button
               type="button"
               onClick={() => setActiveTab('slides')}
-              style={{
-                border: activeTab === 'slides' ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                background: activeTab === 'slides' ? '#dbeafe' : '#ffffff',
-                color: '#1d4ed8',
-                borderRadius: 999,
-                padding: '3px 9px',
-                fontWeight: 700,
-                fontSize: '0.74rem',
-                cursor: 'pointer',
-              }}
+              className={`lms-flow-pill slides ${activeTab === 'slides' ? 'active' : ''}`}
             >
               1. สไลด์
             </button>
             <button
               type="button"
               onClick={() => (extras.fun?.length ? setActiveTab('fun') : navigate('/games'))}
-              style={{
-                border: activeTab === 'fun' ? '1.5px solid #d97706' : '1px solid #fcd34d',
-                background: activeTab === 'fun' ? '#fef3c7' : '#fffbeb',
-                color: '#92400e',
-                borderRadius: 999,
-                padding: '3px 9px',
-                fontWeight: 700,
-                fontSize: '0.74rem',
-                cursor: 'pointer',
-              }}
+              className={`lms-flow-pill games ${activeTab === 'fun' ? 'active' : ''}`}
             >
               2. เกมฝึก
             </button>
@@ -1848,32 +1830,14 @@ const UnitDetail: React.FC = () => {
                 const tpls = cls ? getWorksheetTemplatesForClassroom(cls) : [];
                 return tpls[0] ? `/homework?template=${encodeURIComponent(tpls[0].id)}` : '/homework';
               })()}
-              style={{
-                border: '1px solid #10b981',
-                background: 'linear-gradient(135deg, #2563eb, #10b981)',
-                color: '#ffffff',
-                borderRadius: 999,
-                padding: '3px 10px',
-                fontWeight: 800,
-                fontSize: '0.74rem',
-                textDecoration: 'none',
-              }}
+              className="lms-flow-pill worksheet"
             >
-              3. 🧩 ทำใบงานโต้ตอบออนไลน์
+              3. 🧩 ใบงานโต้ตอบ
             </Link>
             <button
               type="button"
               onClick={() => setActiveTab('quiz')}
-              style={{
-                border: activeTab === 'quiz' ? '1.5px solid #7c3aed' : '1px solid #c4b5fd',
-                background: activeTab === 'quiz' ? '#ede9fe' : '#f5f3ff',
-                color: '#6d28d9',
-                borderRadius: 999,
-                padding: '3px 9px',
-                fontWeight: 700,
-                fontSize: '0.74rem',
-                cursor: 'pointer',
-              }}
+              className={`lms-flow-pill quiz ${activeTab === 'quiz' ? 'active' : ''}`}
             >
               4. แบบทดสอบ
             </button>

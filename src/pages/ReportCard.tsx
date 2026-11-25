@@ -24,6 +24,11 @@ const ReportCard: React.FC = () => {
   useEffect(() => {
     if (!isScoreEligibleUser(user)) return;
 
+    let cancelled = false;
+    const safetyTimer = window.setTimeout(() => {
+      if (!cancelled) setLoadingGrades(false);
+    }, 3000);
+
     const syncGrades = async () => {
       setLoadingGrades(true);
       try {
@@ -37,17 +42,22 @@ const ReportCard: React.FC = () => {
             updated = true;
           }
         }
-        if (updated) {
+        if (updated && !cancelled) {
           setLocalGradesVersion((v) => v + 1);
         }
       } catch (e) {
         console.warn('Sync grades failed', e);
       } finally {
-        setLoadingGrades(false);
+        window.clearTimeout(safetyTimer);
+        if (!cancelled) setLoadingGrades(false);
       }
     };
 
     syncGrades();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(safetyTimer);
+    };
   }, [user]);
 
   if (!user) {

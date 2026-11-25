@@ -38,12 +38,25 @@ const formatGradeRange = (targetUnits: { gradeId: string }[]): string => {
   return parts.join(' + ') || 'ทุกชั้น';
 };
 
+const classroomToGradeId = (classroom?: string): string => {
+  if (!classroom) return 'all';
+  const m = classroom.trim().match(/^([ปม])\.(\d)$/);
+  if (!m) return 'all';
+  const candidate = `${m[1] === 'ป' ? 'p' : 'm'}${m[2]}`;
+  return ALL_GRADES.some((g) => g.id === candidate) ? candidate : 'all';
+};
+
 const Resources: React.FC = () => {
   const { user, partner, getActiveIds } = useAuth();
   const toast = useToast();
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState<ResourceCategory | 'all'>('all');
-  const [activeGrade, setActiveGrade] = useState<string>('all');
+  const defaultGradeId = useMemo(() => classroomToGradeId(user?.classroom), [user?.classroom]);
+  const [activeGrade, setActiveGrade] = useState<string>(() => classroomToGradeId(user?.classroom));
+
+  React.useEffect(() => {
+    setActiveGrade(defaultGradeId);
+  }, [defaultGradeId]);
 
   const filtered = useMemo(() => {
     let list = allResources;
@@ -144,8 +157,9 @@ const Resources: React.FC = () => {
           {user && (
             <div className="resources-info">
               <Award size={16} />
-              <strong>ทุกครั้งที่กดเข้าใช้งาน</strong> ระบบจะบันทึกคะแนน <span className="p-badge">P (ทักษะ)</span>
-              ให้กับตัวชี้วัดที่เกี่ยวข้องโดยอัตโนมัติ
+              <span>
+                เลือกเครื่องมือที่เหมาะกับชั้น <strong>{user.classroom}</strong> — เมื่อฝึกฝนผ่านสื่อที่ตรงกับหน่วย ระบบจะบันทึกหลักฐานทักษะ <span className="p-badge">P (ทักษะ)</span>
+              </span>
             </div>
           )}
           {!user && (

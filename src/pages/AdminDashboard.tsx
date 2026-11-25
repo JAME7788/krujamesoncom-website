@@ -510,20 +510,9 @@ const AdminDashboardInner: React.FC = () => {
         <div
           role="navigation"
           aria-label="ทางลัดงานสอนประจำวัน"
-          style={{
-            display: 'flex',
-            gap: 8,
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            marginBottom: '1rem',
-            padding: '10px 14px',
-            borderRadius: 14,
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
-          }}
+          className="admin2-cockpit"
         >
-          <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748b', marginRight: 4 }}>
+          <span className="admin2-cockpit-label">
             งานหลักประจำคาบ:
           </span>
           {[
@@ -537,16 +526,7 @@ const AdminDashboardInner: React.FC = () => {
               key={quick.id}
               type="button"
               onClick={() => navigateToTab(quick.id)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 999,
-                border: tab === quick.id ? '1.5px solid #d97706' : '1px solid #e2e8f0',
-                background: tab === quick.id ? '#fffbeb' : '#f8fafc',
-                color: tab === quick.id ? '#92400e' : '#334155',
-                fontSize: '0.82rem',
-                fontWeight: tab === quick.id ? 800 : 600,
-                cursor: 'pointer',
-              }}
+              className={`admin2-cockpit-btn ${tab === quick.id ? 'active' : ''}`}
             >
               {quick.label}
             </button>
@@ -554,17 +534,7 @@ const AdminDashboardInner: React.FC = () => {
           <button
             type="button"
             onClick={() => window.open('/live/host', '_blank')}
-            style={{
-              marginLeft: 'auto',
-              padding: '6px 12px',
-              borderRadius: 999,
-              border: '1px solid #fecaca',
-              background: '#fef2f2',
-              color: '#b91c1c',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
+            className="admin2-cockpit-live"
           >
             ⚡ เปิด Live Quiz ↗
           </button>

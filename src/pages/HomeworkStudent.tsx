@@ -706,11 +706,11 @@ const HomeworkStudent: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: '0 0 4px' }}>📝 ศูนย์ส่งงานและเช็กงานค้างของฉัน</h1>
-          <p style={{ color: '#6b7280', margin: 0 }}>
+          <p style={{ color: 'var(--text-muted)', margin: 0 }}>
             {user.name} (ชั้น {user.classroom} เลขที่ {user.studentNumber}) • ตรวจสอบงานค้าง ส่งการบ้าน และติดตามผลคะแนน K/P
           </p>
         </div>
-        <div style={{ padding: '6px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, fontSize: '0.82rem', color: '#166534', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="hw-status-badge done" style={{ padding: '6px 12px', borderRadius: 10, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
           <Sparkles size={16} /> เลือกหนึ่งทางต่อชุดงาน • ใช้คำใบ้ได้โดยไม่หักคะแนน
         </div>
       </div>
@@ -722,33 +722,16 @@ const HomeworkStudent: React.FC = () => {
       )}
 
       {/* 📊 แผงสรุปสถานะงานค้างและการส่งงานของฉัน */}
-      <div
-        className="card"
-        style={{
-          marginTop: '1.25rem',
-          padding: '1.25rem',
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-          border: '1.5px solid #e2e8f0',
-          borderRadius: 18,
-          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.05)',
-        }}
-      >
+      <div className="card hw-summary-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ClipboardList size={20} color="#92400E" />
-            <strong style={{ fontSize: '1.02rem', color: '#0f172a' }}>
+            <ClipboardList size={20} color="var(--primary-ink)" />
+            <strong style={{ fontSize: '1.02rem', color: 'var(--text-main)' }}>
               สรุปสถานะการส่งงานของฉัน (ส่งแล้ว {overview.completedCount} / {overview.tasks.length} ชิ้น)
             </strong>
           </div>
           <span
-            style={{
-              padding: '4px 12px',
-              borderRadius: 999,
-              fontSize: '0.8rem',
-              fontWeight: 800,
-              background: overview.totalMissingCount === 0 ? '#dcfce7' : overview.overdueCount > 0 ? '#fee2e2' : '#fef3c7',
-              color: overview.totalMissingCount === 0 ? '#166534' : overview.overdueCount > 0 ? '#b91c1c' : '#92400e',
-            }}
+            className={`hw-status-badge ${overview.totalMissingCount === 0 ? 'done' : overview.overdueCount > 0 ? 'overdue' : 'pending'}`}
           >
             {overview.totalMissingCount === 0
               ? '🎉 ส่งงานครบทุกชิ้นแล้ว!'
@@ -757,7 +740,7 @@ const HomeworkStudent: React.FC = () => {
         </div>
 
         {/* Progress Bar */}
-        <div style={{ height: 10, background: '#e2e8f0', borderRadius: 999, overflow: 'hidden', marginBottom: 14 }}>
+        <div className="hw-progress-track">
           <div
             style={{
               width: `${overview.completionPercent}%`,
@@ -775,73 +758,44 @@ const HomeworkStudent: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilter(filter === 'overdue' ? 'all' : 'overdue')}
-            style={{
-              textAlign: 'left',
-              padding: '12px 14px',
-              borderRadius: 12,
-              border: filter === 'overdue' ? '2px solid #ef4444' : '1px solid #fecaca',
-              background: '#fef2f2',
-              cursor: 'pointer',
-            }}
+            className={`hw-stat-tile tile-red ${filter === 'overdue' ? 'active' : ''}`}
           >
-            <div style={{ fontSize: '0.78rem', color: '#b91c1c', fontWeight: 700 }}>🚨 ค้างส่ง (เลยกำหนด)</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#dc2626', marginTop: 2 }}>
-              {overview.overdueCount} <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>ชิ้น</span>
+            <div className="hw-stat-label">🚨 ค้างส่ง (เลยกำหนด)</div>
+            <div className="hw-stat-val">
+              {overview.overdueCount} <span>ชิ้น</span>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => setFilter(filter === 'missing' ? 'all' : 'missing')}
-            style={{
-              textAlign: 'left',
-              padding: '12px 14px',
-              borderRadius: 12,
-              border: filter === 'missing' ? '2px solid #f59e0b' : '1px solid #fde68a',
-              background: '#fffbeb',
-              cursor: 'pointer',
-            }}
+            className={`hw-stat-tile tile-amber ${filter === 'missing' ? 'active' : ''}`}
           >
-            <div style={{ fontSize: '0.78rem', color: '#b45309', fontWeight: 700 }}>📌 งานค้างรอส่งทั้งหมด</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#d97706', marginTop: 2 }}>
-              {overview.overdueCount + overview.pendingCount}{' '}
-              <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>ชิ้น</span>
+            <div className="hw-stat-label">📌 งานค้างรอส่งทั้งหมด</div>
+            <div className="hw-stat-val">
+              {overview.overdueCount + overview.pendingCount} <span>ชิ้น</span>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => setFilter(filter === 'waiting_review' ? 'all' : 'waiting_review')}
-            style={{
-              textAlign: 'left',
-              padding: '12px 14px',
-              borderRadius: 12,
-              border: filter === 'waiting_review' ? '2px solid #0284c7' : '1px solid #bae6fd',
-              background: '#f0f9ff',
-              cursor: 'pointer',
-            }}
+            className={`hw-stat-tile tile-blue ${filter === 'waiting_review' ? 'active' : ''}`}
           >
-            <div style={{ fontSize: '0.78rem', color: '#0369a1', fontWeight: 700 }}>⏳ ส่งแล้ว (รอครูตรวจ)</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0284c7', marginTop: 2 }}>
-              {overview.waitingReviewCount} <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>ชิ้น</span>
+            <div className="hw-stat-label">⏳ ส่งแล้ว (รอครูตรวจ)</div>
+            <div className="hw-stat-val">
+              {overview.waitingReviewCount} <span>ชิ้น</span>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => setFilter(filter === 'graded' ? 'all' : 'graded')}
-            style={{
-              textAlign: 'left',
-              padding: '12px 14px',
-              borderRadius: 12,
-              border: filter === 'graded' ? '2px solid #16a34a' : '1px solid #bbf7d0',
-              background: '#f0fdf4',
-              cursor: 'pointer',
-            }}
+            className={`hw-stat-tile tile-green ${filter === 'graded' ? 'active' : ''}`}
           >
-            <div style={{ fontSize: '0.78rem', color: '#15803d', fontWeight: 700 }}>✅ ตรวจและได้คะแนนแล้ว</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#16a34a', marginTop: 2 }}>
-              {overview.gradedCount} <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>ชิ้น</span>
+            <div className="hw-stat-label">✅ ตรวจและได้คะแนนแล้ว</div>
+            <div className="hw-stat-val">
+              {overview.gradedCount} <span>ชิ้น</span>
             </div>
           </button>
         </div>
@@ -994,34 +948,22 @@ const HomeworkStudent: React.FC = () => {
               key={tab.id}
               type="button"
               onClick={() => setFilter(tab.id as HomeworkFilterTab)}
-              style={{
-                padding: '7px 14px',
-                borderRadius: '999px',
-                fontSize: '0.84rem',
-                fontWeight: filter === tab.id ? 700 : 600,
-                border: filter === tab.id ? '1.5px solid #d97706' : '1px solid #d1d5db',
-                background: filter === tab.id ? '#fffbeb' : '#ffffff',
-                color: filter === tab.id ? '#92400e' : '#334155',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
+              className={`hw-filter-pill ${filter === tab.id ? 'active' : ''}`}
             >
               {tab.label}
             </button>
           ))}
         </div>
         {loadingAssignments && (
-          <span style={{ fontSize: '0.76rem', color: '#64748b', fontWeight: 600 }}>
+          <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600 }}>
             กำลังซิงก์รายการล่าสุด...
           </span>
         )}
       </div>
 
       {filteredTasks.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '1.5rem 1.25rem', background: '#ffffff', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
+        <div className="card hw-empty-card">
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: 4 }}>
             {overview.tasks.length === 0
               ? 'ยังไม่มีการบ้านค้างในหมวดนี้ — เลือกทำใบงานโต้ตอบประจำชั้นด้านล่างได้เลย!'
               : 'ไม่พบรายการในหมวดนี้'}
@@ -1041,9 +983,8 @@ const HomeworkStudent: React.FC = () => {
             const recommendation = recommendAssignment(a, user.id);
             const isRecommended = (a.difficulty || 'standard') === recommendation.difficulty;
             return (
-              <div key={a.id} className="card" style={{
-                borderLeft: overdue ? '4px solid #ef4444' : sub ? '4px solid #22c55e' : isRecommended ? '4px solid #f59e0b' : '4px solid #cbd5e1',
-                background: isRecommended && !sub ? 'linear-gradient(to right, #fffdf5, #ffffff)' : 'white',
+              <div key={a.id} className={`card hw-task-card ${isRecommended && !sub ? 'recommended' : ''}`} style={{
+                borderLeft: overdue ? '4px solid #ef4444' : sub ? '4px solid #22c55e' : isRecommended ? '4px solid #f59e0b' : '4px solid var(--border)',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                   <div style={{ flex: 1, minWidth: 200 }}>
@@ -1187,26 +1128,17 @@ const HomeworkStudent: React.FC = () => {
 
       {/* 🧩 คลังใบงานโต้ตอบประจำชั้นเรียน (ตอบผ่านเว็บ ตรวจคะแนนทันที ไม่ต้องเข้าแอปอื่น) */}
       {gradeTemplates.length > 0 && (
-        <div
-          className="card"
-          style={{
-            marginTop: '1.5rem',
-            padding: '1.25rem',
-            borderRadius: 18,
-            border: '1.5px solid #93c5fd',
-            background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
-          }}
-        >
+        <div className="card hw-iw-library">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.08rem', color: '#0f172a' }}>
+              <h2 style={{ margin: 0, fontSize: '1.08rem', color: 'var(--text-main)' }}>
                 🧩 ใบงานโต้ตอบออนไลน์ประจำชั้น {user.classroom} (ทำผ่านเว็บ • ตรวจคะแนนทันที)
               </h2>
-              <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#475569' }}>
+              <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                 ฝึกทำแบบฝึกหัด ถามต่อ ลากบล็อกต่อบล็อก และจัดหมวดหมู่ตามตัวชี้วัดของชั้น {user.classroom} ได้เลยในเว็บเดียว
               </p>
             </div>
-            <span style={{ padding: '4px 12px', borderRadius: 999, background: '#dbeafe', color: '#1d4ed8', fontSize: '0.78rem', fontWeight: 800 }}>
+            <span className="hw-iw-count-pill">
               พร้อมเล่น {gradeTemplates.length} ใบงาน
             </span>
           </div>
@@ -1220,39 +1152,27 @@ const HomeworkStudent: React.FC = () => {
               return (
                 <div
                   key={tpl.id}
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: 14,
-                    padding: '14px',
-                    border: assignedMatch ? '1.5px solid #34d399' : '1px solid #cbd5e1',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
-                  }}
+                  className={`hw-iw-tpl-card ${assignedMatch ? 'assigned' : ''}`}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.73rem', fontWeight: 800, color: '#1d4ed8', background: '#eff6ff', padding: '2px 8px', borderRadius: 999 }}>
+                    <span className="hw-iw-tpl-subj">
                       {tpl.subjectLabel} · {tpl.indicatorCode}
                     </span>
-                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>⏱️ ~{tpl.estimatedMinutes} นาที</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>⏱️ ~{tpl.estimatedMinutes} นาที</span>
                   </div>
-                  <strong style={{ fontSize: '0.93rem', color: '#0f172a', lineHeight: 1.35 }}>{tpl.title}</strong>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569', lineHeight: 1.45, flex: 1 }}>
+                  <strong style={{ fontSize: '0.93rem', color: 'var(--text-main)', lineHeight: 1.35 }}>{tpl.title}</strong>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.45, flex: 1 }}>
                     {tpl.description}
                   </p>
                   <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                     {tpl.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 999, background: '#f1f5f9', color: '#334155', fontWeight: 700 }}
-                      >
+                      <span key={tag} className="hw-iw-tag">
                         #{tag}
                       </span>
                     ))}
                   </div>
                   {bestPractice && !assignedMatch && (
-                    <div style={{ fontSize: '0.76rem', color: '#15803d', fontWeight: 700 }}>
+                    <div className="hw-iw-best">
                       🏆 สถิติฝึกทำดีสุด: {bestPractice.score}/{bestPractice.max} คะแนน ({bestPractice.percent}%)
                     </div>
                   )}
@@ -1261,7 +1181,7 @@ const HomeworkStudent: React.FC = () => {
                       type="button"
                       className="btn-primary"
                       onClick={() => openSubmission(assignedMatch.assignment)}
-                      style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #059669, #10b981)' }}
+                      style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #059669, #10b981)', color: '#ffffff' }}
                     >
                       ✅ ทำใบงานส่งครูเข้า ปพ.5
                     </button>
@@ -1270,7 +1190,7 @@ const HomeworkStudent: React.FC = () => {
                       type="button"
                       className="btn-primary"
                       onClick={() => setPracticeTemplate(tpl)}
-                      style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #2563eb, #0ea5e9)' }}
+                      style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #2563eb, #0ea5e9)', color: '#ffffff' }}
                     >
                       🧩 เปิดทำใบงานเลย (ตรวจทันที)
                     </button>

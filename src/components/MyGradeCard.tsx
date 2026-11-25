@@ -85,6 +85,11 @@ const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name, studentI
     return out;
   }, [classroom, studentNumber, name, revision]);
 
+  const policy = useMemo(() => getGradingPolicy(classroom), [classroom]);
+  const maxK = Math.round(policy.COLLECTED * policy.K_RATIO * 100) / 100;
+  const maxP = Math.round(policy.COLLECTED * policy.P_RATIO * 100) / 100;
+  const maxA = Math.round(policy.COLLECTED * policy.A_RATIO * 100) / 100;
+
   // Empty state — บอกชัดเจน ไม่ใช่ซ่อนเฉยๆ
   if (cards.length === 0) {
     return (
@@ -95,17 +100,12 @@ const MyGradeCard: React.FC<Props> = ({ classroom, studentNumber, name, studentI
       }}>
         <Award size={28} color="#B45309" />
         <h3 style={{ margin: '8px 0 4px', fontSize: '1rem' }}>คะแนนของฉัน — ปีการศึกษา 2569</h3>
-        <p style={{ margin: 0, color: '#6b7280', fontSize: '0.85rem' }}>
+        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
           ยังไม่มีคะแนน — เริ่มเรียนได้เลย คะแนนจะปรากฏที่นี่อัตโนมัติ
         </p>
       </div>
     );
   }
-
-  const policy = useMemo(() => getGradingPolicy(classroom), [classroom]);
-  const maxK = Math.round(policy.COLLECTED * policy.K_RATIO * 100) / 100;
-  const maxP = Math.round(policy.COLLECTED * policy.P_RATIO * 100) / 100;
-  const maxA = Math.round(policy.COLLECTED * policy.A_RATIO * 100) / 100;
 
   return (
     <div className="my-grade-card glass" style={{

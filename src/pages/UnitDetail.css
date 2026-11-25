@@ -172,8 +172,9 @@
 .lms-topbar {
   display: flex;
   align-items: center;
-  padding: 1rem 2rem;
-  background: white;
+  gap: 0.75rem;
+  padding: 0.85rem 1.5rem;
+  background: var(--card, #ffffff);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
@@ -188,7 +189,7 @@
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 8px;
-  margin-right: 1.5rem;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -203,7 +204,94 @@
 .lms-breadcrumb {
   font-weight: 700;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lms-flow-bar {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
+.lms-flow-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.lms-flow-pill {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 700;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lms-flow-pill:hover {
+  transform: translateY(-1px);
+}
+
+.lms-flow-pill.slides {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1d4ed8;
+}
+.lms-flow-pill.slides.active {
+  border: 1.5px solid #2563eb;
+  background: #dbeafe;
+}
+
+.lms-flow-pill.games {
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+}
+.lms-flow-pill.games.active {
+  border: 1.5px solid #d97706;
+  background: #fef3c7;
+}
+
+.lms-flow-pill.worksheet {
+  border: 1px solid #10b981;
+  background: linear-gradient(135deg, #2563eb, #10b981);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.lms-flow-pill.quiz {
+  border: 1px solid #c4b5fd;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+.lms-flow-pill.quiz.active {
+  border: 1.5px solid #7c3aed;
+  background: #ede9fe;
+}
+
+@media (max-width: 1120px) {
+  .lms-topbar {
+    flex-wrap: wrap;
+    row-gap: 0.55rem;
+  }
+  .lms-flow-bar {
+    flex-wrap: wrap;
+    margin-left: 0;
+  }
 }
 
 .lms-content-area {
@@ -234,18 +322,25 @@
   color: var(--primary-ink);
 }
 
-/* Footer Navigation */
+/* Footer Navigation — เว้นระยะขวา 6rem เพื่อไม่ให้ปุ่ม AI Tutor ลอยทับปุ่ม "ต่อไป" */
 .lms-footer-nav {
-  padding: 1.5rem 4rem;
-  background: white;
+  padding: 1.1rem 6rem 1.1rem 2.5rem;
+  background: var(--card, #ffffff);
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   position: sticky;
   bottom: 0;
   z-index: 10;
   box-shadow: 0 -5px 15px rgba(0,0,0,0.02);
+}
+
+@media (max-width: 768px) {
+  .lms-footer-nav {
+    padding: 0.9rem 1.25rem;
+  }
 }
 
 .lms-nav-btn {
@@ -1534,4 +1629,56 @@
   background: #34d399;
   color: #022c22;
   transform: translateY(-1px);
+}
+
+/* ========== Dark Mode — UnitDetail LMS ========== */
+html[data-theme="dark"] .lms-layout,
+html[data-theme="dark"] .lms-main {
+  background: #0f172a;
+}
+html[data-theme="dark"] .lms-sidebar,
+html[data-theme="dark"] .lms-sidebar-header,
+html[data-theme="dark"] .lms-topbar,
+html[data-theme="dark"] .lms-footer-nav {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.09);
+}
+html[data-theme="dark"] .lms-unit-tabs {
+  background: #172033;
+}
+html[data-theme="dark"] .lms-unit-tabs li:hover,
+html[data-theme="dark"] .lms-unit-tabs li.active {
+  background: #1e293b;
+}
+html[data-theme="dark"] .lms-flow-pill.slides {
+  background: rgba(37, 99, 235, 0.16);
+  border-color: rgba(96, 165, 250, 0.4);
+  color: #93c5fd;
+}
+html[data-theme="dark"] .lms-flow-pill.slides.active {
+  background: rgba(37, 99, 235, 0.34);
+  border-color: #60a5fa;
+}
+html[data-theme="dark"] .lms-flow-pill.games {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fde68a;
+}
+html[data-theme="dark"] .lms-flow-pill.games.active {
+  background: rgba(245, 158, 11, 0.32);
+  border-color: #fbbf24;
+}
+html[data-theme="dark"] .lms-flow-pill.quiz {
+  background: rgba(124, 58, 237, 0.18);
+  border-color: rgba(167, 139, 250, 0.45);
+  color: #ddd6fe;
+}
+html[data-theme="dark"] .lms-flow-pill.quiz.active {
+  background: rgba(124, 58, 237, 0.36);
+  border-color: #a78bfa;
+}
+html[data-theme="dark"] .lms-nav-btn.prev {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.14);
 }
