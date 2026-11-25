@@ -9,16 +9,16 @@ import './GameStyles.css';
 interface Task { title: string; emoji: string; steps: { emoji: string; text: string }[] }
 
 const TASKS: Task[] = [
-  { title: 'แปรงฟัน', emoji: '🪥', steps: [
-    { emoji: '🫧', text: 'บีบยาสีฟันลงแปรง' },
-    { emoji: '🪥', text: 'แปรงฟันให้ทั่ว' },
+  { title: 'แปรงฟัน', emoji: '✨', steps: [
+    { emoji: '💧', text: 'บีบยาสีฟันลงแปรง' },
+    { emoji: '✨', text: 'แปรงฟันให้ทั่ว' },
     { emoji: '💧', text: 'บ้วนน้ำล้างปาก' },
     { emoji: '😁', text: 'ยิ้มฟันสะอาด' },
   ] },
   { title: 'ล้างมือ', emoji: '🧼', steps: [
     { emoji: '💧', text: 'เปิดน้ำ ทำมือให้เปียก' },
     { emoji: '🧼', text: 'ถูสบู่ให้ทั่ว' },
-    { emoji: '🫧', text: 'ล้างน้ำให้สะอาด' },
+    { emoji: '💧', text: 'ล้างน้ำให้สะอาด' },
     { emoji: '🧻', text: 'เช็ดมือให้แห้ง' },
   ] },
   { title: 'เปิดคอมพิวเตอร์', emoji: '💻', steps: [
@@ -30,7 +30,7 @@ const TASKS: Task[] = [
   { title: 'ปลูกต้นไม้', emoji: '🌱', steps: [
     { emoji: '🕳️', text: 'ขุดหลุมในดิน' },
     { emoji: '🌱', text: 'วางต้นกล้าลงหลุม' },
-    { emoji: '🪴', text: 'กลบดินให้แน่น' },
+    { emoji: '🌱', text: 'กลบดินให้แน่น' },
     { emoji: '💧', text: 'รดน้ำให้ชุ่ม' },
   ] },
   { title: 'บันทึกไฟล์งาน', emoji: '💾', steps: [

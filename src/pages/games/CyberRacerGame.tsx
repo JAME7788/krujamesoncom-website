@@ -1547,7 +1547,7 @@ const CyberRacerGame: React.FC = () => {
             <Zap size={15} className="text-cyan-400" />
             <span>
               {gameState === 'playing'
-                ? 'ทางด่วนไซเบอร์... ซุ้มคำถามถัดไปกำลังพุ่งเข้ามา! (เก็บเหรียญ 🪙 ไนโตร ⚡ หลบกรวย 🚧)'
+                ? 'ทางด่วนไซเบอร์... ซุ้มคำถามถัดไปกำลังพุ่งเข้ามา! (เก็บเหรียญ 💰 ไนโตร ⚡ หลบกรวย 🚧)'
                 : 'พร้อมซิ่ง! กดปุ่ม “เริ่มซิ่งเลย!” เพื่อเข้าสู่ทางด่วนไซเบอร์'}
             </span>
           </div>
@@ -1589,7 +1589,7 @@ const CyberRacerGame: React.FC = () => {
                   <span>เลี้ยวซ้ายหรือขวาเพื่อเข้าเลนคำตอบที่ถูกต้อง</span>
                 </div>
                 <div className="cr-rule-item">
-                  <span className="cr-rule-icon">🪙 ⚡</span>
+                  <span className="cr-rule-icon">💰 ⚡</span>
                   <span>เก็บเหรียญทองและถังไนโตรชาร์จความเร็ว</span>
                 </div>
                 <div className="cr-rule-item">
@@ -1634,7 +1634,7 @@ const CyberRacerGame: React.FC = () => {
                 </div>
                 <div className="cr-stat-item">
                   <span className="cr-stat-label">เหรียญที่เก็บได้</span>
-                  <span className="cr-stat-val text-yellow-300">{coinsCollected} 🪙</span>
+                  <span className="cr-stat-val text-yellow-300">{coinsCollected} 💰</span>
                 </div>
                 <div className="cr-stat-item">
                   <span className="cr-stat-label">ระยะทาง</span>

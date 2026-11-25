@@ -181,14 +181,36 @@ const Curriculum: React.FC = () => {
           <p>ไม่มีคอร์สสำหรับชั้นนี้</p>
         </div>
       )}
-      <Link to="/is-blog" className="is-course-banner">
-        <span className="is-course-icon" aria-hidden><GraduationCap size={26} /></span>
-        <span className="is-course-text">
-          <strong>บล็อกวิชา IS</strong>
-          <span>คลังความรู้ I20201 และทักษะอาชีพ 1–2 สำหรับการค้นคว้าอิสระ</span>
-        </span>
-        <ChevronRight className="is-course-arrow" size={22} aria-hidden />
-      </Link>
+
+      {/* ทางลัดต่อยอดการเรียน: แหล่งเรียนรู้เสริม + ใบงานโต้ตอบ */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: '1.1rem' }}>
+        <Link
+          to="/homework"
+          className="btn-secondary"
+          style={{ padding: '8px 14px', fontSize: '0.86rem', borderColor: '#6ee7b7', background: '#ecfdf5', color: '#047857', fontWeight: 700 }}
+        >
+          🧩 ใบงานโต้ตอบออนไลน์ (ตรวจคะแนนทันที)
+        </Link>
+        <Link
+          to="/resources"
+          className="btn-secondary"
+          style={{ padding: '8px 14px', fontSize: '0.86rem', fontWeight: 600 }}
+        >
+          <BookOpen size={15} /> แหล่งเรียนรู้เสริมและสื่อดิจิทัล
+        </Link>
+      </div>
+
+      {/* บล็อกวิชา IS แสดงเฉพาะ ม.1–ม.3, ผู้ทดลองภายนอก, และครูผู้สอน (ไม่แสดงให้ ป.1–ป.6) */}
+      {(isAdmin || externalVisitor || /^ม\./.test(user?.classroom || '')) && (
+        <Link to="/is-blog" className="is-course-banner">
+          <span className="is-course-icon" aria-hidden><GraduationCap size={26} /></span>
+          <span className="is-course-text">
+            <strong>บล็อกวิชา IS</strong>
+            <span>คลังความรู้ I20201 และทักษะอาชีพ 1–2 สำหรับการค้นคว้าอิสระ</span>
+          </span>
+          <ChevronRight className="is-course-arrow" size={22} aria-hidden />
+        </Link>
+      )}
       <div className="course-cards-grid">
         {visibleGrades.map((g, i) => {
           const cover = getCourseCover(g.id);

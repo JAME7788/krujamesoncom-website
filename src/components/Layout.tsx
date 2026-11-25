@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Menu, X, Home, Award, LogOut, Gamepad2,
-  LayoutDashboard, Library, GraduationCap, Mail, Phone, MapPin, Globe, Box
+  Menu, X, Home, BookOpen, LogOut, Gamepad2, ClipboardCheck,
+  LayoutDashboard, Library, GraduationCap, Mail, Phone, MapPin, Globe, Box, Radio,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
@@ -92,25 +92,38 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, [isMenuOpen]);
 
+  // เมนูหลัก 5 รายการกระชับ ไม่มีวันชนกันที่ความละเอียดจอโน้ตบุ๊กโรงเรียน (1280px–1366px)
   const navLinks: { name: string; path: string; icon: React.ReactNode; badge?: number; badgeOverdue?: boolean }[] = [
-    { name: 'หน้าแรก', path: '/', icon: <Home size={18} /> },
-    { name: 'คอร์สเรียน', path: '/courses', icon: <Award size={18} /> },
-    { name: 'แหล่งเรียนรู้', path: '/resources', icon: <Library size={18} /> },
-    { name: 'เกมฝึก', path: '/games', icon: <Gamepad2 size={18} /> },
-    { name: 'ห้องเรียน 3D', path: '/world', icon: <Box size={18} /> },
+    { name: 'หน้าแรก', path: '/', icon: <Home size={17} /> },
+    { name: 'บทเรียน', path: '/courses', icon: <BookOpen size={17} /> },
   ];
 
   if (scoreEligible) {
     navLinks.push({
-      name: 'การบ้าน',
+      name: 'ใบงาน',
       path: '/homework',
-      icon: <Award size={18} />,
+      icon: <ClipboardCheck size={17} />,
       badge: homeworkAlertInfo.missingTotal,
       badgeOverdue: homeworkAlertInfo.overdueCount > 0,
     });
-    navLinks.push({ name: 'แดชบอร์ด', path: '/dashboard', icon: <LayoutDashboard size={18} /> });
+    navLinks.push({ name: 'เกมฝึก', path: '/games', icon: <Gamepad2 size={17} /> });
+    navLinks.push({ name: 'คะแนนของฉัน', path: '/dashboard', icon: <LayoutDashboard size={17} /> });
+  } else {
+    navLinks.push({ name: 'เกมฝึก', path: '/games', icon: <Gamepad2 size={17} /> });
+    navLinks.push({ name: 'แหล่งเรียนรู้', path: '/resources', icon: <Library size={17} /> });
+    if (adminUser) {
+      navLinks.push({ name: 'พื้นที่ครู', path: '/admin', icon: <LayoutDashboard size={17} /> });
+    } else {
+      navLinks.push({ name: 'ห้องเรียน 3D', path: '/world', icon: <Box size={17} /> });
+    }
   }
-  if (adminUser) navLinks.push({ name: 'พื้นที่ครู', path: '/admin', icon: <LayoutDashboard size={18} /> });
+
+  // เมนูเสริมในลิ้นชักมือถือ (เข้าถึงทุกพื้นที่ได้ครบ)
+  const mobileExtraLinks: { name: string; path: string; icon: React.ReactNode }[] = [
+    { name: 'แหล่งเรียนรู้เสริม', path: '/resources', icon: <Library size={17} /> },
+    { name: 'ห้องเรียน 3D', path: '/world', icon: <Box size={17} /> },
+    { name: 'เข้าร่วม Live Quiz', path: '/live', icon: <Radio size={17} /> },
+  ];
 
   return (
     <div className="app-container">
@@ -269,6 +282,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   )}
                 </Link>
               ))}
+              <div style={{ margin: '10px 12px 4px', borderTop: '1px solid #e5e7eb', paddingTop: 10, fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8' }}>
+                พื้นที่เพิ่มเติม
+              </div>
+              {mobileExtraLinks
+                .filter((extra) => !navLinks.some((n) => n.path === extra.path))
+                .map((extra) => (
+                  <Link
+                    key={extra.path}
+                    to={extra.path}
+                    className={`mobile-nav-item ${isPortalNavActive(location.pathname, extra.path) ? 'active' : ''}`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {extra.icon}
+                    <span>{extra.name}</span>
+                  </Link>
+                ))}
             </nav>
 
             <div className="mobile-menu-footer">

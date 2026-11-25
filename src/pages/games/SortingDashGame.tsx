@@ -45,7 +45,7 @@ const THEMES: ThemeConfig[] = [
     rightEmoji: '🌐',
     items: [
       { id: 'p1', name: 'รหัสผ่านบัญชีอีเมล', emoji: '🔑', target: 'left', explanation: 'รหัสผ่านเป็นความลับสูงสุด ห้ามเปิดเผย' },
-      { id: 'p2', name: 'เลขประจำตัวประชาชน 13 หลัก', emoji: '🪪', target: 'left', explanation: 'เลขบัตรประชาชนใช้ระบุตัวตนและธุรกรรมสำคัญ' },
+      { id: 'p2', name: 'เลขประจำตัวประชาชน 13 หลัก', emoji: '🔐', target: 'left', explanation: 'เลขบัตรประชาชนใช้ระบุตัวตนและธุรกรรมสำคัญ' },
       { id: 'p3', name: 'รูปภาพวิวธรรมชาติในสวนสาธารณะ', emoji: '🌄', target: 'right', explanation: 'ภาพวิวทิวทัศน์ทั่วไปสามารถแชร์ได้' },
       { id: 'p4', name: 'รหัสผ่านบัตร ATM / PIN', emoji: '💳', target: 'left', explanation: 'รหัส PIN ธนาคารต้องเก็บเป็นความลับ' },
       { id: 'p5', name: 'ปฏิทินวันหยุดโรงเรียนประจำปี', emoji: '📅', target: 'right', explanation: 'ประกาศวันหยุดเป็นข้อมูลสาธารณะของโรงเรียน' },
@@ -67,7 +67,7 @@ const THEMES: ThemeConfig[] = [
     rightEmoji: '💾',
     items: [
       { id: 'hs1', name: 'เมาส์คอมพิวเตอร์', emoji: '🖱️', target: 'left', explanation: 'เมาส์เป็นอุปกรณ์ฮาร์ดแวร์รับเข้า (Input)' },
-      { id: 'hs2', name: 'ระบบปฏิบัติการ Windows 11', emoji: '🪟', target: 'right', explanation: 'OS เป็นซอฟต์แวร์ระบบควบคุมเครื่อง' },
+      { id: 'hs2', name: 'ระบบปฏิบัติการ Windows 11', emoji: '🖥️', target: 'right', explanation: 'OS เป็นซอฟต์แวร์ระบบควบคุมเครื่อง' },
       { id: 'hs3', name: 'คีย์บอร์ดแป้นพิมพ์', emoji: '⌨️', target: 'left', explanation: 'คีย์บอร์ดเป็นอุปกรณ์ฮาร์ดแวร์ป้อนข้อมูล' },
       { id: 'hs4', name: 'โปรแกรมพิมพ์งาน Microsoft Word', emoji: '📄', target: 'right', explanation: 'Word เป็นซอฟต์แวร์ประยุกต์จัดการเอกสาร' },
       { id: 'hs5', name: 'แผงวงจรหลัก (Mainboard)', emoji: '🎛️', target: 'left', explanation: 'เมนบอร์ดเป็นฮาร์ดแวร์วงจรหลัก' },

@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  FileText,
   Sparkles,
   ExternalLink,
   ClipboardList,
@@ -69,7 +68,11 @@ const HomeworkStudent: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
   const [selected, setSelected] = useState<Assignment | null>(null);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>(() =>
+    user && isScoreEligibleUser(user)
+      ? getAssignmentsForStudent(user.classroom, user.id, parseInt(user.studentNumber))
+      : [],
+  );
   const [contentUrl, setContentUrl] = useState('');
   const [comment, setComment] = useState('');
   const [contentData, setContentData] = useState('');
@@ -975,50 +978,59 @@ const HomeworkStudent: React.FC = () => {
         )}
       </div>
 
-      {/* Filter Tabs */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '1.25rem 0' }}>
-        {[
-          { id: 'all', label: `งานทั้งหมด (${overview.tasks.length})` },
-          { id: 'missing', label: `📌 งานค้างยังไม่ส่ง (${overview.overdueCount + overview.pendingCount})` },
-          { id: 'overdue', label: `🚨 เลยกำหนด (${overview.overdueCount})` },
-          { id: 'waiting_review', label: `⏳ รอครูตรวจ (${overview.waitingReviewCount})` },
-          { id: 'graded', label: `✅ ตรวจแล้ว (${overview.gradedCount})` },
-          { id: 'recommended', label: '✨ แนะนำสำหรับเธอ' },
-          { id: 'foundation', label: '🟢 พื้นฐาน' },
-          { id: 'standard', label: '🟡 มาตรฐาน' },
-          { id: 'advanced', label: '🔵 ท้าทาย' },
-          { id: 'submitted', label: '✓ ส่งแล้วทั้งหมด' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setFilter(tab.id as HomeworkFilterTab)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '999px',
-              fontSize: '0.82rem',
-              fontWeight: filter === tab.id ? 700 : 500,
-              border: filter === tab.id ? '2px solid var(--primary, #B45309)' : '1px solid #d1d5db',
-              background: filter === tab.id ? '#FEF3C7' : '#f9fafb',
-              color: filter === tab.id ? '#78350F' : '#374151',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Filter Tabs (กระชับ 4–5 หมวดหลัก อ่านง่ายไม่รก) */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', margin: '1.15rem 0' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'all', label: `งานที่ครูสั่ง (${overview.tasks.length})` },
+            { id: 'missing', label: `ยังไม่ส่ง (${overview.overdueCount + overview.pendingCount})` },
+            ...(overview.overdueCount > 0
+              ? [{ id: 'overdue', label: `เลยกำหนด (${overview.overdueCount})` }]
+              : []),
+            { id: 'waiting_review', label: `รอครูตรวจ (${overview.waitingReviewCount})` },
+            { id: 'graded', label: `ตรวจแล้ว (${overview.gradedCount})` },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setFilter(tab.id as HomeworkFilterTab)}
+              style={{
+                padding: '7px 14px',
+                borderRadius: '999px',
+                fontSize: '0.84rem',
+                fontWeight: filter === tab.id ? 700 : 600,
+                border: filter === tab.id ? '1.5px solid #d97706' : '1px solid #d1d5db',
+                background: filter === tab.id ? '#fffbeb' : '#ffffff',
+                color: filter === tab.id ? '#92400e' : '#334155',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        {loadingAssignments && (
+          <span style={{ fontSize: '0.76rem', color: '#64748b', fontWeight: 600 }}>
+            กำลังซิงก์รายการล่าสุด...
+          </span>
+        )}
       </div>
 
-      {loadingAssignments && assignments.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>กำลังดึงงานจากฐานข้อมูล...</div>
-      ) : filteredTasks.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <FileText size={48} color="#9ca3af" />
-          <h3>ไม่พบรายการในหมวดนี้ 🎉</h3>
-          <p>ไม่มีงานต้องส่งในหมวดที่เลือก — ลองเลือกแท็บ &ldquo;งานทั้งหมด&rdquo;</p>
+      {filteredTasks.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: '1.5rem 1.25rem', background: '#ffffff', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
+            {overview.tasks.length === 0
+              ? 'ยังไม่มีการบ้านค้างในหมวดนี้ — เลือกทำใบงานโต้ตอบประจำชั้นด้านล่างได้เลย!'
+              : 'ไม่พบรายการในหมวดนี้'}
+          </div>
+          {overview.tasks.length > 0 && (
+            <button type="button" className="btn-secondary" style={{ marginTop: 8, padding: '6px 14px', fontSize: '0.82rem' }} onClick={() => setFilter('all')}>
+              แสดงงานทั้งหมด ({overview.tasks.length})
+            </button>
+          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

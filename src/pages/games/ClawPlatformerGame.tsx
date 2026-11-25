@@ -746,7 +746,7 @@ const ClawPlatformerGame: React.FC = () => {
               id: nextPopupIdRef.current++,
               x: coin.x,
               y: coin.y - 12,
-              text: '+20 🪙 ชิป',
+              text: '+20 💰 ชิป',
               color: '#fbbf24',
               life: 30,
               maxLife: 30,
@@ -1468,7 +1468,7 @@ const ClawPlatformerGame: React.FC = () => {
         <div className="cg-mission-pill">
           <span className="cg-mission-tag">🎯 ภารกิจ</span>
           <span className="cg-mission-text">
-            เก็บชิป 🪙 • โหม่งกล่อง ❓ ถอดรหัสลับ • กระโดดเหยียบไวรัส 👾 • มุ่งหน้าสู่ประตู 🚪!
+            เก็บชิป 💰 • โหม่งกล่อง ❓ ถอดรหัสลับ • กระโดดเหยียบไวรัส 👾 • มุ่งหน้าสู่ประตู 🚪!
           </span>
         </div>
       </div>

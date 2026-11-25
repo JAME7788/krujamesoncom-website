@@ -289,7 +289,7 @@ const MATERIALS: Array<{ id: BlockMaterial; color: string; label: string; icon?:
   { id: 'speedpad', color: '#06b6d4', label: 'บล็อกเร่งสปีด', icon: '⚡', hint: 'เหยียบแล้ววิ่งเร็วพิเศษ 2 วินาที' },
   { id: 'lamp', color: '#fde047', label: 'ไฟนีออนลอจิก', icon: '💡', hint: 'สว่างเรืองแสง เชื่อมกับสวิตช์ 0/1 ในระยะ 6 ช่อง' },
   { id: 'switch', color: '#f97316', label: 'สวิตช์ 0/1', icon: '🎛️', hint: 'กดปุ่มโต้ตอบ (E) เพื่อสลับเปิด/ปิดไฟนีออนรอบข้าง' },
-  { id: 'sign', color: '#8b5cf6', label: 'ป้ายชื่อผลงาน', icon: '🪧', hint: 'วางป้ายลอย 3D ตั้งชื่อผลงานหรือจุดเส้นชัย 🏁' },
+  { id: 'sign', color: '#8b5cf6', label: 'ป้ายชื่อผลงาน', icon: '📌', hint: 'วางป้ายลอย 3D ตั้งชื่อผลงานหรือจุดเส้นชัย 🏁' },
 ];
 
 // ภารกิจสร้าง — เปลี่ยน "การวางบล็อก" ให้เป็น "การเรียนรู้" (มีเป้าหมาย ตรวจได้ ได้ดาว+คะแนน P)
@@ -2444,7 +2444,7 @@ const VirtualClassroom: React.FC = () => {
           [
             '• 🧠 สมอง = ซีพียู (CPU) & แรม (RAM) ประมวลผลและจดจำข้อมูล',
             '• 👁️ ดวงตา = กล้อง/สแกนเนอร์  |  👂 หู = ไมโครโฟน  |  👄 ปาก = ลำโพง',
-            '• 🖐️ มือ = คีย์บอร์ด & เมาส์   |  🩸 เส้นเลือด = สายไฟ & บัสข้อมูล',
+            '• 🖐️ มือ = คีย์บอร์ด & เมาส์   |  💧 เส้นเลือด = สายไฟ & บัสข้อมูล',
             '• 4 ยุคคอมพิวเตอร์: หลอดสุญญากาศ → ทรานซิสเตอร์ → IC → ไมโครโพรเซสเซอร์',
           ],
         ),
@@ -3470,7 +3470,7 @@ const VirtualClassroom: React.FC = () => {
             [
               size > 10 ? `• ลานรวม ${size}×${size} ช่อง ให้ทั้งห้องช่วยกันสร้าง แบ่งหน้าที่กันทำ` : '• พื้นที่ 10×10 ช่อง สูงสุด 36 ชั้น สำหรับสร้างผลงาน 3D',
               '• กด [2 โหมดสร้าง] หรือปุ่ม [🤖 โค้ดสร้างบล็อก] เพื่อเสกสิ่งปลูกสร้าง',
-              '• วางบล็อกป้ายชื่อ 🪧 เพื่อเขียนชื่อเจ้าของผลงานได้เลย!',
+              '• วางบล็อกป้ายชื่อ 📌 เพื่อเขียนชื่อเจ้าของผลงานได้เลย!',
             ],
           ),
           roughness: 0.3,
@@ -4151,7 +4151,7 @@ const VirtualClassroom: React.FC = () => {
         roughness: 0.45,
       }),
       sign: new THREE.MeshStandardMaterial({
-        map: makeMagicBlockTexture('#6d28d9', '#fde047', '🪧', 'SIGN'),
+        map: makeMagicBlockTexture('#6d28d9', '#fde047', '📌', 'SIGN'),
         emissive: new THREE.Color(0x7c3aed),
         emissiveIntensity: 0.24,
         roughness: 0.5,
@@ -4597,7 +4597,7 @@ const VirtualClassroom: React.FC = () => {
         arcCore.position.set(0, 1.32, -0.24);
         bodyGroup.add(arcCore);
       } else if (techClass === 'cyber_guardian') {
-        // 🪖 หมวกเกราะไซเบอร์ + โล่ไฟร์วอลล์ที่แขนซ้าย
+        // 🛡️ หมวกเกราะไซเบอร์ + โล่ไฟร์วอลล์ที่แขนซ้าย
         const helmMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.6, roughness: 0.3 });
         const goldMat = new THREE.MeshStandardMaterial({
           color: 0xfacc15,
@@ -4667,7 +4667,7 @@ const VirtualClassroom: React.FC = () => {
         wrench.position.set(0, -0.78, -0.24);
         rightArmPivot.add(wrench);
       } else if (techClass === 'game_creator') {
-        // 👑 มงกุฎพิกเซลทองคำ + 🪄 คฑาบล็อกเรืองแสงที่มือขวา
+        // 👑 มงกุฎพิกเซลทองคำ + ✨ คฑาบล็อกเรืองแสงที่มือขวา
         const crownMat = new THREE.MeshStandardMaterial({
           color: 0xfacc15,
           emissive: new THREE.Color(0xca8a04),
@@ -5010,7 +5010,7 @@ const VirtualClassroom: React.FC = () => {
             setEditingSignBlock(targetBlock);
             setSignDraftText(targetBlock.label || `⭐ ผลงานของ ${targetBlock.ownerName || displayName}`);
           } else {
-            setStatus(`🪧 ป้ายของ ${targetBlock.ownerName || 'เพื่อน'}: "${targetBlock.label || 'ผลงานสร้างสรรค์'}"`);
+            setStatus(`📌 ป้ายของ ${targetBlock.ownerName || 'เพื่อน'}: "${targetBlock.label || 'ผลงานสร้างสรรค์'}"`);
           }
           return;
         }
@@ -7446,7 +7446,7 @@ const VirtualClassroom: React.FC = () => {
           <div className="world-modal-card" onClick={(event) => event.stopPropagation()}>
             <div className="world-modal-header">
               <div className="world-modal-title" style={{ color: '#7c3aed' }}>
-                <span style={{ fontSize: '1.35rem' }}>🪧</span>
+                <span style={{ fontSize: '1.35rem' }}>📌</span>
                 <h3 id="world-sign-title">ตั้งข้อความบนป้าย 3D</h3>
               </div>
               <button
@@ -7687,7 +7687,7 @@ const VirtualClassroom: React.FC = () => {
                     },
                     {
                       id: 'stairs_algo',
-                      title: '🪜 Algorithm บันไดขึ้นฟ้า',
+                      title: '📶 Algorithm บันไดขึ้นฟ้า',
                       concept: 'เพิ่มตำแหน่งแนวราบ (X/Z) และความสูง (Y) พร้อมกันทีละขั้น',
                       code: `for step in range(${algoSteps}):\n  place_block(forward=step, up=step)`,
                     },
@@ -8036,7 +8036,7 @@ const VirtualClassroom: React.FC = () => {
                       desc: 'รับการกดปุ่มและการชี้ตำแหน่งจากผู้ใช้เข้าสู่ระบบ',
                     },
                     {
-                      organ: '🩸 เส้นเลือด & ระบบประสาท',
+                      organ: '💧 เส้นเลือด & ระบบประสาท',
                       hw: 'สายไฟ & สายส่งข้อมูล (Data Bus)',
                       role: 'System Bus & Power',
                       desc: 'ลำเลียงพลังงานไฟฟ้าและส่งผ่านข้อมูลระหว่างอุปกรณ์ทุกชิ้นในเครื่อง',

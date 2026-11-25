@@ -389,10 +389,11 @@ const Dashboard: React.FC = () => {
           className="schedule-banner"
           style={{
             background: activeSlot
-              ? 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)'
+              ? 'linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)'
               : upcomingToday
-              ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
-              : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              ? 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)'
+              : 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
           }}
         >
           <div className="schedule-banner-content">
@@ -483,21 +484,19 @@ const Dashboard: React.FC = () => {
           {/* Exit Ticket — ตั๋วบอกลาคาบเรียน สะท้อนคิดรับคะแนน A */}
           {scoreEligible && (
             <div
-              className="exit-ticket-student-card glass"
+              className="exit-ticket-student-card"
               style={{
-                padding: '1.25rem 1.5rem',
-                borderRadius: 18,
+                padding: '1.15rem 1.35rem',
+                borderRadius: 16,
                 marginBottom: 16,
-                background: todayExitTicket
-                  ? 'linear-gradient(135deg, rgba(236,253,245,0.95) 0%, rgba(240,253,250,0.85) 100%)'
-                  : 'linear-gradient(135deg, rgba(238,242,255,0.95) 0%, rgba(245,243,255,0.85) 100%)',
-                border: todayExitTicket ? '1.5px solid #10b981' : '1.5px solid #B45309',
+                background: '#ffffff',
+                border: todayExitTicket ? '1px solid #86efac' : '1px solid #e2e8f0',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
                 gap: 12,
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+                boxShadow: '0 4px 16px rgba(15, 23, 42, 0.04)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

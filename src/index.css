@@ -83,48 +83,60 @@ html[data-theme="dark"] .search-kbd {
 }
 
 :root {
-  /* Modern Yellow & White Palette */
-  --primary: #FFCC00; /* Vibrant Golden Yellow */
-  --primary-dark: #EBB800;
-  --primary-light: #FFE066;
-  --primary-soft: #FFF9E6;
-  --primary-ink: #9A6700; /* yellow-family text/icons on light surfaces (>=4.5:1) */
-  --primary-ring: #B7791F;
-  
-  --secondary: #1D1D1F; /* Sophisticated Dark */
-  
-  --background: #FFFFFF;
-  --surface: #FBFBFA;
+  /* Warm Classroom Studio — Unified Cohesive Palette */
+  --primary: #F59E0B;
+  --primary-dark: #D97706;
+  --primary-light: #FDE68A;
+  --primary-soft: #FFFBEB;
+  --primary-ink: #92400E;
+  --primary-ring: #D97706;
+
+  --accent-blue: #2563EB;
+  --accent-blue-soft: #EFF6FF;
+  --accent-emerald: #059669;
+  --accent-emerald-soft: #ECFDF5;
+
+  --secondary: #0F172A;
+
+  --background: #FAF9F6;
+  --surface: #F3F2EE;
   --card: #FFFFFF;
-  
-  --text-main: #1D1D1F;
-  --text-muted: #6E6E73;
-  --text-on-primary: #1D1D1F;
-  
-  --border: rgba(0, 0, 0, 0.05);
-  --border-light: rgba(0, 0, 0, 0.03);
-  
-  /* Glassmorphism Refined */
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.5);
-  --glass-shadow: 0 12px 40px rgba(255, 204, 0, 0.08);
-  
+
+  --text-main: #0F172A;
+  --text-muted: #57606F;
+  --text-on-primary: #0F172A;
+
+  --border: #E5E7EB;
+  --border-light: #F1F5F9;
+
+  /* Refined Surface & Depth */
+  --glass-bg: rgba(255, 255, 255, 0.92);
+  --glass-border: #E5E7EB;
+  --glass-shadow: 0 6px 24px rgba(15, 23, 42, 0.05);
+
   /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.1);
-  
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 18px 40px rgba(15, 23, 42, 0.09);
+
   /* Spacing & Radii */
-  --radius-sm: 12px;
-  --radius-md: 20px;
-  --radius-lg: 32px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-full: 9999px;
-  
-  --container-max: 1300px;
-  
+
+  --container-max: 1260px;
+
   /* Transitions */
-  --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  --transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tabular-nums,
+.stat-info h3,
+.uhs-stat-pill strong,
+.schedule-countdown-val {
+  font-variant-numeric: tabular-nums;
 }
 
 * {

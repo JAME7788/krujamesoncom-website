@@ -506,6 +506,70 @@ const AdminDashboardInner: React.FC = () => {
           </div>
         </header>
 
+        {/* แถบคำสั่งด่วนประจำวัน (Daily Teacher Cockpit — กดเข้างานหลักได้ในคลิกเดียว) */}
+        <div
+          role="navigation"
+          aria-label="ทางลัดงานสอนประจำวัน"
+          style={{
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            marginBottom: '1rem',
+            padding: '10px 14px',
+            borderRadius: 14,
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
+          }}
+        >
+          <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748b', marginRight: 4 }}>
+            งานหลักประจำคาบ:
+          </span>
+          {[
+            { id: 'today' as Tab, label: '🎯 คาบเรียนวันนี้' },
+            { id: 'homework' as Tab, label: '🧩 ใบงานโต้ตอบ & ตัดคะแนน' },
+            { id: 'quick-att' as Tab, label: '✅ เช็คชื่อด่วน' },
+            { id: 'gradebook' as Tab, label: '📊 สมุดคะแนน ปพ.5' },
+            { id: 'roster' as Tab, label: '👥 รายชื่อ & ลิงก์ผู้ปกครอง' },
+          ].map((quick) => (
+            <button
+              key={quick.id}
+              type="button"
+              onClick={() => navigateToTab(quick.id)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 999,
+                border: tab === quick.id ? '1.5px solid #d97706' : '1px solid #e2e8f0',
+                background: tab === quick.id ? '#fffbeb' : '#f8fafc',
+                color: tab === quick.id ? '#92400e' : '#334155',
+                fontSize: '0.82rem',
+                fontWeight: tab === quick.id ? 800 : 600,
+                cursor: 'pointer',
+              }}
+            >
+              {quick.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => window.open('/live/host', '_blank')}
+            style={{
+              marginLeft: 'auto',
+              padding: '6px 12px',
+              borderRadius: 999,
+              border: '1px solid #fecaca',
+              background: '#fef2f2',
+              color: '#b91c1c',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            ⚡ เปิด Live Quiz ↗
+          </button>
+        </div>
+
         {/* ADMIN LAYOUT */}
         <div className="admin2-layout">
           {/* Sidebar Navigation */}

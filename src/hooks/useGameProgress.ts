@@ -48,7 +48,7 @@ export const useGameProgress = (
         if (result.saved > 0) {
           const earned = coinsForGameScore(score);
           addCoins(earned, user.id);
-          showToast(`🪙 ได้ ${earned} เหรียญ ไปสะสมซื้อตัวละครได้`, 'info');
+          showToast(`💰 ได้ ${earned} เหรียญ ไปสะสมซื้อตัวละครได้`, 'info');
           showToast(
             `บันทึกคะแนนกิจกรรมเกมแล้ว${result.students === 2 ? ' ให้ทั้ง 2 คน' : ''}`,
             'success'

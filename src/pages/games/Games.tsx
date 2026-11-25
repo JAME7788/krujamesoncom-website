@@ -240,7 +240,7 @@ const Games: React.FC = () => {
               <strong>{totalEarnedStars} ดาว</strong>
             </div>
             <div className="uhs-stat-pill">
-              <span>🪙 เหรียญรางวัล</span>
+              <span>💰 เหรียญรางวัล</span>
               <strong>{unifiedSnapshot.coins.toLocaleString()} เหรียญ</strong>
             </div>
           </div>
@@ -269,21 +269,22 @@ const Games: React.FC = () => {
           </div>
         </div>
 
-        {/* โซนแยกประเภทเกม: เกมหลักสูตร (ตรงตัวชี้วัด ว 4.2/ว 4.1) vs โซนอาร์เคด/พักสมอง */}
+        {/* โซนแยกประเภทเกม: กลมกลืนกับธีมมืดของ Games Hub + ปุ่มลัดห้องเรียน 3D & ใบงาน */}
         <div
           role="tablist"
           aria-label="เลือกโซนคลังเกม"
           style={{
             display: 'flex',
-            gap: 8,
+            gap: 10,
             flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            margin: '12px 0 14px',
-            padding: '10px 12px',
+            margin: '12px 0 16px',
+            padding: '10px 14px',
             borderRadius: 14,
-            background: '#f8fafc',
-            border: '1.5px solid #e2e8f0',
+            background: 'rgba(13, 27, 25, 0.88)',
+            border: '1px solid rgba(250, 204, 21, 0.25)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
           }}
         >
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -301,11 +302,11 @@ const Games: React.FC = () => {
                 style={{
                   padding: '7px 14px',
                   borderRadius: 999,
-                  border: trackFilter === zone.id ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                  background: trackFilter === zone.id ? '#2563eb' : '#ffffff',
-                  color: trackFilter === zone.id ? '#ffffff' : '#334155',
+                  border: trackFilter === zone.id ? '1.5px solid #fbbf24' : '1px solid rgba(148, 163, 184, 0.3)',
+                  background: trackFilter === zone.id ? '#f59e0b' : 'rgba(255, 255, 255, 0.06)',
+                  color: trackFilter === zone.id ? '#0f172a' : '#e2e8f0',
                   fontSize: '0.84rem',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   cursor: 'pointer',
                 }}
               >
@@ -313,24 +314,44 @@ const Games: React.FC = () => {
               </button>
             ))}
           </div>
-          <Link
-            to="/homework"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '6px 12px',
-              borderRadius: 999,
-              background: '#ecfdf5',
-              border: '1px solid #6ee7b7',
-              color: '#047857',
-              fontSize: '0.8rem',
-              fontWeight: 800,
-              textDecoration: 'none',
-            }}
-          >
-            🧩 ทำใบงานโต้ตอบส่งครู →
-          </Link>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link
+              to="/world"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
+                borderRadius: 999,
+                background: 'rgba(56, 189, 248, 0.16)',
+                border: '1px solid rgba(56, 189, 248, 0.45)',
+                color: '#7dd3fc',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              🏫 ห้องเรียน 3D
+            </Link>
+            <Link
+              to="/homework"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
+                borderRadius: 999,
+                background: 'rgba(16, 185, 129, 0.18)',
+                border: '1px solid rgba(52, 211, 153, 0.45)',
+                color: '#6ee7b7',
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                textDecoration: 'none',
+              }}
+            >
+              🧩 ทำใบงานโต้ตอบส่งครู →
+            </Link>
+          </div>
         </div>
 
         {/* New Games Spotlight */}
@@ -463,9 +484,9 @@ const Games: React.FC = () => {
                             borderRadius: 999,
                             fontSize: '0.7rem',
                             fontWeight: 800,
-                            background: getGameTrack(game.id) === 'curriculum' ? '#ecfdf5' : '#fef3c7',
-                            color: getGameTrack(game.id) === 'curriculum' ? '#047857' : '#92400e',
-                            border: `1px solid ${getGameTrack(game.id) === 'curriculum' ? '#6ee7b7' : '#fcd34d'}`,
+                            background: getGameTrack(game.id) === 'curriculum' ? 'rgba(16, 185, 129, 0.16)' : 'rgba(245, 158, 11, 0.18)',
+                            color: getGameTrack(game.id) === 'curriculum' ? '#6ee7b7' : '#fcd34d',
+                            border: `1px solid ${getGameTrack(game.id) === 'curriculum' ? 'rgba(52, 211, 153, 0.4)' : 'rgba(251, 191, 36, 0.4)'}`,
                           }}
                         >
                           {getGameTrack(game.id) === 'curriculum' ? '🎯 หลักสูตร' : '🕹️ อาร์เคด'}

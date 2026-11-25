@@ -796,7 +796,7 @@ const ObstacleDodgeGame: React.FC = () => {
             <div className="od-overlay-icon">🏃‍♂️</div>
             <h2 className="od-overlay-title start">วิ่งทะลุสิ่งกีดขวางไซเบอร์</h2>
             <p className="od-overlay-desc">
-              เปลี่ยนเลนซ้าย-ขวา เพื่อหลบหินกลิ้ง 🪨 และหาช่องว่างของกำแพง 🧱 
+              เปลี่ยนเลนซ้าย-ขวา เพื่อหลบหินกลิ้ง ☄️ และหาช่องว่างของกำแพง 🧱 
               ระวังเลเซอร์สีแดง ⚡ กวาดทั้งเลน! กด กระโดด เพื่อข้ามหินกลิ้งได้!
             </p>
             <div className="od-btn-group">

@@ -166,7 +166,7 @@ const BugCatcher: React.FC = () => {
 
   const bugEmoji = (type: Bug['type']) => {
     if (type === 'good') return '🦋';
-    if (type === 'fast') return '🪲';
+    if (type === 'fast') return '🐞';
     if (type === 'big') return '🐛';
     return '🐞';
   };
@@ -211,7 +211,7 @@ const BugCatcher: React.FC = () => {
                 <p>คลิกบั๊กก่อนหนีไป — ถ้าหนีได้เสียชีวิต</p>
                 <ul style={{ textAlign: 'left', marginTop: 12, listStyle: 'none' }}>
                   <li>🐞 บั๊กธรรมดา = +10 คะแนน</li>
-                  <li>🪲 บั๊กเร็ว = +20 (หายเร็ว!)</li>
+                  <li>🐞 บั๊กเร็ว = +20 (หายเร็ว!)</li>
                   <li>🐛 บั๊กใหญ่ = +15</li>
                   <li>🦋 ผีเสื้อ = <strong style={{ color: '#ef4444' }}>ห้ามตี! เสียชีวิต</strong></li>
                   <li>🔥 Combo: ตอบติดต่อกัน คะแนน bonus</li>

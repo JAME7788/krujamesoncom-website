@@ -78,7 +78,7 @@ export const kruComMissions: KruComMission[] = [
       {
         "text": "Windows 11",
         "category": "ซอฟต์แวร์ (Software)",
-        "emoji": "🪟"
+        "emoji": "🖥️"
       },
       {
         "text": "แป้นพิมพ์ (Keyboard)",
@@ -552,7 +552,7 @@ export const kruComMissions: KruComMission[] = [
       {
         "text": "เลขบัตรประชาชน 13 หลัก",
         "category": "ข้อมูลลับ ห้ามเปิดเผยเด็ดขาด 🔒",
-        "emoji": "🪪"
+        "emoji": "🔐"
       },
       {
         "text": "ชื่อช่องยูทูบที่ชอบดู",
@@ -853,7 +853,7 @@ export const kruComMissions: KruComMission[] = [
       {
         "text": "ช่วยแพทย์ตรวจจับสิ่งผิดปกติจากภาพเอกซเรย์",
         "category": "ประโยชน์ของ AI ✨",
-        "emoji": "🩺"
+        "emoji": "🏥"
       },
       {
         "text": "ปัญหาการละเมิดลิขสิทธิ์ผลงานศิลปะและเพลง",

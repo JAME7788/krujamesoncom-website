@@ -52,7 +52,7 @@ export const ScaffoldingHintLadder: React.FC<ScaffoldingHintLadderProps> = ({
       >
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <Lightbulb size={16} color="#B45309" />
-          🪜 บันไดนั่งร้านตัวช่วย (Scaffolding Hint Ladder){levelName ? ` • ${levelName}` : ''}
+          📶 บันไดนั่งร้านตัวช่วย (Scaffolding Hint Ladder){levelName ? ` • ${levelName}` : ''}
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem' }}>
           {open ? 'ย่อเก็บ' : 'ขอคำใบ้ทีละขั้น'}
