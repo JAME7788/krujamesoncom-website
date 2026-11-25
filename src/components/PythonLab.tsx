@@ -20,7 +20,11 @@ import { useToast } from './Toast';
 const BlocklyPython = React.lazy(() => import('./BlocklyPython'));
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// window.loadPyodide ถูกประกาศ type ไว้แล้วใน CodingSandbox.tsx (ใช้ร่วมกัน)
+declare global {
+  interface Window {
+    loadPyodide?: (options: { indexURL: string }) => Promise<any>;
+  }
+}
 
 const solvedKey = (ownerId: string) => `krujames_py_solved_${ownerId}`;
 const loadSolved = (ownerId: string): string[] => {
