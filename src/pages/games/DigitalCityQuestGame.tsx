@@ -79,6 +79,7 @@ import type {
 import { celebrateVictory } from '../../utils/victoryEffect';
 import './GameStyles.css';
 import './DigitalCityQuestGame.css';
+import { appConfirm } from '../../services/appDialogService';
 
 type Phase = 'setup' | TycoonGamePhase;
 type Player = TycoonPlayerState;
@@ -474,7 +475,9 @@ const DigitalCityQuestGame: React.FC = () => {
   const revealedOnlineGameRef = useRef(0);
   const actionTimersRef = useRef<number[]>([]);
   const playersRef = useRef<Player[]>(players);
-  playersRef.current = players;
+  useEffect(() => {
+    playersRef.current = players;
+  }, [players]);
 
   const clearActionTimers = () => {
     actionTimersRef.current.forEach((id) => window.clearTimeout(id));
@@ -905,10 +908,10 @@ const DigitalCityQuestGame: React.FC = () => {
   const cancelOrLeaveOnlineGame = async () => {
     if (!onlineRoomCode) return;
     if (!isRoomHost) {
-      if (window.confirm('ออกจากห้องแข่งขันนี้ใช่หรือไม่?')) leaveRoom();
+      if (await appConfirm('ออกจากห้องแข่งขันนี้ใช่หรือไม่?')) leaveRoom();
       return;
     }
-    if (!window.confirm('ยกเลิกการแข่งขันสำหรับผู้เล่นทุกคนใช่หรือไม่?')) return;
+    if (!await appConfirm('ยกเลิกการแข่งขันสำหรับผู้เล่นทุกคนใช่หรือไม่?')) return;
     clearActionTimers();
     setIsRolling(false);
     setRoomBusy(true);

@@ -53,6 +53,7 @@ import { getTechnologyLessonPlans } from '../data/technologyLessonPlans';
 import type { PrimaryTechnologyGradeId } from '../data/technologyTeachingSchedule';
 import { loadRoster } from '../services/rosterService';
 import './HomeworkManager.css';
+import { appAlert, appConfirm, appPrompt } from '../services/appDialogService';
 
 const getSubmissionLinkBadge = (url: string) => {
   if (/canva\.com/i.test(url)) return { label: '🎨 เปิดดูงาน Canva', bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' };
@@ -63,6 +64,9 @@ const getSubmissionLinkBadge = (url: string) => {
   if (/figma\.com/i.test(url)) return { label: '📐 เปิด Figma Design', bg: '#fae8ff', color: '#86198f', border: '#f5d0fe' };
   return { label: '🔗 เปิดลิงก์ผลงาน', bg: '#f8fafc', color: '#334155', border: '#e2e8f0' };
 };
+
+const buildDueDateDaysAhead = (days: number): string =>
+  new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
 
 const HomeworkManager: React.FC = () => {
   const [list, setList] = useState(loadAssignments());
@@ -81,17 +85,17 @@ const HomeworkManager: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedMissingId, setCopiedMissingId] = useState<string | null>(null);
 
-  const handleCopyMissing = (assignment: Assignment) => {
+  const handleCopyMissing = async (assignment: Assignment) => {
     const text = formatMissingStudentsMessage(assignment);
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(text).then(() => {
         setCopiedMissingId(assignment.id);
         setTimeout(() => setCopiedMissingId(null), 2500);
-      }).catch(() => {
-        window.prompt('คัดลอกรายชื่อคนค้างงานส่งแชทกลุ่ม:', text);
+      }).catch(async () => {
+        await appPrompt('คัดลอกรายชื่อคนค้างงานส่งแชทกลุ่ม:', text);
       });
     } else {
-      window.prompt('คัดลอกรายชื่อคนค้างงานส่งแชทกลุ่ม:', text);
+      await appPrompt('คัดลอกรายชื่อคนค้างงานส่งแชทกลุ่ม:', text);
     }
   };
 
@@ -100,21 +104,21 @@ const HomeworkManager: React.FC = () => {
     setSyncing(true);
     void updateAssignment(assignment.id, { isDraft: currentlyPublished })
       .then(reload)
-      .catch(() => alert('อัปเดตสถานะการบ้านไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase'))
+      .catch(() => appAlert('อัปเดตสถานะการบ้านไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase'))
       .finally(() => setSyncing(false));
   };
 
-  const handleCopyLink = (id: string) => {
+  const handleCopyLink = async (id: string) => {
     const shareUrl = `${window.location.origin}/homework?id=${id}`;
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(shareUrl).then(() => {
         setCopiedId(id);
         setTimeout(() => setCopiedId(null), 2500);
-      }).catch(() => {
-        prompt('คัดลอกลิงก์ส่งงานให้นักเรียน:', shareUrl);
+      }).catch(async () => {
+        await appPrompt('คัดลอกลิงก์ส่งงานให้นักเรียน:', shareUrl);
       });
     } else {
-      prompt('คัดลอกลิงก์ส่งงานให้นักเรียน:', shareUrl);
+      await appPrompt('คัดลอกลิงก์ส่งงานให้นักเรียน:', shareUrl);
     }
   };
   const [draft, setDraft] = useState<Partial<Assignment>>({
@@ -209,10 +213,10 @@ const HomeworkManager: React.FC = () => {
       await saveGoogleDriveBridgeConfig(driveConfig);
       setDriveConfig(loadGoogleDriveBridgeConfig());
       setStorageSummary(getSubmissionStorageUsageSummary());
-      alert('บันทึกการตั้งค่า Google Drive สำเร็จ! เครื่องคอมนักเรียนทุกเครื่องจะอัปโหลดงานเข้า Google Drive ของคุณครูโดยอัตโนมัติ (ไม่เปลืองความจำเว็บ 100%) ☁️');
+      appAlert('บันทึกการตั้งค่า Google Drive สำเร็จ! เครื่องคอมนักเรียนทุกเครื่องจะอัปโหลดงานเข้า Google Drive ของคุณครูโดยอัตโนมัติ (ไม่เปลืองความจำเว็บ 100%) ☁️');
     } catch (err) {
       console.error(err);
-      alert('เกิดข้อผิดพลาดในการบันทึกตั้งค่า Google Drive');
+      appAlert('เกิดข้อผิดพลาดในการบันทึกตั้งค่า Google Drive');
     } finally {
       setSyncing(false);
     }
@@ -230,14 +234,14 @@ const HomeworkManager: React.FC = () => {
 
   const handlePurgeBinaryCache = async (onlyReviewed: boolean) => {
     const label = onlyReviewed ? 'เฉพาะงานที่ครูตรวจให้คะแนนแล้ว' : 'ไฟล์สำรองทั้งหมดในความจำเว็บ';
-    if (!window.confirm(`ยืนยันการล้างข้อมูลภาพสำรอง (${label}) เพื่อคืนพื้นที่ฐานข้อมูลเว็บ?\n(ประวัติการส่งงาน คะแนน และลิงก์ Google Drive ของเด็กจะยังอยู่ครบ 100%)`)) {
+    if (!await appConfirm(`ยืนยันการล้างข้อมูลภาพสำรอง (${label}) เพื่อคืนพื้นที่ฐานข้อมูลเว็บ?\n(ประวัติการส่งงาน คะแนน และลิงก์ Google Drive ของเด็กจะยังอยู่ครบ 100%)`)) {
       return;
     }
     setSyncing(true);
     try {
       const res = await purgeSubmissionBinaryCache(onlyReviewed);
       setStorageSummary(getSubmissionStorageUsageSummary());
-      alert(`🧹 ล้างไฟล์สำรองสำเร็จ ${res.purgedCount} รายการ! คืนพื้นที่ฐานข้อมูลเว็บได้ ${res.freedKB} KB`);
+      appAlert(`🧹 ล้างไฟล์สำรองสำเร็จ ${res.purgedCount} รายการ! คืนพื้นที่ฐานข้อมูลเว็บได้ ${res.freedKB} KB`);
     } finally {
       setSyncing(false);
     }
@@ -279,12 +283,12 @@ const HomeworkManager: React.FC = () => {
     const kMax = Math.max(0, draft.knowledgeMaxScore || 0);
     const pMax = Math.max(0, draft.practiceMaxScore || 0);
     if (!draft.title || !draft.dueDate || !draft.classroom || !draft.subject || !draft.indicatorId) {
-      alert('กรอกชื่องาน ห้อง วิชา ตัวชี้วัด และกำหนดส่งให้ครบ');
+      appAlert('กรอกชื่องาน ห้อง วิชา ตัวชี้วัด และกำหนดส่งให้ครบ');
       return;
     }
-    if (draft.targetType === 'specific_students' && !draft.targetStudentIds?.length) { alert('กรุณาเลือกนักเรียนอย่างน้อย 1 คน'); return; }
+    if (draft.targetType === 'specific_students' && !draft.targetStudentIds?.length) { appAlert('กรุณาเลือกนักเรียนอย่างน้อย 1 คน'); return; }
     if (kMax + pMax <= 0) {
-      alert('กำหนดคะแนน K หรือ P อย่างน้อย 1 คะแนน');
+      appAlert('กำหนดคะแนน K หรือ P อย่างน้อย 1 คะแนน');
       return;
     }
     setSyncing(true);
@@ -335,7 +339,7 @@ const HomeworkManager: React.FC = () => {
       reload();
     } catch (error) {
       console.error(error);
-      alert('สร้างการบ้านไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
+      appAlert('สร้างการบ้านไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
     } finally {
       setSyncing(false);
     }
@@ -343,7 +347,7 @@ const HomeworkManager: React.FC = () => {
 
   const handleExecuteAuto3Tier = async () => {
     if (!autoDraft.classroom || !autoDraft.subject || !autoDraft.indicatorId || !autoDraft.topic.trim()) {
-      alert('กรุณาเลือกห้อง วิชา ตัวชี้วัด และพิมพ์หัวข้อบทเรียนให้ครบถ้วน');
+      appAlert('กรุณาเลือกห้อง วิชา ตัวชี้วัด และพิมพ์หัวข้อบทเรียนให้ครบถ้วน');
       return;
     }
     setSyncing(true);
@@ -362,14 +366,14 @@ const HomeworkManager: React.FC = () => {
         subject: '',
         indicatorId: '',
         topic: '',
-        dueDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+        dueDate: buildDueDateDaysAhead(7),
         lessonPlanId: '',
       });
       reload();
-      alert('สร้างชุดภารกิจ 3 ระดับ (พื้นฐาน, มาตรฐาน, ท้าทาย) สำเร็จแล้ว 🎉');
+      appAlert('สร้างชุดภารกิจ 3 ระดับ (พื้นฐาน, มาตรฐาน, ท้าทาย) สำเร็จแล้ว 🎉');
     } catch (e) {
       console.error(e);
-      alert('เกิดข้อผิดพลาดในการสร้างชุดงานอัตโนมัติ');
+      appAlert('เกิดข้อผิดพลาดในการสร้างชุดงานอัตโนมัติ');
     } finally {
       setSyncing(false);
     }
@@ -380,10 +384,10 @@ const HomeworkManager: React.FC = () => {
     try {
       await createInteractiveWorksheetFromTemplate(tpl);
       reload();
-      alert(`✅ เปิดสั่งใบงานโต้ตอบ "${tpl.title}" ให้ชั้น ${tpl.classroom} เรียบร้อยแล้ว!\nนักเรียนสามารถตอบผ่านเว็บและระบบจะตรวจคะแนนให้ทันที`);
+      appAlert(`✅ เปิดสั่งใบงานโต้ตอบ "${tpl.title}" ให้ชั้น ${tpl.classroom} เรียบร้อยแล้ว!\nนักเรียนสามารถตอบผ่านเว็บและระบบจะตรวจคะแนนให้ทันที`);
     } catch (err) {
       console.error(err);
-      alert('เปิดสั่งใบงานไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
+      appAlert('เปิดสั่งใบงานไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
     } finally {
       setSyncing(false);
     }
@@ -399,10 +403,10 @@ const HomeworkManager: React.FC = () => {
     );
     const toCreate = templates.filter((t) => !existingTemplateIds.has(t.id));
     if (toCreate.length === 0) {
-      alert(`ห้อง ${targetClass} เปิดสั่งครบทุกใบงานในคลังแล้ว (${templates.length} ใบงาน)`);
+      appAlert(`ห้อง ${targetClass} เปิดสั่งครบทุกใบงานในคลังแล้ว (${templates.length} ใบงาน)`);
       return;
     }
-    if (!window.confirm(`ยืนยันเปิดสั่งใบงานโต้ตอบทั้งหมด ${toCreate.length} ใบงาน ให้ห้อง ${targetClass}?`)) {
+    if (!await appConfirm(`ยืนยันเปิดสั่งใบงานโต้ตอบทั้งหมด ${toCreate.length} ใบงาน ให้ห้อง ${targetClass}?`)) {
       return;
     }
     setSyncing(true);
@@ -411,10 +415,10 @@ const HomeworkManager: React.FC = () => {
         await createInteractiveWorksheetFromTemplate(tpl);
       }
       reload();
-      alert(`🎉 เปิดสั่งใบงานโต้ตอบให้ห้อง ${targetClass} สำเร็จ ${toCreate.length} ใบงาน!`);
+      appAlert(`🎉 เปิดสั่งใบงานโต้ตอบให้ห้อง ${targetClass} สำเร็จ ${toCreate.length} ใบงาน!`);
     } catch (err) {
       console.error(err);
-      alert('เปิดสั่งใบงานบางรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      appAlert('เปิดสั่งใบงานบางรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setSyncing(false);
     }
@@ -1253,12 +1257,12 @@ const HomeworkManager: React.FC = () => {
                         {copiedId === a.id ? <Check size={14} /> : <Link2 size={14} />}
                       </button>
                       <button className="cb-icon-btn" title="ดูผลงานและตรวจงาน" onClick={() => setViewing(a)}><Eye size={14} /></button>
-                      <button className="cb-icon-btn danger" title="ลบการบ้าน" disabled={syncing} onClick={() => {
-                        if (!confirm('ยืนยันลบการบ้านนี้?')) return;
+                      <button className="cb-icon-btn danger" title="ลบการบ้าน" disabled={syncing} onClick={async () => {
+                        if (!await appConfirm('ยืนยันลบการบ้านนี้?')) return;
                         setSyncing(true);
                         void deleteAssignment(a.id)
                           .then(reload)
-                          .catch(() => alert('ลบไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase'))
+                          .catch(() => appAlert('ลบไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase'))
                           .finally(() => setSyncing(false));
                       }}>
                         <Trash2 size={14} />
@@ -1283,7 +1287,7 @@ const HomeworkManager: React.FC = () => {
           onPublished={(created) => {
             setBuilderState({ open: false, template: null });
             reload();
-            alert(`🚀 เปิดสั่งใบงานโต้ตอบ "${created.title}" ให้ห้อง ${created.classroom} เรียบร้อยแล้ว!`);
+            appAlert(`🚀 เปิดสั่งใบงานโต้ตอบ "${created.title}" ให้ห้อง ${created.classroom} เรียบร้อยแล้ว!`);
           }}
           onClose={() => setBuilderState({ open: false, template: null })}
         />
@@ -1326,14 +1330,14 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
     try {
       const res = await autoGradeAllWorksheetSubmissions(assignment.id, { onlyUnreviewed });
       reload();
-      alert(
+      appAlert(
         `⚡ ตัดคะแนนใบงานโต้ตอบเข้า ปพ.5 สำเร็จ ${res.gradedCount} คน!` +
           (res.skippedCount > 0 ? ` (ข้าม ${res.skippedCount} คน)` : '') +
           (res.failedCount > 0 ? ` · ผิดพลาด ${res.failedCount} คน` : ''),
       );
     } catch (err) {
       console.error(err);
-      alert('เกิดข้อผิดพลาดระหว่างตัดคะแนนอัตโนมัติ');
+      appAlert('เกิดข้อผิดพลาดระหว่างตัดคะแนนอัตโนมัติ');
     } finally {
       setAutoGrading(false);
     }
@@ -1346,11 +1350,11 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
       if (res.graded) {
         reload();
       } else {
-        alert(res.reason || 'ไม่สามารถตัดคะแนนอัตโนมัติได้');
+        appAlert(res.reason || 'ไม่สามารถตัดคะแนนอัตโนมัติได้');
       }
     } catch (err) {
       console.error(err);
-      alert('ตัดคะแนนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      appAlert('ตัดคะแนนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setAutoGrading(false);
     }
@@ -1425,7 +1429,7 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
       }
     } catch (error) {
       console.error(error);
-      alert('บันทึกคะแนนไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
+      appAlert('บันทึกคะแนนไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
     } finally {
       setSyncing(false);
     }
@@ -1491,16 +1495,16 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
               type="button"
               className="btn-secondary"
               style={{ fontSize: '0.8rem', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: 5 }}
-              onClick={() => {
+              onClick={async () => {
                 const shareUrl = `${window.location.origin}/homework?id=${assignment.id}`;
                 if (navigator?.clipboard?.writeText) {
                   navigator.clipboard.writeText(shareUrl).then(() => {
-                    alert('คัดลอกลิงก์ส่งงานแล้ว:\n' + shareUrl);
-                  }).catch(() => {
-                    prompt('คัดลอกลิงก์ส่งงาน:', shareUrl);
+                    appAlert('คัดลอกลิงก์ส่งงานแล้ว:\n' + shareUrl);
+                  }).catch(async () => {
+                    await appPrompt('คัดลอกลิงก์ส่งงาน:', shareUrl);
                   });
                 } else {
-                  prompt('คัดลอกลิงก์ส่งงาน:', shareUrl);
+                  await appPrompt('คัดลอกลิงก์ส่งงาน:', shareUrl);
                 }
               }}
               title="คัดลอกลิงก์ส่งงานให้นักเรียนในกลุ่มไลน์"
@@ -1558,8 +1562,8 @@ const ReviewSubmissions: React.FC<{ assignment: Assignment; onClose: () => void 
                   type="button"
                   className="btn-secondary"
                   disabled={syncing || autoGrading}
-                  onClick={() => {
-                    if (window.confirm('ยืนยันคำนวณและอัปเดตคะแนนอัตโนมัติใหม่สำหรับนักเรียนที่ส่งทุกคน?')) {
+                  onClick={async () => {
+                    if (await appConfirm('ยืนยันคำนวณและอัปเดตคะแนนอัตโนมัติใหม่สำหรับนักเรียนที่ส่งทุกคน?')) {
                       void handleAutoGradeAll(false);
                     }
                   }}

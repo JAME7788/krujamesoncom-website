@@ -10,6 +10,7 @@ import {
 } from '../services/rosterService';
 import { allClassrooms2569 } from '../data/students2569';
 import type { StudentInfo } from '../data/students2569';
+import { appAlert, appConfirm, appPrompt } from '../services/appDialogService';
 
 const emojiOptions = ['👦', '👧', '🧒', '👨', '👩', '🧑', '👶', '👨‍🎓', '👩‍🎓'];
 
@@ -22,7 +23,7 @@ const StudentManager: React.FC = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [copiedParentCode, setCopiedParentCode] = useState<string | null>(null);
 
-  const handleCopyParentLink = (s: StudentInfo) => {
+  const handleCopyParentLink = async (s: StudentInfo) => {
     const parentId = `${classroom}_${s.no}_${s.name.replace(/\s+/g, '')}`;
     const url = `${window.location.origin}/parent/${encodeURIComponent(parentId)}`;
     if (navigator?.clipboard?.writeText) {
@@ -32,9 +33,9 @@ const StudentManager: React.FC = () => {
           setCopiedParentCode(s.studentCode);
           setTimeout(() => setCopiedParentCode(null), 2500);
         })
-        .catch(() => window.prompt(`ลิงก์พอร์ทัลผู้ปกครองสำหรับ ${s.name}:`, url));
+        .catch(async () => await appPrompt(`ลิงก์พอร์ทัลผู้ปกครองสำหรับ ${s.name}:`, url));
     } else {
-      window.prompt(`ลิงก์พอร์ทัลผู้ปกครองสำหรับ ${s.name}:`, url);
+      await appPrompt(`ลิงก์พอร์ทัลผู้ปกครองสำหรับ ${s.name}:`, url);
     }
   };
 
@@ -80,7 +81,7 @@ const StudentManager: React.FC = () => {
 
   const handleAdd = async () => {
     if (!draft.name?.trim()) {
-      alert('กรอกชื่อก่อน');
+      appAlert('กรอกชื่อก่อน');
       return;
     }
     setSyncing(true);
@@ -94,7 +95,7 @@ const StudentManager: React.FC = () => {
       setShowAdd(false);
       reload();
     } catch {
-      alert('บันทึกรายชื่อขึ้นฐานข้อมูลไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
+      appAlert('บันทึกรายชื่อขึ้นฐานข้อมูลไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
     } finally {
       setSyncing(false);
     }
@@ -107,27 +108,27 @@ const StudentManager: React.FC = () => {
       setEditingCode(null);
       reload();
     } catch {
-      alert('บันทึกการแก้ไขขึ้นฐานข้อมูลไม่สำเร็จ');
+      appAlert('บันทึกการแก้ไขขึ้นฐานข้อมูลไม่สำเร็จ');
     } finally {
       setSyncing(false);
     }
   };
 
   const handleDelete = async (s: StudentInfo) => {
-    if (!confirm(`ลบ "${s.name}" (เลข ${s.no})?\nคะแนนที่บันทึกไว้จะยังอยู่ในระบบ — แค่ลบออกจากรายชื่อ`)) return;
+    if (!await appConfirm(`ลบ "${s.name}" (เลข ${s.no})?\nคะแนนที่บันทึกไว้จะยังอยู่ในระบบ — แค่ลบออกจากรายชื่อ`)) return;
     setSyncing(true);
     try {
       await deleteStudent(classroom, s.studentCode);
       reload();
     } catch {
-      alert('ลบรายชื่อในฐานข้อมูลไม่สำเร็จ');
+      appAlert('ลบรายชื่อในฐานข้อมูลไม่สำเร็จ');
     } finally {
       setSyncing(false);
     }
   };
 
   const handleMove = async (s: StudentInfo) => {
-    const target = prompt(
+    const target = await appPrompt(
       `ย้าย "${s.name}" จาก ${classroom} ไปห้องไหน?\n\nห้องที่มี: ${allClassrooms2569.join(', ')}`,
       ''
     );
@@ -136,16 +137,16 @@ const StudentManager: React.FC = () => {
     try {
       await moveStudent(classroom, s.studentCode, target);
       reload();
-      alert(`ย้าย ${s.name} ไปห้อง ${target} และบันทึกฐานข้อมูลแล้ว`);
+      appAlert(`ย้าย ${s.name} ไปห้อง ${target} และบันทึกฐานข้อมูลแล้ว`);
     } catch {
-      alert('ย้ายห้องในฐานข้อมูลไม่สำเร็จ');
+      appAlert('ย้ายห้องในฐานข้อมูลไม่สำเร็จ');
     } finally {
       setSyncing(false);
     }
   };
 
   const handleRenumber = async () => {
-    if (!confirm(`จัดเรียงเลขที่ในห้อง ${classroom} ใหม่ตามลำดับ (1, 2, 3, ...)?`)) return;
+    if (!await appConfirm(`จัดเรียงเลขที่ในห้อง ${classroom} ใหม่ตามลำดับ (1, 2, 3, ...)?`)) return;
     setSyncing(true);
     try {
       await renumberClassroom(classroom);
@@ -156,7 +157,7 @@ const StudentManager: React.FC = () => {
   };
 
   const handleReset = async () => {
-    if (!confirm(`รีเซ็ตห้อง ${classroom} กลับเป็นค่าเดิมจากไฟล์ Excel?\nการแก้ไขทั้งหมดจะหายไป`)) return;
+    if (!await appConfirm(`รีเซ็ตห้อง ${classroom} กลับเป็นค่าเดิมจากไฟล์ Excel?\nการแก้ไขทั้งหมดจะหายไป`)) return;
     setSyncing(true);
     try {
       await resetClassroom(classroom);

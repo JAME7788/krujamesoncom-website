@@ -14,6 +14,7 @@ import {
 } from '../data/schedule';
 import { loadAllRosters } from '../services/rosterService';
 import { useToast } from './Toast';
+import { appConfirm } from '../services/appDialogService';
 
 const downloadCsv = (csv: string, filename: string) => {
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
@@ -130,7 +131,7 @@ const QuickAttendance: React.FC = () => {
   };
 
   const handleAllPresent = async () => {
-    if (!confirm(`เซ็ตทุกคน (${roster.length} คน) ในห้อง ${classroom} เป็น "มาเรียน" ?`)) return;
+    if (!await appConfirm(`เซ็ตทุกคน (${roster.length} คน) ในห้อง ${classroom} เป็น "มาเรียน" ?`)) return;
     setBusy('__all__');
     try {
       const students = roster.map((s) => ({ studentCode: s.studentCode, studentId: buildStudentId(s) }));

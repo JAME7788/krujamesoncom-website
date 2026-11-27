@@ -6,6 +6,7 @@ import { getRichSlides, type RichSlide } from '../data/richSlides';
 import { getUnitSlideImages } from '../data/slideImages';
 import { getNextDriveImageFallbackUrl } from '../utils/googleDriveImage';
 import { useToast } from './Toast';
+import { appConfirm } from '../services/appDialogService';
 
 const SlideManager: React.FC = () => {
   const toast = useToast();
@@ -84,7 +85,7 @@ layout: cover
   }, [loadSlidesData]);
 
   const handleResetToDefault = async () => {
-    if (!confirm(`ต้องการรีเซ็ตสไลด์ ${currentGrade?.title} หน่วยที่ ${selectedUnitNo} กลับเป็นค่ามาตรฐานของหลักสูตรใช่หรือไม่?`)) {
+    if (!await appConfirm(`ต้องการรีเซ็ตสไลด์ ${currentGrade?.title} หน่วยที่ ${selectedUnitNo} กลับเป็นค่ามาตรฐานของหลักสูตรใช่หรือไม่?`)) {
       return;
     }
     setLoading(true);

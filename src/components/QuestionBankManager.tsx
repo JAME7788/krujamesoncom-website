@@ -21,6 +21,7 @@ import {
 } from '../services/examService';
 import { useToast } from './Toast';
 import './QuestionBankManager.css';
+import { appConfirm } from '../services/appDialogService';
 
 const blankQuestion = {
   question: '',
@@ -98,7 +99,7 @@ const QuestionBankManager: React.FC = () => {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm('ต้องการลบคำถามข้อนี้ใช่หรือไม่')) return;
+    if (!await appConfirm('ต้องการลบคำถามข้อนี้ใช่หรือไม่')) return;
     setBusy(true);
     try {
       await deleteQuestionBankItem(id);

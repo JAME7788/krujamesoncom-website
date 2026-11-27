@@ -47,6 +47,9 @@ const DRAG_ITEMS_POOL: DragItem[] = [
 
 const EMOJIS = ['🍎', '🍌', '🍇', '🍉', '🍊', '🍓', '🥝', '🍑', '🍒', '🥭', '⭐', '🎈', '🚀', '💎'];
 
+const pickRandomDragItem = () =>
+  DRAG_ITEMS_POOL[Math.floor(Math.random() * DRAG_ITEMS_POOL.length)];
+
 const MousePractice: React.FC = () => {
   const [mode, setMode] = useState<PracticeMode>('single');
   const [speed, setSpeed] = useState<SpeedLevel>('easy');
@@ -78,12 +81,14 @@ const MousePractice: React.FC = () => {
   const soundOnRef = useRef(soundOn);
   const endedRef = useRef(false);
 
-  scoreRef.current = score;
-  hitsRef.current = hits;
-  missesRef.current = misses;
-  comboRef.current = combo;
-  maxComboRef.current = maxCombo;
-  soundOnRef.current = soundOn;
+  useEffect(() => {
+    scoreRef.current = score;
+    hitsRef.current = hits;
+    missesRef.current = misses;
+    comboRef.current = combo;
+    maxComboRef.current = maxCombo;
+    soundOnRef.current = soundOn;
+  }, [score, hits, misses, combo, maxCombo, soundOn]);
 
   // Sound toggle
   const toggleSound = () => {
@@ -353,8 +358,7 @@ const MousePractice: React.FC = () => {
     }
 
     // Pick next item
-    const nextItem = DRAG_ITEMS_POOL[Math.floor(Math.random() * DRAG_ITEMS_POOL.length)];
-    setCurrentDragItem(nextItem);
+    setCurrentDragItem(pickRandomDragItem());
   };
 
   const accuracy = hits + misses > 0 ? Math.round((hits / (hits + misses)) * 100) : 100;

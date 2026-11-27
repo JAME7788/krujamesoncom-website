@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Pin, Calendar, User, Plus, CheckCircle, Trash2, Clock, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { appAlert, appConfirm } from '../../services/appDialogService';
 
 interface StickyNote {
   id: string;
@@ -72,7 +73,7 @@ const PeerReminderBoard: React.FC = () => {
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !subject.trim() || !dueDate.trim() || !author.trim()) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      appAlert('กรุณากรอกข้อมูลให้ครบถ้วน');
       return;
     }
 
@@ -111,8 +112,8 @@ const PeerReminderBoard: React.FC = () => {
   };
 
   // Delete note
-  const handleDeleteNote = (id: string) => {
-    if (confirm('คุณต้องการลบข้อความเตือนความจำนี้ใช่หรือไม่?')) {
+  const handleDeleteNote = async (id: string) => {
+    if (await appConfirm('คุณต้องการลบข้อความเตือนความจำนี้ใช่หรือไม่?')) {
       saveNotes(notes.filter(n => n.id !== id));
     }
   };

@@ -8,6 +8,7 @@ import { trackMediaClick } from '../services/progressService';
 import { syncStudentGradesFromProgress } from '../services/gameProgressService';
 import { getDefaultProgressGradeIdForClassroom } from '../services/courseAccessService';
 import './AITutor.css';
+import { appAlert, appConfirm } from '../services/appDialogService';
 
 const AITutor: React.FC = () => {
   const { user } = useAuth();
@@ -71,8 +72,8 @@ const AITutor: React.FC = () => {
     }
   };
 
-  const handleClear = () => {
-    if (!confirm('ล้างประวัติแชท?')) return;
+  const handleClear = async () => {
+    if (!await appConfirm('ล้างประวัติแชท?')) return;
     clearHistory(userId);
     setMessages([]);
   };
@@ -80,7 +81,7 @@ const AITutor: React.FC = () => {
   const saveSettingsAndClose = () => {
     saveSettings(settings);
     setShowSettings(false);
-    alert('บันทึกการตั้งค่าแล้ว ✓');
+    appAlert('บันทึกการตั้งค่าแล้ว ✓');
   };
 
   const examples = [

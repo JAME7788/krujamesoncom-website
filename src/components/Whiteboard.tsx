@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pencil, Eraser, Square, Circle, Type, Trash2, Download, Undo } from 'lucide-react';
+import { appConfirm, appPrompt } from '../services/appDialogService';
 
 type Tool = 'pen' | 'eraser' | 'rect' | 'circle' | 'text';
 
@@ -96,7 +97,7 @@ const Whiteboard: React.FC<{ width?: number; height?: number }> = ({ width = 800
     setLast(p);
   };
 
-  const end = (e: React.MouseEvent | React.TouchEvent) => {
+  const end = async (e: React.MouseEvent | React.TouchEvent) => {
     if (!drawing || !last) { setDrawing(false); return; }
     e.preventDefault();
     const p = getPos(e);
@@ -115,7 +116,7 @@ const Whiteboard: React.FC<{ width?: number; height?: number }> = ({ width = 800
       ctx.arc(last.x, last.y, r, 0, Math.PI * 2);
       ctx.stroke();
     } else if (tool === 'text') {
-      const text = prompt('พิมพ์ข้อความ:');
+      const text = await appPrompt('พิมพ์ข้อความ:');
       if (text) {
         ctx.fillStyle = color;
         ctx.font = `${size * 8}px 'Prompt', sans-serif`;
@@ -127,8 +128,8 @@ const Whiteboard: React.FC<{ width?: number; height?: number }> = ({ width = 800
     saveHistory();
   };
 
-  const clear = () => {
-    if (!confirm('ลบทั้งหมด?')) return;
+  const clear = async () => {
+    if (!await appConfirm('ลบทั้งหมด?')) return;
     const c = canvasRef.current!;
     const ctx = c.getContext('2d')!;
     ctx.fillStyle = 'white';

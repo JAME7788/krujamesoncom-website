@@ -44,6 +44,7 @@ import {
   parseWorksheetSubmission,
   type WorksheetGradingResult,
 } from '../utils/interactiveWorksheetEngine';
+import { appAlert } from '../services/appDialogService';
 
 type HomeworkFilterTab =
   | 'all'
@@ -121,9 +122,12 @@ const HomeworkStudent: React.FC = () => {
     }
   });
 
+  const userClassroom = user?.classroom;
+  const userId = user?.id;
+
   const gradeTemplates = useMemo(
-    () => (user?.classroom ? getWorksheetTemplatesForClassroom(user.classroom) : []),
-    [user?.classroom],
+    () => (userClassroom ? getWorksheetTemplatesForClassroom(userClassroom) : []),
+    [userClassroom],
   );
 
   const savePracticeScore = useCallback(
@@ -136,14 +140,14 @@ const HomeworkStudent: React.FC = () => {
             : existing;
         const next = { ...prev, [templateId]: nextEntry };
         try {
-          localStorage.setItem(`krujames_ws_practice_${user?.id || 'guest'}`, JSON.stringify(next));
+          localStorage.setItem(`krujames_ws_practice_${userId || 'guest'}`, JSON.stringify(next));
         } catch {
           // ignore
         }
         return next;
       });
     },
-    [user?.id],
+    [userId],
   );
 
   const initDrawingCanvas = useCallback(() => {
@@ -395,7 +399,7 @@ const HomeworkStudent: React.FC = () => {
         );
       }
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'ไม่สามารถแนบไฟล์นี้ได้ กรุณาลองใหม่อีกครั้ง');
+      appAlert(err instanceof Error ? err.message : 'ไม่สามารถแนบไฟล์นี้ได้ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setProcessingFile(false);
     }
@@ -404,7 +408,7 @@ const HomeworkStudent: React.FC = () => {
   /** ปุ่มแคปหน้าจอโปรแกรมที่เปิดอยู่บนคอมพิวเตอร์โรงเรียนใน 1 คลิก */
   const handleOneClickScreenCapture = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-      alert('เบราว์เซอร์นี้ไม่รองรับการแคปหน้าจออัตโนมัติ กรุณากดปุ่ม PrtSc บนคีย์บอร์ดแล้วกด Ctrl + V เพื่อวางภาพ หรือกดปุ่ม "เลือกไฟล์จากคอมพิวเตอร์" ครับ');
+      appAlert('เบราว์เซอร์นี้ไม่รองรับการแคปหน้าจออัตโนมัติ กรุณากดปุ่ม PrtSc บนคีย์บอร์ดแล้วกด Ctrl + V เพื่อวางภาพ หรือกดปุ่ม "เลือกไฟล์จากคอมพิวเตอร์" ครับ');
       return;
     }
     try {
@@ -559,7 +563,7 @@ const HomeworkStudent: React.FC = () => {
       setDataVersion((v) => v + 1);
       openSubmission(linkedAssign);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'ไม่สามารถเปิดหน้าส่งใบงานได้');
+      appAlert(err instanceof Error ? err.message : 'ไม่สามารถเปิดหน้าส่งใบงานได้');
     } finally {
       setSyncing(false);
     }
@@ -586,7 +590,7 @@ const HomeworkStudent: React.FC = () => {
       setDataVersion((version) => version + 1);
     } catch (error: unknown) {
       console.error(error);
-      alert(error instanceof Error ? error.message : 'ส่งใบงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
+      appAlert(error instanceof Error ? error.message : 'ส่งใบงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
       throw error;
     } finally {
       setSyncing(false);
@@ -650,7 +654,7 @@ const HomeworkStudent: React.FC = () => {
     });
 
     if (!validation.valid) {
-      alert(validation.error || 'ข้อมูลการส่งงานไม่ถูกต้อง');
+      appAlert(validation.error || 'ข้อมูลการส่งงานไม่ถูกต้อง');
       return;
     }
 
@@ -673,11 +677,11 @@ const HomeworkStudent: React.FC = () => {
       });
 
       setDataVersion((version) => version + 1);
-      alert('ส่งงานสำเร็จเรียบร้อยแล้ว! 📋 ชิ้นงานถูกส่งให้คุณครูแล้ว อยู่ในสถานะ "รอคุณครูตรวจและให้คะแนน" ครับ');
+      appAlert('ส่งงานสำเร็จเรียบร้อยแล้ว! 📋 ชิ้นงานถูกส่งให้คุณครูแล้ว อยู่ในสถานะ "รอคุณครูตรวจและให้คะแนน" ครับ');
       closeSubmission();
     } catch (error: unknown) {
       console.error(error);
-      alert(error instanceof Error ? error.message : 'ส่งงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
+      appAlert(error instanceof Error ? error.message : 'ส่งงานไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
     } finally {
       setSyncing(false);
     }

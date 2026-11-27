@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../services/themeService';
 import { downloadBackup, importBackup, resetAll } from '../services/backupService';
 import { Download, Upload, Trash2, Palette, Sun, Moon, Monitor } from 'lucide-react';
+import { appAlert, appConfirm } from '../services/appDialogService';
 
 const PRESETS = [
   { name: 'Yellow', primary: '#FFD43B', primaryDark: '#FAB005' },
@@ -23,20 +24,20 @@ const ThemeCustomizer: React.FC = () => {
     reader.onload = () => {
       const result = importBackup(reader.result as string, importMode);
       if (result.success) {
-        alert(`นำเข้าสำเร็จ ${result.imported} รายการ ✓\nรีโหลดหน้าเพื่อใช้งาน`);
+        appAlert(`นำเข้าสำเร็จ ${result.imported} รายการ ✓\nรีโหลดหน้าเพื่อใช้งาน`);
         window.location.reload();
       } else {
-        alert(`นำเข้าไม่สำเร็จ:\n${result.errors.join('\n')}`);
+        appAlert(`นำเข้าไม่สำเร็จ:\n${result.errors.join('\n')}`);
       }
     };
     reader.readAsText(file);
   };
 
-  const handleReset = () => {
-    if (!confirm('⚠️ ลบข้อมูลทั้งหมดในเครื่อง? (คะแนน, ประกาศ, ปฏิทิน, ทุกอย่าง)')) return;
-    if (!confirm('🚨 แน่ใจ 100% นะ? กู้คืนไม่ได้!')) return;
+  const handleReset = async () => {
+    if (!await appConfirm('⚠️ ลบข้อมูลทั้งหมดในเครื่อง? (คะแนน, ประกาศ, ปฏิทิน, ทุกอย่าง)')) return;
+    if (!await appConfirm('🚨 แน่ใจ 100% นะ? กู้คืนไม่ได้!')) return;
     resetAll();
-    alert('ลบเรียบร้อย ✓');
+    appAlert('ลบเรียบร้อย ✓');
     window.location.href = '/';
   };
 
@@ -153,7 +154,7 @@ const ThemeCustomizer: React.FC = () => {
         <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>
           กดเมนู Browser → "ติดตั้งแอป" หรือ "Add to Home Screen" — จะกลายเป็นแอปบนหน้าจอ
         </p>
-        <button onClick={() => alert('💡 บนมือถือ: กดเมนู Chrome → "เพิ่มไปยังหน้าจอหลัก"\n💻 บน Desktop: กดปุ่ม ⊕ ขวาบนของ URL bar')} className="btn-secondary">
+        <button onClick={() => appAlert('💡 บนมือถือ: กดเมนู Chrome → "เพิ่มไปยังหน้าจอหลัก"\n💻 บน Desktop: กดปุ่ม ⊕ ขวาบนของ URL bar')} className="btn-secondary">
           📖 วิธีติดตั้ง
         </button>
       </div>

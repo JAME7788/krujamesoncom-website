@@ -94,6 +94,7 @@ import { getAdminSession } from '../services/authAdmin';
 import { getClassroomExportSummary } from '../services/gradeExportService';
 import RosterSpinner from './tools/RosterSpinner';
 import { StudentGradeSlipPrintLayout } from './StudentGradeSlipPrintLayout';
+import LiveClassroomRadar from './LiveClassroomRadar';
 import { useToast } from './Toast';
 import './TeacherClassroomHub.css';
 
@@ -828,6 +829,18 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
           </div>
         </>
       )}
+
+      {/* เรดาร์ห้องเรียนสด (Live Classroom Radar — เห็นสถานะนักเรียนทั้งห้องในจอเดียว) */}
+      <LiveClassroomRadar
+        classroom={classroom}
+        gradeId={gradeId}
+        unitNo={selectedSession?.unitNo}
+        roster={roster}
+        assignments={assignments}
+        submissions={submissions}
+        exitTickets={exitTickets}
+        onOpenHomework={() => onNavigate('homework')}
+      />
 
       <div className="teacher-classroom-grid">
         <section className="teacher-classroom-panel attendance-panel">

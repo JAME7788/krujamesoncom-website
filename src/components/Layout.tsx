@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Menu, X, Home, BookOpen, LogOut, Gamepad2, ClipboardCheck,
@@ -6,18 +6,18 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
-import AchievementsBadge from './AchievementsBadge';
 import DarkModeToggle from './DarkModeToggle';
-import AITutor from './AITutor';
-import { fetchScheduleFromFirebase } from '../data/schedule';
 import { isPortalNavActive } from '../data/portalDirectory';
 import {
   isAdminPortalUser,
   isExternalVisitor,
   isScoreEligibleUser,
 } from '../services/userAccessService';
-import { getStudentWorkStatusOverview } from '../services/homeworkService';
 import './Layout.css';
+
+// Lazy-load องค์ประกอบหนักที่ยังไม่จำเป็นตอนเปิดหน้าแรก (ลด initial JS สำหรับเน็ตโรงเรียน)
+const AchievementsBadge = React.lazy(() => import('./AchievementsBadge'));
+const AITutor = React.lazy(() => import('./AITutor'));
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -36,24 +36,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const scoreEligible = isScoreEligibleUser(user);
   const externalVisitor = isExternalVisitor(user);
   const adminUser = isAdminPortalUser(user);
+  const [homeworkAlertInfo, setHomeworkAlertInfo] = useState({ missingTotal: 0, overdueCount: 0 });
 
-  const homeworkAlertInfo = React.useMemo(() => {
-    void location.pathname;
-    if (!scoreEligible || !user) return { missingTotal: 0, overdueCount: 0 };
-    try {
-      const overview = getStudentWorkStatusOverview(
-        user.classroom,
-        user.id,
-        Number(user.studentNumber) || 1,
-        user.name
-      );
-      return {
-        missingTotal: overview.totalMissingCount,
-        overdueCount: overview.overdueCount,
-      };
-    } catch {
-      return { missingTotal: 0, overdueCount: 0 };
-    }
+  useEffect(() => {
+    if (!scoreEligible || !user) return;
+    let cancelled = false;
+    void import('../services/homeworkService').then(({ getStudentWorkStatusOverview }) => {
+      if (cancelled) return;
+      try {
+        const overview = getStudentWorkStatusOverview(
+          user.classroom,
+          user.id,
+          Number(user.studentNumber) || 1,
+          user.name
+        );
+        setHomeworkAlertInfo({
+          missingTotal: overview.totalMissingCount,
+          overdueCount: overview.overdueCount,
+        });
+      } catch {
+        setHomeworkAlertInfo({ missingTotal: 0, overdueCount: 0 });
+      }
+    });
+    return () => { cancelled = true; };
   }, [scoreEligible, user, location.pathname]);
 
   useEffect(() => {
@@ -62,11 +67,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // ดึงตารางสอนจาก Firebase ครั้งแรกที่เปิดแอป + ซิงค์ทุก 5 นาที (ทุกหน้าได้ของล่าสุด)
+  // ดึงตารางสอนจาก Firebase แบบ dynamic หลัง first paint + ซิงค์ทุก 5 นาที
   useEffect(() => {
-    void fetchScheduleFromFirebase();
-    const t = setInterval(() => { void fetchScheduleFromFirebase(); }, 5 * 60 * 1000);
-    return () => clearInterval(t);
+    let active = true;
+    const syncSchedule = () => {
+      void import('../data/schedule').then(({ fetchScheduleFromFirebase }) => {
+        if (active) void fetchScheduleFromFirebase();
+      });
+    };
+    const initial = window.setTimeout(syncSchedule, 200);
+    const t = window.setInterval(syncSchedule, 5 * 60 * 1000);
+    return () => {
+      active = false;
+      window.clearTimeout(initial);
+      window.clearInterval(t);
+    };
   }, []);
 
   const [prevPathname, setPrevPathname] = useState(location.pathname);
@@ -176,7 +191,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="nav-actions">
             <SearchBar />
             <DarkModeToggle />
-            {scoreEligible && <AchievementsBadge />}
+            {scoreEligible && (
+              <Suspense fallback={null}>
+                <AchievementsBadge />
+              </Suspense>
+            )}
             <button 
               className="icon-btn" 
               onClick={() => setIsContactOpen(true)} 
@@ -324,8 +343,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       <main id="portal-main" tabIndex={-1}>{children}</main>
 
-      {/* Floating AI Tutor (เฉพาะ login แล้ว) */}
-      {user && !isImmersive && <AITutor />}
+      {/* Floating AI Tutor (เฉพาะ login แล้ว — lazy-load ไม่ถ่วงหน้าแรก) */}
+      {user && !isImmersive && (
+        <Suspense fallback={null}>
+          <AITutor />
+        </Suspense>
+      )}
 
       {!isImmersive && <div className="footer-top-gradient"></div>}
       {!isImmersive && <footer className="footer">

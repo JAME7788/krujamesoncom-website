@@ -10,6 +10,7 @@ import {
   isScoreEligibleUser,
   type PortalUserIdentity,
 } from '../services/userAccessService';
+import { appAlert } from '../services/appDialogService';
 
 export interface Student extends PortalUserIdentity {
   accountType: 'student' | 'external' | 'admin';
@@ -272,7 +273,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const parsed = JSON.parse(savedStudent);
           if (parsed.loginTime && Date.now() - parsed.loginTime > STUDENT_SESSION_MS) {
-            alert('เซสชันการเรียนหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่');
+            appAlert('เซสชันการเรียนหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่');
             logout();
           }
         } catch (e) {

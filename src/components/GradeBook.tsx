@@ -37,6 +37,7 @@ import {
   retryGradebookWorkflowCloudSync,
   subscribeGradebookWorkflowCloudStatus,
 } from '../services/gradebookWorkflowService';
+import { appConfirm, appPrompt } from '../services/appDialogService';
 
 const withTimeout = async <T,>(promise: Promise<T>, milliseconds: number, label: string): Promise<T> => {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -448,9 +449,9 @@ const GradeBook: React.FC = () => {
     reload();
   };
 
-  const handleKnowledgeItemDelete = (assessmentId: string) => {
+  const handleKnowledgeItemDelete = async (assessmentId: string) => {
     if (!ensureGradebookEditable()) return;
-    if (!confirm('ลบช่องคะแนนนี้และคะแนนของนักเรียนทุกคนในงานนี้?')) return;
+    if (!await appConfirm('ลบช่องคะแนนนี้และคะแนนของนักเรียนทุกคนในงานนี้?')) return;
     deleteManualAssessment(classroom, subject, assessmentId);
     applyManualAssessmentsToGrades(classroom, subject);
     reload();
@@ -531,8 +532,8 @@ const GradeBook: React.FC = () => {
     toast.show('ปิดผลและเก็บสำเนาคะแนนรุ่นนี้แล้ว', 'success');
   };
 
-  const handleReopenWorkflow = () => {
-    const reason = window.prompt('ระบุเหตุผลที่เปิดแก้ไขผลอีกครั้ง');
+  const handleReopenWorkflow = async () => {
+    const reason = await appPrompt('ระบุเหตุผลที่เปิดแก้ไขผลอีกครั้ง');
     if (!reason?.trim()) return;
     const next = reopenGradebook(classroom, subject, reason);
     queueGradebookWorkflowCloudSync(next);
@@ -674,9 +675,9 @@ const GradeBook: React.FC = () => {
     toast.show(msg, 'info');
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!ensureGradebookEditable()) return;
-    if (!confirm(`ลบคะแนนทั้งห้อง ${classroom} แล้วเริ่มใหม่จากรายชื่อ 2569?`)) return;
+    if (!await appConfirm(`ลบคะแนนทั้งห้อง ${classroom} แล้วเริ่มใหม่จากรายชื่อ 2569?`)) return;
     initClassroom(classroom, subject);
     reload();
   };
@@ -746,9 +747,9 @@ const GradeBook: React.FC = () => {
     );
   };
 
-  const handleDeleteManualAssessment = (assessmentId: string) => {
+  const handleDeleteManualAssessment = async (assessmentId: string) => {
     if (!ensureGradebookEditable()) return;
-    if (!confirm('ลบงานนี้และคะแนนที่กรอกไว้ทั้งหมด?')) return;
+    if (!await appConfirm('ลบงานนี้และคะแนนที่กรอกไว้ทั้งหมด?')) return;
     deleteManualAssessment(classroom, subject, assessmentId);
     applyManualAssessmentsToGrades(classroom, subject);
     reload();

@@ -6,6 +6,7 @@ import {
 } from '../services/announcementService';
 import type { Announcement } from '../services/announcementService';
 import { allClassrooms2569 } from '../data/students2569';
+import { appAlert, appConfirm } from '../services/appDialogService';
 
 const AnnouncementManager: React.FC = () => {
   const [list, setList] = useState(loadAnnouncements());
@@ -27,7 +28,7 @@ const AnnouncementManager: React.FC = () => {
 
   const submit = async () => {
     if (!draft.title || !draft.body) {
-      alert('กรอกหัวข้อและเนื้อหา');
+      appAlert('กรอกหัวข้อและเนื้อหา');
       return;
     }
     setSyncing(true);
@@ -44,7 +45,7 @@ const AnnouncementManager: React.FC = () => {
       setShow(false);
       reload();
     } catch {
-      alert('บันทึกประกาศไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ต');
+      appAlert('บันทึกประกาศไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ต');
     } finally {
       setSyncing(false);
     }
@@ -57,7 +58,7 @@ const AnnouncementManager: React.FC = () => {
   };
 
   const remove = async (id: string) => {
-    if (!confirm('ลบประกาศนี้?')) return;
+    if (!await appConfirm('ลบประกาศนี้?')) return;
     setSyncing(true);
     try { await deleteAnnouncement(id); reload(); }
     finally { setSyncing(false); }

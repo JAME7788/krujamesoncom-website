@@ -6,6 +6,7 @@ import {
   type ExternalVisitorReport,
 } from '../services/externalVisitorService';
 import './ExternalVisitorManager.css';
+import { appConfirm } from '../services/appDialogService';
 
 const EMPTY_REPORT: ExternalVisitorReport = {
   visitors: [],
@@ -47,7 +48,7 @@ const ExternalVisitorManager: React.FC = () => {
   ).size, [report.visitors]);
 
   const removeVisitor = async (id: string, name: string) => {
-    if (!confirm(`ลบประวัติผู้ทดลอง "${name}"?`)) return;
+    if (!await appConfirm(`ลบประวัติผู้ทดลอง "${name}"?`)) return;
     try {
       await deleteExternalVisitor(id);
       await refresh();

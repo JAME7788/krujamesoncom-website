@@ -308,11 +308,14 @@ const PCBuilderGame: React.FC = () => {
   // Mark current stage completed and record full game progress when all parts are scored
   useEffect(() => {
     if (!isStageComplete()) return;
-    setCompletedStages((prev) => (prev.includes(currentStageIndex) ? prev : [...prev, currentStageIndex]));
+    const timer = window.setTimeout(() => {
+      setCompletedStages((prev) => (prev.includes(currentStageIndex) ? prev : [...prev, currentStageIndex]));
+    }, 0);
     const totalMax = STAGES.reduce((total, stage) => total + stage.parts.length * 100, 0);
     if (score === totalMax) {
       void recordGame(score, undefined, totalMax);
     }
+    return () => window.clearTimeout(timer);
   }, [currentStageIndex, isStageComplete, score, recordGame]);
 
   return (

@@ -52,11 +52,9 @@ const Resources: React.FC = () => {
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState<ResourceCategory | 'all'>('all');
   const defaultGradeId = useMemo(() => classroomToGradeId(user?.classroom), [user?.classroom]);
-  const [activeGrade, setActiveGrade] = useState<string>(() => classroomToGradeId(user?.classroom));
-
-  React.useEffect(() => {
-    setActiveGrade(defaultGradeId);
-  }, [defaultGradeId]);
+  const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
+  const activeGrade = selectedGrade ?? defaultGradeId;
+  const setActiveGrade = (next: string) => setSelectedGrade(next);
 
   const filtered = useMemo(() => {
     let list = allResources;

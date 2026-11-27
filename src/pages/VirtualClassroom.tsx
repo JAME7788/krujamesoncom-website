@@ -1075,10 +1075,15 @@ const VirtualClassroom: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   ), [isTeacher, missionVersion, user]);
 
+  const [classClockMs, setClassClockMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setClassClockMs(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const inClassNow = useMemo(() => (
-    user && !isTeacher ? isInClassTime(Date.now(), user.classroom, loadSchedule()) : false
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), [isTeacher, missionVersion, user]);
+    user && !isTeacher ? isInClassTime(classClockMs, user.classroom, loadSchedule()) : false
+  ), [classClockMs, isTeacher, user]);
 
   const recordActivity = useCallback(async (
     kind: MissionEvidenceKind,
@@ -1144,17 +1149,19 @@ const VirtualClassroom: React.FC = () => {
   // บันทึกการอ่านสไลด์ในห้อง 3D เมื่ออ่านอย่างน้อย 3.5 วินาทีต่อหน้า (กันเด็กกดเปลี่ยนสไลด์รัวๆ)
   useEffect(() => {
     if (!selectedBoard || isTeacher || !user || user.id === 'admin_teacher_account' || qaMode) {
-      setWorldSlideDwellSec(0);
-      return;
+      const clearTimer = window.setTimeout(() => setWorldSlideDwellSec(0), 0);
+      return () => window.clearTimeout(clearTimer);
     }
     const key = `u${selectedBoard.unitNo}-slide-${slideIndex}`;
     if (worldSlidesRecorded[key]) {
-      setWorldSlideDwellSec(0);
-      return;
+      const clearTimer = window.setTimeout(() => setWorldSlideDwellSec(0), 0);
+      return () => window.clearTimeout(clearTimer);
     }
     const DWELL_MS = 3500;
     const start = Date.now();
-    setWorldSlideDwellSec(Math.ceil(DWELL_MS / 1000));
+    const initTimer = window.setTimeout(() => {
+      setWorldSlideDwellSec(Math.ceil(DWELL_MS / 1000));
+    }, 0);
     const countdown = window.setInterval(() => {
       const left = Math.max(0, Math.ceil((DWELL_MS - (Date.now() - start)) / 1000));
       setWorldSlideDwellSec(left);
@@ -1172,6 +1179,7 @@ const VirtualClassroom: React.FC = () => {
       );
     }, DWELL_MS);
     return () => {
+      window.clearTimeout(initTimer);
       window.clearInterval(countdown);
       window.clearTimeout(timer);
     };
@@ -1358,7 +1366,7 @@ const VirtualClassroom: React.FC = () => {
     );
     let pitch = 0;
     let frame = 0;
-    let lastTime = performance.now();
+    let lastTime = 0;
     let lastRenderedAt = 0;
     let lastPresence = 0;
     let verticalVelocity = 0;
@@ -4770,7 +4778,7 @@ const VirtualClassroom: React.FC = () => {
       faceStyle: faceStyleRef.current,
       motion: 'idle',
       role: isTeacher ? 'teacher' : 'student',
-      updatedAt: Date.now(),
+      updatedAt: 0,
     });
     localAvatar.visible = thirdPersonRef.current;
 

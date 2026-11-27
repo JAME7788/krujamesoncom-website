@@ -34,6 +34,7 @@ import {
   type ExamSet,
   type ExamAttempt,
 } from '../services/examService';
+import { appConfirm } from '../services/appDialogService';
 
 // ชุดคำถามเดิมสำหรับโหมดฝึกทบทวนทั่วไป (Backward Compatibility)
 const defaultPracticeQuestions = [
@@ -527,8 +528,8 @@ const Quiz: React.FC = () => {
                 <button
                   className="btn-secondary"
                   style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
-                  onClick={() => {
-                    if (window.confirm('คุณต้องการออกจากการทำแบบทดสอบใช่หรือไม่? (คำตอบที่เลือกไว้จะไม่ถูกบันทึก)')) {
+                  onClick={async () => {
+                    if (await appConfirm('คุณต้องการออกจากการทำแบบทดสอบใช่หรือไม่? (คำตอบที่เลือกไว้จะไม่ถูกบันทึก)')) {
                       setActiveExamSet(null);
                     }
                   }}
@@ -622,12 +623,12 @@ const Quiz: React.FC = () => {
                 <button
                   className="btn-primary"
                   style={{ background: '#16a34a' }}
-                  onClick={() => {
+                  onClick={async () => {
                     const unanswered = activeExamSet.questions.length - answeredExamCount;
                     const msg = unanswered > 0
                       ? `คุณยังไม่ได้ตอบ ${unanswered} ข้อ ต้องการส่งแบบทดสอบเลยหรือไม่?`
                       : 'คุณตอบครบทุกข้อแล้ว ต้องการส่งแบบทดสอบเพื่อตรวจคะแนนหรือไม่?';
-                    if (window.confirm(msg)) {
+                    if (await appConfirm(msg)) {
                       void submitExam();
                     }
                   }}

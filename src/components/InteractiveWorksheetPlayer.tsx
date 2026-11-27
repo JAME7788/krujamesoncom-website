@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   CheckCircle2,
   RotateCcw,
@@ -9,7 +10,12 @@ import {
   ArrowDown,
   X,
   AlertCircle,
+  Volume2,
+  Square,
+  BookOpen,
+  Gamepad2,
 } from 'lucide-react';
+import { isTTSSupported, speak as speakTTS, stop as stopTTS } from '../services/ttsService';
 import {
   encodeWorksheetSubmission,
   followupAnswerKey,
@@ -105,6 +111,40 @@ const InteractiveWorksheetPlayer: React.FC<InteractiveWorksheetPlayerProps> = ({
   } | null>(null);
   const [dragOverBlockItem, setDragOverBlockItem] = useState<string | null>(null);
   const [dragOverBucket, setDragOverBucket] = useState<string | null>(null);
+  const [speakingKey, setSpeakingKey] = useState<string | null>(null);
+  const ttsSupported = useMemo(() => isTTSSupported(), []);
+
+  useEffect(() => () => stopTTS(), []);
+
+  const toggleSpeak = (key: string, text: string) => {
+    if (!ttsSupported) return;
+    if (speakingKey === key) {
+      stopTTS();
+      setSpeakingKey(null);
+      return;
+    }
+    setSpeakingKey(key);
+    speakTTS(text, {
+      rate: 0.94,
+      onEnd: () => setSpeakingKey((cur) => (cur === key ? null : cur)),
+    });
+  };
+
+  const renderSpeakBtn = (key: string, text: string, label = 'ฟังโจทย์') => {
+    if (!ttsSupported) return null;
+    const active = speakingKey === key;
+    return (
+      <button
+        type="button"
+        className={`iw-tts-btn ${active ? 'active' : ''}`}
+        onClick={() => toggleSpeak(key, text)}
+        title={active ? 'หยุดอ่านออกเสียง' : 'ให้ระบบอ่านโจทย์ออกเสียง (เหมาะกับ ป.1–ป.3)'}
+      >
+        {active ? <Square size={12} /> : <Volume2 size={13} />}
+        <span>{active ? 'หยุด' : label}</span>
+      </button>
+    );
+  };
 
   const isReviewMode = Boolean(submittedResult) || locked;
   const maxScores = useMemo(() => getWorksheetMaxScores(spec), [spec]);
@@ -255,7 +295,13 @@ const InteractiveWorksheetPlayer: React.FC<InteractiveWorksheetPlayerProps> = ({
             <span className="iw-item-num">{idx + 1}</span>
             <p className="iw-item-prompt">{item.prompt}</p>
           </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0, alignItems: 'center' }}>
+            {renderSpeakBtn(
+              `choice_${item.id}`,
+              `ข้อที่ ${idx + 1} ${item.prompt}. ${item.options
+                .map((o, oi) => `ข้อ ${['กอ', 'ขอ', 'คอ', 'งอ', 'จอ', 'ฉอ'][oi] || oi + 1} ${o}`)
+                .join('. ')}`,
+            )}
             <span className="iw-kind-tag">🔘 เลือกตอบ</span>
             <span className={`iw-pill ${item.domain}`}>
               {item.domain.toUpperCase()} {detail ? `${detail.earned}/` : ''}
@@ -311,7 +357,8 @@ const InteractiveWorksheetPlayer: React.FC<InteractiveWorksheetPlayerProps> = ({
             <span className="iw-item-num">{idx + 1}</span>
             <p className="iw-item-prompt">สถานการณ์วิเคราะห์และคำถามต่อเนื่อง (ถามต่อ {item.steps.length} ขั้น)</p>
           </div>
-          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center', flexWrap: 'wrap' }}>
+            {renderSpeakBtn(`followup_${item.id}`, `ข้อที่ ${idx + 1} สถานการณ์ ${item.scenario}`)}
             <span className="iw-kind-tag" style={{ background: '#ede9fe', color: '#5b21b6' }}>
               💬 ถามต่อ
             </span>
@@ -447,7 +494,8 @@ const InteractiveWorksheetPlayer: React.FC<InteractiveWorksheetPlayerProps> = ({
             <span className="iw-item-num">{idx + 1}</span>
             <p className="iw-item-prompt">{item.prompt}</p>
           </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0, alignItems: 'center' }}>
+            {renderSpeakBtn(`block_${item.id}`, `ข้อที่ ${idx + 1} ลากบล็อกเรียงลำดับ ${item.prompt}`)}
             <span className="iw-kind-tag" style={{ background: '#dbeafe', color: '#1d4ed8' }}>
               🧱 ลากบล็อกต่อบล็อก
             </span>
@@ -673,7 +721,11 @@ const InteractiveWorksheetPlayer: React.FC<InteractiveWorksheetPlayerProps> = ({
             <span className="iw-item-num">{idx + 1}</span>
             <p className="iw-item-prompt">{item.prompt}</p>
           </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0, alignItems: 'center' }}>
+            {renderSpeakBtn(
+              `match_${item.id}`,
+              `ข้อที่ ${idx + 1} จัดหมวดหมู่ ${item.prompt}. หมวดหมู่มี ${item.groups.map((g) => g.label).join(', ')}`,
+            )}
             <span className="iw-kind-tag" style={{ background: '#ffedd5', color: '#9a3412' }}>
               🗂️ จัดหมวดหมู่
             </span>
@@ -868,7 +920,8 @@ const InteractiveWorksheetPlayer: React.FC<InteractiveWorksheetPlayerProps> = ({
             <span className="iw-item-num">{idx + 1}</span>
             <p className="iw-item-prompt">{item.prompt}</p>
           </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0, alignItems: 'center' }}>
+            {renderSpeakBtn(`short_${item.id}`, `ข้อที่ ${idx + 1} ${item.prompt}`)}
             <span className="iw-kind-tag">✍️ เติมคำสั้น</span>
             <span className={`iw-pill ${item.domain}`}>
               {item.domain.toUpperCase()} {detail ? `${detail.earned}/` : ''}
@@ -938,8 +991,11 @@ const InteractiveWorksheetPlayer: React.FC<InteractiveWorksheetPlayerProps> = ({
 
       {/* คำชี้แจงใบงาน */}
       {(spec.intro || description) && (
-        <div className="iw-intro-box">
-          <strong>📌 คำชี้แจง ({title}):</strong> {spec.intro || description}
+        <div className="iw-intro-box" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <strong>📌 คำชี้แจง ({title}):</strong> {spec.intro || description}
+          </div>
+          {renderSpeakBtn('intro', `${title}. ${spec.intro || description || ''}`, 'ฟังคำชี้แจง')}
         </div>
       )}
 
@@ -991,13 +1047,49 @@ const InteractiveWorksheetPlayer: React.FC<InteractiveWorksheetPlayerProps> = ({
             </div>
           </div>
 
-          <div style={{ marginTop: 10, fontSize: '0.82rem', color: '#334155' }}>
+          <div style={{ marginTop: 10, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
             {practiceMode
               ? '🎯 นี่คือโหมดฝึกทำในเว็บ นักเรียนสามารถดูเฉลยด้านล่างหรือกด "ทำใหม่" เพื่อฝึกซ้ำได้ไม่จำกัด'
               : locked
                 ? `✅ คะแนนนี้ถูกยืนยันลงสมุดคะแนน ปพ.5 เรียบร้อยแล้ว${reviewedResult?.feedback ? ` · 💬 ${reviewedResult.feedback}` : ''}`
                 : '📋 บันทึกคำตอบและผลตรวจอัตโนมัติส่งให้คุณครูเรียบร้อยแล้ว คุณครูสามารถกดยืนยันตัดคะแนนลง ปพ.5 ได้ทันทีครับ'}
           </div>
+
+          {/* วงจรซ่อมเสริมอัตโนมัติ (Diagnostic Feedback) */}
+          {(() => {
+            const missed = submittedResult.details.filter((d) => !d.correct && !d.needsManualReview);
+            if (missed.length === 0) return null;
+            const missedK = missed.filter((d) => d.domain === 'k').length;
+            const missedP = missed.filter((d) => d.domain === 'p').length;
+            return (
+              <div className="iw-diagnostic-box">
+                <div className="iw-diagnostic-head">
+                  <strong>🎯 จุดที่ควรทบทวนเพิ่มเติม ({missed.length} ข้อย่อย)</strong>
+                  <span>
+                    {missedK > 0 ? `ความรู้ K: ${missedK} ข้อ` : ''}
+                    {missedK > 0 && missedP > 0 ? ' · ' : ''}
+                    {missedP > 0 ? `ปฏิบัติ P: ${missedP} ข้อ` : ''}
+                  </span>
+                </div>
+                <ul className="iw-diagnostic-list">
+                  {missed.slice(0, 4).map((m) => (
+                    <li key={m.id}>
+                      <strong>{m.label}</strong>
+                      {m.expectedSummary ? ` — แนวคำตอบ: ${m.expectedSummary}` : ''}
+                    </li>
+                  ))}
+                </ul>
+                <div className="iw-diagnostic-actions">
+                  <Link to="/courses" className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+                    <BookOpen size={14} /> ทบทวนสไลด์บทเรียน
+                  </Link>
+                  <Link to="/games" className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+                    <Gamepad2 size={14} /> ฝึกเพิ่มในคลังเกม
+                  </Link>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 

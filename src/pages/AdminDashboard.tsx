@@ -60,6 +60,7 @@ import type { ClassSlot } from '../data/schedule';
 import type { ActivityLog } from '../services/progressService';
 import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
+import { appAlert, appConfirm } from '../services/appDialogService';
 
 type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'export-grades' | 'media-reports' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'pa-portfolio' | 'reflections' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
 
@@ -317,8 +318,8 @@ const AdminDashboardInner: React.FC = () => {
     setTab(nextTab);
     setOpenNavigationFolder(findNavigationFolder(nextTab)?.id ?? null);
   };
-  const handleLogout = () => {
-    if (confirm('ออกจากระบบ Admin?')) {
+  const handleLogout = async () => {
+    if (await appConfirm('ออกจากระบบ Admin?')) {
       adminLogout();
       window.location.reload();
     }
@@ -1343,7 +1344,7 @@ const AdminDashboardInner: React.FC = () => {
                   </div>
                   <button
                     className="btn-secondary"
-                    onClick={() => { if (confirm('ลบ error log ทั้งหมด?')) { clearErrors(); window.location.reload(); } }}
+                    onClick={async () => { if (await appConfirm('ลบ error log ทั้งหมด?')) { clearErrors(); window.location.reload(); } }}
                   >
                     ล้างทั้งหมด
                   </button>
@@ -1833,11 +1834,11 @@ const ScheduleEditor: React.FC<{ schedule: ClassSlot[]; setSchedule: (s: ClassSl
     saveSchedule(draft);
     const result = await syncScheduleToFirebase(draft);
     if (!result.ok) {
-      alert(`บันทึกในเครื่องแล้ว แต่ยังไม่ขึ้น Firebase\n\nสาเหตุ: ${result.error || 'ไม่ทราบสาเหตุ'}`);
+      appAlert(`บันทึกในเครื่องแล้ว แต่ยังไม่ขึ้น Firebase\n\nสาเหตุ: ${result.error || 'ไม่ทราบสาเหตุ'}`);
       return;
     }
     setSchedule(draft);
-    alert('บันทึกตารางสอนลง Firebase แล้ว ✓');
+    appAlert('บันทึกตารางสอนลง Firebase แล้ว ✓');
   };
   const reset = () => {
     setDraft(defaultSchedule);
@@ -1967,7 +1968,7 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
         const data = JSON.parse(text);
@@ -1981,7 +1982,7 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
           return;
         }
         if (
-          confirm(
+          await appConfirm(
             `ต้องการกู้คืนข้อมูลจำนวน ${validKeys.length} รายการจากไฟล์สำรองใช่ไหม? \n\n⚠️ คำเตือน: ข้อมูลเดิมในระบบบนเครื่องนี้จะถูกเขียนทับด้วยข้อมูลในไฟล์สำรอง`
           )
         ) {
@@ -2004,7 +2005,7 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
 
   // Database Cleaner handlers
   const clearStudentProgress = async () => {
-    if (!confirm('⚠️ ยืนยันที่จะล้างข้อมูลความก้าวหน้า (Progress) ของนักเรียน "ทุกคน" บน Firebase ใช่ไหม?\n\nการลบนี้จะส่งผลกับทุกเครื่อง (ไม่ใช่แค่เครื่องนี้)\nสถิติสไลด์ ควิซ และประวัติเข้าเรียนของนักเรียนทุกคนจะหายถาวร')) return;
+    if (!await appConfirm('⚠️ ยืนยันที่จะล้างข้อมูลความก้าวหน้า (Progress) ของนักเรียน "ทุกคน" บน Firebase ใช่ไหม?\n\nการลบนี้จะส่งผลกับทุกเครื่อง (ไม่ใช่แค่เครื่องนี้)\nสถิติสไลด์ ควิซ และประวัติเข้าเรียนของนักเรียนทุกคนจะหายถาวร')) return;
     const { db } = await import('../services/firebase');
     const { collection, getDocs, deleteDoc } = await import('firebase/firestore');
     const { clearProgressCache } = await import('../services/progressService');
@@ -2023,8 +2024,8 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
     }
   };
 
-  const clearGradebook = () => {
-    if (confirm('⚠️ ยืนยันที่จะล้างสมุดเก็บคะแนน K/P/A ทั้งหมดใช่ไหม?\n\nการดำเนินการนี้จะลบข้อมูลการเก็บคะแนนตัวชี้วัด K, P, A ทุกชั้นเรียนที่คุณครูได้บันทึกไว้ในเครื่องนี้')) {
+  const clearGradebook = async () => {
+    if (await appConfirm('⚠️ ยืนยันที่จะล้างสมุดเก็บคะแนน K/P/A ทั้งหมดใช่ไหม?\n\nการดำเนินการนี้จะลบข้อมูลการเก็บคะแนนตัวชี้วัด K, P, A ทุกชั้นเรียนที่คุณครูได้บันทึกไว้ในเครื่องนี้')) {
       let count = 0;
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
@@ -2042,16 +2043,16 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
     }
   };
 
-  const clearRosters = () => {
-    if (confirm('⚠️ ยืนยันที่จะรีเซ็ตรายชื่อนักเรียนกลับเป็นค่าเริ่มต้นใช่ไหม?\n\nการดำเนินการนี้จะลบรายชื่อนักเรียนที่ครูเพิ่มหรือแก้ไข และเปลี่ยนกลับไปใช้รายชื่อนักเรียนเริ่มต้นของโรงเรียนบ้านคลองมดแดง ปีการศึกษา 2569')) {
+  const clearRosters = async () => {
+    if (await appConfirm('⚠️ ยืนยันที่จะรีเซ็ตรายชื่อนักเรียนกลับเป็นค่าเริ่มต้นใช่ไหม?\n\nการดำเนินการนี้จะลบรายชื่อนักเรียนที่ครูเพิ่มหรือแก้ไข และเปลี่ยนกลับไปใช้รายชื่อนักเรียนเริ่มต้นของโรงเรียนบ้านคลองมดแดง ปีการศึกษา 2569')) {
       localStorage.removeItem('krujames_roster_overrides_v1');
       toast.show('รีเซ็ตรายชื่อนักเรียนกลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'success');
       setTimeout(() => window.location.reload(), 1500);
     }
   };
 
-  const clearAnnouncementsAndEvents = () => {
-    if (confirm('⚠️ ยืนยันที่จะลบประกาศและปฏิทินกิจกรรมทั้งหมดใช่ไหม?\n\nการดำเนินการนี้จะลบประกาศด่วนและกิจกรรม/วันสอบทั้งหมดในระบบ')) {
+  const clearAnnouncementsAndEvents = async () => {
+    if (await appConfirm('⚠️ ยืนยันที่จะลบประกาศและปฏิทินกิจกรรมทั้งหมดใช่ไหม?\n\nการดำเนินการนี้จะลบประกาศด่วนและกิจกรรม/วันสอบทั้งหมดในระบบ')) {
       localStorage.removeItem('krujames_announcements_v1');
       localStorage.removeItem('krujames_calendar_events_v1');
       toast.show('ลบประกาศและกิจกรรมเรียบร้อยแล้ว', 'success');
@@ -2060,7 +2061,7 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
   };
 
   const resetScheduleData = async () => {
-    if (confirm('⚠️ ยืนยันที่จะรีเซ็ตตารางสอนใช่ไหม?\n\nการดำเนินการนี้จะรีเซ็ตตารางคาบเรียนวิชาเทคโนโลยีกลับเป็นตารางเริ่มต้น')) {
+    if (await appConfirm('⚠️ ยืนยันที่จะรีเซ็ตตารางสอนใช่ไหม?\n\nการดำเนินการนี้จะรีเซ็ตตารางคาบเรียนวิชาเทคโนโลยีกลับเป็นตารางเริ่มต้น')) {
       saveSchedule(defaultSchedule);
       const result = await syncScheduleToFirebase(defaultSchedule);
       toast.show(
@@ -2073,8 +2074,8 @@ const SiteInfo: React.FC<{ stats: ReturnType<typeof getSiteStats>; students: Stu
     }
   };
 
-  const factoryResetAll = () => {
-    if (confirm('🚨🚨 คำเตือนขั้นสูงสุด: ยืนยันที่จะรีเซ็ตระบบทั้งหมดเป็นค่าเริ่มต้นจากโรงงาน (Factory Reset) ใช่ไหม?\n\nการดำเนินการนี้จะลบข้อมูล "ทุกอย่าง" รวมถึงบัญชีนักเรียน ความก้าวหน้า คะแนนเช็คชื่อ คะแนน K/P/A ตารางสอน และประกาศข่าวสาร (ยกเว้นรหัสผ่าน Admin)\n\nระบบจะล้างข้อมูลและพาท่านกลับสู่หน้าแรก')) {
+  const factoryResetAll = async () => {
+    if (await appConfirm('🚨🚨 คำเตือนขั้นสูงสุด: ยืนยันที่จะรีเซ็ตระบบทั้งหมดเป็นค่าเริ่มต้นจากโรงงาน (Factory Reset) ใช่ไหม?\n\nการดำเนินการนี้จะลบข้อมูล "ทุกอย่าง" รวมถึงบัญชีนักเรียน ความก้าวหน้า คะแนนเช็คชื่อ คะแนน K/P/A ตารางสอน และประกาศข่าวสาร (ยกเว้นรหัสผ่าน Admin)\n\nระบบจะล้างข้อมูลและพาท่านกลับสู่หน้าแรก')) {
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);

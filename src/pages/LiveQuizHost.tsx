@@ -12,6 +12,7 @@ import {
   recordQuestionAnalysis,
   type QuestionBankItem,
 } from '../services/questionBankService';
+import { appAlert } from '../services/appDialogService';
 
 const LiveQuizHost: React.FC = () => {
   const [room, setRoom] = useState<LiveQuizRoom | null>(null);
@@ -57,7 +58,7 @@ const LiveQuizHost: React.FC = () => {
   }, [room]);
 
   const handleCreate = async () => {
-    if (questions.length === 0) { alert('ต้องมีอย่างน้อย 1 คำถาม'); return; }
+    if (questions.length === 0) { appAlert('ต้องมีอย่างน้อย 1 คำถาม'); return; }
     const c = generateRoomCode();
     await createRoom({
       code: c,
@@ -87,7 +88,7 @@ const LiveQuizHost: React.FC = () => {
     ));
     const drawn = drawQuestionSet(filtered, 10);
     if (drawn.length === 0) {
-      alert('ยังไม่มีคำถามที่เผยแพร่ในคลังสำหรับชั้นและวิชานี้');
+      appAlert('ยังไม่มีคำถามที่เผยแพร่ในคลังสำหรับชั้นและวิชานี้');
       return;
     }
     setQuestions(drawn.map((item) => ({

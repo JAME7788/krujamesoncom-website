@@ -12,6 +12,7 @@ import {
 } from '../data/mediaReportsData';
 import { useToast } from './Toast';
 import './MediaReportHub.css';
+import { appConfirm } from '../services/appDialogService';
 
 export const MediaReportHub: React.FC = () => {
   const toast = useToast();
@@ -148,8 +149,8 @@ export const MediaReportHub: React.FC = () => {
     setEditingItem(null);
   };
 
-  const handleDeleteItem = (id: string, title: string) => {
-    if (confirm(`คุณต้องการลบรายงานสื่อ "${title}" หรือไม่?`)) {
+  const handleDeleteItem = async (id: string, title: string) => {
+    if (await appConfirm(`คุณต้องการลบรายงานสื่อ "${title}" หรือไม่?`)) {
       const updated = items.filter((i) => i.id !== id);
       setItems(updated);
       saveMediaReports(updated);
@@ -160,8 +161,8 @@ export const MediaReportHub: React.FC = () => {
     }
   };
 
-  const handleReset = () => {
-    if (confirm('คุณต้องการรีเซ็ตข้อมูลสื่อกลับเป็นค่าเริ่มต้นตาม Canva หรือไม่? การแก้ไขเพิ่มเติมจะถูกลบ')) {
+  const handleReset = async () => {
+    if (await appConfirm('คุณต้องการรีเซ็ตข้อมูลสื่อกลับเป็นค่าเริ่มต้นตาม Canva หรือไม่? การแก้ไขเพิ่มเติมจะถูกลบ')) {
       const def = resetMediaReports();
       setItems(def);
       setSelectedIds(new Set(def.map((i) => i.id)));

@@ -19,6 +19,7 @@ import {
   type IsStepModule,
 } from '../data/isCareerCurriculum';
 import { useToast } from './Toast';
+import { appAlert, appConfirm, appPrompt } from '../services/appDialogService';
 
 const SkillGradeTable: React.FC = () => {
   const rosters = useMemo(() => loadAllRosters(), []);
@@ -97,27 +98,27 @@ const SkillGradeTable: React.FC = () => {
   const refresh = () => setReloadKey((k) => k + 1);
 
   // ---------- Assignment handlers ----------
-  const handleAddAssignment = () => {
-    const title = prompt('ชื่อช่องคะแนน (เช่น "ใบงานที่ 1: Logo")');
+  const handleAddAssignment = async () => {
+    const title = await appPrompt('ชื่อช่องคะแนน (เช่น "ใบงานที่ 1: Logo")');
     if (!title) return;
-    const maxRaw = prompt(`คะแนนเต็มของ "${title}":`, '10');
+    const maxRaw = await appPrompt(`คะแนนเต็มของ "${title}":`, '10');
     const max = parseInt(maxRaw || '10', 10);
-    if (Number.isNaN(max) || max < 1) { alert('คะแนนเต็มต้องเป็นตัวเลขมากกว่า 0'); return; }
+    if (Number.isNaN(max) || max < 1) { appAlert('คะแนนเต็มต้องเป็นตัวเลขมากกว่า 0'); return; }
     addSkillAssignment(classroom, title, max);
     refresh();
   };
 
-  const handleRenameAssignment = (a: SkillAssignment) => {
-    const title = prompt('ชื่อใหม่:', a.title);
+  const handleRenameAssignment = async (a: SkillAssignment) => {
+    const title = await appPrompt('ชื่อใหม่:', a.title);
     if (title === null) return;
-    const maxRaw = prompt(`คะแนนเต็มของ "${title}":`, String(a.maxScore));
+    const maxRaw = await appPrompt(`คะแนนเต็มของ "${title}":`, String(a.maxScore));
     const max = parseInt(maxRaw || String(a.maxScore), 10);
     renameSkillAssignment(classroom, a.id, { title, maxScore: max });
     refresh();
   };
 
-  const handleDeleteAssignment = (a: SkillAssignment) => {
-    if (!confirm(`ลบช่อง "${a.title}"? คะแนนของทุกคนในช่องนี้จะหายไปด้วย`)) return;
+  const handleDeleteAssignment = async (a: SkillAssignment) => {
+    if (!await appConfirm(`ลบช่อง "${a.title}"? คะแนนของทุกคนในช่องนี้จะหายไปด้วย`)) return;
     deleteSkillAssignment(classroom, a.id);
     refresh();
   };
@@ -135,8 +136,8 @@ const SkillGradeTable: React.FC = () => {
     refresh();
   };
 
-  const handleResetStudents = () => {
-    if (!confirm(`รีเซ็ตรายชื่อนักเรียนห้อง ${classroom} จาก roster ปัจจุบัน?\n(คะแนน + ช่อง K ที่มีอยู่จะคงไว้)`)) return;
+  const handleResetStudents = async () => {
+    if (!await appConfirm(`รีเซ็ตรายชื่อนักเรียนห้อง ${classroom} จาก roster ปัจจุบัน?\n(คะแนน + ช่อง K ที่มีอยู่จะคงไว้)`)) return;
     resetSkillStudentsFromRoster(classroom, rosters[classroom] || []);
     refresh();
     toast.show(`รีเซ็ตรายชื่อห้อง ${classroom} แล้ว`, 'success');

@@ -5,6 +5,7 @@ import {
 } from '../services/calendarService';
 import type { CalendarEvent, EventType } from '../services/calendarService';
 import { allClassrooms2569 } from '../data/students2569';
+import { appAlert, appConfirm } from '../services/appDialogService';
 
 const CalendarManager: React.FC = () => {
   const [list, setList] = useState(loadEvents());
@@ -27,7 +28,7 @@ const CalendarManager: React.FC = () => {
 
   const submit = async () => {
     if (!draft.title || !draft.date) {
-      alert('กรอกหัวข้อและวันที่');
+      appAlert('กรอกหัวข้อและวันที่');
       return;
     }
     setSyncing(true);
@@ -46,14 +47,14 @@ const CalendarManager: React.FC = () => {
       setShow(false);
       reload();
     } catch {
-      alert('บันทึกกิจกรรมไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ต');
+      appAlert('บันทึกกิจกรรมไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ต');
     } finally {
       setSyncing(false);
     }
   };
 
   const remove = async (id: string) => {
-    if (!confirm('ลบกิจกรรมนี้?')) return;
+    if (!await appConfirm('ลบกิจกรรมนี้?')) return;
     setSyncing(true);
     try { await deleteEvent(id); reload(); }
     finally { setSyncing(false); }

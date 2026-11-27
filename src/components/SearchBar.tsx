@@ -1,25 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, ArrowUpRight, BookOpen, Gamepad2, Library } from 'lucide-react';
-import { search } from '../services/searchService';
 import type { SearchResult } from '../services/searchService';
 import './SearchBar.css';
 import { closeDialog, isDialogOpen, openDialog } from '../utils/browserPolyfills';
+
+type SearchFn = (query: string, limit?: number) => SearchResult[];
 
 const SearchBar: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
+  const [searchFn, setSearchFn] = useState<SearchFn | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const navigate = useNavigate();
 
+  // โหลด searchService แบบ dynamic เฉพาะตอนเปิดกล่องค้นหา → ไม่ถ่วง initial bundle ตั้งแต่เปิดเว็บ
+  useEffect(() => {
+    if (!open || searchFn) return;
+    let cancelled = false;
+    void import('../services/searchService').then((mod) => {
+      if (!cancelled) setSearchFn(() => mod.search);
+    });
+    return () => { cancelled = true; };
+  }, [open, searchFn]);
+
   const results = React.useMemo(() => {
-    if (query.trim().length >= 2) {
-      return search(query, 12);
+    if (searchFn && query.trim().length >= 2) {
+      return searchFn(query, 12);
     }
     return [];
-  }, [query]);
+  }, [query, searchFn]);
 
   useEffect(() => {
     const dialog = dialogRef.current;

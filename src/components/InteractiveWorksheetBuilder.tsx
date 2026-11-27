@@ -19,6 +19,7 @@ import {
   type WorksheetShortAnswerItem,
 } from '../utils/interactiveWorksheetEngine';
 import InteractiveWorksheetPlayer from './InteractiveWorksheetPlayer';
+import { appAlert } from '../services/appDialogService';
 
 const BLOCK_PALETTE = ['#2563eb', '#0891b2', '#16a34a', '#9333ea', '#ea580c', '#db2777'];
 const itemUid = (prefix: string) => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
@@ -206,15 +207,15 @@ const InteractiveWorksheetBuilder: React.FC<InteractiveWorksheetBuilderProps> = 
 
   const handlePublish = async () => {
     if (!title.trim()) {
-      alert('กรุณากรอกชื่อใบงาน');
+      appAlert('กรุณากรอกชื่อใบงาน');
       return;
     }
     if (spec.items.length === 0) {
-      alert('กรุณาเพิ่มโจทย์อย่างน้อย 1 ข้อ');
+      appAlert('กรุณาเพิ่มโจทย์อย่างน้อย 1 ข้อ');
       return;
     }
     if (maxScores.totalMax <= 0) {
-      alert('คะแนนรวมต้องมากกว่า 0');
+      appAlert('คะแนนรวมต้องมากกว่า 0');
       return;
     }
     setSaving(true);
@@ -231,7 +232,7 @@ const InteractiveWorksheetBuilder: React.FC<InteractiveWorksheetBuilderProps> = 
       onPublished(created);
     } catch (err) {
       console.error(err);
-      alert('สร้างใบงานโต้ตอบไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
+      appAlert('สร้างใบงานโต้ตอบไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ Firebase');
     } finally {
       setSaving(false);
     }

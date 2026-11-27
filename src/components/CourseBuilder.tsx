@@ -16,6 +16,7 @@ import {
 } from '../services/contentService';
 import type { CourseVersion, CustomCourse, CustomUnit, CustomLink } from '../services/contentService';
 import { getAdminSession } from '../services/authAdmin';
+import { appAlert, appConfirm } from '../services/appDialogService';
 
 const CourseBuilder: React.FC = () => {
   const [courses, setCourses] = useState<CustomCourse[]>(loadCourses());
@@ -45,8 +46,8 @@ const CourseBuilder: React.FC = () => {
     setEditingCourse(c.id);
   };
 
-  const handleDeleteCourse = (id: string) => {
-    if (!confirm('ลบรายวิชานี้และเนื้อหาทั้งหมด? ไม่สามารถกู้คืนได้')) return;
+  const handleDeleteCourse = async (id: string) => {
+    if (!await appConfirm('ลบรายวิชานี้และเนื้อหาทั้งหมด? ไม่สามารถกู้คืนได้')) return;
     deleteCourse(id);
     refresh();
   };
@@ -61,7 +62,7 @@ const CourseBuilder: React.FC = () => {
     const incomplete = course.units.some((unit) => (
       unit.slides.length < 5 || unit.quiz.length < 10 || unit.links.length === 0
     ));
-    if (incomplete && !confirm('บางหน่วยยังมีสไลด์น้อยกว่า 5 หน้า แบบทดสอบน้อยกว่า 10 ข้อ หรือยังไม่มีสื่อประกอบ ต้องการเผยแพร่ต่อหรือไม่?')) {
+    if (incomplete && !await appConfirm('บางหน่วยยังมีสไลด์น้อยกว่า 5 หน้า แบบทดสอบน้อยกว่า 10 ข้อ หรือยังไม่มีสื่อประกอบ ต้องการเผยแพร่ต่อหรือไม่?')) {
       return;
     }
     setSyncing(true);
@@ -129,10 +130,10 @@ const CourseBuilder: React.FC = () => {
       reader.onload = (ev) => {
         const ok = importJSON(ev.target?.result as string);
         if (ok) {
-          alert('นำเข้าสำเร็จ ✓');
+          appAlert('นำเข้าสำเร็จ ✓');
           refresh();
         } else {
-          alert('ไฟล์ไม่ถูกต้อง');
+          appAlert('ไฟล์ไม่ถูกต้อง');
         }
       };
       reader.readAsText(file);
@@ -255,8 +256,8 @@ const CourseBuilder: React.FC = () => {
                               <button
                                 type="button"
                                 className="btn-secondary"
-                                onClick={() => {
-                                  if (!confirm(`กู้คืนเนื้อหาจากรุ่น ${version.version} เป็นฉบับร่าง?`)) return;
+                                onClick={async () => {
+                                  if (!await appConfirm(`กู้คืนเนื้อหาจากรุ่น ${version.version} เป็นฉบับร่าง?`)) return;
                                   void restoreCourseVersion(version).then(() => refresh());
                                 }}
                               >
@@ -314,8 +315,8 @@ const CourseBuilder: React.FC = () => {
                                 </button>
                                 <button
                                   className="cb-icon-btn danger"
-                                  onClick={() => {
-                                    if (confirm('ลบหน่วยนี้?')) {
+                                  onClick={async () => {
+                                    if (await appConfirm('ลบหน่วยนี้?')) {
                                       deleteUnit(course.id, unit.id);
                                       refresh();
                                     }
@@ -514,7 +515,7 @@ const LinkEditor: React.FC<{
 
   const submit = () => {
     if (!title.trim() || !url.trim()) {
-      alert('กรอกชื่อและลิงก์ก่อน');
+      appAlert('กรอกชื่อและลิงก์ก่อน');
       return;
     }
     addLink(courseId, unit.id, { title, url, type, desc, emoji });
@@ -580,7 +581,7 @@ const QuizEditor: React.FC<{
 
   const submit = () => {
     if (!q.trim() || opts.some(o => !o.trim())) {
-      alert('กรอกคำถามและตัวเลือกครบทุกข้อก่อน');
+      appAlert('กรอกคำถามและตัวเลือกครบทุกข้อก่อน');
       return;
     }
     addQuiz(courseId, unit.id, { q, options: opts, answer: ans, explain });

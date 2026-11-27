@@ -731,8 +731,10 @@ const Electronics101Game: React.FC = () => {
 
   const toggleSwitch1Ref = useRef(toggleSwitch1WithSound);
   const toggleSwitch2Ref = useRef(toggleSwitch2WithSound);
-  toggleSwitch1Ref.current = toggleSwitch1WithSound;
-  toggleSwitch2Ref.current = toggleSwitch2WithSound;
+  useEffect(() => {
+    toggleSwitch1Ref.current = toggleSwitch1WithSound;
+    toggleSwitch2Ref.current = toggleSwitch2WithSound;
+  }, [toggleSwitch1WithSound, toggleSwitch2WithSound]);
 
   const handleReplaceBurnedPart = useCallback(() => {
     setIsBurned(false);

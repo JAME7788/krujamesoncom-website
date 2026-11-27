@@ -356,7 +356,9 @@ const TycoonGame: React.FC = () => {
   const rollTimersRef = useRef<number[]>([]);
   const rollingRef = useRef(false);
   const psRef = useRef<P[]>(ps);
-  psRef.current = ps;
+  useEffect(() => {
+    psRef.current = ps;
+  }, [ps]);
 
   const clearRollTimers = () => {
     rollTimersRef.current.forEach((id) => window.clearTimeout(id));

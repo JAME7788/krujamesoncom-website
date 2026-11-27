@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import AppDialogHost from './AppDialogHost';
 
 type ToastType = 'success' | 'error' | 'info';
 interface Toast {
@@ -46,6 +47,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           );
         })}
       </div>
+      <AppDialogHost onNotify={show} />
       <ToastStyles />
     </ToastContext.Provider>
   );
@@ -83,6 +85,87 @@ const ToastStyles: React.FC = () => {
         color: #9ca3af; padding: 4px; border-radius: 6px;
       }
       .toast-close:hover { background: #f3f4f6; color: #1f2937; }
+      html[data-theme="dark"] .toast {
+        background: #1e293b; color: #f1f5f9;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      }
+      html[data-theme="dark"] .toast-close:hover {
+        background: rgba(255, 255, 255, 0.08); color: #f8fafc;
+      }
+      .app-dialog-backdrop {
+        position: fixed; inset: 0; z-index: 10050;
+        background: rgba(15, 23, 42, 0.58);
+        backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center;
+        padding: 1rem;
+        animation: appDialogFade 0.16s ease-out;
+      }
+      .app-dialog-card {
+        width: 100%; max-width: 440px;
+        background: var(--card, #ffffff);
+        color: var(--text-main, #0f172a);
+        border: 1px solid var(--border, #e2e8f0);
+        border-radius: 18px;
+        padding: 1.35rem 1.4rem;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+        animation: toastIn 0.18s ease-out;
+      }
+      .app-dialog-head {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 0.75rem;
+      }
+      .app-dialog-icon {
+        width: 38px; height: 38px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        background: rgba(245, 158, 11, 0.16); color: #b45309;
+      }
+      .app-dialog-icon.danger { background: rgba(239, 68, 68, 0.14); color: #dc2626; }
+      .app-dialog-icon.prompt { background: rgba(37, 99, 235, 0.14); color: #2563eb; }
+      html[data-theme="dark"] .app-dialog-icon { color: #fcd34d; }
+      html[data-theme="dark"] .app-dialog-icon.danger { color: #fca5a5; }
+      html[data-theme="dark"] .app-dialog-icon.prompt { color: #93c5fd; }
+      .app-dialog-title {
+        margin: 0; font-size: 1.05rem; font-weight: 800; flex: 1;
+        color: var(--text-main, #0f172a);
+      }
+      .app-dialog-close {
+        background: transparent; border: 0; cursor: pointer;
+        color: var(--text-muted, #64748b); padding: 4px; border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      .app-dialog-close:hover { background: var(--surface, #f1f5f9); color: var(--text-main, #0f172a); }
+      .app-dialog-message {
+        margin: 0 0 1rem; font-size: 0.93rem; line-height: 1.6;
+        color: var(--text-muted, #475569); white-space: pre-wrap;
+        max-height: 55vh; overflow-y: auto;
+      }
+      .app-dialog-input {
+        width: 100%; box-sizing: border-box;
+        padding: 10px 12px; margin-bottom: 1rem;
+        border: 1.5px solid var(--border, #cbd5e1);
+        border-radius: 10px;
+        background: var(--surface, #f8fafc);
+        color: var(--text-main, #0f172a);
+        font: inherit; font-size: 0.95rem;
+      }
+      .app-dialog-input:focus {
+        outline: none; border-color: #f59e0b;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+      }
+      .app-dialog-actions {
+        display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
+      }
+      .app-dialog-btn {
+        padding: 9px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem;
+      }
+      .app-dialog-btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: #ffffff; border: 0; cursor: pointer;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+      }
+      .app-dialog-btn-danger:hover { filter: brightness(1.05); }
+      @keyframes appDialogFade { from { opacity: 0; } to { opacity: 1; } }
       @keyframes toastIn {
         from { opacity: 0; transform: translateY(10px) scale(0.95); }
         to { opacity: 1; transform: translateY(0) scale(1); }

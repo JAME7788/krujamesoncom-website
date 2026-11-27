@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, PlayCircle, CheckCircle2, XCircle, RotateCcw, Sparkles, Video, Gamepad2, FileText, Award, BookOpen, Menu, Maximize, Minimize, Download, Lock, FolderOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlayCircle, CheckCircle2, XCircle, RotateCcw, Sparkles, Video, Gamepad2, FileText, Award, BookOpen, Menu, Maximize, Minimize, Download, Lock, FolderOpen, Volume2, Square } from 'lucide-react';
+import { isTTSSupported, speak as speakTTS, stop as stopTTS } from '../services/ttsService';
 import { findGrade, type Grade, type Unit } from '../data/curriculum';
 import { unitContent } from '../data/unitContent';
 import { unitExtras, type Article, type LearningFile, type LessonNotes, type QuizQuestion } from '../data/unitExtras';
@@ -1426,6 +1427,17 @@ const UnitDetail: React.FC = () => {
     }
   }, [completedPractices, getActiveIds, gradeId, syncActiveUserGrades, toast, unitNumber, user]);
 
+  const [quizSpeaking, setQuizSpeaking] = useState(false);
+
+  useEffect(() => {
+    stopTTS();
+    const stopTimer = window.setTimeout(() => setQuizSpeaking(false), 0);
+    return () => {
+      window.clearTimeout(stopTimer);
+      stopTTS();
+    };
+  }, [quizIdx, activeTab, quizSubmitted]);
+
   // Reset states when changing unit + load saved attempt count
   useEffect(() => {
     let alive = true;
@@ -1558,17 +1570,19 @@ const UnitDetail: React.FC = () => {
     if (!user || !gradeId || activeTab !== 'slides' || totalSlides === 0) return;
     const recordKey = `${gradeId}_${unitNumber}_${slideIdx}`;
     if (recordedSlideKeys[recordKey]) {
-      setSlideDwellSeconds(0);
-      return;
+      const resetTimer = window.setTimeout(() => setSlideDwellSeconds(0), 0);
+      return () => window.clearTimeout(resetTimer);
     }
     const start = Date.now();
-    setSlideDwellSeconds(Math.ceil(SLIDE_READ_DWELL_MS / 1000));
-    const countdown = setInterval(() => {
+    const initTimer = window.setTimeout(() => {
+      setSlideDwellSeconds(Math.ceil(SLIDE_READ_DWELL_MS / 1000));
+    }, 0);
+    const countdown = window.setInterval(() => {
       const left = Math.max(0, Math.ceil((SLIDE_READ_DWELL_MS - (Date.now() - start)) / 1000));
       setSlideDwellSeconds(left);
     }, 250);
-    const t = setTimeout(() => {
-      clearInterval(countdown);
+    const t = window.setTimeout(() => {
+      window.clearInterval(countdown);
       setSlideDwellSeconds(0);
       setRecordedSlideKeys((prev) => (prev[recordKey] ? prev : { ...prev, [recordKey]: true }));
       // บันทึกให้ทั้ง main + partner (ถ้านั่งคู่)
@@ -1577,8 +1591,9 @@ const UnitDetail: React.FC = () => {
         .catch((error) => console.warn('slide progress sync failed', error));
     }, SLIDE_READ_DWELL_MS);
     return () => {
-      clearInterval(countdown);
-      clearTimeout(t);
+      window.clearTimeout(initTimer);
+      window.clearInterval(countdown);
+      window.clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIdx, activeTab, user, gradeId, unitNumber, totalSlides]);
@@ -2518,6 +2533,28 @@ const UnitDetail: React.FC = () => {
                       <div className={`quiz-card-modern`}>
                         <div className="quiz-card-header">
                           <span className="question-number">ข้อที่ {quizIdx + 1} จาก {quizItems.length}</span>
+                          {isTTSSupported() && (
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              style={{ padding: '5px 12px', fontSize: '0.8rem', borderRadius: 999 }}
+                              onClick={() => {
+                                if (quizSpeaking) {
+                                  stopTTS();
+                                  setQuizSpeaking(false);
+                                  return;
+                                }
+                                const curQ = quizItems[quizIdx];
+                                const spoken = `ข้อที่ ${quizIdx + 1} ${curQ.q}. ${curQ.options
+                                  .map((o, i) => `ข้อ ${['กอ', 'ขอ', 'คอ', 'งอ'][i] || i + 1} ${o}`)
+                                  .join('. ')}`;
+                                setQuizSpeaking(true);
+                                speakTTS(spoken, { rate: 0.95, onEnd: () => setQuizSpeaking(false) });
+                              }}
+                            >
+                              {quizSpeaking ? <><Square size={13} /> หยุดอ่าน</> : <><Volume2 size={14} /> ฟังโจทย์</>}
+                            </button>
+                          )}
                         </div>
                         <h3 className="quiz-question-text">{quizItems[quizIdx].q}</h3>
                         <div className="quiz-options-vertical">
@@ -2611,20 +2648,40 @@ const UnitDetail: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    // RESULT MODE: Show all with explanations
+                    // RESULT MODE: Show all with explanations & Diagnostic Feedback
                     <div className="quiz-result-mode">
-                      <div className="quiz-results-card" style={{ padding: '2.5rem', background: 'white', borderRadius: '20px', border: '1px solid var(--border)', textAlign: 'center', marginBottom: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+                      <div className="quiz-results-card" style={{ padding: '2.25rem', background: 'var(--card)', borderRadius: '20px', border: '1px solid var(--border)', textAlign: 'center', marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
                         <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-                           <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{score === maxScore ? '🏆' : '✨'}</div>
-                           <h2 style={{ fontSize: '2.8rem', margin: '0 0 0.5rem', fontWeight: 900 }}>{score} / {maxScore}</h2>
-                           <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                             {score === maxScore ? 'สุดยอดไปเลย! คุณตอบถูกทุกข้อ' : score >= maxScore * 0.7 ? 'เก่งมาก! ผ่านเกณฑ์แล้ว' : 'พยายามต่อไปนะ อีกนิดเดียว'}
+                           <div style={{ fontSize: '3.6rem', marginBottom: '0.75rem' }}>{score === maxScore ? '🏆' : score >= maxScore * 0.7 ? '🌟' : '✨'}</div>
+                           <h2 style={{ fontSize: '2.6rem', margin: '0 0 0.4rem', fontWeight: 900 }}>{score} / {maxScore}</h2>
+                           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                             {score === maxScore ? 'สุดยอดไปเลย! ตอบถูกครบทุกข้อในหน่วยนี้' : score >= maxScore * 0.7 ? 'เก่งมาก! ผ่านเกณฑ์ความเข้าใจแล้ว' : 'ทบทวนข้อที่ยังพลาดด้านล่างแล้วลองทำใหม่ได้นะ'}
                            </p>
-                           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                           {score < maxScore && (
+                             <div style={{ textAlign: 'left', maxWidth: 620, margin: '0 auto 1.25rem', padding: '12px 16px', borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)', fontSize: '0.88rem' }}>
+                               <strong style={{ color: 'var(--primary-ink)', display: 'block', marginBottom: 4 }}>
+                                 🎯 แนะนำการทบทวนเฉพาะจุด (พลาด {maxScore - score} ข้อ):
+                               </strong>
+                               <span style={{ color: 'var(--text-muted)' }}>
+                                 อ่านเฉลยข้อที่พลาดด้านล่าง หรือกลับไปเปิดสไลด์และฝึกเกมหน่วยนี้ก่อนทำรอบถัดไปครับ
+                               </span>
+                             </div>
+                           )}
+                           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                              <button className="btn-secondary" onClick={() => { setQuizAnswers({}); setQuizSubmitted(false); setQuizIdx(0); }} disabled={attempts >= 2}>
                                <RotateCcw size={16}/> {attempts >= 2 ? 'ทำครบ 2 ครั้งแล้ว' : 'ลองทำอีกครั้ง'}
                              </button>
-                             <button className="btn-primary" onClick={() => setActiveTab('overview')}>กลับไปที่เนื้อหา</button>
+                             {totalSlides > 0 && (
+                               <button className="btn-secondary" onClick={() => setActiveTab('slides')}>
+                                 <FileText size={16} /> ทบทวนสไลด์หน่วยนี้
+                               </button>
+                             )}
+                             {extras.fun && extras.fun.length > 0 && (
+                               <button className="btn-secondary" onClick={() => setActiveTab('fun')}>
+                                 <Gamepad2 size={16} /> ฝึกต่อในเกม
+                               </button>
+                             )}
+                             <button className="btn-primary" onClick={() => setActiveTab('overview')}>กลับหน้าภาพรวม</button>
                            </div>
                         </motion.div>
                       </div>
