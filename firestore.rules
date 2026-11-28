@@ -444,6 +444,40 @@ service cloud.firestore {
       allow delete: if isTeacher() || resource.data.roomId.matches('.*-qa-.*');
     }
 
+    // ====== ผลสอบ: คลังข้อสอบออนไลน์ (/quiz) และข้อสอบกระดาษที่ครูสแกนตรวจ ======
+    // เดิมไม่มีกฎ จึงถูก default deny ทุกครั้ง ผลสอบค้างอยู่แค่ในเครื่องนักเรียน ครูไม่เห็น
+    // นักเรียนสร้างผลของตัวเองได้อย่างเดียว อ่าน/แก้/ลบได้เฉพาะครู (มีชื่อและคะแนนรายคน)
+    match /examAttempts/{attemptId} {
+      allow read: if isTeacher();
+      allow create: if isAcademicStudentId(request.resource.data.studentId)
+                   && baseWrite(24)
+                   && strOk('studentName', 300)
+                   && strOk('classroom', 20)
+                   && strOk('examSetId', 120)
+                   && strOk('examTitle', 300)
+                   && request.resource.data.score is number
+                   && request.resource.data.totalQuestions is number
+                   && request.resource.data.totalQuestions > 0
+                   && request.resource.data.totalQuestions <= 300
+                   && request.resource.data.score >= 0
+                   && request.resource.data.score <= request.resource.data.totalQuestions
+                   && request.resource.data.answers is map
+                   && request.resource.data.answers.size() <= 200;
+      allow update, delete: if isTeacher();
+    }
+
+    // ====== ชุดข้อสอบกระดาษ (มีเฉลย) — ครูเท่านั้น นักเรียนอ่านไม่ได้ ======
+    match /paperExams/{examId} {
+      allow read: if isTeacher();
+      allow create, update: if isTeacher()
+                   && baseWrite(24)
+                   && strOk('title', 300)
+                   && strOk('classroom', 20)
+                   && request.resource.data.keyMasks is list
+                   && request.resource.data.keyMasks.size() <= 60;
+      allow delete: if isTeacher();
+    }
+
     // Default deny for any other path
     match /{document=**} {
       allow read, write: if false;

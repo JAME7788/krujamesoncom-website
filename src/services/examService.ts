@@ -33,9 +33,14 @@ export interface ExamAttempt {
   answers: Record<string, number>; // questionId -> selectedOptionIndex
   timeSpentSeconds: number;
   timestamp: number;
+  /** online = ทำในเว็บ (/quiz), paper = ครูสแกนกระดาษคำตอบ */
+  source?: 'online' | 'paper';
+  studentNo?: number;
+  studentCode?: string;
 }
 
 const LOCAL_STORAGE_KEY = 'kj_exam_attempts_v1';
+const REMOTE_WRITE_TIMEOUT_MS = 8000;
 const FIRESTORE_COLLECTION = 'examAttempts';
 
 const firebaseAvailable = (): boolean => {
@@ -69,10 +74,13 @@ export const loadLocalExamAttempts = (studentId?: string): ExamAttempt[] => {
   }
 };
 
-/** บันทึกผลการทำแบบทดสอบ (ทั้ง LocalStorage และ Firestore) */
-export const saveExamAttempt = async (attempt: ExamAttempt): Promise<void> => {
+/**
+ * บันทึกผลการทำแบบทดสอบ (ทั้ง LocalStorage และ Firestore)
+ * คืน remote = true เมื่อขึ้นฐานข้อมูลกลางแล้ว (ครูเห็นผล) — ไม่ throw เพื่อไม่ให้หน้าสอบพัง
+ */
+export const saveExamAttempt = async (attempt: ExamAttempt): Promise<{ remote: boolean }> => {
+  // 1. บันทึกลง LocalStorage หรือ Memory Fallback
   try {
-    // 1. บันทึกลง LocalStorage หรือ Memory Fallback
     if (typeof localStorage !== 'undefined') {
       const current = loadLocalExamAttempts();
       const next = [attempt, ...current.filter((a) => a.id !== attempt.id)];
@@ -82,16 +90,25 @@ export const saveExamAttempt = async (attempt: ExamAttempt): Promise<void> => {
       if (idx >= 0) inMemoryExamAttempts[idx] = attempt;
       else inMemoryExamAttempts.unshift(attempt);
     }
-
-    // 2. บันทึกลง Firestore (แยกคอลเลกชันอิสระ ไม่แตะต้องคอลเลกชันคะแนนเดิม)
-    if (firebaseAvailable() && db) {
-      await setDoc(doc(db, FIRESTORE_COLLECTION, attempt.id), {
-        ...attempt,
-        serverUpdated: Date.now(),
-      });
-    }
   } catch (err) {
-    console.warn('saveExamAttempt fallback warning:', err);
+    console.warn('saveExamAttempt local cache warning:', err);
+  }
+
+  // 2. บันทึกลง Firestore (แยกคอลเลกชันอิสระ ไม่แตะต้องคอลเลกชันคะแนนเดิม)
+  if (!firebaseAvailable() || !db) return { remote: false };
+  try {
+    // Firestore ไม่รับค่า undefined: ตัดฟิลด์ที่ไม่มีค่าออกก่อน
+    const payload = Object.fromEntries(Object.entries({ ...attempt, serverUpdated: Date.now() }).filter(([, value]) => value !== undefined));
+    // เน็ตโรงเรียนช้า/หลุด: setDoc รอเซิร์ฟเวอร์ตอบไม่สิ้นสุด จึงจำกัดเวลารอ
+    // (คำสั่งเขียนยังค้างในคิวของ Firestore และจะส่งเองเมื่อกลับมาออนไลน์)
+    const confirmed = await Promise.race([
+      setDoc(doc(db, FIRESTORE_COLLECTION, attempt.id), payload).then(() => true),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), REMOTE_WRITE_TIMEOUT_MS)),
+    ]);
+    return { remote: confirmed };
+  } catch (err) {
+    console.warn('saveExamAttempt remote warning:', err);
+    return { remote: false };
   }
 };
 

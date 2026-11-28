@@ -98,7 +98,7 @@ import LiveClassroomRadar from './LiveClassroomRadar';
 import { useToast } from './Toast';
 import './TeacherClassroomHub.css';
 
-type TeacherTab = 'attendance' | 'gradebook' | 'homework' | 'slides' | 'locks' | 'assessments';
+type TeacherTab = 'attendance' | 'gradebook' | 'homework' | 'slides' | 'locks' | 'assessments' | 'paper-exam';
 
 interface Props {
   onNavigate: (tab: TeacherTab) => void;
@@ -818,6 +818,7 @@ const TeacherClassroomHub: React.FC<Props> = ({ onNavigate }) => {
               <Printer size={17} /> พิมพ์ใบแจ้งเกรดทั้งห้อง
             </button>
             <button type="button" onClick={() => onNavigate('homework')}><BookOpen size={17} /> 🧩 ใบงานโต้ตอบ / การบ้าน</button>
+            <button type="button" onClick={() => onNavigate('paper-exam')} title="เปิดระบบสแกนกระดาษคำตอบแบบ ZipGrade และซิงก์เข้า ปพ.5"><Printer size={17} /> 📷 สแกนตรวจข้อสอบ</button>
             <button
               type="button"
               className="complete"

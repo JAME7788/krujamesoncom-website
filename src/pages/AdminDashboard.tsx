@@ -41,10 +41,12 @@ const StudentAssessmentHub = React.lazy(() => import('../components/StudentAsses
 const TeacherClassroomHub = React.lazy(() => import('../components/TeacherClassroomHub'));
 const ExternalVisitorManager = React.lazy(() => import('../components/ExternalVisitorManager'));
 const QuestionBankManager = React.lazy(() => import('../components/QuestionBankManager'));
+const ExamResultsPanel = React.lazy(() => import('../components/ExamResultsPanel'));
+const PaperExamManager = React.lazy(() => import('../components/PaperExamManager'));
 const AuditLogViewer = React.lazy(() => import('../components/AuditLogViewer'));
 const StudentReflectionJournal = React.lazy(() => import('../components/StudentReflectionJournal'));
 import { loadErrors, clearErrors } from '../services/errorLogger';
-import { Megaphone, Calendar as CalIcon, Bug } from 'lucide-react';
+import { Megaphone, Calendar as CalIcon, Bug, Printer } from 'lucide-react';
 import { adminLogout, getAdminSession } from '../services/authAdmin';
 import { getActiveWeeklyGoal } from '../services/srlService';
 import { loadStudentReflections } from '../services/gameReflectionService';
@@ -62,7 +64,7 @@ import './AdminDashboard.css';
 import { useToast } from '../components/Toast';
 import { appAlert, appConfirm } from '../services/appDialogService';
 
-type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'export-grades' | 'media-reports' | 'assessments' | 'question-bank' | 'skill' | 'bonus' | 'daily' | 'research' | 'pa-portfolio' | 'reflections' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
+type Tab = 'today' | 'overview' | 'world' | 'roster' | 'external-visitors' | 'attendance' | 'quick-att' | 'scores' | 'gradebook' | 'export-grades' | 'media-reports' | 'assessments' | 'question-bank' | 'exam-results' | 'paper-exam' | 'skill' | 'bonus' | 'daily' | 'research' | 'pa-portfolio' | 'reflections' | 'development' | 'schedule' | 'courses' | 'p1-plan' | 'teaching-schedule' | 'course-plan5' | 'locks' | 'slides' | 'announcements' | 'calendar' | 'homework' | 'theme' | 'audit' | 'errors' | 'site';
 
 interface NavItem {
   id: Tab;
@@ -128,6 +130,8 @@ const NAVIGATION_GROUPS: NavGroup[] = [
         id: 'assessment-activities', label: 'ข้อสอบและกิจกรรมคะแนน', icon: <Award size={16} />,
         items: [
           { id: 'question-bank', label: 'คลังข้อสอบ', icon: <FileText size={16} /> },
+          { id: 'exam-results', label: 'ผลสอบรายห้อง + วิเคราะห์ข้อสอบ', icon: <BarChart3 size={16} /> },
+          { id: 'paper-exam', label: 'สแกนตรวจข้อสอบ (ZipGrade OMR)', icon: <Printer size={16} /> },
           { id: 'daily', label: 'คำถามประจำวัน', icon: <Award size={16} /> },
           { id: 'bonus', label: 'รางวัลและ Bonus', icon: <Award size={16} /> },
           { id: 'reflections', label: 'บันทึกสะท้อนคิด (GBL)', icon: <BookOpen size={16} /> },
@@ -521,6 +525,7 @@ const AdminDashboardInner: React.FC = () => {
             { id: 'homework' as Tab, label: '🧩 ใบงานโต้ตอบ & ตัดคะแนน' },
             { id: 'quick-att' as Tab, label: '✅ เช็คชื่อด่วน' },
             { id: 'gradebook' as Tab, label: '📊 สมุดคะแนน ปพ.5' },
+            { id: 'paper-exam' as Tab, label: '📷 สแกนตรวจข้อสอบ (ZipGrade)' },
             { id: 'roster' as Tab, label: '👥 รายชื่อ & ลิงก์ผู้ปกครอง' },
           ].map((quick) => (
             <button
@@ -1123,6 +1128,18 @@ const AdminDashboardInner: React.FC = () => {
             {tab === 'assessments' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
                 <StudentAssessmentHub />
+              </motion.div>
+            )}
+
+            {tab === 'exam-results' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <ExamResultsPanel />
+              </motion.div>
+            )}
+
+            {tab === 'paper-exam' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="admin2-panel">
+                <PaperExamManager />
               </motion.div>
             )}
 
